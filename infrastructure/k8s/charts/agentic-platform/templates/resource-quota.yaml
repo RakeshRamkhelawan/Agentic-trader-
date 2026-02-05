@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: {{ include "agentic-platform.fullname" . }}-quota
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "agentic-platform.labels" . | nindent 4 }}
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: "64Gi"
+    limits.cpu: "40"
+    limits.memory: "128Gi"
+    persistentvolumeclaims: "10"
+    pods: "50"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: {{ include "agentic-platform.fullname" . }}-limits
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "agentic-platform.labels" . | nindent 4 }}
+spec:
+  limits:
+    - default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "200m"
+        memory: "256Mi"
+      type: Container

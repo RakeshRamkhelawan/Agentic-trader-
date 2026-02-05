@@ -1,7 +1,9 @@
 # Subagent Planning V2
 
 ## Huidige Status
-- Laatste taak: Commit en Push Alles (Voltooid)
+- Taak 1.1 Docker Optimalisatie: Voltooid.
 
 ## Takenlijst
 - [x] Commit en Push Alles
+- [x] Taak 1.1 Docker Optimalisatie
+- [ ] Taak 1.2 Base Helm Charts

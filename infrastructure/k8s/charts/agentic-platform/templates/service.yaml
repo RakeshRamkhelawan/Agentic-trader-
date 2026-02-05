@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "agentic-platform.fullname" . }}-orchestrator
+  labels:
+    {{- include "agentic-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestrator
+spec:
+  type: {{ .Values.agentOrchestrator.service.type }}
+  clusterIP: None  # Headless service for StatefulSet
+  ports:
+    - name: http
+      port: {{ .Values.agentOrchestrator.service.port }}
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: {{ .Values.agentOrchestrator.service.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    {{- include "agentic-platform.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestrator
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "agentic-platform.fullname" . }}-dashboard-api
+  labels:
+    {{- include "agentic-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard-api
+spec:
+  type: {{ .Values.dashboardApi.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.dashboardApi.service.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "agentic-platform.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard-api

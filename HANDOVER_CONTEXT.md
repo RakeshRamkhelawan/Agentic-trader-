@@ -1,14 +1,18 @@
 # Handover Context
 
-## Sessie: Commit en Push Alles
+## Sessie: Docker Optimalisatie (Taak 1.1)
 **Datum:** 2026-02-05
 **Status:** Voltooid
 
 ### Uitgevoerde Taken
-- Alle openstaande wijzigingen gestaged en gecommit.
-- Commit bericht: "Project cleanup: Update documentation and remove deprecated files".
-- Remote upstream ingesteld voor branch `feature/samkhya-integration`.
-- Succesvolle push naar origin.
+- **Taak 1.1 Docker Optimalisatie met TDD**:
+  - Testscript `scripts/test_docker_build.py` gemaakt.
+  - Huidige build gefaald (Red Phase).
+  - Dockerfile geoptimaliseerd naar Multi-stage build.
+  - Base image aangepast naar `python:3.12-slim` wegens compatibiliteitsproblemen met 3.13 (numpy/hnswlib).
+  - `requirements/base.txt` geupdate voor betere Python 3.12 ondersteuning (OpenTelemetry).
+  - `setup.py` / Dockerfile aangepast om `build-essential` te bevatten voor native extensies.
+  - **Resultaat**: Image size gereduceerd naar **223.58 MB** (was ~800MB). Test geslaagd (Green Phase).
 
 ### Volgende Stappen
-- Geen directe vervolgstappen vanuit deze taak.
+- Start Taak 1.2: Base Helm Charts.
