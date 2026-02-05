@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "agentic-platform.fullname" . }}-key-rotation
+  labels:
+    {{- include "agentic-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: key-rotation
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "agentic-platform.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: key-rotation
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+          containers:
+            - name: key-rotator
+              image: "{{ .Values.global.imageRegistry }}/{{ .Values.agentOrchestrator.image.repository }}:{{ .Values.agentOrchestrator.image.tag }}"
+              imagePullPolicy: {{ .Values.agentOrchestrator.image.pullPolicy }}
+              command:
+                - python
+                - -m
+                - backend.core.security.key_rotation_job
+              env:
+                - name: VAULT_ENABLED
+                  value: "true"
+                - name: VAULT_ADDR
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "agentic-platform.fullname" . }}-vault-credentials
+                      key: vault-addr
+                - name: VAULT_ROLE_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "agentic-platform.fullname" . }}-vault-credentials
+                      key: role-id
+                - name: VAULT_SECRET_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "agentic-platform.fullname" . }}-vault-credentials
+                      key: secret-id
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "200m"
+                  memory: "256Mi"
