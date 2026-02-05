@@ -1,0 +1,161 @@
+version: '3.8'
+
+services:
+  # --- INFRASTRUCTURE LAYER ---
+  
+  # 1. Message Broker (Redpanda - Kafka Compatible)
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.10
+    container_name: redpanda
+    command:
+      - redpanda start
+      - --smp 1  # Beperk CPU gebruik voor dev
+      - --memory 1G
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --check=false
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --pandaproxy-addr 0.0.0.0:28082
+      - --advertise-pandaproxy-addr localhost:28082
+      - --rpc-addr 0.0.0.0:33145
+      - --advertise-rpc-addr redpanda:33145
+    ports:
+      - "9092:9092"
+      - "28082:28082"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Web UI for Redpanda (Optional but super useful)
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v2.4.6
+    container_name: redpanda-console
+    restart: on-failure
+    entrypoint: /bin/sh
+    command: -c "echo \"kafka.brokers=redpanda:29092\" > /tmp/config.yaml && /app/console"
+    ports:
+      - "8081:8080"
+    depends_on:
+      - redpanda
+
+  # 2. TimeSeries Database (ClickHouse)
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    container_name: clickhouse
+    ports:
+      - "8123:8123" # HTTP
+      - "9000:9000" # Native
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./backend/storage/migrations:/docker-entrypoint-initdb.d/migrations # Mount migrations
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  # 3. Hot Store (Redis)
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # 4. Semantic Memory (ChromaDB - Vector Store)
+  chromadb:
+    image: chromadb/chroma:0.5.0
+    container_name: chromadb
+    ports:
+      - "8000:8000"
+    volumes:
+      - chromadb_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+
+  # 5. Prometheus (Metrics Monitoring)
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      - metrics-server # Nu afhankelijk van de metrics-server
+
+  # 6. Grafana (Visualization)
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  # --- APPLICATION LAYER ---
+
+  # The Cognitive Orchestrator & Agents
+  trading-engine:
+    build: 
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+    container_name: trading-engine
+    restart: unless-stopped
+    depends_on:
+      - redpanda
+      - clickhouse
+      - redis
+      - chromadb # Nu ook ChromaDB als dependency
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - REDIS_URL=redis://redis:6379/0
+      - CLICKHOUSE_HOST=clickhouse
+      - PYTHONUNBUFFERED=1
+      - CHROMA_HOST=chromadb # NIEUW: ChromaDB host
+      - CHROMA_PORT=8000
+    volumes:
+      - ./backend:/app/backend # Hot reload for development
+      - ./.env:/app/.env
+      - ./backend/config/agent_profiles.yaml:/app/backend/config/agent_profiles.yaml # Mount agent profiles
+    command: python backend/services/cognitive_orchestrator.py # Start de Orchestrator
+
+  # Metrics Server
+  metrics-server:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+    container_name: metrics-server
+    restart: unless-stopped
+    depends_on:
+      - trading-engine # Zodat metrics van trading-engine kunnen worden opgehaald
+    environment:
+      - PYTHONUNBUFFERED=1
+      - METRICS_SERVER_PORT=8001
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend:/app/backend
+      - ./.env:/app/env
+    command: uvicorn backend.services.metrics_server:app --host 0.0.0.0 --port 8001 # Start de FastAPI service
+
+
+volumes:
+  redpanda_data:
+  clickhouse_data:
+  redis_data:
+  chromadb_data:
+  prometheus_data:
+  grafana_data:
