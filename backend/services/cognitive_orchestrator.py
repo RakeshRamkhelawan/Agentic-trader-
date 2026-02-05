@@ -34,7 +34,15 @@ from backend.risk.validators import RiskValidator
 
 # Initialiseer de tracer en metrics voor deze service
 tracer = get_tracer("cognitive.orchestrator")
-metrics = PrometheusMetrics("cognitive_orchestrator") # NIEUW
+metrics = PrometheusMetrics("cognitive_orchestrator")
+
+# Re-export for convenience
+__all__ = [
+    'CognitiveOrchestrator',
+    'AgentMessage',
+    'RegimeDetector',
+    'MarketRegime',
+] # NIEUW
 
 class CognitiveOrchestrator:
     def __init__(

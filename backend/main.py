@@ -3,6 +3,7 @@ import logging
 from backend.services.cognitive_orchestrator import CognitiveOrchestrator
 from backend.core.telemetry.tracing import setup_tracing
 from backend.core.config.settings import settings
+from backend.schemas.agent_messages import AgentMessage
 
 async def start_services():
     logging.basicConfig(level=logging.INFO)
