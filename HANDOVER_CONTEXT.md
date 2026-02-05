@@ -1,52 +1,45 @@
 # Handover Context
 
-## Sessie: Taak 1 Kubernetes & Orchestration Setup (Compleet)
+## Sessie: Taak 1 & 2 Compleet (TDD)
 **Datum:** 2026-02-05
 **Status:** Voltooid
 
-### Uitgevoerde Taken (TDD Methodiek)
+---
 
-#### Taak 1.1: Docker Optimalisatie
-- Testscript `scripts/test_docker_build.py` gemaakt
-- Red Phase: Test faalde (image te groot)
-- Dockerfile geoptimaliseerd naar multi-stage build (python:3.12-slim)
-- Dependencies geupdate voor Python 3.12 compatibiliteit
-- **Resultaat**: Image size **223.58 MB** (< 250MB doel)
+## Taak 1: Kubernetes & Orchestration Setup
+| Subtaak | Beschrijving | Status |
+|---------|--------------|--------|
+| 1.1 | Docker Optimalisatie (223MB) | :white_check_mark: |
+| 1.2 | Base Helm Charts | :white_check_mark: |
+| 1.3 | Service Deployments (StatefulSet) | :white_check_mark: |
+| 1.4 | Ingress & TLS (Let's Encrypt) | :white_check_mark: |
+| 1.5 | Resource Quotas & NetworkPolicy | :white_check_mark: |
 
-#### Taak 1.2: Base Helm Charts
-- Testscript `scripts/test_helm_charts.py` gemaakt
-- Helm chart structuur aangemaakt:
-  - `Chart.yaml` met dependencies (Redis, ClickHouse)
-  - `values.yaml` met global config
-  - `_helpers.tpl` voor common labels
+**Files:** `infrastructure/k8s/charts/agentic-platform/`
 
-#### Taak 1.3: Service Deployments
-- Testscript `scripts/test_k8s_deployments.py` gemaakt
-- `statefulset.yaml`: Agent Orchestrator met PVC, non-root user, probes
-- `service.yaml`: Headless service voor StatefulSet + Dashboard API service
+---
 
-#### Taak 1.4: Ingress & TLS
-- `ingress.yaml`: NGINX ingress met TLS annotaties
-- `cluster-issuer.yaml`: Let's Encrypt (prod + staging)
+## Taak 2: Secrets Hardening
+| Subtaak | Beschrijving | Status |
+|---------|--------------|--------|
+| 2.1 | Vault Client (`vault_manager.py`) | :white_check_mark: |
+| 2.2 | Settings Integration (VAULT_ENABLED) | :white_check_mark: |
+| 2.3 | Key Rotation Service + CronJob | :white_check_mark: |
 
-#### Taak 1.5: Resource Quotas
-- `resource-quota.yaml`: CPU/Memory limits, PVC limits
-- `network-policy.yaml`: Egress beperkt tot ClickHouse:8123, Redis:6379
+**Files:** `backend/core/security/vault_manager.py`, `key_rotator.py`
 
-### Alle Files
-```
-infrastructure/k8s/charts/agentic-platform/
-  Chart.yaml
-  values.yaml
-  templates/
-    _helpers.tpl
-    statefulset.yaml
-    service.yaml
-    ingress.yaml
-    cluster-issuer.yaml
-    resource-quota.yaml
-    network-policy.yaml
-```
+---
 
-### Volgende Stappen
-- Start Taak 2 uit GTM_KANBAN_PLANNING.md
+## TDD Scripts
+- `scripts/test_docker_build.py`
+- `scripts/test_helm_charts.py`
+- `scripts/test_k8s_deployments.py`
+- `scripts/test_taak1_complete.py`
+- `scripts/test_vault_client.py`
+- `scripts/test_settings_integration.py`
+- `scripts/test_key_rotation.py`
+
+---
+
+## Volgende Stappen
+- Start **Taak 3: Identity & Access Management (IAM)** uit GTM_KANBAN_PLANNING.md
