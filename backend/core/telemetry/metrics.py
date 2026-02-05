@@ -47,26 +47,43 @@ class PrometheusMetrics:
         )
         
         # --- Guna Metrics (Globaal, dus zonder service_name prefix) ---
-        self.global_guna_sattva = Gauge(
-            "global_guna_sattva",
-            "Current global Sattva level.",
-            registry=self._registry
-        )
-        self.global_guna_rajas = Gauge(
-            "global_guna_rajas",
-            "Current global Rajas level.",
-            registry=self._registry
-        )
-        self.global_guna_tamas = Gauge(
-            "global_guna_tamas",
-            "Current global Tamas level.",
-            registry=self._registry
-        )
-        self.guna_deviation_score = Gauge(
-            "guna_deviation_score",
-            "Deviation from ideal Guna balance.",
-            registry=self._registry
-        )
+        # Only register if not already registered
+        try:
+            self.global_guna_sattva = Gauge(
+                "global_guna_sattva",
+                "Current global Sattva level.",
+                registry=self._registry
+            )
+        except ValueError:
+            # Already registered
+            self.global_guna_sattva = self._registry._names_to_collectors.get("global_guna_sattva")
+        
+        try:
+            self.global_guna_rajas = Gauge(
+                "global_guna_rajas",
+                "Current global Rajas level.",
+                registry=self._registry
+            )
+        except ValueError:
+            self.global_guna_rajas = self._registry._names_to_collectors.get("global_guna_rajas")
+        
+        try:
+            self.global_guna_tamas = Gauge(
+                "global_guna_tamas",
+                "Current global Tamas level.",
+                registry=self._registry
+            )
+        except ValueError:
+            self.global_guna_tamas = self._registry._names_to_collectors.get("global_guna_tamas")
+        
+        try:
+            self.guna_deviation_score = Gauge(
+                "guna_deviation_score",
+                "Deviation from ideal Guna balance.",
+                registry=self._registry
+            )
+        except ValueError:
+            self.guna_deviation_score = self._registry._names_to_collectors.get("guna_deviation_score")
         self._initialized = True
 
 
