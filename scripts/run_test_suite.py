@@ -3,7 +3,18 @@ Run test suite and generate summary.
 """
 import subprocess
 import re
+import os
+import sys
 from pathlib import Path
+
+# Fix path logic for moved script
+script_dir = Path(__file__).parent
+project_root = script_dir.parent
+os.chdir(project_root)
+
+# Add project root to path for backend imports
+if str(project_root) not in sys.path:
+    sys.path.append(str(project_root))
 
 test_dir = Path("backend/tests/unit")
 test_files = list(test_dir.glob("*.py"))

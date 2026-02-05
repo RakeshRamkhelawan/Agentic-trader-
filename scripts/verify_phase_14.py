@@ -6,6 +6,16 @@ Demonstrates complete Mahabhutas integration and coherence calculation
 
 import asyncio
 import numpy as np
+import os
+import sys
+from pathlib import Path
+
+# Add project root to path for backend imports
+script_dir = Path(__file__).parent
+project_root = script_dir.parent
+if str(project_root) not in sys.path:
+    sys.path.append(str(project_root))
+
 from backend.config.schemas import TattvaConfig
 from backend.core.system_identity import SystemIdentity
 
