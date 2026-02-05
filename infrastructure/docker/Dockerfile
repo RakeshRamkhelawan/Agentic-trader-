@@ -1,27 +1,43 @@
-# Use official lightweight Python image
-FROM python:3.13-slim
+# Builder stage
+FROM python:3.12-slim as builder
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies (required for some python packages)
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    python3-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+  build-essential \
+  python3-dev \
+  && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements/base.txt /app/requirements/base.txt
+# Create venv and install dependencies
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Install dependencies from file
-RUN pip install --no-cache-dir -r /app/requirements/base.txt
+COPY requirements/base.txt .
+RUN pip install --no-cache-dir -r base.txt
 
-# Copy the application code
+# Final stage
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Copy venv from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy application code
 COPY . .
 
-# Set Python path so backend module is found
+# Set Python path
 ENV PYTHONPATH=/app
 
-# Default command (can be overridden in docker-compose)
+# Create non-root user for security
+RUN useradd -m appuser && chown -R appuser /app
+USER appuser
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# Command
 CMD ["python", "-m", "backend.main"]
