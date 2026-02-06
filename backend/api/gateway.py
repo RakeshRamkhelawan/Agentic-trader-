@@ -164,6 +164,10 @@ class APIGateway:
         self.jwt_manager = JWTManager(secret_key)
         self.rate_limiter = RateLimiter(requests_per_minute)
         
+        # Include WebSocket router
+        from backend.api.websocket_endpoints import router as ws_router
+        self.app.include_router(ws_router, tags=["websocket"])
+        
         # Setup routes
         self._setup_routes()
     
