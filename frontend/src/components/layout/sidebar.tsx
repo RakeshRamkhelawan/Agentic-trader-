@@ -8,10 +8,12 @@ import {
     Wallet,
     History,
     Settings,
-    ChevronLeft,
+    Hexagon,
+    LogIn,
+    LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useUIStore } from "@/lib/stores/ui-store";
+import { useAuth } from "@/context/auth-context";
 
 const navItems = [
     {
@@ -43,37 +45,18 @@ const navItems = [
 
 export function Sidebar() {
     const pathname = usePathname();
-    const { sidebarOpen, toggleSidebar } = useUIStore();
+    const { isAuthenticated, login, logout } = useAuth();
 
     return (
-        <aside
-            className={cn(
-                "fixed left-0 top-0 z-40 h-screen border-r border-border bg-card transition-all duration-300",
-                sidebarOpen ? "w-56" : "w-16"
-            )}
-        >
+        <aside className="fixed left-0 top-0 z-40 flex h-screen w-16 flex-col items-center border-r border-border bg-card py-4 transition-all">
             {/* Logo */}
-            <div className="flex h-14 items-center justify-between border-b border-border px-4">
-                {sidebarOpen && (
-                    <span className="text-lg font-bold text-foreground">
-                        AgenticTrader
-                    </span>
-                )}
-                <button
-                    onClick={toggleSidebar}
-                    className="rounded-md p-1.5 hover:bg-accent"
-                >
-                    <ChevronLeft
-                        className={cn(
-                            "h-5 w-5 text-muted-foreground transition-transform",
-                            !sidebarOpen && "rotate-180"
-                        )}
-                    />
-                </button>
+            <div className="mb-8 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Hexagon className="h-6 w-6" strokeWidth={2.5} />
+                <span className="sr-only">AgenticTrader Logo</span>
             </div>
 
             {/* Navigation */}
-            <nav className="flex flex-col gap-1 p-2">
+            <nav className="flex flex-1 flex-col gap-2">
                 {navItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
@@ -81,18 +64,47 @@ export function Sidebar() {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                                "group relative flex h-10 w-10 items-center justify-center rounded-xl transition-all hover:bg-accent",
                                 isActive
-                                    ? "bg-primary text-primary-foreground"
-                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                    ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
+                                    : "text-muted-foreground hover:text-foreground"
                             )}
+                            title={item.label}
                         >
-                            <item.icon className="h-5 w-5 shrink-0" />
-                            {sidebarOpen && <span>{item.label}</span>}
+                            <item.icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
+                            <span className="sr-only">{item.label}</span>
+
+                            {/* Active Indicator Dot (Optional style choice) */}
+                            {isActive && (
+                                <div className="absolute -right-[1px] top-1/2 h-8 w-[3px] -translate-y-1/2 rounded-l-full bg-primary opacity-0" />
+                            )}
                         </Link>
                     );
                 })}
             </nav>
+
+            {/* Bottom Actions */}
+            <div className="mt-auto pb-4 flex flex-col gap-2">
+                {isAuthenticated ? (
+                    <button
+                        onClick={() => logout()}
+                        className="group relative flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive"
+                        title="Logout"
+                    >
+                        <LogOut className="h-5 w-5" strokeWidth={2} />
+                        <span className="sr-only">Logout</span>
+                    </button>
+                ) : (
+                    <button
+                        onClick={() => login()}
+                        className="group relative flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
+                        title="Login"
+                    >
+                        <LogIn className="h-5 w-5" strokeWidth={2} />
+                        <span className="sr-only">Login</span>
+                    </button>
+                )}
+            </div>
         </aside>
     );
 }

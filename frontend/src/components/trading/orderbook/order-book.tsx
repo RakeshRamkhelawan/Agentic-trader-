@@ -1,87 +1,63 @@
 "use client";
 
-import { useRef, useMemo, useState } from "react";
+import { useRef, useState } from "react";
 import { cn, formatPrice, formatQuantity } from "@/lib/utils";
 import { useOrderbook, type OrderBookLevel } from "@/lib/hooks/use-orderbook";
 
 interface OrderBookProps {
     symbol: string;
     className?: string;
-    useMockData?: boolean;
 }
 
-// Generate mock orderbook data for fallback
-const generateMockLevels = (
-    basePrice: number,
-    isAsk: boolean,
-    count: number = 25
-): OrderBookLevel[] => {
-    const levels: OrderBookLevel[] = [];
-    let cumulative = 0;
-
-    for (let i = 0; i < count; i++) {
-        const offset = (i + 1) * (Math.random() * 5 + 2);
-        const price = isAsk ? basePrice + offset : basePrice - offset;
-        const size = Math.random() * 2 + 0.1;
-        cumulative += size;
-
-        levels.push({
-            price,
-            size,
-            total: cumulative,
-        });
-    }
-
-    return levels;
-};
+// Mock data generation removed for GTM production implementation
 
 export function OrderBook({
     symbol,
     className,
-    useMockData = true,
 }: OrderBookProps) {
-    const basePrice = 45230.5;
-
-    // Use real WebSocket data when available
+    // Use real WebSocket data
     const {
-        bids: wsBids,
-        asks: wsAsks,
-        spread: wsSpread,
+        bids,
+        asks,
+        spread,
         isConnected,
     } = useOrderbook(symbol);
-
-    // Mock data as fallback
-    const mockAsks = useMemo(() => generateMockLevels(basePrice, true), []);
-    const mockBids = useMemo(() => generateMockLevels(basePrice, false), []);
-
-    // Use WebSocket data if connected and not forcing mock, otherwise use mock
-    const useRealData = isConnected && wsBids.length > 0 && !useMockData;
-    const asks = useRealData ? wsAsks : mockAsks;
-    const bids = useRealData ? wsBids : mockBids;
-    const spread = useRealData ? wsSpread : asks[0]?.price - bids[0]?.price || 0;
 
     const maxTotal = Math.max(
         asks[asks.length - 1]?.total || 0,
         bids[bids.length - 1]?.total || 0
     );
 
-    const spreadPercent = (spread / (bids[0]?.price || basePrice)) * 100;
+    const bestBid = bids[0]?.price || 0;
+    const spreadPercent = bestBid > 0 ? (spread / bestBid) * 100 : 0;
 
     const parentRef = useRef<HTMLDivElement>(null);
 
+    // Empty state if connected but no data
+    if (isConnected && bids.length === 0 && asks.length === 0) {
+        return (
+            <div className={cn("flex h-full flex-col bg-card items-center justify-center p-4", className)}>
+                <div className="text-center space-y-2">
+                    <div className="text-muted-foreground text-sm">Waiting for order book...</div>
+                    <div className="text-xs text-muted-foreground/50">Market: {symbol}</div>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className={cn("flex h-full flex-col bg-card", className)}>
+        <div className={cn("flex h-full flex-col", className)}>
             {/* Header */}
-            <div className="grid grid-cols-3 border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground">
+            <div className="grid grid-cols-3 border-b border-white/5 bg-white/5 px-3 py-2 text-xs font-medium text-muted-foreground">
                 <div className="flex items-center gap-1">
                     Price (EUR)
                     {/* Connection indicator */}
                     <span
                         className={cn(
                             "h-1.5 w-1.5 rounded-full",
-                            isConnected ? "bg-brand-green" : "bg-muted"
+                            isConnected ? "bg-brand-green" : "bg-brand-red"
                         )}
-                        title={isConnected ? "Connected" : "Using mock data"}
+                        title={isConnected ? "Connected" : "Disconnected"}
                     />
                 </div>
                 <div className="text-right">Size</div>
@@ -107,7 +83,7 @@ export function OrderBook({
                     </div>
 
                     {/* Spread */}
-                    <div className="sticky top-1/2 z-10 flex items-center justify-between border-y border-border bg-secondary px-3 py-1.5 text-xs">
+                    <div className="sticky top-1/2 z-10 flex items-center justify-between border-y border-white/5 bg-black/20 backdrop-blur-sm px-3 py-1.5 text-xs">
                         <span className="text-muted-foreground">Spread</span>
                         <span className="font-mono font-medium">
                             {formatPrice(spread)} ({spreadPercent.toFixed(3)}%)

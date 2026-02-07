@@ -55,13 +55,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next: Callable):
         """Process request with authentication."""
-        # Skip auth for public paths
-        if self._is_public_path(request.url.path):
+        # Skip auth for public paths and OPTIONS requests (CORS preflight)
+        if request.method == "OPTIONS" or self._is_public_path(request.url.path):
             return await call_next(request)
         
         # Extract token
         token = self._extract_token(request)
         if not token:
+            logger.debug(f"Missing token for protected path: {request.url.path}")
             return JSONResponse(
                 status_code=401,
                 content={"detail": "Missing authorization token"},
@@ -84,9 +85,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             request.state.user_id = payload.sub
             request.state.tenant_id = payload.tenant_id
             request.state.roles = payload.roles
+            logger.debug(f"Successfully authenticated user {payload.sub} for tenant {payload.tenant_id}")
             
         except Exception as e:
-            logger.warning(f"Token validation failed: {e}")
+            logger.error(f"Token validation failed for {request.url.path}: {e}")
             return JSONResponse(
                 status_code=401,
                 content={"detail": str(e)},

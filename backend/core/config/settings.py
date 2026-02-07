@@ -1,5 +1,7 @@
-from typing import Optional
+import os
+from typing import Optional, List
 from functools import cached_property
+from pydantic import Field # Explicit import
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,11 +35,19 @@ class Settings(BaseSettings):
     CHROMA_PORT: int = 8000
     
     # --- SECURITY (Non-sensitive defaults) ---
-    _revolut_api_key: Optional[str] = None
+    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    # Pydantic will load REVOLUT_API_KEY from .env
+    REVOLUT_API_KEY_ENV: Optional[str] = Field(None, validation_alias="REVOLUT_API_KEY")
     REVOLUT_PRIVATE_KEY_PATH: str = "revolut_private.pem"
     REVOLUT_SANDBOX: bool = True
     _jwt_secret_key: Optional[str] = None
     _database_url: Optional[str] = None
+    
+    # --- AUTH0 CONFIGURATION ---
+    AUTH0_DOMAIN: str = "agentictrader.eu.auth0.com"
+    AUTH0_API_AUDIENCE: str = "https://api.agentic-trader.com"
+    AUTH0_ISSUER: str = "https://agentictrader.eu.auth0.com/"
+    AUTH0_ALGORITHM: str = "RS256"
     
     # --- METRICS ---
     METRICS_SERVER_PORT: int = 8001
@@ -74,7 +84,29 @@ class Settings(BaseSettings):
             value = self._vault_manager.get_secret("revolut", "api_key")
             if value:
                 return value
-        return self._revolut_api_key or ""
+        return self.REVOLUT_API_KEY_ENV or ""
+
+    @property
+    def REVOLUT_PRIVATE_KEY(self) -> str:
+        """Read private key content from file path."""
+        try:
+            # Strip quotes that might be left from .env parsing
+            path = self.REVOLUT_PRIVATE_KEY_PATH.strip('"').strip("'")
+            
+            if not os.path.exists(path):
+                # Check root directory relative to CWD if absolute fails
+                if not os.path.isabs(path) and os.path.exists(os.path.abspath(path)):
+                    path = os.path.abspath(path)
+                else:
+                    print(f"Private Key File not found at: {path}")
+                    return ""
+                    
+            with open(path, 'r') as f:
+                return f.read()
+        except Exception as e:
+            # logger isn't available in settings usually, print or ignore
+            print(f"Error reading private key: {e}")
+            return ""
     
     @property
     def JWT_SECRET_KEY(self) -> str:

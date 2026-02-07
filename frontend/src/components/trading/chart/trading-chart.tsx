@@ -3,44 +3,44 @@
 import { useEffect, useRef, useState } from "react";
 import { createChart, ColorType, IChartApi, ISeriesApi, UTCTimestamp } from "lightweight-charts";
 import { cn } from "@/lib/utils";
+import { useTicker } from "@/lib/hooks/use-ticker";
+import { useCandles } from "@/lib/hooks/use-candles";
 
 interface TradingChartProps {
     symbol: string;
     className?: string;
 }
 
-// Mock candlestick data
-const generateMockData = () => {
-    const data = [];
-    let time = Math.floor(new Date("2024-01-01").getTime() / 1000);
-    let open = 45000;
-
-    for (let i = 0; i < 500; i++) {
-        const change = (Math.random() - 0.48) * 500;
-        const high = open + Math.random() * 300;
-        const low = open - Math.random() * 300;
-        const close = open + change;
-
-        data.push({
-            time: time as UTCTimestamp,
-            open,
-            high: Math.max(open, close, high),
-            low: Math.min(open, close, low),
-            close,
-        });
-
-        open = close;
-        time += 3600; // 1 hour candles
-    }
-
-    return data;
-};
+// Mock data generation removed for GTM production implementation
 
 export function TradingChart({ symbol, className }: TradingChartProps) {
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Subscribe to live ticker updates
+    const { ticker } = useTicker(symbol);
+    const { data: candles, isLoading: isCandlesLoading } = useCandles(symbol);
+
+    // Initial data load
+    useEffect(() => {
+        if (seriesRef.current && candles && candles.length > 0) {
+            // Transform if needed, but API returns compatible format?
+            // API: { time, open, high, low, close, value }
+            // Lightweight: { time, open, high, low, close }
+            // We need to ensure 'time' is UTCTimestamp (seconds).
+            // Our API returns seconds (TradingService confirmed).
+
+            const formattedData = candles.map(c => ({
+                ...c,
+                time: c.time as UTCTimestamp
+            }));
+
+            seriesRef.current.setData(formattedData);
+            setIsLoading(false);
+        }
+    }, [candles]);
 
     useEffect(() => {
         if (!chartContainerRef.current) return;
@@ -56,7 +56,7 @@ export function TradingChart({ symbol, className }: TradingChartProps) {
                 horzLines: { color: "rgba(255, 255, 255, 0.05)" },
             },
             crosshair: {
-                mode: 0,
+                mode: 1, // CrosshairMode.Normal - explicit value to avoid import
                 vertLine: {
                     color: "rgba(255, 255, 255, 0.2)",
                     labelBackgroundColor: "#1F1F1F",
@@ -72,7 +72,7 @@ export function TradingChart({ symbol, className }: TradingChartProps) {
             timeScale: {
                 borderColor: "rgba(255, 255, 255, 0.1)",
                 timeVisible: true,
-                secondsVisible: false,
+                secondsVisible: true,
             },
         });
 
@@ -86,12 +86,12 @@ export function TradingChart({ symbol, className }: TradingChartProps) {
             wickDownColor: "#FF4976",
         });
 
-        // Set data
-        const data = generateMockData();
-        seriesRef.current.setData(data);
-        chartRef.current.timeScale().fitContent();
+        // Initialize with empty data
+        seriesRef.current.setData([]);
 
-        setIsLoading(false);
+        if (!isCandlesLoading && !candles) {
+            setIsLoading(false);
+        }
 
         // Handle resize
         const handleResize = () => {
@@ -104,13 +104,34 @@ export function TradingChart({ symbol, className }: TradingChartProps) {
         };
 
         window.addEventListener("resize", handleResize);
-        handleResize();
 
         return () => {
             window.removeEventListener("resize", handleResize);
             chartRef.current?.remove();
         };
     }, [symbol]);
+
+    // Update chart with real-time data
+    useEffect(() => {
+        if (ticker && seriesRef.current) {
+            // In a real app, we'd aggregate ticks. 
+            // Here we simply update the current candle logic or just push a new point 
+            // dependent on timeframe. For simplicity in this demo, we assume 1-minute updates
+            // or just update the "current" candle.
+
+            // Note: lightweight-charts wants UTCTimestamp. 
+            // We use the ticker timestamp.
+            const time = Math.floor(new Date(ticker.timestamp).getTime() / 1000) as UTCTimestamp;
+
+            seriesRef.current.update({
+                time: time,
+                open: ticker.last, // Simplification: open = current for single tick updates if no aggregation
+                high: ticker.last,
+                low: ticker.last,
+                close: ticker.last,
+            });
+        }
+    }, [ticker]);
 
     return (
         <div className={cn("relative h-full w-full", className)}>

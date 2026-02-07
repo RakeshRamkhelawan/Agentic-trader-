@@ -13,6 +13,7 @@ class AgentMessage:
     payload: Dict[str, Any]
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: float = field(default_factory=lambda: datetime.now().timestamp())
+    tenant_id: Optional[str] = None # Added for multi-tenancy context propagation
 
     def __post_init__(self):
         valid_types = {"SIGNAL", "BROADCAST", "QUERY", "RESPONSE", "GUNA_SIGNAL", "NEWS_DATA", "TICK_DATA", "TIMER_TICK_1MIN", "TIMER_TICK_1HOUR", "ORDER_INTENT"}

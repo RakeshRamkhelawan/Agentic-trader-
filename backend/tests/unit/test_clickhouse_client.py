@@ -241,4 +241,53 @@ def test_clickhouse_from_env():
     with patch.dict('os.environ', {'CLICKHOUSE_HOST': 'custom-host', 'CLICKHOUSE_PORT': '9000'}):
         with patch('clickhouse_connect.get_async_client'):
             client = ClickHouseClient()
-            assert 'custom-host' in client.url or hasattr(client, 'host')
+            assert client.host == 'custom-host' or 'custom-host' in client.url
+
+
+@pytest.mark.asyncio
+async def test_clickhouse_insert_injects_tenant_id():
+    """RED: Should inject tenant_id during insert if context is set."""
+    from backend.storage.clickhouse_client import ClickHouseClient
+    
+    with patch('clickhouse_connect.get_async_client') as mock_get_client:
+        mock_client = AsyncMock()
+        mock_client.insert = AsyncMock()
+        mock_get_client.return_value = mock_client
+        
+        with patch('backend.storage.clickhouse_client.get_current_tenant_optional', return_value="tenant-123"):
+            client = ClickHouseClient()
+            await client.connect()
+            
+            data = [{"symbol": "BTC"}] # Missing tenant_id
+            await client.insert("table", data)
+            
+            # Check if tenant_id was injected
+            call_args = mock_client.insert.call_args
+            assert call_args is not None
+            # args[1] is data
+            inserted_data = call_args[0][1]
+            assert inserted_data[0]["tenant_id"] == "tenant-123"
+
+
+@pytest.mark.asyncio
+async def test_clickhouse_execute_injects_tenant_id_parameter():
+    """RED: Should inject tenant_id parameter during execute if context is set."""
+    from backend.storage.clickhouse_client import ClickHouseClient
+    
+    with patch('clickhouse_connect.get_async_client') as mock_get_client:
+        mock_client = AsyncMock()
+        mock_client.query = AsyncMock()
+        mock_get_client.return_value = mock_client
+        
+        with patch('backend.storage.clickhouse_client.get_current_tenant_optional', return_value="tenant-123"):
+            client = ClickHouseClient()
+            await client.connect()
+            
+            await client.execute("SELECT * FROM table WHERE tenant_id = {tenant_id:String}")
+            
+            # Check parameters
+            mock_client.query.assert_called_with(
+                "SELECT * FROM table WHERE tenant_id = {tenant_id:String}", 
+                parameters={"tenant_id": "tenant-123"}
+            )
+

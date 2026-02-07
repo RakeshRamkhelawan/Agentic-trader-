@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from backend.api.gateway import APIGateway
 from backend.api.websocket_manager import ws_manager
 from backend.services.market_data_streamer import market_streamer
+from backend.services.signal_bridge import signal_bridge
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,6 +24,9 @@ async def lifespan(app):
     # Connect market streamer to WebSocket manager
     market_streamer.set_ws_manager(ws_manager)
     
+    # Connect signal bridge to WebSocket manager
+    signal_bridge.set_ws_manager(ws_manager)
+    
     # Start heartbeat monitoring
     await ws_manager.start_heartbeat(interval_seconds=30)
     
@@ -32,6 +36,7 @@ async def lifespan(app):
         await market_streamer.start_stream(symbol)
     
     logger.info("API ready - WebSocket streaming active")
+    logger.info("SignalBridge connected - AI signals will be broadcast to frontend")
     
     yield  # Application runs here
     

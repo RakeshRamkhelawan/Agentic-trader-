@@ -14,7 +14,7 @@ class TokenPayload:
     Contains claims extracted from validated JWT tokens.
     """
     sub: str  # Subject (user ID)
-    tenant_id: str  # Tenant identifier for multi-tenancy
+    tenant_id: str = "default"  # Default if missing in token (e.g. strict Auth0 setup not yet done)
     roles: List[str] = field(default_factory=list)  # User roles
     exp: int = 0  # Expiration timestamp
     iat: Optional[int] = None  # Issued at timestamp

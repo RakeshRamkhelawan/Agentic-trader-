@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Sidebar } from "@/components/layout/sidebar";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,8 +36,9 @@ export default function RootLayout({
         <Providers>
           <div className="flex min-h-screen">
             <Sidebar />
-            <main className="ml-56 flex-1">{children}</main>
+            <main className="ml-16 flex-1">{children}</main>
           </div>
+          <Toaster />
         </Providers>
       </body>
     </html>

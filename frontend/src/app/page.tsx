@@ -1,86 +1,41 @@
-import Link from "next/link";
-import { ArrowRight, TrendingUp, Shield, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+"use client"
 
-export default function HomePage() {
+import { ProtectedRoute } from "@/components/auth/protected-route"
+import { TradingView } from "@/components/dashboard/TradingView"
+import { TradingConsole } from "@/components/dashboard/TradingConsole"
+import { OrderManager } from "@/components/dashboard/OrderManager"
+import { CoherenceAura } from "@/components/dashboard/CoherenceAura"
+
+export default function DashboardPage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Hero Section */}
-      <section className="flex flex-1 flex-col items-center justify-center px-6 py-20">
-        <div className="max-w-3xl text-center">
-          <h1 className="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-6xl">
-            Trade Smarter with AI
-          </h1>
-          <p className="mt-6 text-lg text-muted-foreground">
-            AgenticTrader combines advanced AI agents with real-time market data
-            to help you make better trading decisions. Backtest strategies,
-            simulate trades, and execute with confidence.
-          </p>
-          <div className="mt-10 flex items-center justify-center gap-4">
-            <Link href="/terminal">
-              <Button size="lg" className="gap-2">
-                Open Terminal
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/markets">
-              <Button variant="outline" size="lg">
-                View Markets
-              </Button>
-            </Link>
+    <ProtectedRoute>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard Web Trader</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Main Trading Area - Takes up 3 columns */}
+          <div className="md:col-span-3 rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+            <TradingView />
+            <div className="mt-6 space-y-6">
+              {/* Active Orders & Emergency Controls */}
+              <TradingConsole />
+              {/* Detailed Order Management */}
+              <OrderManager />
+            </div>
+          </div>
+
+          {/* Side Panel - Takes up 1 column */}
+          <div className="md:col-span-1 space-y-6">
+            {/* Mahabhutas Coherence Visualization */}
+            <CoherenceAura />
+
+            {/* Placeholder for future widgets like Market Sentiment or Alerts */}
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 h-[200px] flex items-center justify-center text-muted-foreground">
+              Market Sentiment (Coming Soon)
+            </div>
           </div>
         </div>
-      </section>
-
-      {/* Features */}
-      <section className="border-t border-border bg-card/50 px-6 py-20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="mb-12 text-center text-3xl font-bold">
-            Built for Professional Trading
-          </h2>
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="border-border/50 bg-card">
-              <CardContent className="flex flex-col items-center p-6 text-center">
-                <div className="mb-4 rounded-full bg-brand-blue/10 p-3">
-                  <TrendingUp className="h-6 w-6 text-brand-blue" />
-                </div>
-                <h3 className="mb-2 font-semibold">Real-Time Charts</h3>
-                <p className="text-sm text-muted-foreground">
-                  Professional TradingView charts with 100+ indicators and
-                  drawing tools.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/50 bg-card">
-              <CardContent className="flex flex-col items-center p-6 text-center">
-                <div className="mb-4 rounded-full bg-brand-green/10 p-3">
-                  <Shield className="h-6 w-6 text-brand-green" />
-                </div>
-                <h3 className="mb-2 font-semibold">Smart Order Routing</h3>
-                <p className="text-sm text-muted-foreground">
-                  VWAP-optimized execution across 100+ exchanges for best
-                  prices.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/50 bg-card">
-              <CardContent className="flex flex-col items-center p-6 text-center">
-                <div className="mb-4 rounded-full bg-brand-purple/10 p-3">
-                  <Zap className="h-6 w-6 text-brand-purple" />
-                </div>
-                <h3 className="mb-2 font-semibold">AI-Powered Analysis</h3>
-                <p className="text-sm text-muted-foreground">
-                  Get intelligent insights and automated trading signals from
-                  our AI agents.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
+      </div>
+    </ProtectedRoute>
+  )
 }

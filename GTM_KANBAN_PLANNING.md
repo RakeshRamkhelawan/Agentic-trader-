@@ -720,7 +720,7 @@ ClickHouse query (auto-filtered by tenant_id)
 ## 🟩 BACKLOG: UI/UX & Dashboard (P1)
 
 ### Task 7: Frontend Dashboard (MVP)
-**Status**: 🔴 Not Started | **Priority**: P1 | **Estimated Effort**: 8 days
+**Status**: � In Progress | **Priority**: P1 | **Estimated Effort**: 8 days
 
 **Context**: Backend Phase 16 API is production-ready, but no UI exists for non-technical users.
 
@@ -732,7 +732,7 @@ ClickHouse query (auto-filtered by tenant_id)
 - One-click emergency stop (cancel all orders)
 
 **Subtasks**:
-- [ ] **7.1 Next.js Project Initialization** (4h)
+- [x] **7.1 Next.js Project Initialization** (4h)
   - **Goal**: Bootstrap modern React framework with TypeScript and TailwindCSS
   - **Current State**: No `frontend/` directory exists
   - **Technology Choices**:
@@ -774,7 +774,7 @@ ClickHouse query (auto-filtered by tenant_id)
   - **Validation**: `npm run dev` starts on localhost:3000
   - **Files**: Entire `frontend/` directory
 
-- [ ] **7.2 TypeScript API Client Generation** (6h)
+- [x] **7.2 TypeScript API Client Generation** (6h)
   - **Goal**: Auto-generate type-safe client from backend OpenAPI spec
   - **Current State**: Backend exports OpenAPI at `/openapi.json`
   - **Tool**: `openapi-typescript-codegen` or `orval`
@@ -822,7 +822,7 @@ ClickHouse query (auto-filtered by tenant_id)
   - **Validation**: TypeScript autocomplete works for all API methods
   - **Files**: `src/lib/api-client/`, `src/hooks/`
 
-- [ ] **7.3 Mahabhutas Coherence Visualization** (12h)
+- [x] **7.3 Mahabhutas Coherence Visualization** (12h)
   - **Goal**: Radial chart showing L32-L36 coherence in real-time
   - **Design Concept**: 5 concentric rings, color-coded by coherence level
     - Green (>0.8): Stable
@@ -882,8 +882,9 @@ ClickHouse query (auto-filtered by tenant_id)
   - **Validation**: Chart updates at 2Hz (500ms), no flickering
   - **Files**: `src/components/dashboard/CoherenceAura.tsx`
 
-- [ ] **7.4 Trading Console with Emergency Controls** (10h)
+- [/] **7.4 Trading Console with Emergency Controls** (10h)
   - **Goal**: View active orders + one-click cancel all
+  - **Status**: Backend Implemented (Active Orders / Cancel All endpoints added)
   - **Features**:
     - Real-time order table (Symbol, Side, Qty, Filled, Status)
     - "Panic Sell" button (red, requires confirmation)
@@ -988,12 +989,19 @@ ClickHouse query (auto-filtered by tenant_id)
     - Panic button cancels all orders within 2 seconds
   - **Files**: `src/components/dashboard/TradingConsole.tsx`, `src/hooks/useOrderStream.ts`
 
+- [x] **7.5 Order Management** (8h)
+  - **Goal**: Full order history and management interface
+  - **Status**: ✅ Complete (History endpoint & Frontend UI active)
+  - **Features**:
+    - Active Orders Tab (Detailed view with actions)
+    - Order History Tab (Past orders, filters)
+
 ---
 
 ## 🟪 BACKLOG: AIOps & Sustainability (P1)
 
 ### Task 8: Token Tracking & Billing
-**Status**: 🔴 Not Started | **Priority**: P1 | **Estimated Effort**: 4 days
+**Status**: ✅ Completed | **Priority**: P1 | **Estimated Effort**: 4 days
 
 **Context**: LLM API calls are unmetered, creating risk of bill shock and negative margins.
 
@@ -1002,7 +1010,7 @@ ClickHouse query (auto-filtered by tenant_id)
 **Target State**: Real-time usage tracking with hard limits per tenant.
 
 **Subtasks**:
-- [ ] **8.1 Token Counter with Tiktoken** (6h)
+- [x] **8.1 Token Counter with Tiktoken** (6h)
   - **Goal**: Accurately count tokens for all LLM providers (OpenAI, Gemini, Ollama)
   - **Current State**: No token tracking in `backend/llm/providers/`
   - **Implementation**:
@@ -1071,7 +1079,7 @@ ClickHouse query (auto-filtered by tenant_id)
   - **Files**: `backend/llm/usage_tracker.py`
   - **Dependencies**: Add `tiktoken==0.5.2` to requirements
 
-- [ ] **8.2 Async Buffer for Usage Logging** (6h)
+- [x] **8.2 Async Buffer for Usage Logging** (6h)
   - **Goal**: Batch write token usage to ClickHouse to avoid query overhead
   - **Current State**: No usage logging table
   - **Database Schema** (add to migrations):
@@ -1141,7 +1149,7 @@ ClickHouse query (auto-filtered by tenant_id)
     - No data loss on graceful shutdown (flush on SIGTERM)
   - **Files**: `backend/llm/usage_tracker.py`, `backend/storage/migrations/003_llm_usage.sql`
 
-- [ ] **8.3 Quota Enforcement in Orchestrator** (6h)
+- [x] **8.3 Quota Enforcement in Orchestrator** (6h)
   - **Goal**: Block agent execution when tenant exceeds daily budget
   - **Current State**: `CognitiveOrchestrator` has no budget checks
   - **Implementation**:
@@ -1196,7 +1204,7 @@ ClickHouse query (auto-filtered by tenant_id)
 ## 🟥 BACKLOG: Governance (P2)
 
 ### Task 9: Audit & Explainability
-**Status**: 🔴 Not Started | **Priority**: P2 | **Estimated Effort**: 5 days
+**Status**: ✅ Completed | **Priority**: P2 | **Estimated Effort**: 5 days
 
 **Context**: Regulatory requirement (MiFID II) to explain every algorithmic trading decision.
 
@@ -1207,7 +1215,7 @@ ClickHouse query (auto-filtered by tenant_id)
 **Target Compliance**: Full "Explainable AI" audit trail for all trades.
 
 **Subtasks**:
-- [ ] **9.1 Audit Logger Service** (8h)
+- [x] **9.1 Audit Logger Service** (8h)
   - **Goal**: Immutable logging of all system actions to `audit_trail` table
   - **Current State**: Schema exists in `multi_tenant_schema.sql` but unused
   - **Schema Reminder**:
@@ -1293,7 +1301,7 @@ ClickHouse query (auto-filtered by tenant_id)
     - Audit logs are immutable (ReplacingMergeTree prevents updates)
   - **Files**: `backend/core/compliance/audit_logger.py`
 
-- [ ] **9.2 Agent Reasoning Capture** (10h)
+- [x] **9.2 Agent Reasoning Capture** (10h)
   - **Goal**: Store full chain-of-thought for LLM-based decisions
   - **Current State**: Agents return decisions but not reasoning
   - **Schema Addition**:
@@ -1352,7 +1360,7 @@ ClickHouse query (auto-filtered by tenant_id)
     - Logs include full prompt + response (audit-ready)
   - **Files**: `backend/agents/sentiment_agent.py`, `backend/agents/base_agent.py`, migration file
 
-- [ ] **9.3 MiFID II Compliance Export** (8h)
+- [x] **9.3 MiFID II Compliance Export** (8h)
   - **Goal**: API endpoint to generate regulatory reports
   - **Current State**: No export functionality
   - **Report Contents**:

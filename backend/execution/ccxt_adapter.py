@@ -93,6 +93,12 @@ class CCXTAdapter(ExecutionInterface):
         
         if password:
             config['password'] = password
+            
+        # Revolut specific: CCXT often uses 'privateKey' for RSA/Ed25519 signatures
+        # We assume 'secret' contains the PEM data
+        if exchange_id == 'revolut':
+            config['privateKey'] = secret
+
         
         # Create REST exchange instance
         try:

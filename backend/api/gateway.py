@@ -168,6 +168,17 @@ class APIGateway:
         from backend.api.websocket_endpoints import router as ws_router
         self.app.include_router(ws_router, tags=["websocket"])
         
+        # Exception Handlers
+        from backend.core.exceptions import QuotaExceededError
+        
+        @self.app.exception_handler(QuotaExceededError)
+        async def quota_exceeded_handler(request: Request, exc: QuotaExceededError):
+            return JSONResponse(
+                status_code=429,
+                content={"detail": exc.message, "details": exc.details},
+                headers={"Retry-After": "3600"} # Default retry after 1 hour
+            )
+        
         # Setup routes
         self._setup_routes()
     

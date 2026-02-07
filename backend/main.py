@@ -13,8 +13,29 @@ async def start_services():
     logger.info("Starting Agentic Trader Platform...")
     logger.info(f"Environment: {settings.ENV}, Debug: {settings.DEBUG}")
 
+    logger.info(f"Environment: {settings.ENV}, Debug: {settings.DEBUG}")
+
+    # Initialize Usage Infrastructure
+    from backend.storage.tenant_aware_clickhouse import TenantAwareClickHouseClient
+    from backend.core.compliance.audit_logger import AuditLogger
+    from backend.core.compliance.decorators import set_global_audit_logger
+    import os
+
+    clickhouse_client = TenantAwareClickHouseClient(
+        host=os.getenv("CLICKHOUSE_HOST", "localhost"),
+        port=int(os.getenv("CLICKHOUSE_PORT", 8123)),
+        enforce_tenant=True
+    )
+    usage_tracker = UsageTracker(clickhouse_client=clickhouse_client)
+    await usage_tracker.start()
+
+    # Initialize Audit Logger
+    audit_logger = AuditLogger(clickhouse_client=clickhouse_client)
+    await audit_logger.start()
+    set_global_audit_logger(audit_logger)
+
     # Start the Cognitive Orchestrator
-    orchestrator = CognitiveOrchestrator()
+    orchestrator = CognitiveOrchestrator(usage_tracker=usage_tracker, audit_logger=audit_logger)
 
     # In a production setup, each agent would be its own service.
     # For now, orchestrator manages them internally.

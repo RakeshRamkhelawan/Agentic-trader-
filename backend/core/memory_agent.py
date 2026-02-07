@@ -8,7 +8,9 @@ try:
 except ImportError:
     chromadb = None
 
-from backend.core.config.settings import settings # NIEUW
+from backend.core.config.settings import settings
+from backend.core.auth.context import get_current_tenant_optional
+from threading import Lock
 
 class MemoryAgent:
     """
@@ -20,18 +22,43 @@ class MemoryAgent:
         if chromadb is None:
             raise ImportError("chromadb not installed")
             
-        # Gebruik settings voor host/port
         self.client = client or chromadb.HttpClient(
             host=settings.CHROMA_HOST, 
             port=settings.CHROMA_PORT
         )
         
-        # Create or Get Collection
-        self.collection = self.client.get_or_create_collection(
-            name=collection_name,
-            metadata={"hnsw:space": "cosine"}
-        )
+        self.base_collection_name = collection_name
+        # Cache collections per tenant: {tenant_id: Collection}
+        self._collections: Dict[str, Any] = {}
+        self._lock = Lock()
+        
         self.logger = logging.getLogger("MemoryAgent")
+
+    def _get_collection(self) -> Any:
+        """
+        Get the collection for the current tenant.
+        """
+        tenant_id = get_current_tenant_optional()
+        
+        # If no tenant context, use a default fallback or raise error
+        # For now, we use a 'public' or 'system' prefix, or just the base name
+        # But for isolation, we should probably default to 'default' tenant if allowed
+        if not tenant_id:
+             tenant_id = "default"
+             
+        collection_name = f"{tenant_id}_{self.base_collection_name}"
+        
+        with self._lock:
+            if collection_name in self._collections:
+                return self._collections[collection_name]
+            
+            # Create or Get Collection
+            collection = self.client.get_or_create_collection(
+                name=collection_name,
+                metadata={"hnsw:space": "cosine"}
+            )
+            self._collections[collection_name] = collection
+            return collection
 
 
     def store_thought(self, agent_id: str, text: str, metadata: Optional[Dict] = None):
@@ -43,8 +70,10 @@ class MemoryAgent:
             
         metadata['agent_id'] = agent_id
         metadata['timestamp'] = str(uuid.uuid1())
+        metadata['tenant_id'] = get_current_tenant_optional() or "default"
         
-        self.collection.add(
+        collection = self._get_collection()
+        collection.add(
             documents=[text],
             metadatas=[metadata],
             ids=[str(uuid.uuid4())]
@@ -56,7 +85,8 @@ class MemoryAgent:
         Retrieve most relevant past thoughts based on semantic similarity.
         """
         self.logger.debug(f"Recalling thoughts for query: {query[:50]}...")
-        results = self.collection.query(
+        collection = self._get_collection()
+        results = collection.query(
             query_texts=[query],
             n_results=limit
         )

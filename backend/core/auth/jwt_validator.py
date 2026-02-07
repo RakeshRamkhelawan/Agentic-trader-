@@ -208,9 +208,9 @@ class JWTValidator:
         if "sub" not in claims:
             raise MissingClaimError("Missing 'sub' claim")
         
-        tenant_id = claims.get("tenant_id") or claims.get("https://agentic-trader/tenant_id")
-        if not tenant_id:
-            raise MissingClaimError("Missing 'tenant_id' claim")
+        tenant_id = claims.get("tenant_id") or claims.get("https://agentic-trader/tenant_id") or "default"
+        # if not tenant_id:
+        #     raise MissingClaimError("Missing 'tenant_id' claim")
         
         roles = claims.get("roles") or claims.get("https://agentic-trader/roles", [])
         if isinstance(roles, str):

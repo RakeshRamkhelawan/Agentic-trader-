@@ -75,6 +75,10 @@ class SystemIdentity:
             'tattva_traversals': []     # Track Tattva layer traversals
         }
     
+    async def initialize(self):
+        """Initialize async components."""
+        await self.memory_system.load_from_db()
+
     async def process_market_cycle(
         self,
         price_data: np.ndarray,
@@ -195,7 +199,7 @@ class SystemIdentity:
             # ========== MEMORY: Store experience (Chitta) ==========
             # 3. CHITTA: Store experience for learning
             outcome = 0.0  # Placeholder, updated after execution
-            self.memory_system.store(perception, action, outcome)
+            await self.memory_system.store(perception, action, outcome)
             
             # ========== AHAMKARA: Self-monitor and adapt ==========
             # 4. AHAMKARA: Self-monitor and adapt

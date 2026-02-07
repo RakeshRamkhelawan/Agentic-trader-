@@ -5,6 +5,7 @@ Uses Python's contextvars for async-safe tenant isolation.
 """
 from contextvars import ContextVar
 from typing import Optional
+from contextlib import contextmanager
 
 # Thread-safe, async-safe context variable for tenant_id
 _tenant_context: ContextVar[Optional[str]] = ContextVar('tenant_id', default=None)
@@ -78,7 +79,29 @@ def get_current_user() -> str:
     return user_id
 
 
+def get_current_user_optional() -> Optional[str]:
+    """
+    Get the current user, returning None if not set.
+    
+    Returns:
+        Current user_id or None
+    """
+    return _user_context.get()
+
+
 def clear_context() -> None:
     """Clear all context variables (useful for testing)."""
     _tenant_context.set(None)
     _user_context.set(None)
+
+@contextmanager
+def tenant_context(tenant_id: str):
+    """
+    Context manager to set tenant context temporarily.
+    Restores previous context on exit.
+    """
+    token = _tenant_context.set(tenant_id)
+    try:
+        yield
+    finally:
+        _tenant_context.reset(token)

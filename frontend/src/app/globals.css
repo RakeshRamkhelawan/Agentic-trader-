@@ -1,26 +1,31 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
 
 /* 
  * Revolut X Dark Theme Design Tokens
- * Using Tailwind v4 @theme directive 
  */
 
 @theme {
-  /* Colors - Revolut X inspired */
-  --color-background: #0A0A0A;
+  /* Colors - Revolut X inspired (Deep Black & Neon) */
+  --color-background: #000000;
   --color-foreground: #F2F2F2;
 
-  --color-card: #141414;
+  --color-card: #0F0F0F;
   --color-card-foreground: #F2F2F2;
+
+  --color-popover: #141414;
+  --color-popover-foreground: #F2F2F2;
 
   --color-primary: #0075EB;
   --color-primary-foreground: #FFFFFF;
 
-  --color-secondary: #1F1F1F;
+  --color-secondary: #1A1A1A;
   --color-secondary-foreground: #F2F2F2;
 
   --color-muted: #262626;
-  --color-muted-foreground: #9CA3AF;
+  --color-muted-foreground: #888888;
 
   --color-accent: #262626;
   --color-accent-foreground: #F2F2F2;
@@ -53,6 +58,29 @@
   --animate-slide-up: slide-up 0.3s ease-out;
   --animate-price-up: price-flash-green 0.5s ease-out;
   --animate-price-down: price-flash-red 0.5s ease-out;
+}
+
+/* Glassmorphism Utilities */
+@utility glass {
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@utility glass-hover {
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(30, 30, 30, 0.7);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
+@utility glass-card {
+  background: rgba(15, 15, 15, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 @keyframes fade-in {
@@ -102,16 +130,17 @@
 }
 
 /* Base styles */
-* {
-  border-color: var(--color-border);
-}
+@layer base {
+  * {
+    border-color: var(--color-border);
+    outline-color: var(--color-ring);
+  }
 
-body {
-  background-color: var(--color-background);
-  color: var(--color-foreground);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "rlig" 1, "calt" 1;
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
 }
 
 /* Custom scrollbar for dark theme */

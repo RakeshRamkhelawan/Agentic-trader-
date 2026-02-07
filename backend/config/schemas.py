@@ -197,8 +197,9 @@ class TattvaConfig(BaseModel):
     water_enabled: bool = True  # Data flow active
     earth_enabled: bool = True  # Storage active
     
-    class Config:
-        json_schema_extra = {
+    
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "config_version": "1.0",
                 "active_tattvas": 36,
@@ -207,6 +208,7 @@ class TattvaConfig(BaseModel):
                 "total_system_coherence": 0.95
             }
         }
+    }
 
 
 # ============================================================================
