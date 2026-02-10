@@ -171,6 +171,12 @@ class RiskAssessment(BaseModel):
         le=1.0,
         description="Overall risk score [0=safe, 1=dangerous]"
     )
+    win_probability: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Estimated win probability"
+    )
     modified_size: Optional[float] = Field(
         None,
         gt=0,
@@ -228,6 +234,10 @@ class ExecutionOutcome(BaseModel):
     model_config = ConfigDict(frozen=True)
     
     success: bool = Field(..., description="Whether execution succeeded")
+    trace_id: Optional[str] = Field(
+        None,
+        description="Trace ID from ExecutionPlan"
+    )
     order_id: Optional[str] = Field(
         None,
         description="Exchange order ID (if successful)"

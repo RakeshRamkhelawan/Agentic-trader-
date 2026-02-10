@@ -156,9 +156,9 @@ class OrderExecutor:
         # 1. Pre-execution checks
         if not await self._pre_execution_checks(execution_plan):
             return ExecutionOutcome(
-                trade_id=execution_plan.trade_id,
+                trace_id=execution_plan.trace_id,
                 success=False,
-                error_message="Pre-execution checks failed"
+                error="Pre-execution checks failed"
             )
         
         # 2. Place order
@@ -168,7 +168,7 @@ class OrderExecutor:
                 side=execution_plan.side,
                 order_type=execution_plan.order_type,
                 quantity=execution_plan.quantity,
-                price=execution_plan.limit_price
+                price=execution_plan.price
             )
             
             self.active_orders[order.order_id] = order
@@ -176,9 +176,9 @@ class OrderExecutor:
         except Exception as e:
             self.logger.error(f"Order placement failed: {e}")
             return ExecutionOutcome(
-                trade_id=execution_plan.trade_id,
+                trace_id=execution_plan.trace_id,
                 success=False,
-                error_message=f"Order placement failed: {str(e)}"
+                error=f"Order placement failed: {str(e)}"
             )
         
         # 3. Monitor fill
@@ -189,9 +189,9 @@ class OrderExecutor:
             )
         except ExecutionError as e:
             return ExecutionOutcome(
-                trade_id=execution_plan.trade_id,
+                trace_id=execution_plan.trace_id,
                 success=False,
-                error_message=str(e)
+                error=str(e)
             )
         
         # 4. Calculate execution quality
@@ -208,10 +208,10 @@ class OrderExecutor:
         
         # 5. Return outcome
         return ExecutionOutcome(
-            trade_id=execution_plan.trade_id,
+            trace_id=execution_plan.trace_id,
             success=True,
-            filled_size=filled_order.filled_quantity,
-            average_price=filled_order.avg_fill_price,
+            filled_qty=filled_order.filled_quantity,
+            avg_price=filled_order.avg_fill_price,
             slippage=slippage_bps,
             fees=0.0  # TODO: Calculate from exchange response
         )

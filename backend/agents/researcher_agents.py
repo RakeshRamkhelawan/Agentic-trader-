@@ -41,6 +41,15 @@ class BullResearcher(BaseAgent):
         """BaseAgent abstract method - use generate_hypothesis instead."""
         raise NotImplementedError("BullResearcher uses generate_hypothesis()")
     
+    async def _generate_text(
+        self,
+        prompt: str,
+        context: Optional[dict] = None
+    ) -> str:
+        """Wrapper for ask_llm to match expected interface."""
+        # We can optionally use context for logging or specialized prompting
+        return await self.ask_llm(prompt)
+    
     async def generate_hypothesis(
         self,
         symbol: str,
@@ -69,14 +78,14 @@ class BullResearcher(BaseAgent):
             context={
                 "symbol": symbol,
                 "price": observation.price,
-                "regime": analyst_view.market_regime.value
+                "regime": analyst_view.regime.value
             }
         )
         
         # Parse response
         arguments = self._extract_arguments(response)
         confidence = self._extract_confidence(response)
-        contrarian_score = self._calculate_contrarian_score(analyst_view.market_regime)
+        contrarian_score = self._calculate_contrarian_score(analyst_view.regime)
         
         return ResearchHypothesis(
             stance="bullish",
@@ -96,7 +105,7 @@ class BullResearcher(BaseAgent):
 You are a BULLISH researcher. Your job is to find reasons TO BUY {symbol}.
 
 Current Analysis:
-- Analyst says: {analyst_view.market_regime.value}
+- Analyst says: {analyst_view.regime.value}
 - Price: ${observation.price:,.2f}
 - Sentiment: {observation.social_sentiment:.2f}
 
@@ -199,6 +208,14 @@ class BearResearcher(BaseAgent):
     async def analyze(self, *args, **kwargs):
         """BaseAgent abstract method - use generate_hypothesis instead."""
         raise NotImplementedError("BearResearcher uses generate_hypothesis()")
+
+    async def _generate_text(
+        self,
+        prompt: str,
+        context: Optional[dict] = None
+    ) -> str:
+        """Wrapper for ask_llm to match expected interface."""
+        return await self.ask_llm(prompt)
     
     async def generate_hypothesis(
         self,
@@ -226,13 +243,13 @@ class BearResearcher(BaseAgent):
             context={
                 "symbol": symbol,
                 "price": observation.price,
-                "regime": analyst_view.market_regime.value
+                "regime": analyst_view.regime.value
             }
         )
         
         arguments = self._extract_arguments(response)
         confidence = self._extract_confidence(response)
-        contrarian_score = self._calculate_contrarian_score(analyst_view.market_regime)
+        contrarian_score = self._calculate_contrarian_score(analyst_view.regime)
         
         return ResearchHypothesis(
             stance="bearish",
@@ -252,7 +269,7 @@ class BearResearcher(BaseAgent):
 You are a BEARISH researcher. Your job is to find reasons TO SELL/SHORT {symbol}.
 
 Current Analysis:
-- Analyst says: {analyst_view.market_regime.value}
+- Analyst says: {analyst_view.regime.value}
 - Price: ${observation.price:,.2f}
 - Sentiment: {observation.social_sentiment:.2f}
 
