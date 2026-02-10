@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Dict, Any, List, Optional
 from datetime import datetime, UTC
 from enum import Enum
+from backend.governance.agent_gatekeeper import AgentRole
 
 
 class MarketRegime(str, Enum):
@@ -219,6 +220,14 @@ class ExecutionPlan(BaseModel):
     trace_id: str = Field(
         ...,
         description="Unique trace ID for audit logging"
+    )
+    caller_name: str = Field(
+        default="unknown",
+        description="Name of the agent or service requesting execution"
+    )
+    caller_role: AgentRole = Field(
+        default=AgentRole.UNTRUSTED,
+        description="Role of the caller for authorization"
     )
     timestamp: float = Field(
         default_factory=lambda: datetime.now(UTC).timestamp()

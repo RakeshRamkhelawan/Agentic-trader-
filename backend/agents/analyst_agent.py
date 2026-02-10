@@ -10,6 +10,7 @@ import numpy as np
 
 from backend.agents.base_agent import BaseAgent
 from backend.core.schemas.ooda_types import Observation, Orientation, MarketRegime
+from backend.governance.agent_gatekeeper import AgentRole
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,8 @@ class AnalystAgent(BaseAgent):
         super().__init__(
             agent_name="Analyst",
             llm_provider=llm_provider,
-            event_bus=event_bus
+            event_bus=event_bus,
+            agent_role=AgentRole.STRATEGIST
         )
         self.core_confidence_weight = core_confidence_weight
         self.analyses_completed = 0

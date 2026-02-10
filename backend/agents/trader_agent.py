@@ -13,6 +13,8 @@ from backend.core.schemas.ooda_types import (
     TradeProposal,
     MarketRegime
 )
+from backend.execution.fast_config import FastConfig
+from backend.governance.agent_gatekeeper import AgentRole
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +49,8 @@ class TraderAgent(BaseAgent):
         super().__init__(
             agent_name="Trader",
             llm_provider=llm_provider,
-            event_bus=event_bus
+            event_bus=event_bus,
+            agent_role=AgentRole.STRATEGIST
         )
         
         self.default_risk_reward = default_risk_reward
@@ -126,6 +129,23 @@ class TraderAgent(BaseAgent):
                 f"@ {current_price}, size={size}, confidence={orientation.confidence:.2f}"
             )
             
+            # Read FastConfig for exploration/dynamic adjustment
+            try:
+                config = FastConfig.read()
+                exploration_rate = config.get('exploration_rate', 0.1)
+                
+                # Apply exploration rate to confidence (simulated epsilon-greedy or noise)
+                # In this simplified implementation, we use it to dampen or boost confidence check
+                # or just log it for now as part of the decision context
+                
+                # Dynamic adjustment: higher exploration -> lower confidence threshold
+                if exploration_rate > 0.5:
+                    logger.info(f"High exploration rate {exploration_rate} detected - adjusting strategy")
+                    
+            except Exception as e:
+                logger.warning(f"FastConfig read failed: {e}")
+                exploration_rate = 0.0
+
             return proposal
             
         except Exception as e:
@@ -283,5 +303,6 @@ class TraderAgent(BaseAgent):
         health = self.health_check()
         return {
             **health,
-            "proposals_generated": self.proposals_generated
+            "proposals_generated": self.proposals_generated,
+            "exploration_rate": FastConfig.read().get('exploration_rate', 0.0)
         }

@@ -15,6 +15,8 @@ from backend.core.schemas.ooda_types import (
     ResearchHypothesis,
     MarketRegime
 )
+from backend.governance.agent_gatekeeper import AgentRole
+from backend.core.security.prompt_guard import PromptGuard
 
 
 class BullResearcher(BaseAgent):
@@ -33,7 +35,8 @@ class BullResearcher(BaseAgent):
         super().__init__(
             agent_name="BullResearcher",
             llm_provider=llm_provider,
-            event_bus=event_bus
+            event_bus=event_bus,
+            agent_role=AgentRole.RESEARCHER
         )
         self.logger = logging.getLogger(self.__class__.__name__)
     
@@ -101,13 +104,14 @@ class BullResearcher(BaseAgent):
         analyst_view: Orientation
     ) -> str:
         """Build bullish prompt."""
+        market_data = PromptGuard.wrap_data("MARKET_DATA", observation.model_dump_json(indent=2))
+        analyst_context = PromptGuard.wrap_data("ANALYST_VIEW", analyst_view.model_dump_json(indent=2))
+        
         return f"""
 You are a BULLISH researcher. Your job is to find reasons TO BUY {symbol}.
 
-Current Analysis:
-- Analyst says: {analyst_view.regime.value}
-- Price: ${observation.price:,.2f}
-- Sentiment: {observation.social_sentiment:.2f}
+{analyst_context}
+{market_data}
 
 Play devil's advocate. What bullish signals might we be missing?
 
@@ -201,7 +205,8 @@ class BearResearcher(BaseAgent):
         super().__init__(
             agent_name="BearResearcher",
             llm_provider=llm_provider,
-            event_bus=event_bus
+            event_bus=event_bus,
+            agent_role=AgentRole.RESEARCHER
         )
         self.logger = logging.getLogger(self.__class__.__name__)
     
@@ -265,13 +270,14 @@ class BearResearcher(BaseAgent):
         analyst_view: Orientation
     ) -> str:
         """Build bearish prompt."""
+        market_data = PromptGuard.wrap_data("MARKET_DATA", observation.model_dump_json(indent=2))
+        analyst_context = PromptGuard.wrap_data("ANALYST_VIEW", analyst_view.model_dump_json(indent=2))
+        
         return f"""
 You are a BEARISH researcher. Your job is to find reasons TO SELL/SHORT {symbol}.
 
-Current Analysis:
-- Analyst says: {analyst_view.regime.value}
-- Price: ${observation.price:,.2f}
-- Sentiment: {observation.social_sentiment:.2f}
+{analyst_context}
+{market_data}
 
 Play devil's advocate. What bearish risks might we be missing?
 

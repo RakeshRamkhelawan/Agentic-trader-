@@ -15,6 +15,7 @@ from backend.core.schemas.ooda_types import (
     PortfolioState,
     CapitalAllocation
 )
+from backend.governance.agent_gatekeeper import AgentRole
 
 
 class FundManagerAgent(BaseAgent):
@@ -46,7 +47,8 @@ class FundManagerAgent(BaseAgent):
         super().__init__(
             agent_name="FundManager",
             llm_provider=llm_provider,
-            event_bus=event_bus
+            event_bus=event_bus,
+            agent_role=AgentRole.STRATEGIST
         )
         self.max_position_pct = max_position_pct
         self.max_total_exposure = max_total_exposure

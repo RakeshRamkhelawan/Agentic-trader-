@@ -34,6 +34,12 @@ async def start_services():
     await audit_logger.start()
     set_global_audit_logger(audit_logger)
 
+    # Initialize FastConfig (Hot Path Bridge)
+    from backend.execution.fast_config import FastConfig
+    config_path = os.getenv("FAST_CONFIG_PATH", "data/config/fast_config.bin")
+    FastConfig.initialize(config_path)
+    logger.info(f"FastConfig initialized at {config_path}")
+
     # Start the Cognitive Orchestrator
     orchestrator = CognitiveOrchestrator(usage_tracker=usage_tracker, audit_logger=audit_logger)
 

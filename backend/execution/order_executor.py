@@ -15,6 +15,7 @@ from backend.core.schemas.ooda_types import (
     ExecutionOutcome,
     Order
 )
+from backend.governance.agent_gatekeeper import AgentGatekeeper, ToolPermission
 
 
 class ExecutionError(Exception):
@@ -119,7 +120,8 @@ class OrderExecutor:
         self,
         exchange_adapter: Optional[ExchangeAdapter] = None,
         max_slippage_bps: int = 50,  # 0.5% max slippage
-        order_timeout: int = 30  # 30 seconds
+        order_timeout: int = 30,  # 30 seconds
+        gatekeeper: Optional[AgentGatekeeper] = None
     ):
         """
         Initialize OrderExecutor.
@@ -128,10 +130,12 @@ class OrderExecutor:
             exchange_adapter: Exchange API adapter
             max_slippage_bps: Max acceptable slippage in basis points
             order_timeout: Order fill timeout in seconds
+            gatekeeper: Agent authorization service
         """
         self.exchange = exchange_adapter or ExchangeAdapter()
         self.max_slippage_bps = max_slippage_bps
         self.order_timeout = order_timeout
+        self.gatekeeper = gatekeeper or AgentGatekeeper()
         self.active_orders: Dict[str, Order] = {}
         self.logger = logging.getLogger(self.__class__.__name__)
     
@@ -150,8 +154,24 @@ class OrderExecutor:
         """
         self.logger.info(
             f"Executing trade: {execution_plan.side} "
-            f"{execution_plan.quantity} {execution_plan.symbol}"
+            f"{execution_plan.quantity} {execution_plan.symbol} "
+            f"(requested by: {execution_plan.caller_name})"
         )
+        
+        # 0. Authorization check
+        try:
+            self.gatekeeper.require_permission(
+                agent_name=execution_plan.caller_name,
+                agent_role=execution_plan.caller_role,
+                required_permission=ToolPermission.TRADE_EXECUTION
+            )
+        except PermissionError as e:
+            self.logger.error(f"Authorization failed for trade execution: {e}")
+            return ExecutionOutcome(
+                trace_id=execution_plan.trace_id,
+                success=False,
+                error=f"Permission denied: {str(e)}"
+            )
         
         # 1. Pre-execution checks
         if not await self._pre_execution_checks(execution_plan):

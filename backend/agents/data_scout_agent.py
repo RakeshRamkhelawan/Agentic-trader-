@@ -10,6 +10,7 @@ from datetime import datetime, UTC
 
 from backend.agents.base_agent import BaseAgent
 from backend.core.schemas.ooda_types import Observation
+from backend.governance.agent_gatekeeper import AgentRole
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,8 @@ class DataScoutAgent(BaseAgent):
         super().__init__(
             agent_name="DataScout",
             llm_provider=llm_provider,
-            event_bus=event_bus
+            event_bus=event_bus,
+            agent_role=AgentRole.OBSERVER
         )
         self.data_source = data_source
         

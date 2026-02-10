@@ -14,6 +14,8 @@ from backend.core.schemas.ooda_types import (
     RiskDecision,
     MarketRegime
 )
+from backend.execution.fast_config import FastConfig
+from backend.governance.agent_gatekeeper import AgentRole
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,8 @@ class RiskManagerAgent(BaseAgent):
         super().__init__(
             agent_name="RiskManager",
             llm_provider=llm_provider,
-            event_bus=event_bus
+            event_bus=event_bus,
+            agent_role=AgentRole.STRATEGIST
         )
         
         self.max_position_size = max_position_size
@@ -85,9 +88,19 @@ class RiskManagerAgent(BaseAgent):
             violations = []
             
             # 1. Confidence check
-            if proposal.confidence < self.min_confidence:
+            # 1. Confidence check
+            # Dynamic override from FastConfig
+            try:
+                config = FastConfig.read()
+                dynamic_min_confidence = config.get('confidence', self.min_confidence)
+                if dynamic_min_confidence != self.min_confidence:
+                    logger.debug(f"Using dynamic min_confidence: {dynamic_min_confidence}")
+            except Exception:
+                dynamic_min_confidence = self.min_confidence
+
+            if proposal.confidence < dynamic_min_confidence:
                 violations.append(
-                    f"Confidence {proposal.confidence:.2f} < minimum {self.min_confidence}"
+                    f"Confidence {proposal.confidence:.2f} < minimum {dynamic_min_confidence}"
                 )
             
             # 2. Position size check
@@ -135,7 +148,8 @@ class RiskManagerAgent(BaseAgent):
                 trade_id=proposal.trade_id,
                 decision=decision,
                 rationale=rationale,
-                risk_score=self._calculate_risk_score(proposal, violations)
+                risk_score=self._calculate_risk_score(proposal, violations),
+                win_probability=0.5 # Default placeholder as we don't have a model for this yet
             )
             
             self.assessments_made += 1

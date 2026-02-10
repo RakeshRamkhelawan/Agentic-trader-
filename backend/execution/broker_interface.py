@@ -6,10 +6,10 @@ import asyncio
 import uuid
 from dataclasses import dataclass, field
 
-# We need definitions for OrderRequest and OrderResult.
-# Assuming they exist in backend.schemas.trading or similar.
-# For now defining placeholders or checking if they exist.
-# I will inspect the codebase for existing Order schemas.
+from backend.schemas.orders import OrderRequest, OrderType, OrderSide
+
+# OrderResult is defined here for now, or could move to schemas.
+# Keeping it here as it might be execution-specific result format.
 
 @dataclass
 class OrderResult:

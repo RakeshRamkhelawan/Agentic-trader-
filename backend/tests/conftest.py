@@ -68,3 +68,138 @@ async def system_db():
 @pytest.fixture
 def unique_email():
     return f"test_user_{uuid4().hex[:8]}@example.com"
+
+# ============================================================================
+# SHARED AGENT FIXTURES
+# ============================================================================
+from backend.core.schemas.ooda_types import (
+    Observation,
+    Orientation,
+    TradeProposal,
+    MarketRegime
+)
+
+@pytest.fixture
+def sample_observation():
+    """Sample observation for tests."""
+    return Observation(
+        symbol="BTC/USDT",
+        price=50000.0,
+        volume=100.5,
+        orderbook={
+            'bids': [[49999, 10.0], [49998, 5.0]],
+            'asks': [[50001, 8.0], [50002, 3.0]]
+        },
+        funding_rate=0.0001,
+        social_sentiment=0.5
+    )
+
+@pytest.fixture
+def bullish_orientation():
+    """Bullish orientation fixture."""
+    return Orientation(
+        symbol="BTC/USDT",
+        regime=MarketRegime.TRENDING_UP,
+        indicators={"rsi": 65.0, "macd": 100.0},
+        core_sentiment=0.8,
+        rag_context=["Historical bull run pattern detected"],
+        confidence=0.75
+    )
+
+@pytest.fixture
+def bearish_orientation():
+    """Bearish orientation fixture."""
+    return Orientation(
+        symbol="BTC/USDT",
+        regime=MarketRegime.TRENDING_DOWN,
+        indicators={"rsi": 35.0, "macd": -50.0},
+        core_sentiment=0.3,
+        confidence=0.70
+    )
+
+@pytest.fixture
+def sample_proposal():
+    """Sample trade proposal."""
+    return TradeProposal(
+        symbol="BTC/USDT",
+        side="buy",
+        size=0.5,
+        entry_price=50000.0,
+        leverage=2.0,
+        stop_loss=49000.0,
+        take_profit=52000.0,
+        rationale="Bullish momentum",
+        strategy_id="momentum_v1",
+        confidence=0.75
+    )
+
+from unittest.mock import Mock, AsyncMock
+from backend.agents.fund_manager_agent import FundManagerAgent
+from backend.core.schemas.ooda_types import PortfolioState, RiskAssessment, RiskDecision
+
+@pytest.fixture
+def mock_data_source():
+    """Mock data source."""
+    source = Mock()
+    source.fetch_ticker = AsyncMock(return_value={
+        'last': 50000.0,
+        'volume': 100.5,
+        'bid': 49999.0,
+        'ask': 50001.0,
+        'timestamp': 1234567890.0
+    })
+    source.fetch_orderbook = AsyncMock(return_value={
+        'bids': [[49999, 10.0], [49998, 5.0]],
+        'asks': [[50001, 8.0], [50002, 3.0]]
+    })
+    source.fetch_funding_rate = AsyncMock(return_value=0.0001)
+    return source
+
+@pytest.fixture
+def mock_event_bus():
+    """Mock event bus."""
+    bus = Mock()
+    bus.publish = AsyncMock(return_value="msg-id-123")
+    return bus
+
+@pytest.fixture
+def fund_manager():
+    """Create FundManager instance."""
+    return FundManagerAgent(
+        max_position_pct=0.10,
+        max_total_exposure=0.90,
+        kelly_multiplier=0.5
+    )
+
+@pytest.fixture
+def sample_portfolio():
+    """Sample portfolio state."""
+    return PortfolioState(
+        total_equity=10000.0,
+        available_capital=5000.0,
+        total_exposure_pct=0.50,
+        num_open_positions=2
+    )
+
+@pytest.fixture
+def sample_risk_assessment():
+    """Sample risk assessment."""
+    return RiskAssessment(
+        trade_id="test-trade-001",
+        decision=RiskDecision.APPROVE,
+        rationale="Low risk trade with strong risk/reward ratio",
+        risk_score=0.3,
+        win_probability=0.6
+    )
+
+from backend.agents.researcher_agents import BullResearcher, BearResearcher
+
+@pytest.fixture
+def bull_researcher():
+    """Create BullResearcher instance."""
+    return BullResearcher()
+
+@pytest.fixture
+def bear_researcher():
+    """Create BearResearcher instance."""
+    return BearResearcher()

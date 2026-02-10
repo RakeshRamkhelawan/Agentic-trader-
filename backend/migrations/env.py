@@ -13,11 +13,8 @@ import sys
 sys.path.append(os.getcwd())
 
 # Import models
-from backend.core.database import Base
-from backend.models.user_settings import *  # Import all models to register them
-from backend.models.orders import *       # HITL: Register Order model
-from backend.models.market_data import *  # Persistent Market Memory
-from backend.models.agent_experience import * # Persistent RL Learning
+# Import consolidated models
+from backend.data.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
