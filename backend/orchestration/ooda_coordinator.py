@@ -1,21 +1,20 @@
 """
 OODA Loop Coordinator - Central Orchestration.
 
-Coordineert de volledige Observe → Orient → Decide → Act cyclus.
+Coordineert de volledige Observe -> Orient -> Decide -> Act cyclus.
 """
 
 import logging
 import uuid
+import time
 from typing import Dict, Any, Optional
 from enum import Enum
-import logging
-import uuid
-import time
 
 from backend.agents.data_scout_agent import DataScoutAgent
 from backend.agents.analyst_agent import AnalystAgent
 from backend.agents.trader_agent import TraderAgent
 from backend.agents.risk_manager_agent import RiskManagerAgent
+from backend.agents.orchestrator_agent import OrchestratorAgent
 from backend.core.adapters.system_bridge import CognitiveBridge
 from backend.governance.circuit_breaker import CircuitBreaker, CircuitBreakerTrippedError
 from backend.core.schemas.ooda_types import (
@@ -24,141 +23,6 @@ from backend.core.schemas.ooda_types import (
     TradeProposal,
     RiskAssessment,
     RiskDecision,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
-    CapitalAllocation,
     ExecutionPlan
 )
 from backend.governance.agent_gatekeeper import AgentRole
@@ -179,10 +43,11 @@ class OODALoopCoordinator:
     OODA Loop Coordinator.
     
     Orkestreert multi-agent trading pipeline:
-    1. OBSERVE: DataScout → Observation
-    2. ORIENT: CognitiveBridge + Analyst → Orientation
-    3. DECIDE: Trader + RiskManager → TradeProposal + RiskAssessment
-    4. ACT: [Execution] → ExecutionOutcome
+    1. OBSERVE: DataScout -> Observation
+    2. ORIENT: CognitiveBridge + Analyst -> Orientation
+    3. DECIDE: Trader + RiskManager -> TradeProposal + RiskAssessment
+    4. HARMONIZE: Orchestrator -> Harmony check
+    5. ACT: [Execution] -> ExecutionOutcome
     """
     
     def __init__(
@@ -192,6 +57,7 @@ class OODALoopCoordinator:
         trader: TraderAgent,
         risk_manager: RiskManagerAgent,
         cognitive_bridge: CognitiveBridge,
+        orchestrator: Optional[OrchestratorAgent] = None,
         order_executor: Optional[OrderExecutor] = None,
         circuit_breaker: Optional[CircuitBreaker] = None,
         trading_mode: TradingMode = TradingMode.NOTIFY_ONLY,
@@ -206,6 +72,7 @@ class OODALoopCoordinator:
             trader: TraderAgent instance
             risk_manager: RiskManagerAgent instance
             cognitive_bridge: CognitiveBridge instance
+            orchestrator: OrchestratorAgent (Cognitive Core) voor harmony checks
             order_executor: Order execution engine
             circuit_breaker: Optional CircuitBreaker voor safety
             trading_mode: Execution mode (notify_only / auto)
@@ -216,6 +83,7 @@ class OODALoopCoordinator:
         self.trader = trader
         self.risk_manager = risk_manager
         self.cognitive_bridge = cognitive_bridge
+        self.orchestrator = orchestrator
         self.order_executor = order_executor
         self.circuit_breaker = circuit_breaker
         self.trading_mode = trading_mode
@@ -225,7 +93,8 @@ class OODALoopCoordinator:
         
         logger.info(
             f"OODA Coordinator initialized, mode={trading_mode.value}, "
-            f"circuit_breaker={'enabled' if circuit_breaker else 'disabled'}"
+            f"circuit_breaker={'enabled' if circuit_breaker else 'disabled'}, "
+            f"orchestrator={'enabled' if orchestrator else 'disabled'}"
         )
     
     async def run_cycle(
@@ -302,6 +171,22 @@ class OODALoopCoordinator:
                 strategy_id
             )
             
+            # ========== HARMONIZE (Orchestrator) ==========
+            harmony_result = None
+            if self.orchestrator:
+                proposals = [proposal] if proposal else []
+                assessments = [risk_assessment] if risk_assessment else []
+                harmony_result = await self.orchestrator.harmonize(
+                    observation=observation,
+                    orientation=orientation,
+                    proposals=proposals,
+                    risk_assessments=assessments
+                )
+                logger.info(
+                    f"[HARMONIZE] status={harmony_result['status']}, "
+                    f"harmony={harmony_result['harmony_score']}"
+                )
+            
             # ========== ACT (conditional) ==========
             execution_result = None
             if self.trading_mode == TradingMode.AUTO:
@@ -326,6 +211,7 @@ class OODALoopCoordinator:
                 "orientation": orientation,
                 "proposal": proposal,
                 "risk_assessment": risk_assessment,
+                "harmony": harmony_result,
                 "execution": execution_result,
                 "mode": self.trading_mode.value,
                 "decision": self._get_decision_summary(proposal, risk_assessment)
@@ -515,7 +401,7 @@ class OODALoopCoordinator:
         self.trading_mode = new_mode
         
         logger.warning(
-            f"⚠️ TRADING_MODE CHANGED: {old_mode.value} → {new_mode.value} "
+            f"[WARNING] TRADING_MODE CHANGED: {old_mode.value} -> {new_mode.value} "
             f"(user={user_id}, reason={reason or 'N/A'})"
         )
         
@@ -532,7 +418,7 @@ class OODALoopCoordinator:
     
     def get_statistics(self) -> Dict[str, Any]:
         """Krijg coordinator statistieken."""
-        return {
+        stats = {
             "cycles_completed": self.cycles_completed,
             "trading_mode": self.trading_mode.value,
             "agents": {
@@ -542,3 +428,7 @@ class OODALoopCoordinator:
                 "risk_manager": self.risk_manager.get_statistics()
             }
         }
+        if self.orchestrator:
+            stats["agents"]["orchestrator"] = self.orchestrator.get_statistics()
+            stats["harmony_score"] = self.orchestrator.harmony_score
+        return stats
