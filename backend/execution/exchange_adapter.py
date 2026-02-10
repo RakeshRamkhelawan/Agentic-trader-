@@ -2,10 +2,13 @@ import time
 import json
 import base64
 import httpx
+import logging
 from typing import Dict, Any, Optional, List, AsyncGenerator
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+logger = logging.getLogger(__name__)
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
 from backend.schemas.orders import OrderRequest, OrderSide, OrderType, OrderStatus
@@ -171,36 +174,95 @@ class ExchangeAdapter(ExecutionInterface):
 
     async def get_ticker(self, symbol: str) -> Dict[str, Any]:
         """Get ticker data for a specific symbol."""
-        # Use the authenticated tickers endpoint which is efficient
-        # GET /api/1.0/tickers?symbols=[symbol]
-        try:
-            response = await self._request("GET", "/api/1.0/tickers", params={"symbols": symbol})
-            if isinstance(response, list) and len(response) > 0:
-                 target = next((item for item in response if item.get('symbol') == symbol), response[0])
-                 return {
-                     "symbol": symbol,
-                     "last": float(target.get('last_price', 0)),
-                     "bid": float(target.get('bid', 0)),
-                     "ask": float(target.get('ask', 0))
-                 }
-        except Exception:
-            pass
+        tickers = await self.get_tickers([symbol])
+        return tickers.get(symbol, {"symbol": symbol, "last": 0.0})
 
-        # Fallback to public/last-trades + public/order-book
-        try:
-            trades = await self._request("GET", "/api/1.0/public/last-trades", params={"symbol": symbol, "limit": 1})
-            last_price = 0.0
-            if trades and len(trades) > 0:
-                last_price = float(trades[0].get('price', 0))
+    async def get_tickers(self, symbols: List[str]) -> Dict[str, Dict[str, Any]]:
+        """Get ticker data for multiple symbols in bulk with chunking."""
+        if not symbols:
+            return {}
+            
+        results = {}
+        # Revolut might limit the number of symbols or URL length. Let's chunk by 20.
+        chunk_size = 20
+        for i in range(0, len(symbols), chunk_size):
+            chunk = symbols[i:i + chunk_size]
+            
+            # Format symbols for API (Revolut expects BTC-EUR, not BTC/EUR)
+            formatted_chunk = [s.replace("/", "-") for s in chunk]
+            symbols_str = ",".join(formatted_chunk)
+            
+            try:
+                response = await self._request("GET", "/api/1.0/tickers", params={"symbols": symbols_str})
                 
-            return {
-                "symbol": symbol, 
-                "last": last_price,
-                "bid": last_price, # Proxy
-                "ask": last_price  # Proxy
-            }
-        except Exception:
-             return {"symbol": symbol, "last": 0.0}
+                # Normalize response to list (handle {data: [...]})
+                items = []
+                if isinstance(response, dict) and "data" in response and isinstance(response["data"], list):
+                    items = response["data"]
+                elif isinstance(response, list):
+                    items = response
+                elif isinstance(response, dict):
+                    items = [response]
+                    
+                for item in items:
+                    sym = item.get('symbol')
+                    if sym:
+                        # Normalize symbol for matching (e.g. BTCEUR -> BTC/EUR)
+                        norm_sym = sym
+                        if "/" not in sym and "-" not in sym:
+                            if sym.endswith("EUR") and len(sym) > 3:
+                                norm_sym = f"{sym[:-3]}/EUR"
+                            elif sym.endswith("USD") and len(sym) > 3:
+                                norm_sym = f"{sym[:-3]}/USD"
+                        elif "-" in sym:
+                            norm_sym = sym.replace("-", "/")
+                            
+                        results[norm_sym] = {
+                            "symbol": norm_sym,
+                            "last": float(item.get('last_price', 0)),
+                            "bid": float(item.get('bid', 0)),
+                            "ask": float(item.get('ask', 0)),
+                            "volume_24h": float(item.get('volume_24h', 0)) if item.get('volume_24h') else 0.0,
+                            "change_24h": float(item.get('price_change_24h', 0)) if item.get('price_change_24h') else 0.0
+                        }
+            except Exception as e:
+                # ... (Failure logging) ...
+                with open("debug_adapter.txt", "a") as f:
+                    f.write(f"Bulk chunk failed: {e}\n")
+                logger.warning(f"Bulk tickers chunk failed, falling back to individual: {e}")
+                # Fallback to individual fetches for this chunk
+                for sym in chunk:
+                    try:
+                        formatted_sym = sym.replace("/", "-")
+                        resp = await self._request("GET", "/api/1.0/tickers", params={"symbols": formatted_sym})
+                        
+                        # Handle dict or list response (unwrap data)
+                        target_item = None
+                        
+                        if isinstance(resp, dict) and "data" in resp and isinstance(resp["data"], list) and len(resp["data"]) > 0:
+                            target_item = resp["data"][0]
+                        elif isinstance(resp, list) and len(resp) > 0:
+                            target_item = resp[0]
+                        elif isinstance(resp, dict) and "data" not in resp: # plain dict
+                            target_item = resp
+                            
+                        if target_item:
+                            results[sym] = {
+                                "symbol": sym,
+                                "last": float(target_item.get('last_price', 0)),
+                                "bid": float(target_item.get('bid', 0)),
+                                "ask": float(target_item.get('ask', 0)),
+                                "volume_24h": float(target_item.get('volume_24h', 0)) if target_item.get('volume_24h') else 0.0,
+                                "change_24h": float(target_item.get('price_change_24h', 0)) if target_item.get('price_change_24h') else 0.0
+                            }
+                    except Exception as ex:
+                        with open("debug_adapter.txt", "a") as f:
+                            f.write(f"Fallback exception for {sym}: {ex}\n")
+                        continue
+        
+        with open("debug_adapter.txt", "a") as f:
+            f.write(f"GetTickers returning {len(results)} results\n")
+        return results
 
     async def get_candles(self, symbol: str, timeframe: str = "1h", limit: int = 100) -> List[Dict[str, Any]]:
         """Get OHLCV candles."""

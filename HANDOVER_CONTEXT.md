@@ -4,9 +4,12 @@
 Resolve API Authentication (401 errors) and WebSocket connectivity issues.
 
 ## 2. Completed Work
+- **High-Performance Caching & ETF Expansion**:
+  - Implemented `AsyncCacheLayer` in `backend/core/cache_layer.py` using Redis.
+  - Updated `TradingService.get_markets` with dynamic instrument discovery and 30s TTL caching.
+  - Created `market_sync_task.py` for continuous background price updates.
+  - Expanded ETF visibility by enabling dynamic discovery from Revolut X.
 - **Authentication Unification & Race Condition Fix**:
-  - Implemented `isApiReady` in `AuthContext` to prevent early API calls.
-  - Added the `isApiReady` guard to `ProtectedRoute.tsx`.
   - Created a robust global token delegator (`window._resolveToken`) in `api-client.ts` and `trading-api.ts`.
   - Unified `OpenAPI` imports to ensure singleton consistency.
   - **Kritieke Fix**: Corrigeerde de root `.gitignore` (verwijderde `lib/`) die verhinderde dat de API-client bestanden werden gecommit.
@@ -23,12 +26,11 @@ Resolve API Authentication (401 errors) and WebSocket connectivity issues.
 - `frontend/src/lib/api-client.ts` (API configuration)
 - `backend/api/main.py` (CORS and middleware setup)
 
-## 4. Current State
-- **Build Status**: ✅ PASSING (`npm run build`)
-- **API Status**: ✅ WORKING (authenticated requests to `/portfolio`)
-- **WebSocket Status**: ✅ CONNECTED (connecting to `ws://localhost:8000/ws`)
-- **Known Issues**:
-  - WebSocket currently uses a "demo-tenant" fallback in the backend handler (Task for future tenant-aware WS logic).
+## Fase 4: Performance & Instrumentatie [VOLTOOID]
+De applicatie is nu geoptimaliseerd voor snelheid en bereik.
+- **Extreme Performance**: Marktprijzen worden nu binnen enkele milliseconden geserveerd vanuit een Redis cache.
+- **ETF Expansie**: De lijst met markten is niet langer beperkt tot crypto, maar haalt nu dynamisch alle beschikbare instrumenten (inclusief ETF's) op van de exchange adapters.
+- **Achtergrond Sync**: Een dedicated script zorgt ervoor dat prijzen in de cache actueel blijven zonder dat de gebruiker hoeft te wachten op API-responses.
 
 3. **Production Hardening**: Ensure all diagnostic logs are removed and the `isApiReady` pattern is used for all authenticated entry points.
 

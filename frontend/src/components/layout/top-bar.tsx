@@ -158,7 +158,7 @@ export function TopBar({
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="rounded-full">
                             <Avatar className="h-8 w-8">
-                                <AvatarImage src="/avatars/01.png" alt="@user" />
+                                <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="@user" />
                                 <AvatarFallback>TR</AvatarFallback>
                             </Avatar>
                         </Button>

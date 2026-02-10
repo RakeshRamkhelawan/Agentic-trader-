@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { TopBar } from "@/components/layout/top-bar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Star, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { Search, Star, TrendingUp, TrendingDown, Loader2, Minus } from "lucide-react";
 import { getMarkets, Market } from "@/lib/api/trading-api";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -102,13 +102,13 @@ export default function MarketsPage() {
                                         <div className="text-2xl font-bold">
                                             €{market.price.toLocaleString("en-IE", { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
                                         </div>
-                                        <div className={`flex items-center gap-1 text-sm font-medium ${market.change >= 0 ? "text-green-500" : "text-red-500"
+                                        <div className={`flex items-center gap-1 text-sm font-medium ${market.change > 0 ? "text-green-500" :
+                                            market.change < 0 ? "text-red-500" : "text-muted-foreground"
                                             }`}>
-                                            {market.change >= 0 ?
-                                                <TrendingUp className="h-4 w-4" /> :
-                                                <TrendingDown className="h-4 w-4" />
-                                            }
-                                            {Math.abs(market.change)}%
+                                            {market.change > 0 ? <TrendingUp className="h-4 w-4" /> :
+                                                market.change < 0 ? <TrendingDown className="h-4 w-4" /> :
+                                                    <Minus className="h-4 w-4" />}
+                                            {Math.abs(market.change).toFixed(2)}%
                                         </div>
                                     </div>
 
