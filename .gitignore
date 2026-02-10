@@ -65,5 +65,19 @@ logs/
 *.key
 *.crt
 
+
 # Vscode AI rules
 .github\instructions\codacy.instructions.md
+
+# Debug & Local Scripts
+check_*.py
+setup_*.py
+reproduce_*.py
+debug_*.py
+test_*.py
+*_diff.txt
+*.log
+test_output.txt
+backend/tests/dump_revolut.py
+backend/tests/inject_revolut_key.py
+backend/scripts/probe_revolut.py

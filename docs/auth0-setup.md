@@ -108,8 +108,8 @@ You will need these values for your `.env` file.
 Update your `backend/.env` (and `frontend/.env.local` later) with:
 
 ```env
-AUTH0_DOMAIN=your-tenant.auth0.com
+AUTH0_DOMAIN=agentictrader.eu.auth0.com
 AUTH0_API_AUDIENCE=https://api.agentic-trader.com
-AUTH0_ISSUER=https://your-tenant.auth0.com/
+AUTH0_ISSUER=https://agentictrader.eu.auth0.com/
 AUTH0_ALGORITHM=RS256
 ```
