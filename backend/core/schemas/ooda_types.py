@@ -201,6 +201,11 @@ class ExecutionPlan(BaseModel):
         gt=0,
         description="Limit price (None for market orders)"
     )
+    expected_price: float = Field(
+        ...,
+        gt=0,
+        description="Expected fill price for slippage calculation"
+    )
     params: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional exchange-specific parameters"

@@ -5,7 +5,7 @@ Contrarian perspective generators voor bias detection.
 """
 
 import logging
-from typing import List
+from typing import List, Optional
 from datetime import datetime, UTC
 
 from backend.agents.base_agent import BaseAgent
@@ -25,8 +25,16 @@ class BullResearcher(BaseAgent):
     """
     
     
-    def __init__(self, model_name: str = "gpt-4", **kwargs):
-        super().__init__(model_name=model_name, **kwargs)
+    def __init__(
+        self,
+        llm_provider: Optional["LLMProvider"] = None,
+        event_bus: Optional["EventBus"] = None
+    ):
+        super().__init__(
+            agent_name="BullResearcher",
+            llm_provider=llm_provider,
+            event_bus=event_bus
+        )
         self.logger = logging.getLogger(self.__class__.__name__)
     
     async def analyze(self, *args, **kwargs):
@@ -176,8 +184,16 @@ class BearResearcher(BaseAgent):
     Generates arguments VOOR selling/shorting, even in bullish conditions.
     """
     
-    def __init__(self, model_name: str = "gpt-4", **kwargs):
-        super().__init__(model_name=model_name, **kwargs)
+    def __init__(
+        self,
+        llm_provider: Optional["LLMProvider"] = None,
+        event_bus: Optional["EventBus"] = None
+    ):
+        super().__init__(
+            agent_name="BearResearcher",
+            llm_provider=llm_provider,
+            event_bus=event_bus
+        )
         self.logger = logging.getLogger(self.__class__.__name__)
     
     async def analyze(self, *args, **kwargs):

@@ -27,22 +27,27 @@ class FundManagerAgent(BaseAgent):
     
     def __init__(
         self,
-        model_name: str = "gpt-4",
+        llm_provider: Optional["LLMProvider"] = None,
+        event_bus: Optional["EventBus"] = None,
         max_position_pct: float = 0.10,  # 10% max per position
         max_total_exposure: float = 0.90,  # 90% max total exposure
         kelly_multiplier: float = 0.5,  # Half-Kelly safety
-        **kwargs
     ):
         """
         Initialize FundManager.
         
         Args:
-            model_name: LLM model
+            llm_provider: Optional LLMProvider instance for AI capabilities.
+            event_bus: Optional EventBus instance for inter-agent communication.
             max_position_pct: Max position as % of equity
             max_total_exposure: Max total exposure
             kelly_multiplier: Kelly safety multiplier (0.5 = half-Kelly)
         """
-        super().__init__(model_name=model_name, **kwargs)
+        super().__init__(
+            agent_name="FundManager",
+            llm_provider=llm_provider,
+            event_bus=event_bus
+        )
         self.max_position_pct = max_position_pct
         self.max_total_exposure = max_total_exposure
         self.kelly_multiplier = kelly_multiplier
