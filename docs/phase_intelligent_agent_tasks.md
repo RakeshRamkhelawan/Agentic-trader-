@@ -1,25 +1,25 @@
 # Phase 2: Kanban/TDD Task Document
 **Project:** Agentic Trading Platform - OODA Multi-Agent AGI
 **Method:** Kanban + TDD (Red-Green-Refactor)
-**Spec:** Based on `phase_intelligent_agent.md` and User Feedback
+**Spec:** Based on `phase_intelligent_agent.md` (1:1 Match)
 
 This document serves as the **definitive, step-by-step build instruction** for the LLM builder.
 
 ---
 
-## Epic 0: Core Types & Contracts (Foundation)
+## Epic 12: Documentatie & Schema's (Foundational Layer)
+*(Implement First for Type Safety)*
 
-### Task 0.1: Domain Models (Pydantic)
+### Task 12.1: Type Definities (Pydantic)
+**Section:** 12.1
 
 **Master Prompt:**
 ```text
 Create backend/core/schemas/ooda_types.py.
 Define strict Pydantic models for the OODA loop data flow.
 Ensure all models have ConfigDict(frozen=True) for immutability.
+Include: MarketRegime, Observation, Orientation, TradeProposal, RiskAssessment, ExecutionPlan, ExecutionOutcome.
 ```
-
-**Context:**
-- These types are the "language" spoken between agents.
 
 **Implementation Snippet:**
 ```python
@@ -46,263 +46,48 @@ class Observation(BaseModel):
     timestamp: float = Field(default_factory=lambda: datetime.utcnow().timestamp())
     raw_ticker: Dict[str, Any] = Field(default_factory=dict)
 
-class Orientation(BaseModel):
-    model_config = ConfigDict(frozen=True)
-    symbol: str
-    regime: MarketRegime
-    indicators: Dict[str, float]  # rsi, macd, bb_width
-    core_sentiment: float  # From SystemIdentity (Ahamkara)
-    rag_context: List[str]  # Summaries from VectorMemory
-    confidence: float
-
-class TradeProposal(BaseModel):
-    model_config = ConfigDict(frozen=True)
-    symbol: str
-    side: str  # 'buy' or 'sell'
-    size: float
-    entry_price: Optional[float]
-    stop_loss: float
-    take_profit: float
-    time_in_force: str = "GTC"
-    rationale: str
-    strategy_id: str
-
-class RiskAssessment(BaseModel):
-    model_config = ConfigDict(frozen=True)
-    approved: bool
-    modified_size: Optional[float] = None
-    risk_score: float  # 0.0-1.0
-    reason: str
-    checks_passed: List[str]
-    checks_failed: List[str]
-
-class ExecutionPlan(BaseModel):
-    model_config = ConfigDict(frozen=True)
-    symbol: str
-    side: str
-    quantity: float
-    order_type: str = "LIMIT"
-    price: Optional[float]
-    params: Dict[str, Any] = Field(default_factory=dict)
-
-class ExecutionOutcome(BaseModel):
-    model_config = ConfigDict(frozen=True)
-    success: bool
-    order_id: Optional[str]
-    filled_qty: float
-    avg_price: float
-    fee: float
-    error: Optional[str]
+# ... (Include Orientation, TradeProposal, RiskAssessment, ExecutionPlan, ExecutionOutcome as per spec)
 ```
 
-### Task 0.2: Event Schemas
+### Task 12.2: Event Schema's
+**Section:** 12.2
 
 **Master Prompt:**
 ```text
 Create backend/core/schemas/events.py.
-Define payload schemas for the EventBus.
-```
-
-**Implementation Snippet:**
-```python
-# backend/core/schemas/events.py
-class TradeProposalEvent(BaseModel):
-    proposal: TradeProposal
-    timestamp: float
-
-class MarketTickEvent(BaseModel):
-    symbol: str
-    price: float
-    timestamp: float
+Define payload schemas for the EventBus:
+- market_tick
+- news_event
+- trade_proposal
+- trade_executed
+- risk_alert
+- system_health
 ```
 
 ---
 
-## Epic 1: Vector Memory & RAG Layer
+## Epic 3: OODA Loop Orchestratie
 
-### Task 1.1: TradingKnowledge Vector Store
-
-**Master Prompt:**
-```text
-Implement backend/rag/vector_memory.py with a TradingKnowledge SQLAlchemy model using pgvector.
-The model must store strategy playbooks, macro events, and historical scenarios with embeddings.
-Implement insert, similarity search with cosine distance, and category filtering.
-Use async SQLAlchemy.
-Include "Logging/Audit": Log all searches to standard logger.
-```
-
-**Context:**
-- Dependencies: `pgvector`, `sqlalchemy[async]`, `asyncpg`
-
-**Unhappy Path Test (Systemic):**
-```python
-@pytest.mark.asyncio
-async def test_search_database_down_resilience():
-    """Systemic Unhappy Path: Database Down"""
-    vm = VectorMemory(connection_string="postgresql+asyncpg://bad:port/db")
-    # Should raise specific VectorStoreError, not crash application
-    with pytest.raises(VectorStoreError):
-        await vm.search_similar(...) 
-```
-
----
-
-## Epic 1.5: Cognitive Core Integration
-
-### Task 1.5.1: SystemIdentity Adapter
-
-**Master Prompt:**
-```text
-Implement backend/core/adapters/system_bridge.py.
-Create a 'CognitiveBridge' class that wraps the existing SystemIdentity.
-It must export a method `process_observation(obs: Observation) -> float`.
-This method converts the Pydantic Observation into the numpy arrays required by SystemIdentity.process_market_cycle().
-It returns the 'confidence' score from the Core (Ahamkara).
-```
-
-**Context:**
-- Connects new OODA world (Pydantic) with valid Old World (Numpy/FFT).
-
-**Happy Path Test:**
-```python
-@pytest.mark.asyncio
-async def test_bridge_transform():
-    identity = SystemIdentity()
-    bridge = CognitiveBridge(identity)
-    obs = Observation(symbol="BTC", price=50000, volume=100, orderbook=..., social_sentiment=0.5)
-    
-    core_confidence = await bridge.process_observation(obs)
-    assert 0.0 <= core_confidence <= 1.0
-    # Verify SystemIdentity state updated
-    assert identity.system_state['total_experiences'] > 0
-```
-
----
-
-## Epic 2: Data Scout Agent (Observe)
-
-### Task 2.1: DataScoutAgent Implementation
-
-**Master Prompt:**
-```text
-Implement backend/agents/data_scout_agent.py.
-Collects market data and returns a standardized Observation.
-Must inject Audit logging: every observation is logged with a trace_id.
-```
-
-**Implementation Snippet:**
-```python
-class DataScoutAgent(BaseAgent):
-    async def observe(self, symbol: str, trace_id: str) -> Observation:
-        obs = ... # fetch data
-        await self.audit_log.log(trace_id, "OBSERVE", obs.model_dump())
-        return obs
-```
-
----
-
-## Epic 3: Analyst Agents (Orient)
-
-### Task 3.1: TechnicalAnalyst Agent
-
-**Master Prompt:**
-```text
-Implement backend/agents/analyst_agent.py.
-Calculate indicators.
-Consume the Observation.
-Must include Audit logging.
-```
-
-### Task 3.2: Researcher Agents (Debate)
-
-**Master Prompt:**
-```text
-Implement backend/agents/researcher_agent.py.
-Bull/Bear agents.
-Output layout:
-class Argument(BaseModel):
-    bias: str # 'bull'/'bear'
-    key_points: List[str]
-    rag_citations: List[str]
-    sentiment_score: float
-```
-
----
-
-## Epic 4: Risk Manager (Decide - Constraint)
-
-### Task 4.1: RiskManager Implementation
-
-**Master Prompt:**
-```text
-Implement backend/agents/risk_manager_agent.py.
-Validates TradeProposal.
-Addresses Systemic Failure: If RiskManager service/logic fails (exception), default to REJECT.
-```
-
-**Unhappy Path Test (Systemic):**
-```python
-async def test_risk_agent_exception_defaults_to_reject():
-    """If internal logic fails, return approved=False"""
-    agent = RiskManagerAgent()
-    # Mock internal method to raise Exception
-    agent._check_drawdown = Mock(side_effect=Exception("DB fail"))
-    
-    assessment = await agent.evaluate(proposal, ...)
-    assert assessment.approved == False
-    assert "SystemError" in assessment.reason
-```
-
----
-
-## Epic 5: Trader Agent (Decide - Plan)
-
-### Task 5.1: TraderAgent Implementation
-
-**Master Prompt:**
-```text
-Implement backend/agents/trader_agent.py.
-Input: Orientation (with Core intuition) + List[Argument] (Bull/Bear).
-Use LLM to synthesize.
-Constraint: Even if LLM says "BUY", if Core Intuition (from Orientation) is < 0.2, force "HOLD" or reduce size (Core Override).
-```
-
-**Context:**
-- Validates that the "Gut Feeling" of the existing system is respected.
-
----
-
-## Epic 6: Fund Manager (Decide - Allocate)
-
-### Task 6.1: FundManagerAgent
-
-**Master Prompt:**
-```text
-Implement backend/agents/fund_manager_agent.py.
-Allocate capital across proposals.
-Audit: Log final allocation decision.
-```
-
----
-
-## Epic 7: OODA Orchestrator
-
-### Task 7.1: OODALoopCoordinator
+### Task 3.1: OODA Orchestrator
+**Section:** 3.1
+**Dependencies:** Epic 12, Epic 4, Epic 5
 
 **Master Prompt:**
 ```text
 Implement backend/orchestration/ooda_coordinator.py.
+Class: OODALoopCoordinator.
+Dependencies: SystemIdentity, SensoryProcessor, MemorySystem, Agents (DataScout, Analyst, RiskManager, Trader, FundManager).
 Modes:
 1. `run_loop_interval(interval_ms)`
 2. `run_loop_event_driven()` (subscribes to market_tick)
-
-Config: `TRADING_MODE` ("notify_only" vs "auto")
+Config: `TRADING_MODE` ("notify_only" vs "auto").
 Logic:
+- Observe -> Orient -> Decide -> Act.
 - If "notify_only": Stop after Decide. Emit `trade_proposal` event. Do NOT call Execution.
 - If "auto": Call Execution.
 ```
 
-**Happy Path Test (Run Mode):**
+**Happy Path Test (Notify Mode):**
 ```python
 async def test_notify_only_mode():
     coord = OODALoopCoordinator(trading_mode="notify_only")
@@ -313,100 +98,286 @@ async def test_notify_only_mode():
     assert event_bus.emit.call_args[0][0] == "trade_proposal"
 ```
 
-**Unhappy Path Test (LLM Timeout):**
-```python
-async def test_ooda_llm_timeout_robustness():
-    """If Analyst LLM times out, OODA should skip trading this cycle but NOT crash"""
-    coord = OODALoopCoordinator()
-    coord.analyst.analyze = Mock(side_effect=TimeoutError("LLM Slow"))
-    
-    result = await coord.run_cycle("BTC")
-    assert result["status"] == "skipped"
-    assert result["reason"] == "OrientationFailed"
-    # Ensure loop stays alive
+### Task 3.2: Cognitive System Bridge (Adapter)
+**Section:** 3.1 (Dependency)
+
+**Master Prompt:**
+```text
+Implement backend/core/adapters/system_bridge.py.
+Create a 'CognitiveBridge' class that wraps the existing SystemIdentity.
+Export method `process_observation(obs: Observation) -> float`.
+Converts Pydantic Observation to Numpy inputs for SystemIdentity.process_market_cycle().
+Returns 'confidence' score from Core (Ahamkara).
 ```
 
 ---
 
-## Epic 8: Execution & Hot Path
+## Epic 4: RAG / Vector Memory Layer
 
-### Task 8.1: FastConfig Structure & Tests
+### Task 4.1: Vector Memory
+**Section:** 4.1
+
+**Master Prompt:**
+```text
+Implement backend/rag/vector_memory.py.
+Model: TradingKnowledge (SQLAlchemy) with pgvector.
+Columns: id, content, embedding, category, asset, timestamp.
+Functionality:
+- Upsert Playbooks/Events.
+- Similarity Search (cosine distance).
+- Async SQLAlchemy implementation.
+```
+
+**Unhappy Path Test (DB Down):**
+```python
+@pytest.mark.asyncio
+async def test_search_database_down_resilience():
+    """Systemic Unhappy Path: Database Down"""
+    vm = VectorMemory(connection_string="postgresql+asyncpg://bad:port/db")
+    with pytest.raises(VectorStoreError):
+        await vm.search_similar(...) 
+```
+
+---
+
+## Epic 5: Multi-Agent “Trading Firm” Laag
+
+### Task 5.1: DataScoutAgent
+**Section:** 5.1
+
+**Master Prompt:**
+```text
+Implement backend/agents/data_scout_agent.py.
+Rol: Observe.
+Collects live data (ticks, orderbook) and normalizes to Observation schema.
+Inject Audit logging: log(trace_id, "OBSERVE", obs).
+```
+
+### Task 5.2: AnalystAgent (Technical & Sentiment)
+**Section:** 5.2
+
+**Master Prompt:**
+```text
+Implement backend/agents/analyst_agent.py.
+Rol: Orient.
+- TechnicalAnalyst: Calc RSI, MACD, Bollinger.
+- SentimentAnalyst: Aggregates news/tweets.
+Output: Orientation (with confidence score).
+```
+
+### Task 5.3: RiskManagerAgent
+**Section:** 5.3
+
+**Master Prompt:**
+```text
+Implement backend/agents/risk_manager_agent.py.
+Rol: Decide (Constraints).
+Validates TradeProposal against policies (max drawdown, exposure).
+Returns: RiskAssessment (GO/NO-GO).
+Systemic Failure: If logic fails/crashes, default to REJECT.
+```
+
+**Unhappy Path Test:**
+```python
+async def test_risk_agent_exception_defaults_to_reject():
+    agent = RiskManagerAgent()
+    agent._check_drawdown = Mock(side_effect=Exception("DB fail"))
+    assessment = await agent.evaluate(...)
+    assert assessment.approved == False
+```
+
+### Task 5.4: TraderAgent
+**Section:** 5.4
+
+**Master Prompt:**
+```text
+Implement backend/agents/trader_agent.py.
+Rol: Decide (Execution Plan).
+Input: Orientation + Researcher Arguments.
+Synthesizes signals into TradeProposal.
+Constraint: Verify Core Intuition < 0.2 override (Force HOLD).
+```
+
+### Task 5.5: FundManagerAgent
+**Section:** 5.5
+
+**Master Prompt:**
+```text
+Implement backend/agents/fund_manager_agent.py.
+Rol: Decide (Portfolio Allocation).
+Aggregates multiple TradeProposals.
+Allocates capital based on risk/reward.
+```
+
+### Task 5.6: ResearcherAgents (Bull/Bear)
+**Section:** 5.6
+
+**Master Prompt:**
+```text
+Implement backend/agents/researcher_bull_agent.py & researcher_bear_agent.py.
+Rol: Orient (Debate).
+Generate opposing theses (Bull vs Bear arguments).
+Output: List[Argument] for TraderAgent.
+```
+
+---
+
+## Epic 6: Execution Layer: Hot Path
+
+### Task 6.1: FastConfig Bridge
+**Section:** 6.1
 
 **Master Prompt:**
 ```text
 Implement backend/execution/fast_config.py.
-Define the Shared Memory Structure (using `struct` or `multiprocessing.SharedMemory` pattern, or a highly optimized dictionary for MVP).
-Strict Structure:
-- symbol (str 10)
-- direction (int: 1=buy, -1=sell)
-- size (float)
-- trigger_price (float)
-- max_slippage (float)
-- valid_until (timestamp)
-- strategy_id (uuid)
+Zero-copy bridge (Shared Memory / Optimized Dict).
+Structure: symbol, direction, size, trigger_price, max_slippage, valid_until, strategy_id.
 ```
 
-**Round-Trip Test:**
-```python
-def test_fast_config_round_trip():
-    fc = FastConfig()
-    fc.write("BTC", side=1, price=50000, size=0.1)
-    
-    # Read back from "Hotkey" perspective
-    read_val = fc.read("BTC")
-    assert read_val['side'] == 1
-    assert read_val['trigger_price'] == 50000
-```
-
-### Task 8.2: HotPathEngine & Exchange Errors
+### Task 6.2: HotPathEngine
+**Section:** 6.2
 
 **Master Prompt:**
 ```text
-Implement HotPathEngine.
-Handle Exchange Errors:
-- If order rejected (Insufficient Funds): Log Audit, Disable Strategy, Alert User.
-- If network timeout: Retry (max 3 times) then Abort.
+Implement backend/execution/hot_path_engine.py.
+Low-latency execution.
+Reads FastConfig.
+ executes orders via Exchange API.
+Handles Exchange Errors (Timeout/Rejection) -> Log & Disable Strategy.
 ```
 
 ---
 
-## Epic 9: Governance
+## Epic 7: Governance, Monitoring & Failure Modes
 
-### Task 9.1: DecisionAuditLog
+### Task 7.1: Observability & Logging
+**Section:** 7.1
 
 **Master Prompt:**
 ```text
-Implement backend/core/compliance/audit_logger.py.
-Must support structured logging of every step in OODA.
-Schema:
-{
-  trace_id: str,
-  timestamp: float,
-  stage: str (OBSERVE|ORIENT|DECIDE|ACT),
-  component: str,
-  input_summary: dict,
-  output_summary: dict,
-  latency_ms: float
-}
+Implement backend/core/compliance/audit_logger.py (DecisionAuditLog).
+Log every OODA cycle with `trace_id`.
+Fields: Snapshot, RAG Sources, Agent Outputs, Decision, ExecutionOutcome.
+```
+
+### Task 7.2: Agent Failure Modes & Watchdogs
+**Section:** 7.2
+
+**Master Prompt:**
+```text
+Implement backend/orchestration/watchdog.py.
+Monitor OODALoopCoordinator heartbeat.
+Implement Circuit Breaker for frequent timeouts/errors.
+Hard limit on MAX_ITERATIONS in loops.
+```
+
+### Task 7.3: Governance / RBAC
+**Section:** 7.3
+
+**Master Prompt:**
+```text
+Enforce strict changes to TRADING_MODE.
+Ensure TRADING_MODE cannot be changed by Agents, only by Admin/Config.
+```
+
+### Task 7.4: Evaluation Datasets
+**Section:** 7.4
+
+**Master Prompt:**
+```text
+Create evaluation datasets (backtest scenarios):
+- Crash (Market drop > 10%)
+- Gap-up
+- Flash-illiquidity
+Ensure new agent versions pass these gates.
 ```
 
 ---
 
-## Epic 10: End-to-End Integration
+## Epic 8: Human-in-the-Loop & Config
 
-### Task 10.1: Full Dataflow Test
+### Task 8.1: Notify-Only Mode
+**Section:** 8.1
+
+**Master Prompt:**
+```text
+Verify Notify-Only logic in OODA Coordinator.
+Ensure events `trade_proposal` are emitted.
+Implement UI handler (Mock or Real) for Manual Approval injection.
+```
+
+---
+
+## Epic 9: Validatie & Tests
+
+### Task 9.1: Nieuwe Test Suites
+**Section:** 9.1
+
+**Master Prompt:**
+```text
+Create dedicated test files:
+- backend/tests/test_ooda_coordinator.py
+- backend/tests/test_agents_specialized.py
+- backend/tests/test_execution_hotpath.py
+- backend/tests/test_rag_vector_memory.py
+```
+
+### Task 9.2: Integratie (End-to-End)
+**Section:** 9.2
 
 **Master Prompt:**
 ```text
 Create backend/tests/test_end_to_end_flow.py.
-Simulate a full market tick -> trade execution flow.
-Verify:
-1. DataScout -> Observation
-2. Bridge -> SystemIdentity sets 'confidence'
-3. Analyst -> Orientation (includes Core confidence)
-4. Trader -> Proposal
-5. Risk -> Approval
-6. FundManager -> Allocation
-7. Execution -> Order
-8. AuditLog -> Contains full trace
+Simulate Full Flow: Market Tick -> OODA -> Order -> Execution.
+Verify Audit Log completeness.
+```
+
+---
+
+## Epic 10: Data- en Configlaag
+
+### Task 10.1: Standardized Data Layer
+**Section:** 10.1
+
+**Master Prompt:**
+```text
+Verify schema implementation for:
+- market_tick (Postgres)
+- orderbook_snapshot (Redis)
+- portfolio_state (Redis)
+Ensure Agents use these standardized sources only.
+```
+
+### Task 10.2: Config & Policy Store
+**Section:** 10.2
+
+**Master Prompt:**
+```text
+Implement Central Config Store (backend/config/trading_config.py).
+Store Risk Limits, OODA Interval, Active Agents.
+Remove hardcoded values from Agents.
+```
+
+---
+
+## Epic 11: Security & Tool Governance
+
+### Task 11.1: Tool Toegang
+**Section:** 11.1
+
+**Master Prompt:**
+```text
+Audit Tool Access.
+Ensure 'Execute Trade' is ONLY available to TraderAgent and HotPathEngine.
+Implement Code-level Guardrails (Allowlist).
+```
+
+### Task 11.2: Prompt Injection Mitigatie
+**Section:** 11.2
+
+**Master Prompt:**
+```text
+Implement Citation Validation in Research Agents.
+Ensure RAG sources are explicitly cited.
+Flag conflicting sources.
 ```
