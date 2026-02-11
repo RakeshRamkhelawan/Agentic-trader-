@@ -3,6 +3,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timezone
 
@@ -13,6 +14,8 @@ from backend.api import user_settings_api
 from backend.api import approval_api
 from backend.api.websocket_endpoints import router as ws_router
 from backend.api import analytics_api
+from backend.api import backtest_api
+from backend.observability.metrics import PrometheusMiddleware, metrics_endpoint
 
 # Services
 from backend.services.trading_service import get_trading_service
@@ -113,23 +116,50 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Agentic Trader API",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/docs" if settings.DOCS_ENABLED else None,
+    redoc_url="/redoc" if settings.DOCS_ENABLED else None,
 )
 
 # CORS
-# Frontend runs on 3000, API on 8001
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Prometheus Middleware
+app.add_middleware(PrometheusMiddleware)
+
+# Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none';"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none';"
+    return response
+
+# Global Exception Handler (Sanitization)
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all exception handler to prevent stack traces in production.
+    In development (ENV != production), allows FastAPI's default handler (with debug info).
+    """
+    if settings.ENV == "production":
+        logger.error(f"Global Exception: {exc}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal Server Error. Please contact support."}
+        )
+    # Re-raise to let FastAPI's default debug handler catch it in dev
+    # (Or return a detailed JSON response if preferred)
+    raise exc
 
 # ============================================================================
 # AUTH MIDDLEWARE - JWT Token Validation
@@ -146,7 +176,9 @@ AuthMiddleware.PUBLIC_PATHS = {
     "/api/v1/auth/register",
     "/api/v1/auth/login",
     "/api/v1/auth/callback",
+    "/api/v1/auth/callback",
     "/ws",
+    "/metrics",
 }
 
 # Use JWTValidator with Auth0 config
@@ -166,8 +198,12 @@ app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(trading_api.router) # Prefix defined in router
 app.include_router(user_settings_api.router, prefix="/api/v1/settings", tags=["settings"])
 app.include_router(approval_api.router, prefix="/api/v1/approvals", tags=["approvals"])
-app.include_router(analytics_api.router, prefix="/api/v1/analytics", tags=["analytics"]) # Added analytics_api router
+app.include_router(analytics_api.router, prefix="/api/v1/analytics", tags=["analytics"])
+app.include_router(backtest_api.router, prefix="/api/v1/backtest", tags=["backtesting"])
 app.include_router(ws_router) # /ws endpoint
+
+# Metrics Endpoint
+app.add_route("/metrics", metrics_endpoint)
 
 @app.get("/health")
 def health_check():

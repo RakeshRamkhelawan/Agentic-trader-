@@ -63,7 +63,7 @@ class DecisionAuditLog(Base):
     trading_mode = Column(String(16), nullable=False)  # notify_only/auto
     strategy_id = Column(String(64), nullable=False)
     
-    timestamp = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False, index=True)
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False, index=True)
     
     def __repr__(self):
         return (

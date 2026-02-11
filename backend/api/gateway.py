@@ -17,7 +17,20 @@ from typing import Optional, Dict, List
 from datetime import datetime, timedelta, timezone
 import jwt
 import time
+import os
+import logging
 from enum import Enum
+import redis.asyncio as redis
+from backend.core.config.settings import settings
+
+_logger = logging.getLogger(__name__)
+
+_JWT_SECRET = os.getenv("JWT_SECRET_KEY")
+if not _JWT_SECRET:
+    _logger.warning(
+        "JWT_SECRET_KEY not set! Gateway JWT auth will be unavailable. "
+        "Set JWT_SECRET_KEY in .env for production use."
+    )
 
 
 # ============================================
@@ -77,34 +90,54 @@ class HealthResponse(BaseModel):
 
 class RateLimiter:
     """
-    Simple in-memory rate limiter per API key.
-    Production: Use Redis or dedicated rate limiting service.
+    Redis-backed rate limiter per API key (Fixed Window).
+    Falls back to in-memory if Redis is not configured.
     """
     
-    def __init__(self, requests_per_minute: int = 60):
+    def __init__(self, requests_per_minute: int = 60, redis_url: Optional[str] = None):
         self.requests_per_minute = requests_per_minute
-        self.request_history: Dict[str, List[float]] = {}
-    
-    def is_allowed(self, api_key: str) -> bool:
-        """Check if API key can make a request."""
+        self.redis_url = redis_url
+        self.redis: Optional[redis.Redis] = None
+        self._local_history: Dict[str, List[float]] = {}
+        
+        if self.redis_url:
+            try:
+                self.redis = redis.from_url(self.redis_url, encoding="utf-8", decode_responses=True)
+            except Exception as e:
+                _logger.error(f"Failed to initialize Redis Rate Limiter: {e}")
+
+    async def is_allowed(self, api_key: str) -> bool:
+        """Check if API key can make a request (Async)."""
+        if self.redis:
+            try:
+                key = f"rate_limit:{api_key}"
+                # Atomic INCR
+                count = await self.redis.incr(key)
+                
+                # Set expiry on first request
+                if count == 1:
+                    await self.redis.expire(key, 60)
+                
+                return count <= self.requests_per_minute
+            except Exception as e:
+                _logger.error(f"Redis rate limit check failed: {e}. Falling back to in-memory.")
+        
+        # In-memory fallback (Same logic as before)
         current_time = time.time()
-        cutoff_time = current_time - 60  # Last 60 seconds
+        cutoff_time = current_time - 60
         
-        if api_key not in self.request_history:
-            self.request_history[api_key] = []
+        if api_key not in self._local_history:
+            self._local_history[api_key] = []
         
-        # Remove old requests
-        self.request_history[api_key] = [
-            req_time for req_time in self.request_history[api_key]
-            if req_time > cutoff_time
+        self._local_history[api_key] = [
+            t for t in self._local_history[api_key] 
+            if t > cutoff_time
         ]
         
-        # Check limit
-        if len(self.request_history[api_key]) >= self.requests_per_minute:
+        if len(self._local_history[api_key]) >= self.requests_per_minute:
             return False
-        
-        # Record this request
-        self.request_history[api_key].append(current_time)
+            
+        self._local_history[api_key].append(current_time)
         return True
 
 
@@ -115,7 +148,11 @@ class RateLimiter:
 class JWTManager:
     """JWT token management for API authentication."""
     
-    def __init__(self, secret_key: str = "your-secret-key", algorithm: str = "HS256"):
+    def __init__(self, secret_key: Optional[str] = None, algorithm: str = "HS256"):
+        if secret_key is None:
+            secret_key = _JWT_SECRET
+        if not secret_key:
+            raise ValueError("JWT secret key is required. Set JWT_SECRET_KEY in .env.")
         self.secret_key = secret_key
         self.algorithm = algorithm
     
@@ -157,12 +194,18 @@ class APIGateway:
     
     def __init__(
         self,
-        secret_key: str = "your-secret-key",
-        requests_per_minute: int = 60
+        secret_key: Optional[str] = None,
+        requests_per_minute: int = 60,
+        redis_url: Optional[str] = None
     ):
         self.app = FastAPI(title="Agentic Trader API", version="1.0.0")
         self.jwt_manager = JWTManager(secret_key)
-        self.rate_limiter = RateLimiter(requests_per_minute)
+        
+        # Use settings.REDIS_URL if not provided
+        if redis_url is None:
+            redis_url = settings.REDIS_URL
+            
+        self.rate_limiter = RateLimiter(requests_per_minute, redis_url)
         
         # Include WebSocket router
         from backend.api.websocket_endpoints import router as ws_router
@@ -237,7 +280,7 @@ class APIGateway:
             
             # Check rate limit
             api_key = token_data.get("account_id")
-            if not self.rate_limiter.is_allowed(api_key):
+            if not await self.rate_limiter.is_allowed(api_key):
                 raise HTTPException(status_code=429, detail="Rate limit exceeded")
             
             # Validate order
@@ -278,7 +321,7 @@ class APIGateway:
                 raise HTTPException(status_code=403, detail="Access denied")
             
             # Check rate limit
-            if not self.rate_limiter.is_allowed(account_id):
+            if not await self.rate_limiter.is_allowed(account_id):
                 raise HTTPException(status_code=429, detail="Rate limit exceeded")
             
             # In production: Fetch from database
@@ -335,7 +378,7 @@ class APIGateway:
 # ============================================
 
 def create_gateway(
-    secret_key: str = "your-secret-key",
+    secret_key: Optional[str] = None,
     requests_per_minute: int = 60
 ) -> FastAPI:
     """

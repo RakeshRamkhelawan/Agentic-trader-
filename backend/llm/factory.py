@@ -6,10 +6,14 @@ based on environment configuration or explicit parameters.
 """
 from typing import Optional, Dict, Any
 import os
+import logging
+
+_logger = logging.getLogger(__name__)
 
 from backend.llm.provider_interface import LLMProvider
 from backend.llm.providers.gemini import GeminiProvider
 from backend.llm.providers.ollama import OllamaProvider
+from backend.llm.providers.deepseek import DeepSeekProvider
 
 
 class LLMFactory:
@@ -19,6 +23,7 @@ class LLMFactory:
     _PROVIDERS = {
         "gemini": GeminiProvider,
         "ollama": OllamaProvider,
+        "deepseek": DeepSeekProvider,
     }
     
     # Default provider (local-first approach)
@@ -96,6 +101,52 @@ class LLMFactory:
         return list(cls._PROVIDERS.keys())
     
     @classmethod
+    def create_for_agent(
+        cls,
+        agent_role: str,
+        **kwargs
+    ) -> LLMProvider:
+        """
+        Create an LLM provider configured for a specific agent role.
+        
+        Lookup order (provider-agnostic):
+          1. LLM_AGENT_{ROLE}_PROVIDER / LLM_AGENT_{ROLE}_MODEL
+          2. LLM_PROVIDER / LLM_MODEL  (global defaults)
+          3. Factory defaults
+        
+        Args:
+            agent_role: Agent identifier (e.g. 'risk_manager', 'bull_researcher')
+            **kwargs: Additional arguments passed to provider constructor
+            
+        Examples:
+            >>> # Uses LLM_AGENT_RISK_MANAGER_PROVIDER env var
+            >>> provider = LLMFactory.create_for_agent("risk_manager")
+            
+            >>> # Falls back to LLM_PROVIDER if no agent-specific var set
+            >>> provider = LLMFactory.create_for_agent("data_scout")
+        """
+        role_key = agent_role.upper().replace("-", "_").replace(" ", "_")
+        
+        # Per-agent env vars
+        agent_provider = os.getenv(f"LLM_AGENT_{role_key}_PROVIDER")
+        agent_model = os.getenv(f"LLM_AGENT_{role_key}_MODEL")
+        
+        # Global fallbacks
+        provider_type = agent_provider or os.getenv("LLM_PROVIDER", cls._DEFAULT_PROVIDER)
+        model_name = agent_model or os.getenv("LLM_MODEL")
+        
+        # Pass model_name if resolved
+        if model_name and "model_name" not in kwargs:
+            kwargs["model_name"] = model_name
+        
+        _logger.info(
+            f"LLM routing: agent={agent_role} -> "
+            f"provider={provider_type}, model={kwargs.get('model_name', 'default')}"
+        )
+        
+        return cls.create(provider_type=provider_type, **kwargs)
+    
+    @classmethod
     def register_provider(cls, name: str, provider_class: type[LLMProvider]) -> None:
         """
         Register a new provider type.
@@ -122,7 +173,7 @@ class LLMFactory:
         cls._PROVIDERS[name.lower().strip()] = provider_class
 
 
-# Convenience function for simpler usage
+# Convenience functions
 def create_llm_provider(
     provider_type: Optional[str] = None,
     **kwargs
@@ -133,10 +184,29 @@ def create_llm_provider(
     This is a simpler alternative to using LLMFactory.create() directly.
     
     Args:
-        provider_type: Type of provider ('gemini', 'ollama')
+        provider_type: Type of provider ('gemini', 'ollama', 'deepseek')
         **kwargs: Additional arguments for provider
     
     Returns:
         LLMProvider instance
     """
     return LLMFactory.create(provider_type=provider_type, **kwargs)
+
+
+def create_agent_llm(agent_role: str, **kwargs) -> LLMProvider:
+    """
+    Create an LLM provider for a specific agent role.
+    
+    Reads per-agent config from env vars:
+      LLM_AGENT_{ROLE}_PROVIDER, LLM_AGENT_{ROLE}_MODEL
+    Falls back to LLM_PROVIDER / LLM_MODEL globals.
+    
+    Args:
+        agent_role: Agent identifier (e.g. 'risk_manager')
+        **kwargs: Additional provider arguments
+    
+    Returns:
+        LLMProvider instance configured for the agent
+    """
+    return LLMFactory.create_for_agent(agent_role=agent_role, **kwargs)
+

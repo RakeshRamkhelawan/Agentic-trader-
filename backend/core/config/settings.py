@@ -36,6 +36,14 @@ class Settings(BaseSettings):
     
     # --- SECURITY (Non-sensitive defaults) ---
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    ALLOWED_ORIGINS: List[str] = Field(
+        default=["http://localhost:3000", "http://127.0.0.1:3000"],
+        description="CORS allowed origins. Override via ALLOWED_ORIGINS env var (JSON list)."
+    )
+    DOCS_ENABLED: bool = Field(
+        default=True,
+        description="Enable /docs and /redoc. Set DOCS_ENABLED=false in production."
+    )
     # Pydantic will load REVOLUT_API_KEY from .env
     REVOLUT_API_KEY_ENV: Optional[str] = Field(None, validation_alias="REVOLUT_API_KEY")
     REVOLUT_PRIVATE_KEY_PATH: str = "revolut_private.pem"
@@ -115,7 +123,8 @@ class Settings(BaseSettings):
             value = self._vault_manager.get_secret("auth", "jwt_secret")
             if value:
                 return value
-        return self._jwt_secret_key or "dev-secret-key-change-in-production"
+        # No fallback default - must be explicitly set in .env or Vault
+        return self._jwt_secret_key or ""
     
     @property
     def DATABASE_URL(self) -> str:

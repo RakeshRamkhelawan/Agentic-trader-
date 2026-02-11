@@ -18,14 +18,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-class LLMProvider(ABC):
-    @abstractmethod
-    async def generate_text(self, prompt: str, system_instruction: Optional[str] = None, **kwargs) -> str:
-        pass
-        
-    @abstractmethod
-    async def generate_json(self, prompt: str, schema: Optional[Dict] = None, **kwargs) -> Dict[str, Any]:
-        pass
+from ..provider_interface import LLMProvider
 
 class MockProvider(LLMProvider):
     async def generate_text(self, prompt: str, system_instruction: Optional[str] = None, **kwargs) -> str:

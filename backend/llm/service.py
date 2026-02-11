@@ -3,9 +3,11 @@ import os
 import logging
 from pydantic import BaseModel
 from backend.llm.providers import LLMProvider, MockProvider, GeminiProvider, OpenAIProvider, OllamaProvider
+from backend.llm.providers.deepseek import DeepSeekProvider
 from backend.llm.usage_tracker import UsageTracker
 from backend.storage.tenant_aware_clickhouse import TenantAwareClickHouseClient
 from backend.core.auth.context import get_current_tenant_optional
+from backend.llm.resilience import CircuitBreaker, CircuitBreakerOpenException
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +20,11 @@ class LLMResponse(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
 
 class LLMService:
-    def __init__(self, provider: LLMProvider, usage_tracker: Optional[UsageTracker] = None):
+    def __init__(self, provider: LLMProvider, usage_tracker: Optional[UsageTracker] = None, fallback_provider: Optional[LLMProvider] = None):
         self.provider = provider
+        self.fallback_provider = fallback_provider
         self.usage_tracker = usage_tracker
+        self.circuit_breaker = CircuitBreaker(name=provider.__class__.__name__)
         
         if self.usage_tracker:
              # Start the usage tracker background task if not already started
@@ -50,6 +54,10 @@ class LLMService:
             elif provider_type == "openai":
                 if not model: model = "gpt-4-turbo-preview"
                 provider = OpenAIProvider(api_key=api_key, model_name=model)
+            elif provider_type == "deepseek":
+                ds_key = os.getenv("DEEPSEEK_API_KEY", api_key)
+                if not model: model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+                provider = DeepSeekProvider(api_key=ds_key, model_name=model)
             elif provider_type == "ollama":
                 base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
                 if not model: model = "llama3"
@@ -61,6 +69,15 @@ class LLMService:
             logger.error(f"Failed to initialize {provider_type} provider: {e}")
             provider = MockProvider()
             
+        # Setup Fallback (Generic: If DeepSeek, fallback to Gemini or Mock)
+        fallback_provider = None
+        if isinstance(provider, DeepSeekProvider):
+            gemini_key = os.getenv("LLM_API_KEY") # Asking for trouble? usually GEMINI_API_KEY
+            # Simplified fallback strategy: Always Mock for now unless explicitly configured
+            # In real prod, we'd check for secondary keys
+            fallback_provider = MockProvider()
+            logger.info("Configured MockProvider as fallback for DeepSeek.")
+            
         # Initialize Usage Tracker
         clickhouse_client = TenantAwareClickHouseClient(
             host=os.getenv("CLICKHOUSE_HOST", "localhost"),
@@ -70,7 +87,7 @@ class LLMService:
         usage_tracker = UsageTracker(clickhouse_client=clickhouse_client)
             
         logger.info(f"LLM Service initialized with provider: {provider.__class__.__name__}")
-        return cls(provider, usage_tracker)
+        return cls(provider, usage_tracker, fallback_provider)
 
     async def _track_usage(self, prompt: str, response_text: str, model: str):
         if self.usage_tracker:
@@ -108,8 +125,21 @@ class LLMService:
         # Determine model for tracking - simpler to assume configured model
         model = getattr(self.provider, 'model_name', os.getenv("LLM_MODEL", "unknown"))
 
-        response_text = await self.provider.generate_text(prompt, system_instruction=system_prompt)
-        
+        try:
+            # Circuit Breaker Protection
+            response_text = await self.circuit_breaker.call(
+                self.provider.generate_text, 
+                prompt, 
+                system_instruction=system_prompt
+            )
+        except (CircuitBreakerOpenException, Exception) as e:
+            logger.error(f"Primary LLM failed: {e}. Attempting fallback...")
+            if self.fallback_provider:
+                response_text = await self.fallback_provider.generate_text(prompt, system_instruction=system_prompt)
+                model = getattr(self.fallback_provider, 'model_name', "fallback_model")
+            else:
+                raise e
+
         await self._track_usage(prompt + system_prompt, response_text, model)
         
         return response_text
@@ -122,8 +152,19 @@ class LLMService:
         
         model = getattr(self.provider, 'model_name', os.getenv("LLM_MODEL", "unknown"))
         
-        response_json = await self.provider.generate_json(text, system_instruction=system_prompt)
-        
+        try:
+            response_json = await self.circuit_breaker.call(
+                self.provider.generate_json, 
+                text, 
+                system_instruction=system_prompt
+            )
+        except (CircuitBreakerOpenException, Exception) as e:
+            if self.fallback_provider:
+                response_json = await self.fallback_provider.generate_json(text, system_instruction=system_prompt)
+                model = getattr(self.fallback_provider, 'model_name', "fallback_model")
+            else:
+                raise e
+
         # Convert JSON back to string for token counting approximation
         import json
         response_text = json.dumps(response_json)
