@@ -1,4 +1,4 @@
-name: Tests & Security
+name: Tests & Quality
 
 on:
   push:
@@ -7,110 +7,152 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  build_and_test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.13']
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    
-    - name: Cache pip packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('requirements/base-lock.txt', 'requirements/test-lock.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    
-    - name: Install base dependencies (prod-like)
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements/base.txt
-
-    - name: Install test dependencies
-      run: |
-        pip install -r requirements/test.txt
-    
-    - name: Run unit tests
-      run: |
-        python -m pytest backend/tests/unit/ -v --cov=backend --cov-report=xml --tb=short
-    
-    - name: Run integration tests (requires docker services to be up)
-      # Temporarily skip integration tests requiring external services for initial CI pass
-      # until we have full docker-compose setup in CI.
-      run: |
-        echo "Skipping full integration tests for now, focus on unit tests."
-        # python -m pytest backend/tests/integration/ -v --cov=backend --cov-report=xml --tb=short
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
-
-  security:
+  quality:
+    name: Code Quality
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.13'
-    
-    - name: Install security tools and dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements/dev-lock.txt # semgrep, mcp zijn hierin
-        pip install bandit safety
-    
-    - name: Run GitGuardian Security Checks
-      uses: GitGuardian/ggshield-action@v2
-      env:
-        GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/dev-lock.txt
+          
+      - name: Run Black (Formatting)
+        run: black --check backend/
+        
+      - name: Run Isort (Imports)
+        run: isort --check-only backend/
+        
+      - name: Run Ruff (Linting)
+        run: ruff check backend/
 
-    - name: Run Bandit (code security check)
-      run: bandit -r backend/ -f json -o bandit-report.json || true
-      continue-on-error: true
-    
-    - name: Run Safety (dependency check)
-      run: safety check --json -r requirements/base-lock.txt || true # Check prod dependencies
-      continue-on-error: true
+      - name: Run MyPy (Type Checking)
+        run: mypy backend/ --strict
 
-  lint:
+  backend-tests:
+    name: Backend Tests
+    needs: quality
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: trader
+          POSTGRES_PASSWORD: trading_secure
+          POSTGRES_DB: trading_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      clickhouse:
+        image: clickhouse/clickhouse-server:24.3
+        ports:
+          - 8123:8123
+          - 9000:9000
+        options: >-
+          --ulimit nofile=262144:262144
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/base.txt
+          pip install -r requirements/test.txt
+          
+      - name: Wait for ClickHouse
+        run: |
+          # Simple wait loop for ClickHouse http port
+          timeout 60s bash -c 'until curl -s http://localhost:8123/ping > /dev/null; do sleep 1; done'
+
+      - name: Run Unit Tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://trader:trading_secure@localhost:5432/trading_db
+          REDIS_URL: redis://localhost:6379/0
+          CLICKHOUSE_HOST: localhost
+          CLICKHOUSE_PORT: 8123
+          JWT_SECRET_KEY: test_secret_key
+        run: |
+          python -m pytest backend/tests/unit/ -v --cov=backend --cov-report=xml
+          
+      - name: Run Integration Tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://trader:trading_secure@localhost:5432/trading_db
+          REDIS_URL: redis://localhost:6379/0
+          CLICKHOUSE_HOST: localhost
+          CLICKHOUSE_PORT: 8123
+          JWT_SECRET_KEY: test_secret_key
+          LLM_PROVIDER: mock
+        run: |
+          python -m pytest backend/tests/integration/ -v
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  frontend-build:
+    name: Frontend Build
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.13'
-    
-    - name: Install linting tools and dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements/dev-lock.txt # mypy, black, isort, ruff zijn hierin
-    
-    - name: Run MyPy type checking
-      run: mypy backend/ --strict || true
-      continue-on-error: true
-    
-    - name: Check code formatting
-      run: black --check backend/ || true
-      continue-on-error: true
-    
-    - name: Check imports order (isort)
-      run: isort --check-only backend/ || true
-      continue-on-error: true
-    
-    - name: Run Ruff linter
-      run: ruff check backend/ || true
-      continue-on-error: true
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+          
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm ci
+        
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+  docker-build:
+    name: Docker Build Check
+    needs: [backend-tests, frontend-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        
+      - name: Build Backend Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: infrastructure/docker/Dockerfile
+          push: false
+          tags: agentic-trader:test

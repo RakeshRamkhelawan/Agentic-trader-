@@ -2,6 +2,8 @@
 API Dependencies.
 Shares common logic like Tenant ID extraction and Database Session setup with RLS context.
 """
+import os
+
 from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import AsyncGenerator, Dict, Any, Optional
@@ -19,8 +21,8 @@ except ImportError:
     jwt = None
     JWTError = Exception
 
-# Secret key (should match auth_api.py and main.py)
-SECRET_KEY = "dev-secret-key"
+# Secret key from environment (never hardcoded in production)
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "")
 
 
 async def get_current_tenant_id(request: Request) -> str:
