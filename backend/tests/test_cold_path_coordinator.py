@@ -38,6 +38,7 @@ class CoordinatorDecision:
     reasoning: str  # Why this decision
     source: str  # Which agents contributed
     timestamp: float  # When decision was made
+    quantity: float = 0.0
 
 
 class TestColdPathCoordinatorBasics:
@@ -239,7 +240,7 @@ class TestColdPathConfigUpdates:
             coordinator.write_config(decision)
             
             # Read back from FastConfig
-            config = coordinator.config_manager.read_fast()
+            config, _ = coordinator.config_manager.read_fast()
             
             assert config['action'] == 1
             assert pytest.approx(config['confidence'], abs=0.01) == 0.85
@@ -309,7 +310,7 @@ class TestColdPathConfigUpdates:
             coordinator.write_config(None)  # Should use last_best_decision
             
             # Verify best decision was written
-            config = coordinator.config_manager.read_fast()
+            config, _ = coordinator.config_manager.read_fast()
             assert config['confidence'] == pytest.approx(0.8, abs=0.01)
     
     def test_version_tracking(self):
@@ -528,7 +529,7 @@ class TestColdPathThreadSafety:
                 t.join()
             
             # Final config should be valid
-            final_config = coordinator.config_manager.read_fast()
+            final_config, _ = coordinator.config_manager.read_fast()
             assert final_config['action'] in [0, 1, 2]
             assert 0 <= final_config['confidence'] <= 1
     

@@ -1,0 +1,88 @@
+# Global configuration
+global:
+  namespace: agentic-platform-prod
+  domain: yourdomain.com
+  imageRegistry: docker.io
+
+# Agent Orchestrator configuration
+agentOrchestrator:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: agentic-trader
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  service:
+    type: ClusterIP
+    port: 8000
+    metricsPort: 8001
+
+# Dashboard API configuration
+dashboardApi:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: agentic-trader
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  service:
+    type: ClusterIP
+    port: 8000
+
+# Redis configuration (Bitnami subchart)
+redis:
+  enabled: false
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+
+# ClickHouse configuration (Altinity subchart)
+clickhouse:
+  enabled: false
+  persistence:
+    enabled: true
+    size: 50Gi
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+  hosts:
+    - host: api.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: dashboard-api
+          port: 8000
+    - host: yourdomain.com
+      paths:
+        - path: /metrics
+          pathType: Prefix
+          service: agent-orchestrator
+          port: 8001
+  tls:
+    - secretName: agentic-platform-tls
+      hosts:
+        - api.yourdomain.com
+        - yourdomain.com

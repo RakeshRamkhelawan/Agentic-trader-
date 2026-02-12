@@ -8,6 +8,9 @@ if TYPE_CHECKING:
     from backend.llm.provider_interface import LLMProvider
     from backend.events.event_bus import EventBus
 
+from backend.governance.agent_gatekeeper import AgentRole
+from backend.core.security.prompt_guard import PromptGuard
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -25,11 +28,13 @@ class BaseAgent(ABC):
         self,
         agent_name: str,
         llm_provider: Optional["LLMProvider"] = None,
-        event_bus: Optional["EventBus"] = None
+        event_bus: Optional["EventBus"] = None,
+        agent_role: AgentRole = AgentRole.UNTRUSTED
     ):
         self.agent_name = agent_name
         self.llm_provider = llm_provider
         self.event_bus = event_bus
+        self.agent_role = agent_role
         
         self.state: Dict[str, Any] = {}
         self.reasoning_history: List[Dict[str, Any]] = []
@@ -59,7 +64,9 @@ class BaseAgent(ABC):
             return "LLM provider not available."
         
         try:
-            return await self.llm_provider.generate_text(prompt, system_prompt)
+            # Sanitize user prompt to prevent instruction injection
+            safe_prompt = PromptGuard.sanitize_input(prompt)
+            return await self.llm_provider.generate_text(safe_prompt, system_prompt)
         except Exception as e:
             self.logger.error(f"LLM error: {e}")
             return f"LLM error: {str(e)}"

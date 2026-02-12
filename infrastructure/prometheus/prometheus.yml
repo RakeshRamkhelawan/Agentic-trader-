@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s # Hoe vaak Prometheus metrics ophaalt
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090'] # Prometheus monitort zichzelf
+  
+  - job_name: 'cognitive-orchestrator'
+    static_configs:
+      - targets: ['metrics-server:8001'] # Haalt metrics op van onze metrics-server

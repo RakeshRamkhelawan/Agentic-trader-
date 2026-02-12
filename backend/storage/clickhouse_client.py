@@ -7,6 +7,9 @@ Provides async connection pooling and query execution for ClickHouse.
 import os
 from typing import Any, Dict, List, Optional
 import clickhouse_connect
+import sqlparse
+from sqlparse import sql, tokens
+from backend.core.auth.context import get_current_tenant_optional
 
 
 class ClickHouseClient:
@@ -79,7 +82,15 @@ class ClickHouseClient:
         """
         if not self.client:
             raise RuntimeError("Not connected. Call connect() first.")
-        
+            
+        tenant_id = get_current_tenant_optional()
+        if tenant_id:
+            if parameters is None:
+                parameters = {}
+            # Auto-inject tenant_id parameter for binding
+            if "tenant_id" not in parameters:
+                parameters["tenant_id"] = tenant_id
+                
         return await self.client.query(query, parameters=parameters)
     
     async def insert(
@@ -98,7 +109,14 @@ class ClickHouseClient:
         """
         if not self.client:
             raise RuntimeError("Not connected. Call connect() first.")
-        
+            
+        # Automatic Tenant Injection
+        tenant_id = get_current_tenant_optional()
+        if tenant_id:
+            for item in data:
+                if "tenant_id" not in item:
+                    item["tenant_id"] = tenant_id
+
         await self.client.insert(table, data, column_names=column_names)
     
     async def create_table(self, schema: str) -> None:

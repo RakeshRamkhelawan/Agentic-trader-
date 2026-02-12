@@ -1,0 +1,24 @@
+features:
+  # --- MOMENTUM ---
+  - name: rsi_14
+    description: Relative Strength Index (14 periods)
+    category: momentum
+    window_seconds: 60
+    parameters:
+      period: 14
+
+  # --- TREND ---
+  - name: sma_50
+    description: Simple Moving Average (50 periods)
+    category: trend
+    window_seconds: 300
+    parameters:
+      period: 50
+
+  # --- VOLATILITY ---
+  - name: atr_14
+    description: Average True Range (14 periods)
+    category: volatility
+    window_seconds: 60
+    parameters:
+      period: 14

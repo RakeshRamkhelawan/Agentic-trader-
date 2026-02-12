@@ -28,7 +28,8 @@ class TestConfigSerializer:
         config = {
             'action': 1,
             'confidence': 0.85,
-            'exploration_rate': 0.05
+            'exploration_rate': 0.05,
+            'quantity': 0.5
         }
         
         serializer = ConfigSerializer()
@@ -42,40 +43,44 @@ class TestConfigSerializer:
         config = {
             'action': 2,
             'confidence': 0.72,
-            'exploration_rate': 0.08
+            'exploration_rate': 0.08,
+            'quantity': 10.5
         }
         
         serializer = ConfigSerializer()
         binary = serializer.serialize(config)
-        restored = serializer.deserialize(binary)
+        
+        restored, version = serializer.deserialize(binary)
         
         assert restored['action'] == 2
         assert abs(restored['confidence'] - 0.72) < 0.01
         assert abs(restored['exploration_rate'] - 0.08) < 0.01
+        assert abs(restored['quantity'] - 10.5) < 0.01
     
     def test_serialization_preserves_types(self):
         """Serialization should preserve integer and float types."""
-        config = {'action': 0, 'confidence': 0.5, 'exploration_rate': 0.1}
+        config = {'action': 0, 'confidence': 0.5, 'exploration_rate': 0.1, 'quantity': 1.0}
         serializer = ConfigSerializer()
         binary = serializer.serialize(config)
-        restored = serializer.deserialize(binary)
+        restored, version = serializer.deserialize(binary)
         
         assert isinstance(restored['action'], int)
         assert isinstance(restored['confidence'], float)
         assert isinstance(restored['exploration_rate'], float)
+        assert isinstance(restored['quantity'], float)
     
     def test_serialization_handles_edge_cases(self):
         """Should handle edge values (0, 1, boundary values)."""
         edge_cases = [
-            {'action': 0, 'confidence': 0.0, 'exploration_rate': 0.0},
-            {'action': 2, 'confidence': 1.0, 'exploration_rate': 1.0},
-            {'action': 1, 'confidence': 0.5, 'exploration_rate': 0.5}
+            {'action': 0, 'confidence': 0.0, 'exploration_rate': 0.0, 'quantity': 0.0},
+            {'action': 2, 'confidence': 1.0, 'exploration_rate': 1.0, 'quantity': 1000.0},
+            {'action': 1, 'confidence': 0.5, 'exploration_rate': 0.5, 'quantity': 0.0001}
         ]
         
         serializer = ConfigSerializer()
         for config in edge_cases:
             binary = serializer.serialize(config)
-            restored = serializer.deserialize(binary)
+            restored, version = serializer.deserialize(binary)
             assert restored['action'] == config['action']
             assert abs(restored['confidence'] - config['confidence']) < 0.01
 
@@ -106,7 +111,8 @@ class TestFastConfigManager:
         config = {
             'action': 1,
             'confidence': 0.9,
-            'exploration_rate': 0.05
+            'exploration_rate': 0.05,
+            'quantity': 1.0
         }
         
         manager = FastConfigManager(temp_config_file)
@@ -121,14 +127,15 @@ class TestFastConfigManager:
         config = {
             'action': 2,
             'confidence': 0.75,
-            'exploration_rate': 0.1
+            'exploration_rate': 0.1,
+            'quantity': 0.5
         }
         
         manager = FastConfigManager(temp_config_file)
         manager.write_atomic(config)
         
         # Read should be fast
-        read_config = manager.read_fast()
+        read_config, version = manager.read_fast()
         assert read_config['action'] == 2
         assert abs(read_config['confidence'] - 0.75) < 0.01
     
@@ -137,16 +144,17 @@ class TestFastConfigManager:
         manager = FastConfigManager(temp_config_file)
         
         configs = [
-            {'action': 1, 'confidence': 0.8, 'exploration_rate': 0.05},
-            {'action': 2, 'confidence': 0.85, 'exploration_rate': 0.06},
-            {'action': 0, 'confidence': 0.9, 'exploration_rate': 0.04}
+            {'action': 1, 'confidence': 0.8, 'exploration_rate': 0.05, 'quantity': 0.1},
+            {'action': 2, 'confidence': 0.85, 'exploration_rate': 0.06, 'quantity': 0.2},
+            {'action': 0, 'confidence': 0.9, 'exploration_rate': 0.04, 'quantity': 0.0}
         ]
         
         for config in configs:
             manager.write_atomic(config)
         
         # Last config should be readable
-        final = manager.read_fast()
+        # Last config should be readable
+        final, version = manager.read_fast()
         assert final['action'] == 0
         assert abs(final['confidence'] - 0.9) < 0.01
     
@@ -155,12 +163,14 @@ class TestFastConfigManager:
         manager = FastConfigManager(temp_config_file)
         
         # Write initial config
-        initial = {'action': 1, 'confidence': 0.8, 'exploration_rate': 0.05}
+        # Write initial config
+        initial = {'action': 1, 'confidence': 0.8, 'exploration_rate': 0.05, 'quantity': 0.1}
         manager.write_atomic(initial)
         
         # Reader always sees consistent state
+        # Reader always sees consistent state
         for _ in range(5):
-            read_config = manager.read_fast()
+            read_config, version = manager.read_fast()
             # Should see valid config, never partial
             assert 'action' in read_config
             assert 'confidence' in read_config
@@ -181,14 +191,15 @@ class TestFastConfigHotPath:
         fast_config_manager.write_atomic({
             'action': 1,
             'confidence': 0.9,
-            'exploration_rate': 0.05
+            'exploration_rate': 0.05,
+            'quantity': 1.0
         })
         
         # Measure read latency
         times = []
         for _ in range(100):
             start = time.perf_counter()
-            config = fast_config_manager.read_fast()
+            config, version = fast_config_manager.read_fast()
             elapsed = time.perf_counter() - start
             times.append(elapsed)
         
@@ -206,14 +217,16 @@ class TestFastConfigHotPath:
         manager.write_atomic({
             'action': 1,
             'confidence': 0.8,
-            'exploration_rate': 0.05
+            'exploration_rate': 0.05,
+            'quantity': 0.1
         })
         
         # Delete file to simulate error
         os.unlink(str(config_file))
         
         # Should return fallback
-        config = manager.read_fast()
+        # Should return fallback
+        config, version = manager.read_fast()
         assert config is not None
         assert 'action' in config
 
@@ -233,7 +246,8 @@ class TestFastConfigColdPath:
         config = {
             'action': 1,
             'confidence': 0.85,
-            'exploration_rate': 0.05
+            'exploration_rate': 0.05,
+            'quantity': 0.5
         }
         
         start = time.time()
@@ -249,14 +263,16 @@ class TestFastConfigColdPath:
         fast_config_manager.write_atomic({
             'action': 1,
             'confidence': 0.8,
-            'exploration_rate': 0.05
+            'exploration_rate': 0.05,
+            'quantity': 0.1
         })
         v2 = fast_config_manager.get_version()
         
         fast_config_manager.write_atomic({
             'action': 2,
             'confidence': 0.85,
-            'exploration_rate': 0.06
+            'exploration_rate': 0.06,
+            'quantity': 0.2
         })
         v3 = fast_config_manager.get_version()
         
@@ -279,7 +295,8 @@ class TestConfigSchemaValidation:
             ConfigValidator.validate({
                 'action': 'buy',
                 'confidence': 0.9,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
         
         # Wrong type for confidence (should be float)
@@ -287,7 +304,8 @@ class TestConfigSchemaValidation:
             ConfigValidator.validate({
                 'action': 1,
                 'confidence': 'high',
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
     
     def test_field_value_ranges(self):
@@ -297,7 +315,8 @@ class TestConfigSchemaValidation:
             ConfigValidator.validate({
                 'action': -1,
                 'confidence': 0.9,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
         
         # confidence should be 0-1
@@ -305,7 +324,8 @@ class TestConfigSchemaValidation:
             ConfigValidator.validate({
                 'action': 1,
                 'confidence': 1.5,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
         
         # exploration_rate should be 0-1
@@ -313,15 +333,16 @@ class TestConfigSchemaValidation:
             ConfigValidator.validate({
                 'action': 1,
                 'confidence': 0.9,
-                'exploration_rate': -0.1
+                'exploration_rate': -0.1,
+                'quantity': 0.1
             })
     
     def test_valid_config_passes(self):
         """Valid configs should pass validation."""
         valid_configs = [
-            {'action': 0, 'confidence': 0.0, 'exploration_rate': 0.0},
-            {'action': 1, 'confidence': 0.5, 'exploration_rate': 0.5},
-            {'action': 2, 'confidence': 1.0, 'exploration_rate': 1.0}
+            {'action': 0, 'confidence': 0.0, 'exploration_rate': 0.0, 'quantity': 0.0},
+            {'action': 1, 'confidence': 0.5, 'exploration_rate': 0.5, 'quantity': 0.5},
+            {'action': 2, 'confidence': 1.0, 'exploration_rate': 1.0, 'quantity': 1.0}
         ]
         
         for config in valid_configs:
@@ -340,12 +361,14 @@ class TestFastConfigIntegration:
         cold_config = {
             'action': 2,
             'confidence': 0.88,
-            'exploration_rate': 0.07
+            'exploration_rate': 0.07,
+            'quantity': 0.5
         }
         manager.write_atomic(cold_config)
         
         # Hot path reads immediately
-        hot_config = manager.read_fast()
+        # Hot path reads immediately
+        hot_config, version = manager.read_fast()
         assert hot_config['action'] == 2
         assert abs(hot_config['confidence'] - 0.88) < 0.01
     
@@ -365,11 +388,11 @@ class TestFastConfigIntegration:
         config_file = tmp_path / "config.bin"
         manager = FastConfigManager(str(config_file))
         
-        config1 = {'action': 1, 'confidence': 0.8, 'exploration_rate': 0.05}
+        config1 = {'action': 1, 'confidence': 0.8, 'exploration_rate': 0.05, 'quantity': 0.1}
         manager.write_atomic(config1)
         version1 = manager.get_version()
         
-        config2 = {'action': 2, 'confidence': 0.85, 'exploration_rate': 0.06}
+        config2 = {'action': 2, 'confidence': 0.85, 'exploration_rate': 0.06, 'quantity': 0.2}
         manager.write_atomic(config2)
         version2 = manager.get_version()
         
@@ -384,7 +407,8 @@ class TestFastConfigPerformance:
         config = {
             'action': 1,
             'confidence': 0.85,
-            'exploration_rate': 0.05
+            'exploration_rate': 0.05,
+            'quantity': 0.5
         }
         serializer = ConfigSerializer()
         binary = serializer.serialize(config)
@@ -396,15 +420,15 @@ class TestFastConfigPerformance:
     def test_binary_round_trip_precision(self):
         """Binary serialization should preserve precision."""
         configs = [
-            {'action': 0, 'confidence': 0.0, 'exploration_rate': 0.0},
-            {'action': 1, 'confidence': 0.333, 'exploration_rate': 0.667},
-            {'action': 2, 'confidence': 1.0, 'exploration_rate': 1.0}
+            {'action': 0, 'confidence': 0.0, 'exploration_rate': 0.0, 'quantity': 0.0},
+            {'action': 1, 'confidence': 0.333, 'exploration_rate': 0.667, 'quantity': 0.333},
+            {'action': 2, 'confidence': 1.0, 'exploration_rate': 1.0, 'quantity': 100.0}
         ]
         
         serializer = ConfigSerializer()
         for original in configs:
             binary = serializer.serialize(original)
-            restored = serializer.deserialize(binary)
+            restored, version = serializer.deserialize(binary)
             
             # Float precision should be within 1%
             assert abs(restored['confidence'] - original['confidence']) < 0.001
