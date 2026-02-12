@@ -30,9 +30,12 @@ class RiskGuardianAgent:
             risk_settings = user_preferences.get("risk_settings", {})
             profile = RiskProfile(**risk_settings)
             
-            # KILL SWITCH CHECK
+            # KILL SWITCH CHECK (Global & Profile)
+            if self.settings_service and self.settings_service.KILL_SWITCH:
+                 return {"allowed": False, "reason": "GLOBAL KILL SWITCH ACTIVE", "requires_approval": False}
+
             if profile.kill_switch_enabled:
-                return {"allowed": False, "reason": "KILL SWITCH ENABLED", "requires_approval": False}
+                return {"allowed": False, "reason": "PROFILE KILL SWITCH ENABLED", "requires_approval": False}
 
             # 2. Manual Mode -> Always Block, Recommend Approval
             if autonomy == AutonomyStatus.MANUAL.value:
@@ -99,7 +102,14 @@ class RiskGuardianAgent:
                 source="risk_guardian_v1",
                 target=message.source,
                 type="ORDER_VALIDATION_RESULT",
-                payload={"original_msg_id": message.id, "result": result}
+                payload={
+                    "original_msg_id": message.id, 
+                    "result": result,
+                    "order": order, # Full order details for execution
+                    "symbol": order.get("symbol"),
+                    "side": order.get("side"),
+                    "price": order.get("price")
+                }
             )
             if self.message_bus:
                 await self.message_bus(response)

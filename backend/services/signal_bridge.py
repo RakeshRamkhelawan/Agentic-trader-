@@ -80,6 +80,8 @@ class SignalBridge:
     def __init__(self):
         # Reference to WebSocket manager (set externally)
         self.ws_manager = None
+        # Reference to Redis Publisher (set externally for backend services)
+        self.redis_publisher = None
         # Signal history for late-joining clients
         self.signal_history: List[TradingSignal] = []
         self.max_history_size = 50
@@ -90,6 +92,11 @@ class SignalBridge:
         """Set the WebSocket manager for broadcasting."""
         self.ws_manager = ws_manager
         logger.info("SignalBridge connected to WebSocket manager")
+
+    def set_redis_publisher(self, redis_publisher) -> None:
+        """Set the Redis Publisher for backend broadcasting."""
+        self.redis_publisher = redis_publisher
+        logger.info("SignalBridge connected to Redis Publisher")
     
     async def emit_signal(self, signal: TradingSignal) -> int:
         """
@@ -103,30 +110,51 @@ class SignalBridge:
             if len(self.signal_history) > self.max_history_size:
                 self.signal_history.pop(0)
         
-        if not self.ws_manager:
-            logger.warning("SignalBridge: No WebSocket manager connected")
-            return 0
-        
         signal_data = signal.to_dict()
-        
-        # Broadcast to general signals channel
-        sent_count = await self.ws_manager.broadcast_to_channel(
-            channel="signals",
-            message=signal_data,
-            message_type="signal"
-        )
-        
-        # Also broadcast to agent-specific channel
-        await self.ws_manager.broadcast_to_channel(
-            channel=f"signals.{signal.agent_id}",
-            message=signal_data,
-            message_type="signal"
-        )
-        
-        logger.info(
-            f"Signal emitted: {signal.signal_type.value} {signal.symbol} "
-            f"from {signal.agent_name} (sent to {sent_count} clients)"
-        )
+        sent_count = 0
+
+        # 1. Direct WebSocket Broadcast (if in API process)
+        if self.ws_manager:
+            # Broadcast to general signals channel
+            c1 = await self.ws_manager.broadcast_to_channel(
+                channel="signals",
+                message=signal_data,
+                message_type="signal"
+            )
+            
+            # Also broadcast to agent-specific channel
+            await self.ws_manager.broadcast_to_channel(
+                channel=f"signals.{signal.agent_id}",
+                message=signal_data,
+                message_type="signal"
+            )
+            sent_count = c1
+            logger.info(
+                f"Signal emitted to WS: {signal.signal_type.value} {signal.symbol} "
+                f"from {signal.agent_name} (sent to {sent_count} clients)"
+            )
+
+        # 2. Redis Publish (if in Orchestrator process)
+        if self.redis_publisher:
+            # Wrap as an event for the market stream
+            # We need to ensure RedisSubscriber can parse this.
+            # RedisSubscriber expects "event_type".
+            # We'll stick to a compatible structure.
+            event = {
+                "event_type": "SIGNAL",
+                "symbol": signal.symbol,
+                "data": signal_data,
+                "timestamp": datetime.utcnow().timestamp()
+            }
+            try:
+                await self.redis_publisher.publish(event)
+                logger.debug(f"Signal published to Redis: {signal.signal_id}")
+            except Exception as e:
+                logger.error(f"Failed to publish signal to Redis: {e}")
+
+        if not self.ws_manager and not self.redis_publisher:
+            logger.warning("SignalBridge: No output channel connected (WS or Redis)")
+            return 0
         
         return sent_count
     

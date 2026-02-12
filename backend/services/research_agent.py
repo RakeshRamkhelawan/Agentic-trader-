@@ -56,9 +56,62 @@ class ResearchAgent:
         self.logger.info(f"Research Agent received message: {message.type} from {message.source}")
         if message.type == "TIMER_TICK_1MIN":
             await self.run_cycle()
+        elif message.type == "TICK_DATA":
+            await self.process_tick(message.payload)
         elif message.type == "SIGNAL" and message.payload.get("signal") == "RUN_RESEARCH":
             await self.run_cycle()
 
+    async def process_tick(self, tick_data: Dict[str, Any]):
+        """MVP: Track price and generate signal on significant movement."""
+        symbol = tick_data.get("symbol", "UNKNOWN")
+        price = tick_data.get("price") or tick_data.get("bid")
+
+        if not price:
+            return
+
+        price = float(price)
+
+        # Track prices per symbol (rolling window)
+        if not hasattr(self, '_price_history'):
+            self._price_history: Dict[str, List[float]] = {}
+
+        history = self._price_history.setdefault(symbol, [])
+        history.append(price)
+
+        # Keep max 100 prices
+        if len(history) > 100:
+            history.pop(0)
+
+        # MVP Signal: Compare current price vs rolling average
+        if len(history) >= 5:
+            avg = sum(history) / len(history)
+            deviation = (price - avg) / avg if avg > 0 else 0.0
+
+            if deviation > 0.02:  # >2% above average
+                await self._emit_signal(symbol, price, "BULLISH", deviation)
+            elif deviation < -0.02:  # >2% below average
+                await self._emit_signal(symbol, price, "BEARISH", deviation)
+
+    async def _emit_signal(self, symbol: str, price: float, direction: str, deviation: float):
+        """Emit MVP momentum signal to orchestrator."""
+        self.logger.info(f"MVP SIGNAL: {direction} {symbol} @ {price} (dev: {deviation:.2%})")
+        msg = AgentMessage(
+            source="research_v1",
+            target="orchestrator_v1",
+            type="SIGNAL",
+            payload={
+                "signal": f"{direction}_MOMENTUM",
+                "symbol": symbol,
+                "price": price,
+                "deviation": round(deviation, 4),
+                "strategy": "mean_reversion_mvp"
+            }
+        )
+        if self.message_bus:
+            if asyncio.iscoroutinefunction(self.message_bus):
+                await self.message_bus(msg)
+            else:
+                self.message_bus(msg)
 
     async def run_cycle(self):
         """One full scrape cycle."""

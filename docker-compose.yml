@@ -9,7 +9,7 @@ services:
     container_name: redpanda
     command:
       - redpanda start
-      - --smp 1 # Beperk CPU gebruik voor dev
+      - --smp 1
       - --memory 1G
       - --reserve-memory 0M
       - --overprovisioned
@@ -19,8 +19,6 @@ services:
       - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
       - --pandaproxy-addr 0.0.0.0:28082
       - --advertise-pandaproxy-addr localhost:28082
-      - --rpc-addr 0.0.0.0:33145
-      - --advertise-rpc-addr redpanda:33145
     ports:
       - "9094:9092"
       - "28082:28082"
@@ -32,7 +30,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Web UI for Redpanda (Optional but super useful)
+  # Web UI for Redpanda
   redpanda-console:
     image: docker.redpanda.com/redpandadata/console:v2.4.6
     container_name: redpanda-console
@@ -53,26 +51,36 @@ services:
       - "9000:9000" # Native
     volumes:
       - clickhouse_data:/var/lib/clickhouse
-      - ./backend/storage/migrations:/docker-entrypoint-initdb.d/migrations # Mount migrations
+      - ./backend/storage/migrations:/docker-entrypoint-initdb.d/migrations
     ulimits:
       nofile:
         soft: 262144
         hard: 262144
+    environment:
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB}
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # 3. Relational Database (PostgreSQL)
   postgres:
     image: timescale/timescaledb:latest-pg15
     container_name: postgres
     ports:
-      - "5455:5432"
+      - "5456:5432"
     environment:
-      - POSTGRES_USER=trader
-      - POSTGRES_PASSWORD=trading_secure
-      - POSTGRES_DB=trading_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - postgres_data_final:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U trader -d trading_db" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -82,27 +90,32 @@ services:
     image: redis:7.2-alpine
     container_name: redis
     ports:
-      - "6379:6379"
+      - "16379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-  # 4. Semantic Memory (ChromaDB - Vector Store)
+  # 4. Semantic Memory (ChromaDB)
   chromadb:
     image: chromadb/chroma:0.5.0
     container_name: chromadb
     ports:
-      - "8000:8000"
+      - "8005:8000"
     volumes:
       - chromadb_data:/chroma/chroma
     environment:
       - IS_PERSISTENT=TRUE
 
-  # 5. Prometheus (Metrics Monitoring)
+  # 5. Prometheus
   prometheus:
     image: prom/prometheus:v2.47.0
     container_name: prometheus
     ports:
-      - "9090:9090"
+      - "9091:9090"
     volumes:
       - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -110,10 +123,9 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
     depends_on:
+      - api-server
 
-      - api-server # Nu afhankelijk van de api-server
-
-  # 6. Grafana (Visualization)
+  # 6. Grafana
   grafana:
     image: grafana/grafana:10.2.2
     container_name: grafana
@@ -126,7 +138,7 @@ services:
 
   # --- APPLICATION LAYER ---
 
-  # The Cognitive Orchestrator & Agents
+  # The Cognitive Orchestrator
   trading-engine:
     build:
       context: .
@@ -134,26 +146,35 @@ services:
     container_name: trading-engine
     restart: unless-stopped
     depends_on:
-      - redpanda
-      - clickhouse
-      - redis
-      - chromadb
-      - postgres
+      redpanda:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
       - REDIS_URL=redis://redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
-      - PYTHONUNBUFFERED=1
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB}
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
-      - DATABASE_URL=postgresql+asyncpg://trader:trading_secure@postgres:5432/trading_db
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - PYTHONUNBUFFERED=1
     volumes:
-      - ./backend:/app/backend # Hot reload for development
+      - ./backend:/app/backend
       - ./.env:/app/.env
-      - ./backend/config/agent_profiles.yaml:/app/backend/config/agent_profiles.yaml # Mount agent profiles
-    command: python backend/services/cognitive_orchestrator.py # Start de Orchestrator
+      - ./backend/config/agent_profiles.yaml:/app/backend/config/agent_profiles.yaml
+    command: python backend/services/cognitive_orchestrator.py
 
-  # API Server (Main Entrypoint)
+  # API Server
   api-server:
     build:
       context: .
@@ -161,17 +182,27 @@ services:
     container_name: api-server
     restart: unless-stopped
     depends_on:
-      - trading-engine # Zodat metrics van trading-engine kunnen worden opgehaald
+      trading-engine:
+        condition: service_started
+      clickhouse:
+        condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
       - METRICS_SERVER_PORT=8001
-      - DATABASE_URL=postgresql+asyncpg://trader:trading_secure@postgres:5432/trading_db
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
     ports:
       - "8003:8001"
     volumes:
       - ./backend:/app/backend
       - ./.env:/app/env
-    command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 # Start de Unified API
+    command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8001
 
 volumes:
   postgres_data_final:

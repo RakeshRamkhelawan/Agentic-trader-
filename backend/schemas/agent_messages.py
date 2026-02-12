@@ -16,7 +16,12 @@ class AgentMessage:
     tenant_id: Optional[str] = None # Added for multi-tenancy context propagation
 
     def __post_init__(self):
-        valid_types = {"SIGNAL", "BROADCAST", "QUERY", "RESPONSE", "GUNA_SIGNAL", "NEWS_DATA", "TICK_DATA", "TIMER_TICK_1MIN", "TIMER_TICK_1HOUR", "ORDER_INTENT"}
+        valid_types = {
+            "SIGNAL", "BROADCAST", "QUERY", "RESPONSE", 
+            "GUNA_SIGNAL", "NEWS_DATA", "TICK_DATA", "MARKET_TICK", 
+            "TIMER_TICK_1MIN", "TIMER_TICK_1HOUR", "ORDER_INTENT",
+            "VALIDATE_ORDER", "ORDER_VALIDATION_RESULT" # Added for Risk Flow
+        }
         if self.type not in valid_types:
             raise ValueError(f"Invalid message type: {self.type}")
 

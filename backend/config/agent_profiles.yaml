@@ -35,7 +35,7 @@ agents:
     allowed_tools:
       - "scrape_web"
       - "analyze_sentiment"
-    subscriptions: ["TIMER_TICK_1MIN"]
+    subscriptions: ["TIMER_TICK_1MIN", "TICK_DATA"]
 
   # --- FIRE (AGNI): Risk & Regime ---
   # Ontstaat uit Rajas + Sattva. Transformatie en Verlichting.
@@ -92,4 +92,4 @@ agents:
     allowed_tools:
       - "calc_mayer_multiple"
       - "calc_nvt"
-    subscriptions: ["MARKET_UPDATE"]
+    subscriptions: ["MARKET_UPDATE", "TICK_DATA"]

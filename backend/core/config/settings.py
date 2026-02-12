@@ -28,8 +28,13 @@ class Settings(BaseSettings):
     
     # --- INFRASTRUCTURE URLs ---
     KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
-    CLICKHOUSE_HOST: str = "localhost"
+    CLICKHOUSE_HOST: str = "127.0.0.1"
     CLICKHOUSE_PORT: int = 8123
+
+    CLICKHOUSE_USER: str = Field(..., validation_alias="CLICKHOUSE_USER")
+    CLICKHOUSE_PASSWORD: str = Field(..., validation_alias="CLICKHOUSE_PASSWORD")
+    CLICKHOUSE_DB: str = "trading_db"
+
     REDIS_URL: str = "redis://localhost:6379/0"
     CHROMA_HOST: str = "localhost"
     CHROMA_PORT: int = 8000
@@ -44,10 +49,18 @@ class Settings(BaseSettings):
         default=True,
         description="Enable /docs and /redoc. Set DOCS_ENABLED=false in production."
     )
+
     # Pydantic will load REVOLUT_API_KEY from .env
     REVOLUT_API_KEY_ENV: Optional[str] = Field(None, validation_alias="REVOLUT_API_KEY")
     REVOLUT_PRIVATE_KEY_PATH: str = "revolut_private.pem"
     REVOLUT_SANDBOX: bool = True
+    
+    # --- BYBIT CONFIGURATION ---
+    BYBIT_API_KEY: Optional[str] = None
+    BYBIT_API_SECRET: Optional[str] = None
+    BYBIT_TESTNET: bool = True
+    BYBIT_USE_EU: bool = Field(default=False, description="Use Bybit EU endpoint (api.bybit.eu)")
+    
     _jwt_secret_key: Optional[str] = None
     _database_url: Optional[str] = None
     
@@ -63,6 +76,10 @@ class Settings(BaseSettings):
     # --- RISK LIMITS (Hardcoded defaults for safety) ---
     MAX_ORDER_SIZE_EUR: float = 1000.0
     MAX_DAILY_LOSS_EUR: float = 50.0
+    
+    # --- SAFETY CONTROLS ---
+    KILL_SWITCH: bool = Field(default=False, description="Master Kill Switch. If True, all trading stops.")
+    TRADING_MODE: str = Field(default="paper", description="Mode: 'paper' or 'live'")
     
     # Pydantic Settings Config
     model_config = SettingsConfigDict(

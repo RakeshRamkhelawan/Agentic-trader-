@@ -19,7 +19,7 @@ class ClickHouseClient:
         self,
         host: Optional[str] = None,
         port: Optional[int] = None,
-        database: str = "agentic_trading",
+        database: Optional[str] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
         url: Optional[str] = None
@@ -37,9 +37,14 @@ class ClickHouseClient:
         """
         self.host = host or os.getenv('CLICKHOUSE_HOST', 'localhost')
         self.port = port or int(os.getenv('CLICKHOUSE_PORT', '8123'))
-        self.database = database
+        self.database = database or os.getenv('CLICKHOUSE_DB', 'agentic_trading')
         self.username = username or os.getenv('CLICKHOUSE_USER', 'default')
         self.password = password or os.getenv('CLICKHOUSE_PASSWORD', '')
+        
+        if self.database:
+            self.database = self.database.strip()
+            
+        print(f"DEBUG: ClickHouseClient init. Database={repr(self.database)}, CLICKHOUSE_DB env={repr(os.getenv('CLICKHOUSE_DB'))}")
         
         # Build URL if provided or from components
         if url:
@@ -51,13 +56,19 @@ class ClickHouseClient:
     
     async def connect(self) -> None:
         """Establish connection to ClickHouse."""
-        self.client = await clickhouse_connect.get_async_client(
-            host=self.host,
-            port=self.port,
-            database=self.database,
-            username=self.username,
-            password=self.password
-        )
+        try:
+            self.client = await clickhouse_connect.get_async_client(
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                username=self.username,
+                password=self.password
+            )
+        except Exception as e:
+            print(f"CRITICAL: ClickHouse Connection Failed! Error: {e}")
+            import traceback
+            traceback.print_exc()
+            raise e
     
     async def disconnect(self) -> None:
         """Close connection to ClickHouse."""

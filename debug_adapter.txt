@@ -1,0 +1,36 @@
+Bulk chunk failed: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"6e0476f8-ed93-4ada-b34d-f3c12285f13c","timestamp":1770906627744}
+Fallback exception for BTC-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"2092ddbd-7c45-41a9-b3c2-b83a6a47b428","timestamp":1770906627783}
+Fallback exception for ETH-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"09dc82ee-f3e4-4933-9aed-6df5fce4bc15","timestamp":1770906627818}
+GetTickers returning 0 results
+Bulk chunk failed: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"85b6a4c5-1f42-4472-9134-aa05545fac10","timestamp":1770906628852}
+Fallback exception for BTC-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"d6045a06-3565-4701-9c88-c7b22a74cf8d","timestamp":1770906628886}
+Fallback exception for ETH-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"774296f1-6ba1-404f-b547-fe9c1cb62994","timestamp":1770906628924}
+GetTickers returning 0 results
+Bulk chunk failed: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"a1254ee0-2f4a-4cfe-a9ab-2f0bb3375af0","timestamp":1770906629972}
+Fallback exception for BTC-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"b07b78bb-bb61-4c09-afa3-8d402862599f","timestamp":1770906630007}
+Fallback exception for ETH-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"9eec2823-12f4-4664-8949-a77e3b1da935","timestamp":1770906630042}
+GetTickers returning 0 results
+Bulk chunk failed: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"3f8f81da-49af-44cb-bbca-9684feab1304","timestamp":1770906631090}
+Fallback exception for BTC-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"296158c4-559b-47a3-b97e-dd1e98bcfde4","timestamp":1770906631123}
+Fallback exception for ETH-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"a6d36b9a-842d-43a3-8d46-861f0eb86c1f","timestamp":1770906631160}
+GetTickers returning 0 results
+Bulk chunk failed: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"57304bff-2e96-4bbf-86c6-72d4ebed3b79","timestamp":1770906632198}
+Fallback exception for BTC-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"1c3b569d-e59c-44bf-b796-514b3381d450","timestamp":1770906632230}
+Fallback exception for ETH-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"ba087c82-822a-488c-86e9-f9ab59814053","timestamp":1770906632269}
+GetTickers returning 0 results
+Bulk chunk failed: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"299f57a3-d0cb-4550-be29-31f0dadc38a7","timestamp":1770906633304}
+Fallback exception for BTC-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"55bec135-b7b9-49c3-9b95-96d527bdfa36","timestamp":1770906633338}
+Fallback exception for ETH-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"114a39c0-fd5f-4792-8b08-f8b0abed5961","timestamp":1770906633372}
+GetTickers returning 0 results
+Bulk chunk failed: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"a91b0d52-5f22-452a-be69-3e9463e1e961","timestamp":1770906634409}
+Fallback exception for BTC-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"7850a2fa-8293-40b5-b3ea-aa7504db18c5","timestamp":1770906634444}
+Fallback exception for ETH-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"cf3fa62f-b309-4c0d-aaa7-200e3cdd0818","timestamp":1770906634479}
+GetTickers returning 0 results
+Bulk chunk failed: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"f5c1b063-de53-4960-8bb5-61f1ea2cd42e","timestamp":1770906635544}
+Fallback exception for BTC-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"0a54d700-6ecf-43ca-b59e-eb5e564c63e6","timestamp":1770906635614}
+Fallback exception for ETH-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"21f40f29-4e93-45be-8388-5684994652ac","timestamp":1770906635662}
+GetTickers returning 0 results
+Bulk chunk failed: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"46fe6701-3b9c-4d75-b99f-c23eee67e97c","timestamp":1770906636702}
+Fallback exception for BTC-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"00c91ad8-e709-462b-9ac9-6e8fe975fae3","timestamp":1770906636742}
+Fallback exception for ETH-USD: Exchange API Error (409): {"message":"Request timestamp is in the future","error_id":"70913e30-5127-4906-9da4-c5c93d8cc58d","timestamp":1770906636796}
+GetTickers returning 0 results

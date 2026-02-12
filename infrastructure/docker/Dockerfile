@@ -1,5 +1,5 @@
 # Builder stage
-FROM python:3.12-slim as builder
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
@@ -14,12 +14,17 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY requirements/base.txt .
-RUN pip install --no-cache-dir -r base.txt
+RUN pip install --no-cache-dir --upgrade pip "setuptools==69.5.1" wheel && \
+  pip install --no-cache-dir -r base.txt
 
 # Final stage
 FROM python:3.12-slim
 
 WORKDIR /app
+
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
 
 # Copy venv from builder
 COPY --from=builder /opt/venv /opt/venv
