@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "agentic-platform.fullname" . }}-orchestrator
+  labels:
+    {{- include "agentic-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestrator
+spec:
+  serviceName: {{ include "agentic-platform.fullname" . }}-orchestrator
+  replicas: {{ .Values.agentOrchestrator.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "agentic-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: orchestrator
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+      labels:
+        {{- include "agentic-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: orchestrator
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: orchestrator
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.agentOrchestrator.image.repository }}:{{ .Values.agentOrchestrator.image.tag }}"
+          imagePullPolicy: {{ .Values.agentOrchestrator.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+            - name: metrics
+              containerPort: 8001
+              protocol: TCP
+          env:
+            - name: CLICKHOUSE_HOST
+              value: "clickhouse-service.{{ .Values.global.namespace }}.svc.cluster.local"
+            - name: REDIS_URL
+              value: "redis://redis-master:6379/0"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka-bootstrap:9092"
+          resources:
+            {{- toYaml .Values.agentOrchestrator.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: agent-state
+              mountPath: /app/data
+  volumeClaimTemplates:
+    - metadata:
+        name: agent-state
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi

@@ -1,0 +1,2 @@
+﻿src/components/trading/order-ticket/order-ticket.tsx(157,25): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/components/trading/order-ticket/order-ticket.tsx(176,29): error TS17001: JSX elements cannot have multiple attributes with the same name.
