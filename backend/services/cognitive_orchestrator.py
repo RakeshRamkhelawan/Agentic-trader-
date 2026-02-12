@@ -36,6 +36,7 @@ from backend.services.research_agent import ResearchAgent
 from backend.services.macro_agent import MacroAgent
 from backend.services.valuation_agent import ValuationAgent
 from backend.risk.validators import RiskValidator
+from backend.services.execution_gateway import ExecutionGateway
 
 # Initialiseer de tracer en metrics voor deze service
 tracer = get_tracer("cognitive.orchestrator")
@@ -59,7 +60,11 @@ class CognitiveOrchestrator:
         memory_agent_factory: Callable[[], MemoryAgent] = MemoryAgent, # Factory om MemoryAgent aan te maken
         signal_bridge = None,  # Optional SignalBridge for frontend communication
         usage_tracker: Optional[UsageTracker] = None, # Optional UsageTracker
-        audit_logger = None # Optional AuditLogger
+        audit_logger = None, # Optional AuditLogger
+        clickhouse_client = None, # NIEUW: Optional ClickHouseClient
+        market_writer = None, # NIEUW: Optional ClickHouseWriter
+        message_writer = None, # NIEUW: Optional ClickHouseWriter for AgentMessage
+        execution_gateway: Optional[ExecutionGateway] = None # Phase 9: Real Execution
     ):
         self.agent_registry = agent_registry or AgentRegistry(config_path=agent_profiles_path)
         self.guna_quantifier = guna_quantifier or GunaQuantifier()
@@ -68,6 +73,10 @@ class CognitiveOrchestrator:
         self.signal_bridge = signal_bridge  # Bridge to WebSocket frontend
         self.usage_tracker = usage_tracker
         self.audit_logger = audit_logger
+        self.clickhouse_client = clickhouse_client
+        self.market_writer = market_writer
+        self.message_writer = message_writer
+        self.execution_gateway = execution_gateway
         
         self.agents: Dict[str, Any] = {}
         self.message_handlers: Dict[str, List[Callable[[AgentMessage], Any]]] = {}
@@ -137,6 +146,28 @@ class CognitiveOrchestrator:
             
             # Determine effective tenant: Message ID > Current Context
             effective_tenant = message.tenant_id or get_current_tenant_optional()
+
+            # 0. PERSIST Message (Async)
+            if self.message_writer:
+                try:
+                    # Format for ClickHouse agent_events table
+                    row = {
+                        "id": message.id,
+                        "ts": datetime.fromtimestamp(message.timestamp), 
+                        "type": message.type,
+                        "source": message.source,
+                        "target": message.target,
+                        "tenant_id": effective_tenant,
+                        "payload": json.dumps(message.payload), # Store raw JSON
+                        # Extract common fields for indexing if present
+                        "symbol": message.payload.get("symbol"),
+                        "price": float(message.payload["price"]) if "price" in message.payload and message.payload["price"] else None
+                    }
+                    # We might need to handle validation/conversion error inside loop, 
+                    # but here just enqueue.
+                    await self.message_writer.enqueue(row)
+                except Exception as e:
+                    self.logger.warning(f"Failed to persist message {message.id}: {e}")
             
             # Create a context manager wrapper
             # If no tenant, we use a null context or just proceed (but tenant_context needs a value)
@@ -225,9 +256,16 @@ class CognitiveOrchestrator:
                 target_profiles_to_notify.append(profile)
 
         for profile in target_profiles_to_notify:
+            agent_instance = self.agents.get(profile.id)
+            if not agent_instance:
+                continue
+
             self.logger.debug(f"Routing {message.type} to {profile.name} (ID: {profile.id}) based on subscription.")
-            if hasattr(self.agents.get(profile.id), 'handle_message'):
-                await self.agents[profile.id].handle_message(message)
+            
+            if agent_instance == self:
+                await self.process_generic_message(message)
+            elif hasattr(agent_instance, 'handle_message'):
+                await agent_instance.handle_message(message)
             else:
                 self.logger.warning(f"Agent {profile.id} has no handle_message method for {message.type}")
         
@@ -266,7 +304,9 @@ class CognitiveOrchestrator:
             "ALERT", "WARNING", "RISK_ALERT",
             "SENTIMENT_UPDATE", "MACRO_INSIGHT", "VALUATION_UPDATE",
             "RESEARCH_COMPLETE", "ANALYSIS_RESULT",
-            "ORDER_VALIDATION_RESULT" # Added for Risk Feedback
+            "RESEARCH_COMPLETE", "ANALYSIS_RESULT",
+            "ORDER_VALIDATION_RESULT", # Added for Risk Feedback
+            "SIGNAL" # Added for generic signals
         }
         return message_type in actionable_types
 
@@ -283,22 +323,229 @@ class CognitiveOrchestrator:
 
     async def process_generic_message(self, message: AgentMessage):
         self.logger.info(f"Generic handler processed message: {message.id} from {message.source}")
+        
+        # 1. Handle SIGNALS from Research Agent (BULLISH/BEARISH)
+        if message.type == "SIGNAL" and message.source == "research_v1":
+            payload = message.payload
+            direction = payload.get("signal") # BULLISH_MOMENTUM / BEARISH_MOMENTUM
+            symbol = payload.get("symbol")
+            price = payload.get("price")
+            exchange_id = payload.get("exchange_id") # NEW: Multi-Broker Routing
 
+            if direction and symbol and price:
+                self.logger.info(f"Converting SIGNAL {direction} for {symbol} (Ex: {exchange_id}) to ORDER INTENT")
+                
+                # Construct Order Intent
+                side = "buy" if "BULLISH" in direction else "sell"
+                order_payload = {
+                    "symbol": symbol,
+                    "side": side,
+                    "type": "market",
+                    "quantity": 1.0, # Default for MVP
+                    "price": price,
+                    "exchange_id": exchange_id, # Persist preference
+                    "timestamp": time.time()
+                }
+                
+                # Route to Risk Guardian for Validation
+                validation_msg = AgentMessage(
+                    source="orchestrator_v1", # Generated by Orchestrator
+                    target="risk_guardian_v1",
+                    type="VALIDATE_ORDER",
+                    payload={
+                        "order": order_payload,
+                        "preferences": {
+                             "autonomy_status": "semi_auto", # Default to semi-auto for safety
+                             "risk_settings": {
+                                 "max_order_size": 100000.0,
+                                 "allowed_assets": ["BTC/E2E", "ETH/USD"],
+                                 "kill_switch_enabled": False
+                             }
+                        } 
+                    },
+                    tenant_id=message.tenant_id
+                )
+                
+                if "risk_guardian_v1" in self.agents:
+                    await self.agents["risk_guardian_v1"].handle_message(validation_msg)
+                else:
+                    self.logger.warning("RiskGuardian not found! Cannot validate order.")
+
+        # 2. Handle ORDER_VALIDATION_RESULT from Risk Guardian
+        elif message.type == "ORDER_VALIDATION_RESULT":
+            result = message.payload.get("result", {})
+            original_msg_id = message.payload.get("original_msg_id")
+            
+            if result.get("allowed"):
+                self.logger.info(f"✅ ORDER APPROVED by RiskGuardian: {result.get('reason')}")
+                # EXECUTE ORDER (REAL)
+                if self.execution_gateway:
+                     self.logger.info(f"🚀 SENDING ORDER TO GATEWAY: {original_msg_id}")
+                     # Extract details from payload
+                     try:
+                         order_details = message.payload.get("order", {})
+                         exec_result = await self.execution_gateway.execute_order(
+                             symbol=order_details.get("symbol"),
+                             side=order_details.get("side"),
+                             amount=order_details.get("quantity", 0), # Ensure quantity is passed
+                             order_type=order_details.get("order_type", "market"),
+                             price=order_details.get("price"),
+                             target_exchange=order_details.get("exchange_id") # Route to specific exchange
+                         )
+                         self.logger.info(f"Execution Result: {exec_result}")
+                     except Exception as e:
+                         self.logger.error(f"Execution Failed: {e}")
+                else:
+                     self.logger.warning("Execution Gateway not attached! Order DROPPED.")
+                
+            else:
+                self.logger.warning(f"❌ ORDER BLOCKED by RiskGuardian: {result.get('reason')}")
+                if result.get("requires_approval"):
+                    self.logger.info("requesting HITL approval... (not implemented)")
+
+
+
+    async def start_market_consumer(self):
+        """Start consuming market data from Redis."""
+        import redis.asyncio as redis
+        from backend.core.config.settings import settings
+        import msgpack
+        
+        self.logger.info("Starting Market Data Consumer...")
+        redis_client = redis.from_url(settings.REDIS_URL, decode_responses=False)
+        last_id = "$"
+        stream_key = "market_events"
+        
+        while True:
+            try:
+                streams = await redis_client.xread({stream_key: last_id}, count=100, block=1000)
+                if not streams:
+                    continue
+                    
+                for stream_name, messages in streams:
+                    for message_id, data in messages:
+                        last_id = message_id
+                        payload = data.get(b"data") or data.get("data")
+                        if payload:
+                            try:
+                                event = msgpack.unpackb(payload, raw=False)
+                                await self.handle_market_tick(event)
+                            except Exception as e:
+                                self.logger.error(f"Failed to decode event: {e}")
+                                
+            except Exception as e:
+                self.logger.error(f"Market Consumer error: {e}")
+                await asyncio.sleep(5)
+
+    async def handle_market_tick(self, event: Dict[str, Any]):
+        """Process incoming market tick with full validation and dispatch."""
+        from backend.market_data.models import UnifiedMarketEvent, EventType
+        import time as _time
+
+        try:
+            # 1. DESERIALIZE & VALIDATE
+            raw_event_type = event.get("event_type", "ticker")
+            try:
+                event_type_enum = EventType(raw_event_type)
+            except ValueError:
+                event_type_enum = EventType.TICKER
+
+            unified = UnifiedMarketEvent(
+                event_type=event_type_enum,
+                venue=event.get("venue", "unknown"),
+                symbol=event.get("symbol", "UNKNOWN"),
+                ts_exchange=float(event.get("ts_exchange", _time.time())),
+                ts_received=_time.time(),
+                price=event.get("price") or event.get("last"),
+                bid=event.get("bid"),
+                ask=event.get("ask"),
+                size=event.get("size") or event.get("volume"),
+            )
+            unified.validate()  # Raises ValueError if invalid (negative price etc.)
+
+            self.logger.info(f"Validated tick: {unified.symbol} @ {unified.price}")
+
+            # 1b. PERSIST to ClickHouse (Async)
+            if self.market_writer:
+                await self.market_writer.enqueue(unified.to_dict())
+
+            # 2. DISPATCH via AgentMessage pipeline
+            msg = AgentMessage(
+                source="market_data_consumer",
+                target="all",
+                type="TICK_DATA",
+                payload=unified.to_dict()
+            )
+            await self.handle_message(msg)
+
+        except ValueError as e:
+            self.logger.warning(f"Invalid tick data rejected: {e}")
+        except Exception as e:
+            self.logger.error(f"Tick processing error: {e}")
 
 async def main():
     logging.basicConfig(level=logging.INFO)
     setup_tracing("cognitive-orchestrator-service")
     logging.info("Starting Cognitive Orchestrator Service...")
     
-    orchestrator = CognitiveOrchestrator()
+    # Initialize ClickHouse Client
+    from backend.storage.clickhouse_client import ClickHouseClient
+    from backend.market_data.sinks.clickhouse_writer import ClickHouseWriter
+    
+    clickhouse_client = ClickHouseClient()
+    # Connect needs to happen in loop
+    await clickhouse_client.connect()
+    
+    market_writer = ClickHouseWriter(clickhouse_client, table="market_events", batch_size=1000, flush_interval=1.0)
+    message_writer = ClickHouseWriter(clickhouse_client, table="agent_events", batch_size=500, flush_interval=1.0)
+    
+    # Initialize SignalBridge with RedisPublisher for Decoupled Broadcasting
+    from backend.services.signal_bridge import SignalBridge
+    from backend.market_data.sinks.redis_publisher import RedisPublisher
+    import redis.asyncio as redis
+    from backend.core.config.settings import settings
+
+    redis_client = redis.from_url(settings.REDIS_URL, decode_responses=False)
+    redis_publisher = RedisPublisher(redis_client, stream_key="market_events")
+    
+    signal_bridge = SignalBridge()
+    # We are in Orchestrator process, so we use Redis Publisher, not WS Manager
+    signal_bridge.set_redis_publisher(redis_publisher)
+    
+    # Inject dependencies
+    orchestrator = CognitiveOrchestrator(
+        clickhouse_client=clickhouse_client,
+        market_writer=market_writer,
+        message_writer=message_writer,
+        signal_bridge=signal_bridge,
+        execution_gateway=ExecutionGateway() # Initialize Default Gateway
+    )
+    
+    # Start Execution Gateway
+    if orchestrator.execution_gateway:
+        await orchestrator.execution_gateway.start()
+    
+    # Start Writer Tasks
+    market_writer_task = asyncio.create_task(market_writer.run())
+    message_writer_task = asyncio.create_task(message_writer.run())
+    
+    # Start Market Consumer Task
+    consumer_task = asyncio.create_task(orchestrator.start_market_consumer())
     
     if "research_v1" in orchestrator.agents:
         research_agent = orchestrator.agents["research_v1"]
         await orchestrator.handle_message(AgentMessage(source="orchestrator", target="research_v1", type="TIMER_TICK_1MIN", payload={}))
     
-    while True:
-        await asyncio.sleep(10)
-
+    try:
+        while True:
+            await asyncio.sleep(10)
+    finally:
+        logging.info("Shutting down...")
+        market_writer.stop()
+        message_writer.stop()
+        await market_writer_task
+        await message_writer_task
+        await clickhouse_client.disconnect()
 
 if __name__ == "__main__":
     asyncio.run(main())
