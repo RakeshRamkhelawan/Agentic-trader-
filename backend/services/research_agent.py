@@ -40,7 +40,7 @@ async def analyze_text_with_llm(text: str) -> Dict[str, Any]:
     }
 
 class ResearchAgent:
-    def __init__(self, memory_agent: MemoryAgent = None, message_bus=None):
+    def __init__(self, memory_agent: MemoryAgent = None, message_bus=None, strategy=None):
         self.sources = [
             "https://finance.yahoo.com/crypto",
             "https://cointelegraph.com",
@@ -50,15 +50,86 @@ class ResearchAgent:
         self.message_bus = message_bus # Callback function or Kafka Producer
         self.logger = logging.getLogger("ResearchAgent")
         self.client = httpx.AsyncClient(timeout=10.0, follow_redirects=True)
+        
+        # Strategy Injection (Phase 11)
+        if strategy:
+            self.strategy = strategy
+        else:
+            # Default to MVP Strategy
+            from backend.strategies.simple_tremor import SimpleTremorStrategy
+            self.strategy = SimpleTremorStrategy({
+                "window_size": 5,
+                "deviation_threshold": 0.02,
+                "max_history": 100
+            })
 
     async def handle_message(self, message: AgentMessage):
         """Handle incoming messages from the orchestrator."""
         self.logger.info(f"Research Agent received message: {message.type} from {message.source}")
         if message.type == "TIMER_TICK_1MIN":
             await self.run_cycle()
+        elif message.type == "TICK_DATA":
+            # Ensure payload is dict, might be Pydantic model in some paths
+            payload = message.payload
+            if hasattr(payload, "to_dict"):
+                payload = payload.to_dict()
+            await self.process_tick(payload)
         elif message.type == "SIGNAL" and message.payload.get("signal") == "RUN_RESEARCH":
             await self.run_cycle()
 
+    async def process_tick(self, tick_data: Dict[str, Any]):
+        """
+        Phase 11: Delegate to Strategy Strategy.
+        """
+        # Convert dict to UnifiedMarketEvent if needed, or Strategy handles dict?
+        # BaseStrategy expects UnifiedMarketEvent. Use helper or robust casting.
+        
+        from backend.market_data.models import UnifiedMarketEvent, EventType
+        
+        # Try to construct event from dict
+        try:
+            # Check if it's already an object
+            if hasattr(tick_data, "symbol"):
+                event = tick_data
+            else:
+                # Basic validation/defaulting
+                event = UnifiedMarketEvent(
+                    event_type=EventType.TICKER,
+                    venue=tick_data.get("venue", "unknown"),
+                    symbol=tick_data.get("symbol", "UNKNOWN"),
+                    ts_exchange=tick_data.get("ts_exchange", 0.0),
+                    ts_received=tick_data.get("ts_received", 0.0),
+                    price=float(tick_data.get("price") or tick_data.get("bid") or 0.0)
+                )
+        except Exception as e:
+            self.logger.warning(f"Failed to parse tick for strategy: {e}")
+            return
+
+        # Delegate
+        signal_payload = await self.strategy.on_tick(event)
+        
+        if signal_payload:
+            await self._emit_signal_payload(signal_payload)
+
+    async def _emit_signal_payload(self, payload: Dict[str, Any]):
+        """Emit formatted signal to orchestrator."""
+        direction = "BULLISH" if "BULLISH" in payload.get("signal", "") else "BEARISH"
+        symbol = payload.get("symbol")
+        price = payload.get("price")
+        
+        self.logger.info(f"STRATEGY SIGNAL: {direction} {symbol} @ {price}")
+        
+        msg = AgentMessage(
+            source="research_v1",
+            target="orchestrator_v1",
+            type="SIGNAL",
+            payload=payload
+        )
+        if self.message_bus:
+            if asyncio.iscoroutinefunction(self.message_bus):
+                await self.message_bus(msg)
+            else:
+                self.message_bus(msg)
 
     async def run_cycle(self):
         """One full scrape cycle."""
