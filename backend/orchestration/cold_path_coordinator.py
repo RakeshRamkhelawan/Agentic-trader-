@@ -45,12 +45,14 @@ class CoordinatorDecision:
     reasoning: str  # Why this decision
     source: str  # Which agents contributed (comma-separated)
     timestamp: float  # When decision was made
+    quantity: float = 0.0  # Trade quantity/size
     
     def to_config(self) -> Dict[str, Any]:
         """Convert to FastConfig format."""
         return {
             'action': self.action,
             'confidence': self.confidence,
+            'quantity': self.quantity,
             'exploration_rate': 0.1  # Default exploration
         }
 
@@ -185,7 +187,7 @@ class ColdPathCoordinator:
     def _initialize_from_config(self) -> None:
         """Initialize coordinator from FastConfig."""
         try:
-            config = self.config_manager.read_fast()
+            config, _ = self.config_manager.read_fast()
             logger.info(f"Initialized from config: action={config.get('action')}")
         except Exception as e:
             logger.warning(f"Could not read initial config: {e}")
@@ -364,7 +366,8 @@ class ColdPathCoordinator:
             confidence=best_confidence,
             reasoning=self._generate_reasoning(results, best_action, best_confidence),
             source=','.join(sorted(results.keys())),
-            timestamp=time.time()
+            timestamp=time.time(),
+            quantity=1.0  # Default quantity for now
         )
         
         return decision
@@ -381,7 +384,8 @@ class ColdPathCoordinator:
             confidence=0.5,  # Neutral
             reasoning='Fallback decision (agents unavailable)',
             source='',
-            timestamp=time.time()
+            timestamp=time.time(),
+            quantity=0.0
         )
     
     def _validate_agent_output(self, output: Dict[str, Any]) -> None:
@@ -483,7 +487,7 @@ class ColdPathCoordinator:
             min(interval, self.MAX_UPDATE_INTERVAL)
         )
         logger.info(f"Set update interval to {self.update_interval}s")
-    
+
     def get_current_config(self) -> Dict[str, Any]:
         """
         Get current config from FastConfig.
@@ -491,7 +495,7 @@ class ColdPathCoordinator:
         Returns:
             Current configuration
         """
-        return self.config_manager.read_fast()
+        return self.config_manager.read_fast()[0]
     
     def get_health(self) -> CoordinatorHealth:
         """

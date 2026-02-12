@@ -35,7 +35,8 @@ class TestHotPathEngineBasics:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 1.0
             })
             
             engine = HotPathEngine(config_file)
@@ -52,7 +53,8 @@ class TestHotPathEngineBasics:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.85,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.5
             })
             
             engine = HotPathEngine(config_file)
@@ -60,6 +62,7 @@ class TestHotPathEngineBasics:
             
             assert decision.action == 1
             assert decision.confidence == pytest.approx(0.85, abs=0.01)
+            assert decision.quantity == 0.5
             assert decision.timestamp > 0
             assert decision.source == 'hot_path'
     
@@ -71,7 +74,8 @@ class TestHotPathEngineBasics:
             config_manager.write_atomic({
                 'action': 2,
                 'confidence': 0.75,
-                'exploration_rate': 0.1
+                'exploration_rate': 0.1,
+                'quantity': 0.2
             })
             
             engine = HotPathEngine(config_file)
@@ -80,6 +84,7 @@ class TestHotPathEngineBasics:
             
             assert decision_dict['action'] == 2
             assert decision_dict['confidence'] == 0.75
+            assert decision_dict['quantity'] == pytest.approx(0.2)
             assert 'timestamp' in decision_dict
             assert 'config_version' in decision_dict
 
@@ -95,7 +100,8 @@ class TestHotPathLatency:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -118,7 +124,8 @@ class TestHotPathLatency:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -142,7 +149,8 @@ class TestHotPathLatency:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -170,7 +178,8 @@ class TestHotPathDeterminism:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.85,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.5
             })
             
             engine = HotPathEngine(config_file)
@@ -189,7 +198,8 @@ class TestHotPathDeterminism:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -210,7 +220,8 @@ class TestHotPathDeterminism:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -281,7 +292,8 @@ class TestHotPathMemory:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -308,7 +320,8 @@ class TestHotPathMemory:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -332,7 +345,8 @@ class TestHotPathThreadSafety:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -368,7 +382,8 @@ class TestHotPathExecution:
             config_manager.write_atomic({
                 'action': 2,
                 'confidence': 0.9,
-                'exploration_rate': 0.02
+                'exploration_rate': 0.02,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -385,7 +400,8 @@ class TestHotPathExecution:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.65,
-                'exploration_rate': 0.08
+                'exploration_rate': 0.08,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -402,7 +418,8 @@ class TestHotPathExecution:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -427,7 +444,8 @@ class TestHotPathIntegration:
             config_manager.write_atomic({
                 'action': 0,
                 'confidence': 0.5,
-                'exploration_rate': 0.1
+                'exploration_rate': 0.1,
+                'quantity': 0.0
             })
             
             engine = HotPathEngine(config_file)
@@ -439,7 +457,8 @@ class TestHotPathIntegration:
             config_manager.write_atomic({
                 'action': 2,
                 'confidence': 0.9,
-                'exploration_rate': 0.02
+                'exploration_rate': 0.02,
+                'quantity': 0.5
             })
             
             decision2 = engine.get_execution_decision()
@@ -454,7 +473,8 @@ class TestHotPathIntegration:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -475,7 +495,8 @@ class TestHotPathPerformance:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -498,7 +519,8 @@ class TestHotPathPerformance:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.85,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             engine = HotPathEngine(config_file)
@@ -519,11 +541,13 @@ class TestExecutionDecisionDataclass:
             action=1,
             confidence=0.85,
             timestamp=time.time(),
-            config_version=5
+            config_version=5,
+            quantity=0.5
         )
         
         assert decision.action == 1
         assert decision.confidence == 0.85
+        assert decision.quantity == 0.5
         assert decision.config_version == 5
         assert decision.source == 'hot_path'
     
@@ -533,12 +557,14 @@ class TestExecutionDecisionDataclass:
             action=2,
             confidence=0.75,
             timestamp=1234.5,
-            config_version=3
+            config_version=3,
+            quantity=0.5
         )
         
         d = decision.to_dict()
         assert d['action'] == 2
         assert d['confidence'] == 0.75
+        assert d['quantity'] == 0.5
         assert d['timestamp'] == 1234.5
         assert d['config_version'] == 3
         assert d['source'] == 'hot_path'
@@ -555,7 +581,8 @@ class TestHotPathExecutor:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             executor = HotPathExecutor(config_file)
@@ -572,7 +599,8 @@ class TestHotPathExecutor:
             config_manager.write_atomic({
                 'action': 1,
                 'confidence': 0.8,
-                'exploration_rate': 0.05
+                'exploration_rate': 0.05,
+                'quantity': 0.1
             })
             
             executor = HotPathExecutor(config_file)

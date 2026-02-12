@@ -42,6 +42,12 @@ CONFIG_SCHEMA = {
         'range': (0.0, 1.0),
         'required': True,
         'description': 'Exploration vs exploitation ratio'
+    },
+    'quantity': {
+        'type': float,
+        'range': (0.0, 1000.0), # Maximum reasonable quantity
+        'required': True,
+        'description': 'Order quantity (0.0 = use default/risk manager)'
     }
 }
 
@@ -49,7 +55,8 @@ CONFIG_SCHEMA = {
 FALLBACK_CONFIG = {
     'action': 0,  # Default to hold
     'confidence': 0.5,
-    'exploration_rate': 0.1
+    'exploration_rate': 0.1,
+    'quantity': 0.0
 }
 
 
@@ -69,8 +76,8 @@ class ConfigSerializer:
     """Binary serialization for compact config representation."""
     
     # Binary format: 
-    # [version:uint32] [action:uint8] [confidence:float32] [exploration_rate:float32]
-    FORMAT = '!I B f f'  # Network byte order (big-endian)
+    # [version:uint32] [action:uint8] [confidence:float32] [exploration_rate:float32] [quantity:float32]
+    FORMAT = '!I B f f f'  # Network byte order (big-endian)
     SIZE = struct.calcsize(FORMAT)
     
     @staticmethod
@@ -97,6 +104,7 @@ class ConfigSerializer:
         action = int(config['action'])
         confidence = float(config['confidence'])
         exploration_rate = float(config['exploration_rate'])
+        quantity = float(config.get('quantity', 0.0))
         
         # Pack into binary format
         binary = struct.pack(
@@ -104,40 +112,42 @@ class ConfigSerializer:
             version,
             action,
             confidence,
-            exploration_rate
+            exploration_rate,
+            quantity
         )
         
         return binary
     
     @staticmethod
-    def deserialize(binary: bytes) -> Dict[str, Any]:
+    def deserialize(data: bytes) -> tuple[Dict[str, Any], int]:
         """
-        Deserialize binary config back to dict.
+        Deserialize binary config.
         
         Args:
-            binary: Binary-encoded configuration
+            data: Binary configuration data
             
         Returns:
-            Configuration dictionary
+            Tuple of (config_dict, version)
             
         Raises:
-            struct.error: Invalid binary format
+            struct.error: If data is invalid/incomplete
         """
-        if len(binary) < ConfigSerializer.SIZE:
-            raise ValueError(f"Binary too short: {len(binary)} < {ConfigSerializer.SIZE}")
-        
-        # Unpack from binary format
-        version, action, confidence, exploration_rate = struct.unpack(
-            ConfigSerializer.FORMAT,
-            binary[:ConfigSerializer.SIZE]
+        if len(data) != ConfigSerializer.SIZE:
+            raise struct.error(f"Invalid data size: {len(data)} != {ConfigSerializer.SIZE}")
+            
+        version, action, confidence, exploration_rate, quantity = struct.unpack(
+            ConfigSerializer.FORMAT, 
+            data
         )
         
-        return {
+        config = {
             'action': action,
             'confidence': confidence,
             'exploration_rate': exploration_rate,
-            '_version': version
+            'quantity': quantity
         }
+        
+        return config, version
 
 
 class ConfigValidator:
@@ -264,7 +274,7 @@ class FastConfigManager:
                     os.unlink(tmp_path)
                 raise
     
-    def read_fast(self) -> Dict[str, Any]:
+    def read_fast(self) -> tuple[Dict[str, Any], int]:
         """
         Read config with minimal latency.
         
@@ -274,7 +284,7 @@ class FastConfigManager:
         - Return immediately
         
         Returns:
-            Current configuration
+            Tuple of (config_dict, version)
             
         Raises:
             IOError: Cannot read config file
@@ -285,15 +295,15 @@ class FastConfigManager:
                 binary = f.read(ConfigSerializer.SIZE)
             
             # Deserialize
-            config = ConfigSerializer.deserialize(binary)
+            config, version = ConfigSerializer.deserialize(binary)
             
             # Validate deserialized values are sane
             ConfigValidator.validate(config)
             
-            return config
+            return config, version
         except (IOError, struct.error, KeyError, ValueError, TypeError):
             # Fallback on error (robust)
-            return FALLBACK_CONFIG.copy()
+            return FALLBACK_CONFIG.copy(), 0
     
     def get_version(self) -> int:
         """
@@ -322,9 +332,7 @@ class FastConfigManager:
         Returns:
             (config, version) tuple
         """
-        config = self.read_fast()
-        version = config.pop('_version', self.version.version)
-        return config, version
+        return self.read_fast()
 
 
 class FastConfig:
@@ -377,7 +385,7 @@ class FastConfig:
         Convenience method. Equivalent to:
         FastConfig.get_manager().read_fast()
         """
-        return cls.get_manager().read_fast()
+        return cls.get_manager().read_fast()[0]
     
     @classmethod
     def write(cls, config: Dict[str, Any]) -> None:
