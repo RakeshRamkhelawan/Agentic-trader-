@@ -1,5 +1,5 @@
 # Environment variables
-.env                     # NIEUW: Exclude .env file
+.env
 .env.local
 .env.*.local
 
@@ -46,8 +46,6 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
-test_revolut_connectivity.py
-test_revolut_balance.py
 
 # Database
 *.db
@@ -59,7 +57,7 @@ test_revolut_balance.py
 logs/
 
 # Credentials (NEVER commit these)
-# .env # Deze is nu al bovenaan geplaatst
+.env
 .env.local
 *.pem
 *.key

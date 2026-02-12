@@ -16,7 +16,6 @@ Design:
 """
 
 import time
-import asyncio
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
 from pathlib import Path
@@ -24,9 +23,7 @@ from pathlib import Path
 from backend.execution.fast_config import (
     FastConfigManager, FALLBACK_CONFIG
 )
-from backend.execution.broker_interface import (
-    ExecutionInterface, OrderRequest, OrderSide, OrderType
-)
+
 
 @dataclass
 class ExecutionDecision:
@@ -159,97 +156,68 @@ class HotPathEngine:
 
 class HotPathExecutor:
     """
-    Hot path executor with REAL broker connectivity.
+    Hot path executor with batching support.
     
-    Translates HotPath decisions (action=1) into actual broker orders.
+    For scenarios where decisions need to be batched
+    (e.g., multiple market venues, multiple assets).
     """
     
-    def __init__(
-        self, 
-        config_path: str, 
-        broker_adapter: Optional[ExecutionInterface] = None,
-        shadow_mode: bool = True,
-        symbol: str = "BTC-EUR"
-    ):
+    def __init__(self, config_path: str, batch_size: int = 10):
         """
-        Initialize executor.
+        Initialize executor with batching.
         
         Args:
             config_path: Path to FastConfig file
-            broker_adapter: Instance of ExecutionInterface (e.g. RevolutXAdapter)
-            shadow_mode: If True, only logs orders, does not send them.
-            symbol: Trading pair to trade (default: BTC-EUR)
+            batch_size: Number of decisions to batch
         """
         self.engine = HotPathEngine(config_path)
-        self.adapter = broker_adapter
-        self.shadow_mode = shadow_mode
-        self.symbol = symbol
-        self.last_decision_time = 0
+        self.batch_size = batch_size
+        self.decision_cache: Optional[ExecutionDecision] = None
+        self.cache_version = -1
     
-    async def execute_cycle(self) -> bool:
+    def get_decision_batch(self, count: int = 1) -> list[ExecutionDecision]:
         """
-        Run one execution cycle.
+        Get batch of decisions.
         
-        1. Get decision from engine
-        2. Check confidence threshold
-        3. Execute order if needed
-        """
-        decision = self.engine.get_execution_decision()
+        Uses caching to reduce reads for same config.
         
-        # Debounce: Do not re-execute same decision within 1 second
-        if decision.timestamp <= self.last_decision_time:
-            return False
-        
-        self.last_decision_time = decision.timestamp
-        
-        # Only act if action is NOT Hold (0)
-        if decision.action != 0:
-            return await self.execute_action(decision)
+        Args:
+            count: Number of decisions to return
             
-        return False
-
-    async def execute_action(self, decision: ExecutionDecision) -> bool:
+        Returns:
+            List of ExecutionDecision objects
         """
-        Execute trading action from decision via Broker Adapter.
+        decisions = []
+        
+        for _ in range(count):
+            decision = self.engine.get_execution_decision()
+            decisions.append(decision)
+        
+        return decisions
+    
+    def execute_action(self, decision: ExecutionDecision) -> bool:
+        """
+        Execute trading action from decision.
+        
+        This is where the actual trade would be placed.
         
         Args:
             decision: ExecutionDecision to execute
             
         Returns:
-            True if execution successful (or simulated)
+            True if execution successful
         """
-        if not self.adapter:
-            print(f"[HotPath] No adapter configured. Action {decision.action} ignored.")
-            return False
+        # Placeholder for actual trade execution
+        # In production, this would:
+        # - Validate decision
+        # - Place order on exchange
+        # - Log execution
+        # - Return success/failure
+        
+        return True
 
-        side = OrderSide.BUY if decision.action == 1 else OrderSide.SELL
-        
-        # BASIC STRATEGY: Market Order of 0.0001 BTC (Placeholder size)
-        # TODO: Retrieve position size from Risk Manager
-        qty = 0.0001 
-        
-        order = OrderRequest(
-            symbol=self.symbol,
-            side=side,
-            order_type=OrderType.MARKET,
-            qty=qty
-        )
-
-        if self.shadow_mode:
-            print(f"[SHADOW MODE] Would EXECUTE: {side.value} {qty} {self.symbol} (Conf: {decision.confidence:.2f})")
-            return True
-        
-        try:
-            print(f"[LIVE EXECUTION] Sending Order: {side.value} {qty} {self.symbol}...")
-            result = await self.adapter.submit_order(order)
-            print(f"[LIVE EXECUTION] Order Sent! ID: {result.order_id} Status: {result.status.value}")
-            return True
-        except Exception as e:
-            print(f"[EXECUTION ERROR] Failed to send order: {str(e)}")
-            return False
 
 if __name__ == '__main__':
-    # Test script for HotPathEngine (standalone)
     import tempfile
     
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -269,3 +237,17 @@ if __name__ == '__main__':
         # Get decision
         decision = engine.get_execution_decision()
         print(f"✓ Decision: action={decision.action}, confidence={decision.confidence:.2f}")
+        
+        # Measure latency
+        import time
+        times = []
+        for _ in range(100):
+            start = time.perf_counter()
+            decision = engine.get_execution_decision()
+            elapsed = time.perf_counter() - start
+            times.append(elapsed * 1000)  # Convert to milliseconds
+        
+        avg_latency = sum(times) / len(times)
+        max_latency = max(times)
+        print(f"✓ Latency: avg={avg_latency:.3f}ms, max={max_latency:.3f}ms")
+        print(f"✓ Throughput: {int(1000 / avg_latency)} decisions/second")
