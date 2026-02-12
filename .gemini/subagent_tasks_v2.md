@@ -6,4 +6,4 @@
 - [x] Taak 7.5 Order Management (Backend History, Frontend Order Manager)
 - [x] Epic 10: Standardized Data & Config Layer
 - [x] Epic 11: Security Hardening (AgentGatekeeper, PromptGuard)
-- [x] Commit en Push Alles (Epics 10 & 11)
+- [x] Phase 10: Samkhya Integration & Merge to main

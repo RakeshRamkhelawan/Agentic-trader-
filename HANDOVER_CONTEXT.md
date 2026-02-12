@@ -13,8 +13,11 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
   - **Permission Enforcement**: Integrated gatekeeper checks into `OrderExecutor` to protect trade execution.
   - **Prompt Injection Mitigation**: Created `PromptGuard` for sanitizing untrusted inputs.
   - **Data Isolation**: Updated agent prompts (ResearcherAgents) with XML-style delimiters to isolate data from instructions.
-- **Git & Deployment**:
-  - Committed and pushed 39 files covering both Epics to branch `feature/samkhya-integration`.
+- **Phase 10: Samkhya Integration (Finalized)**:
+  - Merged the massive `feature/samkhya-integration` branch into `main` (457 files).
+  - Resolved merge conflicts in `.env` and `agent_profiles.yaml`.
+  - Herstelde de `main` branch door de eerdere foutieve merge van `feat/unified-market-data` ongedaan te maken via een revert-commit.
+  - De `main` branch op GitHub is nu de bron van waarheid voor de Samkhya architectuur met alle Elemental Agents.
 
 ## 3. Key Files
 - `backend/governance/agent_gatekeeper.py` (Agent RBAC logic)
@@ -27,7 +30,8 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
 ## 4. Reflections
 - **Layered Security**: Moving from role-assignment to enforcement in the final execution path (`OrderExecutor`) provides a robust "last line of defense".
 - **Semantic XML Delimitation**: Using XML tags in prompts significantly improves the LLM's ability to distinguish between its instructions and the raw data it needs to process.
-- **Repository Pattern**: Centralizing data access simplifies tenant-isolation and audit logging for future scalability.
+- **Merge Strategy**: Bij complexe repository-regels (zoals PR-verplichtingen) is een gecombineerde integratiebranch met revert en nieuwe feature-merge de meest schaalbare manier om de `main` branch consistent te houden.
+- **Samkhya Progressie**: De succesvolle merge van Phase 10 vormt het fundament voor de verdere opschaling naar productie.
 
 ## 5. Next Steps
 - Audit remaining high-risk execution paths for unauthorized tool access.
