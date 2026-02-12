@@ -15,6 +15,11 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
   - **Data Isolation**: Updated agent prompts (ResearcherAgents) with XML-style delimiters to isolate data from instructions.
 - **Git & Deployment**:
   - Committed and pushed 39 files covering both Epics to branch `feature/samkhya-integration`.
+- **Phase 10: Multi-Broker Expansion**:
+  - **Bybit Integration**: Implemented `BybitProvider` (WebSockets via `ccxt.pro`) and verified live connectivity (`infra/verify_bybit_eu.py`).
+  - **Revolut X Integration**: Implemented `RevolutProvider` (Polling) and integrated `ExchangeAdapter` into `ExecutionGateway`.
+  - **Hybrid Execution Gateway**: Refactored `ExecutionGateway` to support both CCXT (Kraken, Bybit) and custom adapters (Revolut).
+  - **Verification**: Validated live wallet balance for Bybit and paper execution for Revolut.
 
 ## 3. Key Files
 - `backend/governance/agent_gatekeeper.py` (Agent RBAC logic)
