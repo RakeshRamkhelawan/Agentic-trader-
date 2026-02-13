@@ -1,5 +1,5 @@
 # Environment variables
-.env                     # NIEUW: Exclude .env file
+.env
 .env.local
 .env.*.local
 

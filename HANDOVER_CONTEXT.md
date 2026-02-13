@@ -14,9 +14,13 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
   - **Prompt Injection Mitigation**: Created `PromptGuard` for sanitizing untrusted inputs.
   - **Data Isolation**: Updated agent prompts (ResearcherAgents) with XML-style delimiters to isolate data from instructions.
 - **Definitieve Branch Consolidatie (VOLTOOID)**:
-  - **Echt Alles is gemerged**: Zowel de `feature/samkhya-integration` (457+ bestanden) als de `feat/unified-market-data` (OODA agents) zijn nu volledig geïntegreerd in `main`.
-  - **Beveiliging**: De `.env` file is uit de git-tracking verwijderd en `.gitignore` is versterkt.
-  - **Opschoning**: Alle tijdelijke branches zijn verwijderd; `main` is nu de enige bron van waarheid op GitHub.
+  - **Echt Alles is gemerged**: Zowel de `feature/samkhya-integration` als de `feat/unified-market-data` zijn nu volledig geïntegreerd in `main`.
+- **Provider Verificatie Status**:
+  - ✅ **DeepSeek LLM**: Geverifieerd en werkend.
+  - ✅ **Revolut X**: Geverifieerd en werkend.
+  - ⚠️ **Bybit/Kraken**: Nog steeds Auth errors (Bybit: 10010 IP restriction).
+- **Beveiliging hersteld**: De `.env` file is volledig gewist uit de git historie en wordt nu genegeerd.
+- **Cleanup & Commit**: Alle wijzigingen (inclusief nieuwe scripts en `.gitignore` fix) zijn gecommit en gepusht.
 
 ## 3. Key Files
 - `backend/governance/agent_gatekeeper.py` (Agent RBAC logic)
