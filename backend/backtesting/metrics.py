@@ -10,10 +10,14 @@ class MetricsCalculator:
     """Calculates financial performance metrics from equity curve and trades."""
 
     RISK_FREE_RATE = 0.02  # 2% annually for crypto/stock analysis
+    TRADING_DAYS_PER_YEAR = 365  # Default to 365 for crypto (24/7), use 252 for stocks
 
     @staticmethod
     def calculate(
-        equity_curve: List[Dict], initial_capital: float, trades: List[Trade] = None
+        equity_curve: List[Dict], 
+        initial_capital: float, 
+        trades: List[Trade] = None,
+        trading_days_per_year: int = 365
     ) -> BacktestMetrics:
         """Calculate comprehensive backtesting metrics.
 
@@ -21,6 +25,7 @@ class MetricsCalculator:
             equity_curve: List of {'timestamp', 'equity'} dicts
             initial_capital: Starting capital
             trades: List of Trade objects for detailed analysis
+            trading_days_per_year: Trading days per year (365 for crypto, 252 for stocks)
 
         Returns:
             BacktestMetrics with all performance indicators
@@ -56,8 +61,8 @@ class MetricsCalculator:
         if std_return == 0:
             sharpe = 0.0
         else:
-            annual_return = mean_return * 252
-            annual_std = std_return * np.sqrt(252)
+            annual_return = mean_return * trading_days_per_year
+            annual_std = std_return * np.sqrt(trading_days_per_year)
             sharpe = (annual_return - MetricsCalculator.RISK_FREE_RATE) / annual_std
 
         # Sortino Ratio (only penalizes downside volatility)
@@ -66,7 +71,7 @@ class MetricsCalculator:
             downside_std = downside_returns.std()
             sortino = (
                 (annual_return - MetricsCalculator.RISK_FREE_RATE)
-                / (downside_std * np.sqrt(252))
+                / (downside_std * np.sqrt(trading_days_per_year))
                 if downside_std > 0
                 else 0.0
             )
@@ -125,7 +130,19 @@ class MetricsCalculator:
 
         closed_trades = [t for t in trades if t.pnl is not None]
         if not closed_trades:
-            return {}
+            return {
+                "total_trades": 0,
+                "winning_trades": 0,
+                "losing_trades": 0,
+                "win_rate": 0.0,
+                "profit_factor": 0.0,
+                "avg_win": 0.0,
+                "avg_loss": 0.0,
+                "largest_win": 0.0,
+                "largest_loss": 0.0,
+                "consecutive_wins": 0,
+                "consecutive_losses": 0,
+            }
 
         pnls = [t.pnl for t in closed_trades]
         winning_trades = [p for p in pnls if p > 0]

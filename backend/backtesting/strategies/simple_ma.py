@@ -68,7 +68,11 @@ class MovingAverageStrategy(Strategy):
             bar: OHLCV data with 'close', 'timestamp', 'volume' keys
         """
         close_price = bar["close"]
-        timestamp = bar.get("timestamp", None)
+        timestamp = bar.get("timestamp")
+        if timestamp is None:
+            # Use current time as fallback for live trading
+            # Note: Backtests should always provide timestamps in bar data
+            timestamp = datetime.now()
         bar_volume = bar.get("volume", 1000.0)
 
         if symbol not in self.prices:
@@ -102,39 +106,45 @@ class MovingAverageStrategy(Strategy):
 
         # Golden Cross (Buy Signal)
         if short_ma > long_ma and current_qty == 0:
-            self.exchange.execute_market_order(
+            trade = self.execute_order(
                 symbol=symbol,
                 side=OrderSide.BUY,
                 quantity=position_size,
                 current_price=close_price,
                 timestamp=timestamp,
+                available_volume=bar_volume,
             )
-            self.trades_count += 1
-            print(
-                f"BUY {symbol}: {position_size:.4f} @ {close_price} "
-                f"(short_ma={short_ma:.2f} > long_ma={long_ma:.2f})"
-            )
+            if trade:
+                self.trades_count += 1
+                print(
+                    f"BUY {symbol}: {trade.quantity:.4f} @ {trade.price} "
+                    f"(short_ma={short_ma:.2f} > long_ma={long_ma:.2f})"
+                )
 
         # Death Cross (Sell Signal)
         elif short_ma < long_ma and current_qty > 0:
-            self.exchange.execute_market_order(
+            trade = self.execute_order(
                 symbol=symbol,
                 side=OrderSide.SELL,
                 quantity=current_qty,
                 current_price=close_price,
                 timestamp=timestamp,
+                available_volume=bar_volume,
             )
-            self.trades_count += 1
-            print(
-                f"SELL {symbol}: {current_qty:.4f} @ {close_price} "
-                f"(short_ma={short_ma:.2f} < long_ma={long_ma:.2f})"
-            )
+            if trade:
+                self.trades_count += 1
+                print(
+                    f"SELL {symbol}: {trade.quantity:.4f} @ {trade.price} "
+                    f"(short_ma={short_ma:.2f} < long_ma={long_ma:.2f})"
+                )
 
         # Update portfolio value for position sizing
-        if self.exchange.cash >= 0:
-            self.update_portfolio_value(
-                self.exchange.cash
-                + sum(
-                    p.quantity * close_price for p in self.exchange.positions.values()
-                )
-            )
+        portfolio_value = self.exchange.cash
+        for sym, position in self.exchange.positions.items():
+            # Use latest price for the symbol if available, otherwise use position's current price
+            if sym in self.prices and self.prices[sym]:
+                price = self.prices[sym][-1]
+            else:
+                price = position.current_price
+            portfolio_value += position.quantity * price
+        self.update_portfolio_value(portfolio_value)

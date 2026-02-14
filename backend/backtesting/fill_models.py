@@ -86,8 +86,13 @@ class ProportionalFillModel(FillModel):
         if available_volume <= 0:
             return 0.0, order_quantity
 
-        # Fill ratio = min(order_qty / available_vol, max_participation_rate)
-        fill_ratio = min(order_quantity / available_volume, self.max_participation_rate)
+        # If there is enough volume to fully fill the order, fill it completely.
+        if available_volume >= order_quantity:
+            return order_quantity, 0.0
+
+        # Volume is insufficient: fill proportionally, capped by max_participation_rate.
+        # Fill ratio = min(available_vol / order_qty, max_participation_rate)
+        fill_ratio = min(available_volume / order_quantity, self.max_participation_rate)
         filled = order_quantity * fill_ratio
         unfilled = order_quantity - filled
 
