@@ -23,9 +23,7 @@ class Strategy(ABC):
         self.position_sizer = position_sizer or FixedQuantitySizer(base_quantity=1.0)
         self.slippage_model = slippage_model or FixedSlippageModel(basis_points=5.0)
         self.fill_model = fill_model or FullFillModel()
-        self.portfolio_value = (
-            exchange.initial_cash if hasattr(exchange, "initial_cash") else 10000.0
-        )
+        self.portfolio_value = exchange.initial_capital
 
     def calculate_position_size(
         self, price: float, signal_strength: float = 1.0, risk_per_trade: float = 0.01

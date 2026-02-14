@@ -67,8 +67,9 @@ class MovingAverageStrategy(Strategy):
             bar: OHLCV data with 'close', 'timestamp', 'volume' keys
         """
         close_price = bar["close"]
-        timestamp = bar.get("timestamp", None)
-        bar_volume = bar.get("volume", 1000.0)
+        timestamp = bar.get("timestamp")
+        if timestamp is None:
+            timestamp = datetime.now()
 
         if symbol not in self.prices:
             self.prices[symbol] = []
@@ -130,10 +131,8 @@ class MovingAverageStrategy(Strategy):
             )
 
         # Update portfolio value for position sizing
-        if self.exchange.cash >= 0:
-            self.update_portfolio_value(
-                self.exchange.cash
-                + sum(
-                    p.quantity * close_price for p in self.exchange.positions.values()
-                )
-            )
+        portfolio_value = self.exchange.cash + sum(
+            position.quantity * (self.prices.get(sym, [close_price])[-1])
+            for sym, position in self.exchange.positions.items()
+        )
+        self.update_portfolio_value(portfolio_value)
