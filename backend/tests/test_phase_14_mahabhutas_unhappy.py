@@ -11,15 +11,17 @@ These tests verify that the physical layer infrastructure gracefully handles:
 - Partial failures
 """
 
-import pytest
-import numpy as np
 import asyncio
-from typing import Dict, Any
-from unittest.mock import patch, MagicMock
+from typing import Any, Dict
+from unittest.mock import MagicMock, patch
 
-from backend.config.schemas import TattvaConfig, TattvaLayer, AkashaConfig, VayuConfig, AgniConfig, ApasConfig, PrithviConfig
+import numpy as np
+import pytest
+
+from backend.config.schemas import (AgniConfig, AkashaConfig, ApasConfig,
+                                    PrithviConfig, TattvaConfig, TattvaLayer,
+                                    VayuConfig)
 from backend.core.system_identity import SystemIdentity
-
 
 # ============================================================================
 # FIXTURES

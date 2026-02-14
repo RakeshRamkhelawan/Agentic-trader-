@@ -7,7 +7,7 @@ service or tool invocation by automated agents.
 
 import logging
 from enum import Enum
-from typing import Set, Dict, Optional
+from typing import Dict, Optional, Set
 
 logger = logging.getLogger(__name__)
 

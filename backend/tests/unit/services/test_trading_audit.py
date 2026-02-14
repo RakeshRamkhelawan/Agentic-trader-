@@ -1,8 +1,12 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from backend.services.trading_service import TradingService
+
+import pytest
+
+from backend.core.auth.context import (clear_context, set_current_tenant,
+                                       set_current_user)
 from backend.core.compliance.decorators import set_global_audit_logger
-from backend.core.auth.context import set_current_tenant, set_current_user, clear_context
+from backend.services.trading_service import TradingService
+
 
 @pytest.fixture(autouse=True)
 def context_cleanup():

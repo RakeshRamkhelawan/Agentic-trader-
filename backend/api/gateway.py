@@ -9,18 +9,20 @@ Features:
 - Audit logging
 """
 
-from fastapi import FastAPI, HTTPException, Depends, Header, Request
+import logging
+import os
+import time
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Dict, List, Optional
+
+import jwt
+import redis.asyncio as redis
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, List
-from datetime import datetime, timedelta, timezone
-import jwt
-import time
-import os
-import logging
-from enum import Enum
-import redis.asyncio as redis
+
 from backend.core.config.settings import settings
 
 _logger = logging.getLogger(__name__)

@@ -1,7 +1,11 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
-from backend.execution.smart_order_router import SmartOrderRouter, NoRouteFoundError
+
+from backend.execution.smart_order_router import (NoRouteFoundError,
+                                                  SmartOrderRouter)
 from backend.schemas.orders import OrderRequest, OrderSide, OrderType
+
 
 # Mock adapters
 @pytest.fixture

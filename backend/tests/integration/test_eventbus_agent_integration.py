@@ -4,14 +4,15 @@ Integration Tests for EventBus + Agent Communication.
 Tests real interactions between EventBus and Agents.
 """
 
-import pytest
 import asyncio
 from datetime import datetime, timezone
+
+import pytest
+
+from backend.agents.base_agent import BaseAgent
 from backend.events.event_bus import EventBus
 from backend.events.schemas import AgentThought, MarketTick
-from backend.agents.base_agent import BaseAgent
 from backend.llm.provider_interface import LLMProvider
-
 
 pytestmark = pytest.mark.integration
 

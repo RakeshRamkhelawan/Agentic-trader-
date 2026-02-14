@@ -5,10 +5,11 @@ Genereert trade proposals uit orientation analysis.
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import Orientation, TradeProposal, MarketRegime
+from backend.core.schemas.ooda_types import (MarketRegime, Orientation,
+                                             TradeProposal)
 from backend.execution.fast_config import FastConfig
 from backend.governance.agent_gatekeeper import AgentRole
 

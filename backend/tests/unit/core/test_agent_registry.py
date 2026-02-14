@@ -1,5 +1,7 @@
 import pytest
-from backend.core.agent_registry import AgentRegistry, AgentProfile
+
+from backend.core.agent_registry import AgentProfile, AgentRegistry
+
 
 # --- FIXTURES ---
 @pytest.fixture

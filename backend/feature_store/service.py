@@ -1,5 +1,6 @@
-from typing import List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List
+
 from backend.feature_store.registry import FeatureRegistry
 
 

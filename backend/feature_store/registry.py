@@ -1,6 +1,7 @@
-import yaml
 import logging
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
+
+import yaml
 from pydantic import BaseModel
 
 

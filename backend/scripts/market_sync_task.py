@@ -4,18 +4,19 @@ Market Sync Task - Periodic background synchronization of market data to Redis.
 
 import asyncio
 import logging
-import sys
 import os
+import sys
 
 # Add project root to path
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
-from backend.core.cache_layer import get_cache
-from backend.execution.exchange_adapter import ExchangeAdapter
-from backend.core.config.settings import settings
 import ccxt.async_support as ccxt
+
+from backend.core.cache_layer import get_cache
+from backend.core.config.settings import settings
+from backend.execution.exchange_adapter import ExchangeAdapter
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -136,8 +137,9 @@ async def sync_revolut(cache):
             tickers = await adapter.get_tickers(raw_symbols)
 
             # NEW: Store ticks to DB for history
-            from backend.services.trading_service import get_trading_service
             from datetime import datetime
+
+            from backend.services.trading_service import get_trading_service
 
             trading_service = get_trading_service()
             current_time = datetime.utcnow()

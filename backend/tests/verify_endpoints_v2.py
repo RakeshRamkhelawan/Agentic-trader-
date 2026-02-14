@@ -1,7 +1,8 @@
-import requests
 import json
 import sys
 import time
+
+import requests
 
 BASE_URL = "http://localhost:8003/api/v1"
 

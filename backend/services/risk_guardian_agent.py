@@ -1,11 +1,12 @@
-from typing import Dict, Any, Optional
 import logging
-from backend.core.memory_agent import MemoryAgent
-from backend.schemas.agent_messages import AgentMessage
-from backend.schemas.risk import RiskProfile, AutonomyStatus
+from typing import Any, Dict, Optional
 
 # Basic Pydantic models for validation
 from pydantic import ValidationError
+
+from backend.core.memory_agent import MemoryAgent
+from backend.schemas.agent_messages import AgentMessage
+from backend.schemas.risk import AutonomyStatus, RiskProfile
 
 
 class RiskGuardianAgent:

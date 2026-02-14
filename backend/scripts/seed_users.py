@@ -9,12 +9,13 @@ Usage:
 import asyncio
 import logging
 import uuid
-from sqlalchemy import select
 from datetime import datetime
+
+from sqlalchemy import select
 
 # Import database and models
 from backend.core.database import AsyncSessionLocal
-from backend.models.user_settings import User, UserProfile, UserPreferences
+from backend.models.user_settings import User, UserPreferences, UserProfile
 
 # Import hashing function (re-use from auth_api or re-implement if lazy imports issue)
 try:

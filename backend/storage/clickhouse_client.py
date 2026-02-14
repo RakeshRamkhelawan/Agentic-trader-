@@ -6,9 +6,11 @@ Provides async connection pooling and query execution for ClickHouse.
 
 import os
 from typing import Any, Dict, List, Optional
+
 import clickhouse_connect
 import sqlparse
 from sqlparse import sql, tokens
+
 from backend.core.auth.context import get_current_tenant_optional
 
 

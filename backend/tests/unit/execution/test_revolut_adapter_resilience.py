@@ -1,15 +1,19 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 import respx
 from httpx import Response
-from unittest.mock import MagicMock, patch
+
+from backend.execution.broker_interface import (OrderRequest, OrderSide,
+                                                OrderType)
 from backend.execution.exchange_adapter import ExchangeAdapter
-from backend.execution.broker_interface import OrderRequest, OrderSide, OrderType
+
 
 @pytest.fixture
 def mock_keys(tmp_path):
     """Maak dummy key files aan."""
-    from cryptography.hazmat.primitives.asymmetric import ed25519
     from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ed25519
     
     priv = ed25519.Ed25519PrivateKey.generate()
     pem = priv.private_bytes(

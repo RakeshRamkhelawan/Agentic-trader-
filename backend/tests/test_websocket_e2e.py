@@ -7,12 +7,12 @@ Run with: pytest backend/tests/test_websocket_e2e.py -v
 """
 
 import asyncio
-import pytest
 import json
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 from unittest.mock import AsyncMock, patch
 
+import pytest
 
 # ============================================
 # WebSocket Manager Tests
@@ -305,7 +305,7 @@ class TestWebSocketIntegration:
         """Test complete orderbook subscription flow."""
         from backend.api.websocket_manager import WebSocketManager
         from backend.services.market_data_streamer import MarketDataStreamer
-        
+
         # Setup
         ws_manager = WebSocketManager()
         streamer = MarketDataStreamer()

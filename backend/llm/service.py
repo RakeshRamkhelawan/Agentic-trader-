@@ -1,19 +1,16 @@
-from typing import Dict, Any, List, Optional
-import os
 import logging
+import os
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel
-from backend.llm.providers import (
-    LLMProvider,
-    MockProvider,
-    GeminiProvider,
-    OpenAIProvider,
-    OllamaProvider,
-)
+
+from backend.core.auth.context import get_current_tenant_optional
+from backend.llm.providers import (GeminiProvider, LLMProvider, MockProvider,
+                                   OllamaProvider, OpenAIProvider)
 from backend.llm.providers.deepseek import DeepSeekProvider
+from backend.llm.resilience import CircuitBreaker, CircuitBreakerOpenException
 from backend.llm.usage_tracker import UsageTracker
 from backend.storage.tenant_aware_clickhouse import TenantAwareClickHouseClient
-from backend.core.auth.context import get_current_tenant_optional
-from backend.llm.resilience import CircuitBreaker, CircuitBreakerOpenException
 
 logger = logging.getLogger(__name__)
 

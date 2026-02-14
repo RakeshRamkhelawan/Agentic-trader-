@@ -13,15 +13,17 @@ This module implements the 36-Tattva consciousness architecture:
 - Layers 32-36: Mahabhutas (physical elements)
 """
 
-from typing import Dict, Any, List, Optional
-import numpy as np
 import asyncio
 import logging
 import time
-from backend.core.sensory_processor import SensoryProcessor
-from backend.core.memory_system import MemorySystem
-from backend.core.decision_discriminator import DecisionDiscriminator
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+
 from backend.config.schemas import TattvaConfig, TattvaLayer
+from backend.core.decision_discriminator import DecisionDiscriminator
+from backend.core.memory_system import MemorySystem
+from backend.core.sensory_processor import SensoryProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -417,9 +419,8 @@ class SystemIdentity:
 
         if use_phase15:
             try:
-                from backend.observability.hardware_metrics import (
-                    Phase15MetricsIntegration,
-                )
+                from backend.observability.hardware_metrics import \
+                    Phase15MetricsIntegration
 
                 if not hasattr(self, "_metrics_integration"):
                     self._metrics_integration = Phase15MetricsIntegration()

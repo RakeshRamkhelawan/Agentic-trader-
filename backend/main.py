@@ -1,9 +1,10 @@
 import asyncio
 import logging
-from backend.services.cognitive_orchestrator import CognitiveOrchestrator
-from backend.core.telemetry.tracing import setup_tracing
+
 from backend.core.config.settings import settings
+from backend.core.telemetry.tracing import setup_tracing
 from backend.schemas.agent_messages import AgentMessage
+from backend.services.cognitive_orchestrator import CognitiveOrchestrator
 
 
 async def start_services():
@@ -17,10 +18,12 @@ async def start_services():
     logger.info(f"Environment: {settings.ENV}, Debug: {settings.DEBUG}")
 
     # Initialize Usage Infrastructure
-    from backend.storage.tenant_aware_clickhouse import TenantAwareClickHouseClient
+    import os
+
     from backend.core.compliance.audit_logger import AuditLogger
     from backend.core.compliance.decorators import set_global_audit_logger
-    import os
+    from backend.storage.tenant_aware_clickhouse import \
+        TenantAwareClickHouseClient
 
     clickhouse_client = TenantAwareClickHouseClient(
         host=os.getenv("CLICKHOUSE_HOST", "localhost"),

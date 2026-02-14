@@ -1,10 +1,11 @@
 
+import os
+
 import pytest
 import pytest_asyncio
-import os
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://trader:trading_secure@localhost:5455/trading_db")
 

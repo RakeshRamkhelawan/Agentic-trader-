@@ -1,5 +1,6 @@
-import sys
 import logging
+import sys
+
 from backend.core.config.settings import settings
 
 

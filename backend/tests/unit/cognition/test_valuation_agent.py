@@ -1,6 +1,9 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
+
 from backend.services.valuation_agent import ValuationAgent
+
 
 @pytest.fixture
 def mock_memory():

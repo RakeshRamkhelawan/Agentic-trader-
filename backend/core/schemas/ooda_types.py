@@ -5,10 +5,12 @@ Defines immutable Pydantic models for the Observe-Orient-Decide-Act cycle.
 These types ensure type safety and validation across the multi-agent system.
 """
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Dict, Any, List, Optional
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
 from backend.governance.agent_gatekeeper import AgentRole
 
 

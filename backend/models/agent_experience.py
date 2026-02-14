@@ -1,7 +1,9 @@
-from sqlalchemy import Column, String, DateTime, Float, Integer, Boolean
-from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
 from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+
 from backend.core.database import Base
 
 

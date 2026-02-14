@@ -8,14 +8,15 @@ Responsibility:
 
 import asyncio
 import logging
-import httpx
-from typing import List, Dict, Optional, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import httpx
 from bs4 import BeautifulSoup
 
+from backend.core.config.settings import settings
 from backend.core.memory_agent import MemoryAgent  # GEWIJZIGD
 from backend.schemas.agent_messages import AgentMessage  # GEWIJZIGD
-from backend.core.config.settings import settings
 
 
 # Mock LLM analysis for now (replace with real OpenAI/Gemini call later)
@@ -91,7 +92,7 @@ class ResearchAgent:
         # Convert dict to UnifiedMarketEvent if needed, or Strategy handles dict?
         # BaseStrategy expects UnifiedMarketEvent. Use helper or robust casting.
 
-        from backend.market_data.models import UnifiedMarketEvent, EventType
+        from backend.market_data.models import EventType, UnifiedMarketEvent
 
         # Try to construct event from dict
         try:

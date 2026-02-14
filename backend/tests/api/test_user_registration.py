@@ -9,9 +9,10 @@ Tests cover:
 - Happy path: Successful registration and login
 - Unhappy paths: Duplicate email, invalid input, wrong password
 """
-import pytest
-from httpx import AsyncClient, ASGITransport
 from datetime import datetime, timedelta, timezone
+
+import pytest
+from httpx import ASGITransport, AsyncClient
 
 # Import the app
 from backend.api.main import app

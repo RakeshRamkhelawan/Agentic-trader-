@@ -4,13 +4,15 @@ Tests for LLM-based SentimentAgent.
 TDD Test Suite - Write tests FIRST before implementation.
 """
 
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 from pydantic import BaseModel
+
 from backend.agents.sentiment_agent import SentimentAgent
-from backend.llm.provider_interface import LLMProvider
 from backend.events.event_bus import EventBus
+from backend.llm.provider_interface import LLMProvider
 
 
 class SentimentAnalysis(BaseModel):

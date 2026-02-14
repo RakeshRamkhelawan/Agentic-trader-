@@ -1,12 +1,9 @@
-from typing import Dict, Any
 import uuid
-from backend.execution.broker_interface import (
-    ExecutionInterface,
-    OrderRequest,
-    OrderResult,
-    OrderSide,
-    OrderStatus,
-)
+from typing import Any, Dict
+
+from backend.execution.broker_interface import (ExecutionInterface,
+                                                OrderRequest, OrderResult,
+                                                OrderSide, OrderStatus)
 
 
 class ShadowPortfolioManager(ExecutionInterface):

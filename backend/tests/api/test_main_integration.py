@@ -1,8 +1,9 @@
 
-import pytest
-from httpx import AsyncClient
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
+from httpx import AsyncClient
 
 # We mock the entire app import because it doesn't exist yet in the TDD cycle
 # In a real run, we would import app from backend.api.main

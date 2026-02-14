@@ -1,10 +1,12 @@
-from typing import AsyncGenerator, Optional
 from datetime import datetime
-from sqlalchemy import select, and_
+from typing import AsyncGenerator, Optional
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.core.database import AsyncSessionLocal
-from backend.models.market_data import MarketTick
 from backend.execution.simulated_clock import SimulatedClock
+from backend.models.market_data import MarketTick
 from backend.schemas.market_data import TickerUpdate
 
 

@@ -1,11 +1,10 @@
 import functools
-import logging
 import inspect
-from typing import Optional, Any
-from backend.core.auth.context import (
-    get_current_tenant_optional,
-    get_current_user_optional,
-)
+import logging
+from typing import Any, Optional
+
+from backend.core.auth.context import (get_current_tenant_optional,
+                                       get_current_user_optional)
 
 logger = logging.getLogger(__name__)
 

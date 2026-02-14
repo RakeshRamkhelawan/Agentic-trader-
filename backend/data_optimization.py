@@ -9,10 +9,9 @@ This module provides utilities for:
 """
 
 import logging
-from typing import List, Dict, Any, Optional, Generator
 from dataclasses import dataclass
-import logging
 from datetime import datetime, timedelta
+from typing import Any, Dict, Generator, List, Optional
 
 logger = logging.getLogger(__name__)
 

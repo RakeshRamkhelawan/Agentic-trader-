@@ -4,9 +4,9 @@ Tenant Context Management - Thread-safe context variables for multi-tenancy.
 Uses Python's contextvars for async-safe tenant isolation.
 """
 
+from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Optional
-from contextlib import contextmanager
 
 # Thread-safe, async-safe context variable for tenant_id
 _tenant_context: ContextVar[Optional[str]] = ContextVar("tenant_id", default=None)

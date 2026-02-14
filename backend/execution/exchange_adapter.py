@@ -1,23 +1,21 @@
-import time
-import json
 import base64
-import httpx
+import json
 import logging
-from typing import Dict, Any, Optional, List, AsyncGenerator
-from cryptography.hazmat.primitives.asymmetric import ed25519
+import time
+from typing import Any, AsyncGenerator, Dict, List, Optional
+
+import httpx
 from cryptography.hazmat.primitives import serialization
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-)
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
+                      wait_exponential)
 
 logger = logging.getLogger(__name__)
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
-from backend.schemas.orders import OrderRequest, OrderSide, OrderType, OrderStatus
-from backend.schemas.market_data import TickerUpdate, OrderBook, OrderUpdate
+from backend.schemas.market_data import OrderBook, OrderUpdate, TickerUpdate
+from backend.schemas.orders import (OrderRequest, OrderSide, OrderStatus,
+                                    OrderType)
 
 
 class RateLimitError(Exception):
@@ -345,8 +343,8 @@ class ExchangeAdapter(ExecutionInterface):
         await self._request("DELETE", "/api/1.0/orders")
 
     async def subscribe_ticker(self, symbol: str) -> AsyncGenerator[TickerUpdate, None]:
-        from datetime import datetime
         import asyncio
+        from datetime import datetime
 
         while True:
             try:
@@ -367,8 +365,8 @@ class ExchangeAdapter(ExecutionInterface):
     async def subscribe_orderbook(
         self, symbol: str, depth: int = 10
     ) -> AsyncGenerator[OrderBook, None]:
-        from datetime import datetime
         import asyncio
+        from datetime import datetime
 
         while True:
             yield OrderBook(
@@ -377,8 +375,8 @@ class ExchangeAdapter(ExecutionInterface):
             await asyncio.sleep(5.0)
 
     async def subscribe_orders(self) -> AsyncGenerator[OrderUpdate, None]:
-        from datetime import datetime
         import asyncio
+        from datetime import datetime
 
         while True:
             await asyncio.sleep(10.0)

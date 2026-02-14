@@ -1,6 +1,9 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+
 from backend.llm.usage_tracker import TokenCounter, UsageTracker
+
 
 @pytest.fixture
 def mock_clickhouse():
