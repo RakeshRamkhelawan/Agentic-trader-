@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
+from datetime import datetime
 from backend.backtesting.exchange import SimulatedExchange
 from backend.backtesting.position_sizing import PositionSizer, FixedQuantitySizer
 from backend.backtesting.fill_models import FillModel, FullFillModel
 from backend.backtesting.slippage_models import SlippageModel, FixedSlippageModel
+from backend.backtesting.models import OrderSide, Trade
 
 
 class Strategy(ABC):
@@ -49,3 +51,54 @@ class Strategy(ABC):
     def update_portfolio_value(self, new_value: float) -> None:
         """Update portfolio value (called after each bar or trade)."""
         self.portfolio_value = new_value
+
+    def execute_order(
+        self,
+        symbol: str,
+        side: OrderSide,
+        quantity: float,
+        current_price: float,
+        timestamp: datetime,
+        available_volume: float = float('inf'),
+    ) -> Optional[Trade]:
+        """
+        Execute an order with slippage and fill model simulation.
+
+        Args:
+            symbol: Trading symbol
+            side: OrderSide.BUY or OrderSide.SELL
+            quantity: Desired quantity to trade
+            current_price: Current market price
+            timestamp: Order timestamp
+            available_volume: Available market volume (for fill simulation)
+
+        Returns:
+            Trade object if order was filled (fully or partially), None if unfilled
+        """
+        # Apply fill model to determine how much gets filled
+        filled_quantity, unfilled_quantity = self.fill_model.compute_fill(
+            order_quantity=quantity,
+            available_volume=available_volume
+        )
+
+        # If nothing filled, return None
+        if filled_quantity <= 0:
+            return None
+
+        # Apply slippage model to get execution price
+        execution_price, slippage_cost = self.slippage_model.apply(
+            price=current_price,
+            quantity=filled_quantity,
+            side=side
+        )
+
+        # Execute the filled portion at the slipped price
+        trade = self.exchange.execute_market_order(
+            symbol=symbol,
+            side=side,
+            quantity=filled_quantity,
+            current_price=execution_price,
+            timestamp=timestamp
+        )
+
+        return trade
