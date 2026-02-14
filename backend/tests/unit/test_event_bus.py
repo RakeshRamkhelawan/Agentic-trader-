@@ -4,9 +4,11 @@ Tests for Event Bus using Redis Streams.
 TDD Test Suite - Write tests FIRST before implementation.
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 import redis.asyncio as redis
-from unittest.mock import AsyncMock, MagicMock, patch
+
 from backend.events.event_bus import EventBus
 
 

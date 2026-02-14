@@ -4,11 +4,12 @@ Tests for Ollama LLM Provider (Local).
 TDD Test Suite - Write tests FIRST before implementation.
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from pydantic import BaseModel
-from backend.llm.provider_interface import LLMProvider
 
+import pytest
+from pydantic import BaseModel
+
+from backend.llm.provider_interface import LLMProvider
 
 pytestmark = pytest.mark.unit
 
@@ -211,8 +212,9 @@ async def test_ollama_handles_connection_error():
 @pytest.mark.asyncio
 async def test_ollama_handles_api_error_response():
     """GREEN: Should handle API error responses."""
-    from backend.llm.providers.ollama import OllamaProvider
     import httpx
+
+    from backend.llm.providers.ollama import OllamaProvider
     
     with patch('httpx.AsyncClient') as MockClient:
         mock_response = MagicMock()

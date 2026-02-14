@@ -1,13 +1,15 @@
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Import the (yet to be created) SessionManager and context managers
 # This import will fail initially, which is part of the Red phase
 try:
-    from backend.core.database import SessionManager, system_admin_session, tenant_session
+    from backend.core.database import (SessionManager, system_admin_session,
+                                       tenant_session)
 except ImportError:
     SessionManager = None
     system_admin_session = None

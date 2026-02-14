@@ -2,6 +2,7 @@
 Analysis Router
 Provides endpoints for running and managing analyses.
 """
+
 import asyncio
 import logging
 import uuid
@@ -16,7 +17,7 @@ from src.api.schemas.analysis import (
     AnalysisListResponse,
     AnalysisType,
     AnalysisStatus,
-    MarketSummary
+    MarketSummary,
 )
 from src.api.services.analysis_service import AnalysisService
 from src.api.services.ingestion_service import IngestionService
@@ -37,7 +38,7 @@ _ingestion_service: Optional[IngestionService] = None
 def initialize_services(data_dir: str = "/app/data"):
     """Initialize services on startup."""
     global _db_manager, _analysis_service, _ingestion_service
-    
+
     try:
         _db_manager = DuckDBManager(data_dir=data_dir)
         _analysis_service = AnalysisService(db_manager=_db_manager)
@@ -53,27 +54,26 @@ def initialize_services(data_dir: str = "/app/data"):
     response_model=AnalysisResult,
     status_code=status.HTTP_202_ACCEPTED,
     summary="Run Analysis",
-    description="Trigger an analysis job (async)"
+    description="Trigger an analysis job (async)",
 )
 async def run_analysis(
-    request: AnalysisRequest,
-    background_tasks: BackgroundTasks
+    request: AnalysisRequest, background_tasks: BackgroundTasks
 ) -> AnalysisResult:
     """
     Trigger an analysis job.
-    
+
     Analysis runs asynchronously in the background.
     Poll GET /analysis/{id} for status and results.
-    
+
     Args:
         request: Analysis configuration
         background_tasks: FastAPI background tasks
-    
+
     Returns:
         AnalysisResult with job ID and queued status
     """
     analysis_id = f"analysis_{uuid.uuid4().hex[:12]}"
-    
+
     result = AnalysisResult(
         analysis_id=analysis_id,
         analysis_type=request.analysis_type,
@@ -85,15 +85,15 @@ async def run_analysis(
         metadata={
             "market": request.market,
             "category": request.category,
-            "parameters": request.parameters
-        }
+            "parameters": request.parameters,
+        },
     )
-    
+
     _analyses[analysis_id] = result
-    
+
     # Queue background task
     background_tasks.add_task(_execute_analysis, analysis_id, request)
-    
+
     return result
 
 
@@ -101,27 +101,27 @@ async def run_analysis(
     "/analysis/{analysis_id}",
     response_model=AnalysisResult,
     summary="Get Analysis Status",
-    description="Get status and results of an analysis"
+    description="Get status and results of an analysis",
 )
 async def get_analysis(analysis_id: str) -> AnalysisResult:
     """
     Get analysis status and results.
-    
+
     Args:
         analysis_id: Unique analysis ID
-    
+
     Returns:
         AnalysisResult with current status
-    
+
     Raises:
         HTTPException 404 if analysis not found
     """
     if analysis_id not in _analyses:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Analysis {analysis_id} not found"
+            detail=f"Analysis {analysis_id} not found",
         )
-    
+
     return _analyses[analysis_id]
 
 
@@ -129,31 +129,31 @@ async def get_analysis(analysis_id: str) -> AnalysisResult:
     "/analysis",
     response_model=AnalysisListResponse,
     summary="List Analyses",
-    description="List recent analyses"
+    description="List recent analyses",
 )
 async def list_analyses(
     status_filter: Optional[AnalysisStatus] = Query(None, alias="status"),
-    limit: int = Query(10, ge=1, le=50)
+    limit: int = Query(10, ge=1, le=50),
 ) -> AnalysisListResponse:
     """
     List recent analyses.
-    
+
     Args:
         status_filter: Filter by status
         limit: Maximum results
-    
+
     Returns:
         List of recent analyses
     """
     analyses = list(_analyses.values())
-    
+
     if status_filter:
         analyses = [a for a in analyses if a.status == status_filter]
-    
+
     # Sort by created_at descending
     analyses.sort(key=lambda x: x.created_at, reverse=True)
     analyses = analyses[:limit]
-    
+
     return AnalysisListResponse(analyses=analyses, total=len(analyses))
 
 
@@ -161,17 +161,17 @@ async def list_analyses(
     "/markets/summary",
     response_model=MarketSummary,
     summary="Get Market Summary",
-    description="Get summary statistics for a prediction market"
+    description="Get summary statistics for a prediction market",
 )
 async def get_market_summary(
     market: str = Query("kalshi", description="Market source")
 ) -> MarketSummary:
     """
     Get market summary statistics.
-    
+
     Args:
         market: Market source (kalshi/polymarket)
-    
+
     Returns:
         MarketSummary with statistics
     """
@@ -182,7 +182,7 @@ async def get_market_summary(
         active_markets=487,
         total_volume_24h=15_420_000.50,
         categories=["crypto", "politics", "economics", "finance", "sports"],
-        last_updated=datetime.now(timezone.utc)
+        last_updated=datetime.now(timezone.utc),
     )
 
 
@@ -190,11 +190,13 @@ async def _execute_analysis(analysis_id: str, request: AnalysisRequest):
     """Execute analysis in background with real analysis engines."""
     if analysis_id not in _analyses:
         return
-    
+
     # Update status to running
     _analyses[analysis_id].status = AnalysisStatus.RUNNING
-    logger.info(f"Starting analysis {analysis_id} for {request.market}/{request.category}")
-    
+    logger.info(
+        f"Starting analysis {analysis_id} for {request.market}/{request.category}"
+    )
+
     try:
         # Fetch market data
         logger.info(f"Fetching data from {request.market}")
@@ -202,9 +204,9 @@ async def _execute_analysis(analysis_id: str, request: AnalysisRequest):
             market=request.market,
             symbol=request.parameters.get("symbol", "DEFAULT"),
             category=request.category,
-            limit=request.parameters.get("limit", 1000)
+            limit=request.parameters.get("limit", 1000),
         )
-        
+
         # Check if data fetch was successful
         if len(trades_df) == 0:
             _analyses[analysis_id].status = AnalysisStatus.COMPLETED
@@ -212,20 +214,20 @@ async def _execute_analysis(analysis_id: str, request: AnalysisRequest):
             _analyses[analysis_id].result = {
                 "status": "insufficient_data",
                 "metadata": metadata,
-                "message": f"No trades available for {request.parameters.get('symbol', 'DEFAULT')}"
+                "message": f"No trades available for {request.parameters.get('symbol', 'DEFAULT')}",
             }
             logger.warning(f"No trades found for analysis {analysis_id}")
             return
-        
+
         # Run analysis pipeline
         logger.info(f"Running analysis on {len(trades_df)} trades")
         analysis_result = _analysis_service.analyze_market(
             market=request.market,
             symbol=request.parameters.get("symbol", "DEFAULT"),
             trades_df=trades_df,
-            category=request.category
+            category=request.category,
         )
-        
+
         # Prepare final result
         result = {
             "analysis_type": request.analysis_type.value,
@@ -239,18 +241,23 @@ async def _execute_analysis(analysis_id: str, request: AnalysisRequest):
             "statistical_tests": analysis_result.get("statistical_tests"),
             "signals": analysis_result.get("signals", []),
             "signal_count": len(analysis_result.get("signals", [])),
-            "high_confidence_signals": len([
-                s for s in analysis_result.get("signals", [])
-                if s.get("confidence", 0) >= 70
-            ])
+            "high_confidence_signals": len(
+                [
+                    s
+                    for s in analysis_result.get("signals", [])
+                    if s.get("confidence", 0) >= 70
+                ]
+            ),
         }
-        
+
         _analyses[analysis_id].status = AnalysisStatus.COMPLETED
         _analyses[analysis_id].completed_at = datetime.now(timezone.utc)
         _analyses[analysis_id].result = result
-        
-        logger.info(f"Analysis {analysis_id} completed with {result['signal_count']} signals")
-        
+
+        logger.info(
+            f"Analysis {analysis_id} completed with {result['signal_count']} signals"
+        )
+
     except Exception as e:
         logger.error(f"Analysis {analysis_id} failed: {e}", exc_info=True)
         _analyses[analysis_id].status = AnalysisStatus.FAILED

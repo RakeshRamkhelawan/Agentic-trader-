@@ -1,4 +1,5 @@
 """API Schemas."""
+
 from src.api.schemas.signal import (
     MarketSignal,
     SignalFilter,

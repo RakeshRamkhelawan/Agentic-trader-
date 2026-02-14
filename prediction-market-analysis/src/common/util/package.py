@@ -2,7 +2,9 @@ import subprocess
 from pathlib import Path
 
 
-def package_data(data_dir: Path = Path("data"), output_path: Path = Path("data.tar.zst")) -> bool:
+def package_data(
+    data_dir: Path = Path("data"), output_path: Path = Path("data.tar.zst")
+) -> bool:
     """Package the data directory into a zstd-compressed tar archive.
 
     Args:

@@ -4,18 +4,17 @@ Unit tests for FastConfig - Hot/Cold path configuration bridge.
 TDD approach: Tests define the contract for FastConfig behavior.
 """
 
-import pytest
-import struct
-import time
-import tempfile
 import os
+import struct
+import tempfile
+import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from backend.execution.fast_config import (
-    FastConfigManager, FastConfig, ConfigSerializer, ConfigValidator
-)
+import pytest
 
+from backend.execution.fast_config import (ConfigSerializer, ConfigValidator,
+                                           FastConfig, FastConfigManager)
 
 pytestmark = pytest.mark.unit
 

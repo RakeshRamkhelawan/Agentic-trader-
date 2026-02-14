@@ -8,27 +8,32 @@ Function:
 - Checks agent health/prana before routing.
 """
 
-import logging
-from typing import Dict, Any, List, Optional
 import asyncio
+import logging
+from typing import Any, Dict, List, Optional
 
 from backend.agents.elemental_base import ElementalBase
 
 logger = logging.getLogger(__name__)
+
 
 class ElementalRouter:
     """
     Routes signals within the Elemental System.
     Not an agent itself, but a mechanism (Upaya).
     """
-    
+
     def __init__(self):
         self.agents: Dict[str, ElementalBase] = {}
         self.routes: Dict[str, List[str]] = {
-            "market_data": ["air", "water", "earth"], # Data flows to Research, Macro, Valuation
-            "strategy_signal": ["fire", "earth"],     # Strategy flows to Risk, Execution
-            "risk_alert": ["ether", "earth"],         # Alerts flow to Orchestrator, Execution
-            "synthesis": ["air", "water", "earth"]    # Feedback loop
+            "market_data": [
+                "air",
+                "water",
+                "earth",
+            ],  # Data flows to Research, Macro, Valuation
+            "strategy_signal": ["fire", "earth"],  # Strategy flows to Risk, Execution
+            "risk_alert": ["ether", "earth"],  # Alerts flow to Orchestrator, Execution
+            "synthesis": ["air", "water", "earth"],  # Feedback loop
         }
 
     def register_agent(self, agent: ElementalBase):
@@ -38,7 +43,9 @@ class ElementalRouter:
         self.agents[agent.element] = agent
         logger.info(f"Registered agent: {agent.agent_name} for element {agent.element}")
 
-    async def route_signal(self, signal_type: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def route_signal(
+        self, signal_type: str, payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Route signal to subscribed agents and aggregate responses.
         """
@@ -49,11 +56,11 @@ class ElementalRouter:
 
         tasks = []
         active_elements = []
-        
+
         for element in targets:
             agent = self.agents.get(element)
             if agent:
-                # Check health/prana before dispatching? 
+                # Check health/prana before dispatching?
                 # Agent's process_signal handles prana check, but we could optimize.
                 tasks.append(agent.process_signal(payload))
                 active_elements.append(element)
@@ -65,7 +72,7 @@ class ElementalRouter:
 
         # Parallel execution
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         aggregated = {}
         for element, result in zip(active_elements, results):
             if isinstance(result, Exception):
@@ -73,7 +80,7 @@ class ElementalRouter:
                 aggregated[element] = {"error": str(result)}
             else:
                 aggregated[element] = result
-                
+
         return aggregated
 
     def get_agent_status(self) -> Dict[str, Any]:

@@ -4,16 +4,18 @@ CCXT-based Exchange Adapter.
 Provides unified access to 100+ cryptocurrency exchanges
 via the CCXT library with WebSocket streaming support.
 """
+
 import asyncio
 import logging
-from datetime import datetime
-from typing import Dict, Any, List, Optional, AsyncGenerator
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
-from backend.schemas.orders import OrderRequest, OrderStatus
-from backend.schemas.market_data import TickerUpdate, OrderBook, OrderUpdate
+from backend.schemas.market_data import OrderBook
 from backend.schemas.market_data import OrderStatus as MarketOrderStatus
+from backend.schemas.market_data import OrderUpdate, TickerUpdate
+from backend.schemas.orders import OrderRequest, OrderStatus
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,7 @@ logger = logging.getLogger(__name__)
 try:
     import ccxt
     import ccxt.pro as ccxtpro
+
     CCXT_AVAILABLE = True
 except ImportError:
     CCXT_AVAILABLE = False
@@ -30,29 +33,30 @@ except ImportError:
 
 class CCXTConnectionError(Exception):
     """Raised when CCXT connection fails."""
+
     pass
 
 
 class CCXTAdapter(ExecutionInterface):
     """
     CCXT-based exchange adapter supporting 100+ exchanges.
-    
+
     Features:
     - Unified API for all supported exchanges
     - WebSocket streaming via CCXT Pro
     - Automatic reconnection with exponential backoff
     - Sandbox/testnet support
     """
-    
+
     # Map CCXT order status to our OrderStatus
     STATUS_MAP = {
-        'open': OrderStatus.OPEN,
-        'closed': OrderStatus.FILLED,
-        'canceled': OrderStatus.CANCELLED,
-        'expired': OrderStatus.EXPIRED,
-        'rejected': OrderStatus.REJECTED,
+        "open": OrderStatus.OPEN,
+        "closed": OrderStatus.FILLED,
+        "canceled": OrderStatus.CANCELLED,
+        "expired": OrderStatus.EXPIRED,
+        "rejected": OrderStatus.REJECTED,
     }
-    
+
     def __init__(
         self,
         exchange_id: str = "binance",
@@ -60,11 +64,11 @@ class CCXTAdapter(ExecutionInterface):
         secret: str = "",
         password: str = "",
         sandbox: bool = False,
-        options: Optional[Dict[str, Any]] = None
+        options: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize CCXT adapter.
-        
+
         Args:
             exchange_id: CCXT exchange ID (e.g., "binance", "kraken", "coinbase")
             api_key: Exchange API key
@@ -76,35 +80,34 @@ class CCXTAdapter(ExecutionInterface):
         self.exchange_id = exchange_id
         self.sandbox = sandbox
         self._connected = False
-        
+
         if not CCXT_AVAILABLE:
             logger.warning("CCXT not installed, using mock exchange")
             self._exchange = None
             self._exchange_ws = None
             return
-        
+
         # CCXT configuration
         config = {
-            'apiKey': api_key,
-            'secret': secret,
-            'enableRateLimit': True,
-            'options': options or {},
+            "apiKey": api_key,
+            "secret": secret,
+            "enableRateLimit": True,
+            "options": options or {},
         }
-        
+
         if password:
-            config['password'] = password
-            
+            config["password"] = password
+
         # Revolut specific: CCXT often uses 'privateKey' for RSA/Ed25519 signatures
         # We assume 'secret' contains the PEM data
-        if exchange_id == 'revolut':
-            config['privateKey'] = secret
+        if exchange_id == "revolut":
+            config["privateKey"] = secret
 
-        
         # Create REST exchange instance
         try:
             exchange_class = getattr(ccxt, exchange_id)
             self._exchange = exchange_class(config)
-            
+
             if sandbox:
                 self._exchange.set_sandbox_mode(True)
                 logger.info(f"CCXT {exchange_id} adapter initialized (SANDBOX mode)")
@@ -113,20 +116,20 @@ class CCXTAdapter(ExecutionInterface):
         except Exception as e:
             logger.error(f"Failed to initialize CCXT exchange: {e}")
             self._exchange = None
-        
+
         # Create WebSocket exchange instance (CCXT Pro)
         try:
             exchange_ws_class = getattr(ccxtpro, exchange_id)
             self._exchange_ws = exchange_ws_class(config)
-            
+
             if sandbox:
                 self._exchange_ws.set_sandbox_mode(True)
         except Exception as e:
             logger.warning(f"CCXT Pro not available for {exchange_id}: {e}")
             self._exchange_ws = None
-    
+
     # ==================== REST METHODS ====================
-    
+
     async def submit_order(self, order: OrderRequest) -> OrderResult:
         """Submit an order to the exchange."""
         if not self._exchange:
@@ -134,9 +137,9 @@ class CCXTAdapter(ExecutionInterface):
                 order_id="mock-order-001",
                 client_order_id=order.client_order_id or "mock-001",
                 status=OrderStatus.PENDING,
-                error_message="CCXT not available"
+                error_message="CCXT not available",
             )
-        
+
         try:
             result = await asyncio.to_thread(
                 self._exchange.create_order,
@@ -144,17 +147,17 @@ class CCXTAdapter(ExecutionInterface):
                 order.order_type.value.lower(),
                 order.side.value.lower(),
                 order.quantity,
-                order.price if order.price else None
+                order.price if order.price else None,
             )
-            
+
             return OrderResult(
-                order_id=result['id'],
-                client_order_id=result.get('clientOrderId', ''),
-                status=self.STATUS_MAP.get(result['status'], OrderStatus.PENDING),
-                filled_qty=result.get('filled', 0.0),
-                remaining_qty=result.get('remaining', order.quantity),
-                avg_price=result.get('average'),
-                raw_response=result
+                order_id=result["id"],
+                client_order_id=result.get("clientOrderId", ""),
+                status=self.STATUS_MAP.get(result["status"], OrderStatus.PENDING),
+                filled_qty=result.get("filled", 0.0),
+                remaining_qty=result.get("remaining", order.quantity),
+                avg_price=result.get("average"),
+                raw_response=result,
             )
         except Exception as e:
             logger.error(f"Order submission failed: {e}")
@@ -162,9 +165,9 @@ class CCXTAdapter(ExecutionInterface):
                 order_id="",
                 client_order_id=order.client_order_id or "",
                 status=OrderStatus.REJECTED,
-                error_message=str(e)
+                error_message=str(e),
             )
-    
+
     async def get_order_status(self, order_id: str) -> OrderResult:
         """Get order status."""
         if not self._exchange:
@@ -172,23 +175,20 @@ class CCXTAdapter(ExecutionInterface):
                 order_id=order_id,
                 client_order_id="",
                 status=OrderStatus.PENDING,
-                error_message="CCXT not available"
+                error_message="CCXT not available",
             )
-        
+
         try:
-            result = await asyncio.to_thread(
-                self._exchange.fetch_order,
-                order_id
-            )
-            
+            result = await asyncio.to_thread(self._exchange.fetch_order, order_id)
+
             return OrderResult(
-                order_id=result['id'],
-                client_order_id=result.get('clientOrderId', ''),
-                status=self.STATUS_MAP.get(result['status'], OrderStatus.PENDING),
-                filled_qty=result.get('filled', 0.0),
-                remaining_qty=result.get('remaining', 0.0),
-                avg_price=result.get('average'),
-                raw_response=result
+                order_id=result["id"],
+                client_order_id=result.get("clientOrderId", ""),
+                status=self.STATUS_MAP.get(result["status"], OrderStatus.PENDING),
+                filled_qty=result.get("filled", 0.0),
+                remaining_qty=result.get("remaining", 0.0),
+                avg_price=result.get("average"),
+                raw_response=result,
             )
         except Exception as e:
             logger.error(f"Get order status failed: {e}")
@@ -196,144 +196,141 @@ class CCXTAdapter(ExecutionInterface):
                 order_id=order_id,
                 client_order_id="",
                 status=OrderStatus.PENDING,
-                error_message=str(e)
+                error_message=str(e),
             )
-    
+
     async def get_balance(self) -> Dict[str, float]:
         """Get account balance."""
         if not self._exchange:
             return {"EUR": 10000.0, "BTC": 1.0}  # Mock balance
-        
+
         try:
             balance = await asyncio.to_thread(self._exchange.fetch_balance)
-            return {k: v for k, v in balance.get('total', {}).items() if v > 0}
+            return {k: v for k, v in balance.get("total", {}).items() if v > 0}
         except Exception as e:
             logger.error(f"Get balance failed: {e}")
             return {}
-    
+
     async def get_ticker(self, symbol: str) -> Dict[str, float]:
         """Get ticker data."""
         if not self._exchange:
             return {"bid": 45000.0, "ask": 45010.0, "last": 45005.0}
-        
+
         try:
             ticker = await asyncio.to_thread(self._exchange.fetch_ticker, symbol)
             return {
-                "bid": ticker.get('bid', 0),
-                "ask": ticker.get('ask', 0),
-                "last": ticker.get('last', 0),
-                "volume": ticker.get('quoteVolume', 0)
+                "bid": ticker.get("bid", 0),
+                "ask": ticker.get("ask", 0),
+                "last": ticker.get("last", 0),
+                "volume": ticker.get("quoteVolume", 0),
             }
         except Exception as e:
             logger.error(f"Get ticker failed: {e}")
             return {}
-    
+
     # ==================== DATA SCOUT COMPATIBLE METHODS ====================
-    
+
     async def fetch_ticker(self, symbol: str) -> Dict[str, Any]:
         """
         Fetch ticker data (DataScout compatible).
-        
+
         Args:
             symbol: Trading pair (e.g., 'BTC/USDT')
-        
+
         Returns:
             Dict with: last, volume, bid, ask, timestamp
         """
         if not self._exchange:
             return {
-                'last': 45000.0,
-                'volume': 100.0,
-                'bid': 44999.0,
-                'ask': 45001.0,
-                'timestamp': datetime.now().timestamp()
+                "last": 45000.0,
+                "volume": 100.0,
+                "bid": 44999.0,
+                "ask": 45001.0,
+                "timestamp": datetime.now().timestamp(),
             }
-        
+
         try:
             ticker = await asyncio.to_thread(self._exchange.fetch_ticker, symbol)
             return {
-                'last': ticker.get('last', 0),
-                'volume': ticker.get('baseVolume', 0),  # BTC volume
-                'bid': ticker.get('bid', 0),
-                'ask': ticker.get('ask', 0),
-                'timestamp': ticker.get('timestamp', datetime.now().timestamp())
+                "last": ticker.get("last", 0),
+                "volume": ticker.get("baseVolume", 0),  # BTC volume
+                "bid": ticker.get("bid", 0),
+                "ask": ticker.get("ask", 0),
+                "timestamp": ticker.get("timestamp", datetime.now().timestamp()),
             }
         except Exception as e:
             logger.error(f"fetch_ticker failed for {symbol}: {e}")
             raise ValueError(f"Failed to fetch ticker: {e}")
-    
+
     async def fetch_orderbook(self, symbol: str, limit: int = 10) -> Dict[str, Any]:
         """
         Fetch orderbook snapshot (DataScout compatible).
-        
+
         Args:
             symbol: Trading pair (e.g., 'BTC/USDT')
             limit: Number of levels per side
-        
+
         Returns:
             Dict with: bids [[price, size], ...], asks [[price, size], ...]
         """
         if not self._exchange:
             return {
-                'bids': [[44999.0, 1.0], [44998.0, 0.5]],
-                'asks': [[45001.0, 1.0], [45002.0, 0.5]]
+                "bids": [[44999.0, 1.0], [44998.0, 0.5]],
+                "asks": [[45001.0, 1.0], [45002.0, 0.5]],
             }
-        
+
         try:
             orderbook = await asyncio.to_thread(
-                self._exchange.fetch_order_book,
-                symbol,
-                limit
+                self._exchange.fetch_order_book, symbol, limit
             )
             return {
-                'bids': orderbook.get('bids', [])[:limit],
-                'asks': orderbook.get('asks', [])[:limit],
-                'timestamp': orderbook.get('timestamp', datetime.now().timestamp())
+                "bids": orderbook.get("bids", [])[:limit],
+                "asks": orderbook.get("asks", [])[:limit],
+                "timestamp": orderbook.get("timestamp", datetime.now().timestamp()),
             }
         except Exception as e:
             logger.error(f"fetch_orderbook failed for {symbol}: {e}")
-            return {'bids': [], 'asks': []}
-    
+            return {"bids": [], "asks": []}
+
     async def fetch_funding_rate(self, symbol: str) -> float:
         """
         Fetch funding rate for perpetual contracts (DataScout compatible).
-        
+
         Args:
             symbol: Trading pair
-        
+
         Returns:
             Funding rate (0.0 if not applicable)
         """
         if not self._exchange:
             return 0.0001  # Mock
-        
+
         try:
             # Only applicable for perpetual/futures contracts
-            if hasattr(self._exchange, 'fetch_funding_rate'):
+            if hasattr(self._exchange, "fetch_funding_rate"):
                 funding = await asyncio.to_thread(
-                    self._exchange.fetch_funding_rate,
-                    symbol
+                    self._exchange.fetch_funding_rate, symbol
                 )
-                return funding.get('fundingRate', 0.0)
+                return funding.get("fundingRate", 0.0)
             return 0.0  # Spot market has no funding
         except Exception as e:
             logger.debug(f"fetch_funding_rate not available for {symbol}: {e}")
             return 0.0
-    
+
     async def cancel_all_orders(self):
         """Cancel all open orders."""
         if not self._exchange:
             logger.warning("CCXT not available, mock cancel")
             return
-        
+
         try:
             await asyncio.to_thread(self._exchange.cancel_all_orders)
             logger.info("All orders cancelled")
         except Exception as e:
             logger.error(f"Cancel all orders failed: {e}")
-    
+
     # ==================== WEBSOCKET STREAMING METHODS ====================
-    
+
     async def subscribe_ticker(self, symbol: str) -> AsyncGenerator[TickerUpdate, None]:
         """Stream real-time ticker updates."""
         if not self._exchange_ws:
@@ -346,27 +343,33 @@ class CCXTAdapter(ExecutionInterface):
                     last=45005.0,
                     volume_24h=1000000.0,
                     timestamp=datetime.utcnow(),
-                    source=self.exchange_id
+                    source=self.exchange_id,
                 )
                 await asyncio.sleep(1.0)
-        
+
         while True:
             try:
                 ticker = await self._exchange_ws.watch_ticker(symbol)
                 yield TickerUpdate(
-                    symbol=ticker['symbol'],
-                    bid=ticker.get('bid', 0),
-                    ask=ticker.get('ask', 0),
-                    last=ticker.get('last', 0),
-                    volume_24h=ticker.get('quoteVolume', 0),
-                    timestamp=datetime.fromtimestamp(ticker['timestamp'] / 1000) if ticker.get('timestamp') else datetime.utcnow(),
-                    source=self.exchange_id
+                    symbol=ticker["symbol"],
+                    bid=ticker.get("bid", 0),
+                    ask=ticker.get("ask", 0),
+                    last=ticker.get("last", 0),
+                    volume_24h=ticker.get("quoteVolume", 0),
+                    timestamp=(
+                        datetime.fromtimestamp(ticker["timestamp"] / 1000)
+                        if ticker.get("timestamp")
+                        else datetime.utcnow()
+                    ),
+                    source=self.exchange_id,
                 )
             except Exception as e:
                 logger.error(f"Ticker stream error: {e}")
                 await asyncio.sleep(1.0)  # Reconnect delay
-    
-    async def subscribe_orderbook(self, symbol: str, depth: int = 10) -> AsyncGenerator[OrderBook, None]:
+
+    async def subscribe_orderbook(
+        self, symbol: str, depth: int = 10
+    ) -> AsyncGenerator[OrderBook, None]:
         """Stream order book updates."""
         if not self._exchange_ws:
             # Mock orderbook
@@ -375,23 +378,29 @@ class CCXTAdapter(ExecutionInterface):
                     symbol=symbol,
                     bids=[(45000.0 - i * 10, 1.0) for i in range(depth)],
                     asks=[(45010.0 + i * 10, 1.0) for i in range(depth)],
-                    timestamp=datetime.utcnow()
+                    timestamp=datetime.utcnow(),
                 )
                 await asyncio.sleep(0.5)
-        
+
         while True:
             try:
-                orderbook = await self._exchange_ws.watch_order_book(symbol, limit=depth)
+                orderbook = await self._exchange_ws.watch_order_book(
+                    symbol, limit=depth
+                )
                 yield OrderBook(
                     symbol=symbol,
-                    bids=[(b[0], b[1]) for b in orderbook['bids'][:depth]],
-                    asks=[(a[0], a[1]) for a in orderbook['asks'][:depth]],
-                    timestamp=datetime.fromtimestamp(orderbook['timestamp'] / 1000) if orderbook.get('timestamp') else datetime.utcnow()
+                    bids=[(b[0], b[1]) for b in orderbook["bids"][:depth]],
+                    asks=[(a[0], a[1]) for a in orderbook["asks"][:depth]],
+                    timestamp=(
+                        datetime.fromtimestamp(orderbook["timestamp"] / 1000)
+                        if orderbook.get("timestamp")
+                        else datetime.utcnow()
+                    ),
                 )
             except Exception as e:
                 logger.error(f"Orderbook stream error: {e}")
                 await asyncio.sleep(1.0)
-    
+
     async def subscribe_orders(self) -> AsyncGenerator[OrderUpdate, None]:
         """Stream order updates."""
         if not self._exchange_ws:
@@ -399,30 +408,34 @@ class CCXTAdapter(ExecutionInterface):
             while True:
                 await asyncio.sleep(10.0)
                 return
-        
+
         while True:
             try:
                 orders = await self._exchange_ws.watch_orders()
                 for order in orders:
                     yield OrderUpdate(
-                        order_id=order['id'],
-                        status=MarketOrderStatus(self.STATUS_MAP.get(order['status'], OrderStatus.PENDING).value),
-                        filled_qty=order.get('filled', 0),
-                        avg_price=order.get('average', 0),
-                        remaining_qty=order.get('remaining', 0),
-                        timestamp=datetime.utcnow()
+                        order_id=order["id"],
+                        status=MarketOrderStatus(
+                            self.STATUS_MAP.get(
+                                order["status"], OrderStatus.PENDING
+                            ).value
+                        ),
+                        filled_qty=order.get("filled", 0),
+                        avg_price=order.get("average", 0),
+                        remaining_qty=order.get("remaining", 0),
+                        timestamp=datetime.utcnow(),
                     )
             except Exception as e:
                 logger.error(f"Orders stream error: {e}")
                 await asyncio.sleep(1.0)
-    
+
     # ==================== CONNECTION MANAGEMENT ====================
-    
+
     async def connect(self) -> None:
         """Establish connections."""
         self._connected = True
         logger.info(f"Connected to {self.exchange_id}")
-    
+
     async def disconnect(self) -> None:
         """Close connections."""
         if self._exchange_ws:

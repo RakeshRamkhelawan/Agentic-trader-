@@ -31,7 +31,9 @@ class ParquetStorage:
         self._existing_tickers = set()
         chunks = self._get_market_chunks()
         if chunks:
-            result = duckdb.sql(f"SELECT DISTINCT ticker FROM '{self.data_dir}/markets_*.parquet'").fetchall()
+            result = duckdb.sql(
+                f"SELECT DISTINCT ticker FROM '{self.data_dir}/markets_*.parquet'"
+            ).fetchall()
             self._existing_tickers = {row[0] for row in result}
         return self._existing_tickers
 

@@ -1,18 +1,20 @@
 from opentelemetry import trace
+from opentelemetry.instrumentation.asyncio import \
+    AsyncioInstrumentor  # Voor async context
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
-from opentelemetry.instrumentation.asyncio import AsyncioInstrumentor # Voor async context
+from opentelemetry.sdk.trace.export import (ConsoleSpanExporter,
+                                            SimpleSpanProcessor)
+
 
 def setup_tracing(service_name: str):
     """
     Initialiseert OpenTelemetry tracing voor de service.
     """
     # Resource definieert de service (naam, attributen)
-    resource = Resource.create(attributes={
-        "service.name": service_name,
-        "service.version": "0.1.0"
-    })
+    resource = Resource.create(
+        attributes={"service.name": service_name, "service.version": "0.1.0"}
+    )
 
     # Provider creëert tracers
     provider = TracerProvider(resource=resource)
@@ -25,6 +27,7 @@ def setup_tracing(service_name: str):
 
     # Instrumenteer asyncio om async contexten correct te propageren
     AsyncioInstrumentor().instrument()
+
 
 def get_tracer(name: str):
     """

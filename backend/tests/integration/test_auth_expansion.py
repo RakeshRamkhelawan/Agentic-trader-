@@ -1,11 +1,14 @@
 
-import pytest
 import asyncio
-from httpx import AsyncClient
 from uuid import uuid4
+
+import pytest
+from httpx import AsyncClient
 from sqlalchemy import text
+
 from backend.api.auth_api import hash_password
 from backend.core.database import SessionManager
+
 
 @pytest.mark.asyncio
 async def test_08_register_duplicate_email(async_client, unique_email):
@@ -79,9 +82,10 @@ async def test_11_invalid_jwt_token(async_client):
 async def test_12_expired_jwt_token(async_client):
     """Verify 401 response for expired JWT token (simulated)."""
     # Create an expired token manually
-    from jose import jwt
     from datetime import datetime, timedelta, timezone
-    
+
+    from jose import jwt
+
     # We need the secret key. In tests it might be the default dev key.
     try:
         from backend.core.config.settings import settings

@@ -4,13 +4,15 @@ Unhappy Path Tests for SentimentAgent.
 Tests error handling, edge cases, and failure scenarios for LLM-based sentiment analysis.
 """
 
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 from pydantic import BaseModel, ValidationError
+
 from backend.agents.sentiment_agent import SentimentAgent, SentimentAnalysis
-from backend.llm.provider_interface import LLMProvider
 from backend.events.event_bus import EventBus
+from backend.llm.provider_interface import LLMProvider
 
 
 @pytest.mark.unit

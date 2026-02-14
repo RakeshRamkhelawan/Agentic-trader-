@@ -1,6 +1,7 @@
 
-import sys
 import os
+import sys
+
 # Add current directory to path
 sys.path.append(os.getcwd())
 

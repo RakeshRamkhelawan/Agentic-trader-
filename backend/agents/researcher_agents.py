@@ -5,108 +5,97 @@ Contrarian perspective generators voor bias detection.
 """
 
 import logging
+from datetime import UTC, datetime
 from typing import List, Optional
-from datetime import datetime, UTC
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import (
-    Observation,
-    Orientation,
-    ResearchHypothesis,
-    MarketRegime
-)
-from backend.governance.agent_gatekeeper import AgentRole
+from backend.core.schemas.ooda_types import (MarketRegime, Observation,
+                                             Orientation, ResearchHypothesis)
 from backend.core.security.prompt_guard import PromptGuard
+from backend.governance.agent_gatekeeper import AgentRole
 
 
 class BullResearcher(BaseAgent):
     """
     Bullish hypothesis generator (devil's advocate).
-    
+
     Generates arguments VOOR buying, even in bearish conditions.
     """
-    
-    
+
     def __init__(
         self,
         llm_provider: Optional["LLMProvider"] = None,
-        event_bus: Optional["EventBus"] = None
+        event_bus: Optional["EventBus"] = None,
     ):
         super().__init__(
             agent_name="BullResearcher",
             llm_provider=llm_provider,
             event_bus=event_bus,
-            agent_role=AgentRole.RESEARCHER
+            agent_role=AgentRole.RESEARCHER,
         )
         self.logger = logging.getLogger(self.__class__.__name__)
-    
+
     async def analyze(self, *args, **kwargs):
         """BaseAgent abstract method - use generate_hypothesis instead."""
         raise NotImplementedError("BullResearcher uses generate_hypothesis()")
-    
-    async def _generate_text(
-        self,
-        prompt: str,
-        context: Optional[dict] = None
-    ) -> str:
+
+    async def _generate_text(self, prompt: str, context: Optional[dict] = None) -> str:
         """Wrapper for ask_llm to match expected interface."""
         # We can optionally use context for logging or specialized prompting
         return await self.ask_llm(prompt)
-    
+
     async def generate_hypothesis(
-        self,
-        symbol: str,
-        observation: Observation,
-        analyst_view: Orientation
+        self, symbol: str, observation: Observation, analyst_view: Orientation
     ) -> ResearchHypothesis:
         """
         Generate bullish hypothesis.
-        
+
         Args:
             symbol: Trading symbol
             observation: Market observation
             analyst_view: Analyst's orientation
-        
+
         Returns:
             Bullish research hypothesis
         """
         self.logger.info(f"Generating bullish hypothesis for {symbol}")
-        
+
         # Build contrarian prompt
         prompt = self._build_bullish_prompt(symbol, observation, analyst_view)
-        
+
         # Generate via LLM
         response = await self._generate_text(
             prompt=prompt,
             context={
                 "symbol": symbol,
                 "price": observation.price,
-                "regime": analyst_view.regime.value
-            }
+                "regime": analyst_view.regime.value,
+            },
         )
-        
+
         # Parse response
         arguments = self._extract_arguments(response)
         confidence = self._extract_confidence(response)
         contrarian_score = self._calculate_contrarian_score(analyst_view.regime)
-        
+
         return ResearchHypothesis(
             stance="bullish",
             confidence=confidence,
             arguments=arguments,
-            contrarian_score=contrarian_score
+            contrarian_score=contrarian_score,
         )
-    
+
     def _build_bullish_prompt(
-        self,
-        symbol: str,
-        observation: Observation,
-        analyst_view: Orientation
+        self, symbol: str, observation: Observation, analyst_view: Orientation
     ) -> str:
         """Build bullish prompt."""
-        market_data = PromptGuard.wrap_data("MARKET_DATA", observation.model_dump_json(indent=2))
-        analyst_context = PromptGuard.wrap_data("ANALYST_VIEW", analyst_view.model_dump_json(indent=2))
-        
+        market_data = PromptGuard.wrap_data(
+            "MARKET_DATA", observation.model_dump_json(indent=2)
+        )
+        analyst_context = PromptGuard.wrap_data(
+            "ANALYST_VIEW", analyst_view.model_dump_json(indent=2)
+        )
+
         return f"""
 You are a BULLISH researcher. Your job is to find reasons TO BUY {symbol}.
 
@@ -131,50 +120,50 @@ ARGUMENTS:
 2. [Argument 2]
 3. [Argument 3]
 """
-    
+
     def _extract_arguments(self, response: str) -> List[str]:
         """Extract arguments from LLM response."""
         arguments = []
-        lines = response.split('\n')
-        
+        lines = response.split("\n")
+
         for line in lines:
             line = line.strip()
             # Look for numbered lines
-            if line and (line[0].isdigit() or line.startswith('-')):
+            if line and (line[0].isdigit() or line.startswith("-")):
                 # Remove numbering
-                arg = line.lstrip('0123456789.-) ').strip()
+                arg = line.lstrip("0123456789.-) ").strip()
                 if arg:
                     arguments.append(arg)
-        
+
         # Fallback if parsing failed
         if not arguments:
             arguments = ["Generated hypothesis (parsing failed)"]
-        
+
         return arguments[:3]  # Max 3
-    
+
     def _extract_confidence(self, response: str) -> float:
         """Extract confidence from LLM response."""
-        lines = response.split('\n')
-        
+        lines = response.split("\n")
+
         for line in lines:
-            if 'CONFIDENCE:' in line.upper():
+            if "CONFIDENCE:" in line.upper():
                 try:
                     # Extract number
-                    parts = line.split(':')
+                    parts = line.split(":")
                     if len(parts) > 1:
                         conf_str = parts[1].strip()
                         confidence = float(conf_str)
                         return max(0.0, min(confidence, 1.0))
                 except ValueError:
                     pass
-        
+
         # Default medium confidence
         return 0.5
-    
+
     def _calculate_contrarian_score(self, regime: MarketRegime) -> float:
         """
         Calculate how contrarian this bullish view is.
-        
+
         High score = very contrarian (bullish in bear market)
         Low score = consensus (bullish in bull market)
         """
@@ -193,86 +182,80 @@ ARGUMENTS:
 class BearResearcher(BaseAgent):
     """
     Bearish hypothesis generator (devil's advocate).
-    
+
     Generates arguments VOOR selling/shorting, even in bullish conditions.
     """
-    
+
     def __init__(
         self,
         llm_provider: Optional["LLMProvider"] = None,
-        event_bus: Optional["EventBus"] = None
+        event_bus: Optional["EventBus"] = None,
     ):
         super().__init__(
             agent_name="BearResearcher",
             llm_provider=llm_provider,
             event_bus=event_bus,
-            agent_role=AgentRole.RESEARCHER
+            agent_role=AgentRole.RESEARCHER,
         )
         self.logger = logging.getLogger(self.__class__.__name__)
-    
+
     async def analyze(self, *args, **kwargs):
         """BaseAgent abstract method - use generate_hypothesis instead."""
         raise NotImplementedError("BearResearcher uses generate_hypothesis()")
 
-    async def _generate_text(
-        self,
-        prompt: str,
-        context: Optional[dict] = None
-    ) -> str:
+    async def _generate_text(self, prompt: str, context: Optional[dict] = None) -> str:
         """Wrapper for ask_llm to match expected interface."""
         return await self.ask_llm(prompt)
-    
+
     async def generate_hypothesis(
-        self,
-        symbol: str,
-        observation: Observation,
-        analyst_view: Orientation
+        self, symbol: str, observation: Observation, analyst_view: Orientation
     ) -> ResearchHypothesis:
         """
         Generate bearish hypothesis.
-        
+
         Args:
             symbol: Trading symbol
             observation: Market observation
             analyst_view: Analyst's orientation
-        
+
         Returns:
             Bearish research hypothesis
         """
         self.logger.info(f"Generating bearish hypothesis for {symbol}")
-        
+
         prompt = self._build_bearish_prompt(symbol, observation, analyst_view)
-        
+
         response = await self._generate_text(
             prompt=prompt,
             context={
                 "symbol": symbol,
                 "price": observation.price,
-                "regime": analyst_view.regime.value
-            }
+                "regime": analyst_view.regime.value,
+            },
         )
-        
+
         arguments = self._extract_arguments(response)
         confidence = self._extract_confidence(response)
         contrarian_score = self._calculate_contrarian_score(analyst_view.regime)
-        
+
         return ResearchHypothesis(
             stance="bearish",
             confidence=confidence,
             arguments=arguments,
-            contrarian_score=contrarian_score
+            contrarian_score=contrarian_score,
         )
-    
+
     def _build_bearish_prompt(
-        self,
-        symbol: str,
-        observation: Observation,
-        analyst_view: Orientation
+        self, symbol: str, observation: Observation, analyst_view: Orientation
     ) -> str:
         """Build bearish prompt."""
-        market_data = PromptGuard.wrap_data("MARKET_DATA", observation.model_dump_json(indent=2))
-        analyst_context = PromptGuard.wrap_data("ANALYST_VIEW", analyst_view.model_dump_json(indent=2))
-        
+        market_data = PromptGuard.wrap_data(
+            "MARKET_DATA", observation.model_dump_json(indent=2)
+        )
+        analyst_context = PromptGuard.wrap_data(
+            "ANALYST_VIEW", analyst_view.model_dump_json(indent=2)
+        )
+
         return f"""
 You are a BEARISH researcher. Your job is to find reasons TO SELL/SHORT {symbol}.
 
@@ -297,45 +280,45 @@ ARGUMENTS:
 2. [Argument 2]
 3. [Argument 3]
 """
-    
+
     def _extract_arguments(self, response: str) -> List[str]:
         """Extract arguments from LLM response."""
         arguments = []
-        lines = response.split('\n')
-        
+        lines = response.split("\n")
+
         for line in lines:
             line = line.strip()
-            if line and (line[0].isdigit() or line.startswith('-')):
-                arg = line.lstrip('0123456789.-) ').strip()
+            if line and (line[0].isdigit() or line.startswith("-")):
+                arg = line.lstrip("0123456789.-) ").strip()
                 if arg:
                     arguments.append(arg)
-        
+
         if not arguments:
             arguments = ["Generated hypothesis (parsing failed)"]
-        
+
         return arguments[:3]
-    
+
     def _extract_confidence(self, response: str) -> float:
         """Extract confidence from LLM response."""
-        lines = response.split('\n')
-        
+        lines = response.split("\n")
+
         for line in lines:
-            if 'CONFIDENCE:' in line.upper():
+            if "CONFIDENCE:" in line.upper():
                 try:
-                    parts = line.split(':')
+                    parts = line.split(":")
                     if len(parts) > 1:
                         conf_str = parts[1].strip()
                         confidence = float(conf_str)
                         return max(0.0, min(confidence, 1.0))
                 except ValueError:
                     pass
-        
+
         return 0.5
-    
+
     def _calculate_contrarian_score(self, regime: MarketRegime) -> float:
         """
         Calculate how contrarian this bearish view is.
-        
+
         High score = very contrarian (bearish in bull market)
         Low score = consensus (bearish in bear market)
         """

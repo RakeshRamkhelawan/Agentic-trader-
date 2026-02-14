@@ -8,10 +8,11 @@ Supported models:
   - deepseek-chat      (DeepSeek-V3, fast general-purpose)
   - deepseek-reasoner  (DeepSeek-R1, chain-of-thought reasoning)
 """
-import os
+
 import json
-import re
 import logging
+import os
+import re
 from typing import Optional, Type, TypeVar
 
 from pydantic import BaseModel
@@ -41,14 +42,9 @@ class DeepSeekProvider(LLMProvider):
         base_url: Optional[str] = None,
     ):
         if not openai:
-            raise ImportError(
-                "openai package not installed. Run 'pip install openai'"
-            )
+            raise ImportError("openai package not installed. Run 'pip install openai'")
 
-        self.api_key = (
-            api_key
-            or os.getenv("DEEPSEEK_API_KEY")
-        )
+        self.api_key = api_key or os.getenv("DEEPSEEK_API_KEY")
         if not self.api_key:
             raise ValueError(
                 "DeepSeek API key is missing. "
@@ -56,10 +52,7 @@ class DeepSeekProvider(LLMProvider):
             )
 
         self.model_name = model_name or os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
-        self.base_url = (
-            base_url
-            or os.getenv("DEEPSEEK_BASE_URL", DEEPSEEK_BASE_URL)
-        )
+        self.base_url = base_url or os.getenv("DEEPSEEK_BASE_URL", DEEPSEEK_BASE_URL)
 
         self.client = openai.AsyncOpenAI(
             api_key=self.api_key,

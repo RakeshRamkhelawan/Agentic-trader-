@@ -88,7 +88,9 @@ class MakerWinRateByDirectionAnalysis(Analysis):
         ).df()
 
         # Pivot for comparison
-        df_yes = df[df["maker_side"] == "YES"][["price", "win_rate", "mispricing", "n_trades", "contracts"]].copy()
+        df_yes = df[df["maker_side"] == "YES"][
+            ["price", "win_rate", "mispricing", "n_trades", "contracts"]
+        ].copy()
         df_yes = df_yes.rename(
             columns={
                 "win_rate": "yes_win_rate",
@@ -98,7 +100,9 @@ class MakerWinRateByDirectionAnalysis(Analysis):
             }
         )
 
-        df_no = df[df["maker_side"] == "NO"][["price", "win_rate", "mispricing", "n_trades", "contracts"]].copy()
+        df_no = df[df["maker_side"] == "NO"][
+            ["price", "win_rate", "mispricing", "n_trades", "contracts"]
+        ].copy()
         df_no = df_no.rename(
             columns={
                 "win_rate": "no_win_rate",
@@ -159,8 +163,16 @@ class MakerWinRateByDirectionAnalysis(Analysis):
         chart_data = [
             {
                 "price": int(row["price"]),
-                "Maker bought YES": round(row["yes_win_rate"] * 100, 2) if pd.notna(row["yes_win_rate"]) else None,
-                "Maker bought NO": round(row["no_win_rate"] * 100, 2) if pd.notna(row["no_win_rate"]) else None,
+                "Maker bought YES": (
+                    round(row["yes_win_rate"] * 100, 2)
+                    if pd.notna(row["yes_win_rate"])
+                    else None
+                ),
+                "Maker bought NO": (
+                    round(row["no_win_rate"] * 100, 2)
+                    if pd.notna(row["no_win_rate"])
+                    else None
+                ),
                 "Implied probability": round(row["implied_prob"] * 100, 2),
             }
             for _, row in df.iterrows()

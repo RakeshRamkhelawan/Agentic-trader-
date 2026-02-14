@@ -1,7 +1,8 @@
-import pytest
-import pandas as pd
 import numpy as np
-from backend.risk.var_calculator import VaRCalculator, VaRCalculationError
+import pandas as pd
+import pytest
+
+from backend.risk.var_calculator import VaRCalculationError, VaRCalculator
 
 # --- FIXTURES ---
 

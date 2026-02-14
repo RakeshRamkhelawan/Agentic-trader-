@@ -37,9 +37,7 @@ query_string = "accountType=UNIFIED"
 
 param_str = f"{timestamp}{api_key}{recv_window}{query_string}"
 signature = hmac.new(
-    api_secret.encode('utf-8'),
-    param_str.encode('utf-8'),
-    hashlib.sha256
+    api_secret.encode("utf-8"), param_str.encode("utf-8"), hashlib.sha256
 ).hexdigest()
 
 headers = {
@@ -53,7 +51,7 @@ try:
     url = f"{base_url}/v5/account/wallet-balance?{query_string}"
     resp = requests.get(url, headers=headers, timeout=10)
     data = resp.json()
-    
+
     if data.get("retCode") == 0:
         print(f"✅ BYBIT WERKT! Balance gevonden!")
         print(f"   Result: {data.get('result')}")

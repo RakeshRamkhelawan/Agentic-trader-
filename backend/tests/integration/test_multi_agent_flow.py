@@ -1,10 +1,14 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
+
+from backend.execution.shadow_portfolio import ShadowPortfolioManager
+from backend.risk.validators import RiskValidator
+from backend.schemas.orders import (OrderRequest, OrderSide, OrderStatus,
+                                    OrderType)
 from backend.services.cognitive_orchestrator import AgentMessage, MemoryAgent
 from backend.services.research_agent import ResearchAgent
-from backend.risk.validators import RiskValidator
-from backend.execution.shadow_portfolio import ShadowPortfolioManager
-from backend.schemas.orders import OrderRequest, OrderSide, OrderType, OrderStatus
+
 
 # --- MOCK ORCHESTRATOR ---
 class MockOrchestrator:

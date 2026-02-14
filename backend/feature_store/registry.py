@@ -1,7 +1,9 @@
-import yaml
 import logging
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
+
+import yaml
 from pydantic import BaseModel
+
 
 class FeatureDefinition(BaseModel):
     name: str
@@ -10,12 +12,13 @@ class FeatureDefinition(BaseModel):
     window_seconds: int
     parameters: Optional[Dict] = {}
 
+
 class FeatureRegistry:
     """
     Central Registry for all available features.
     Loads definitions from YAML to ensure consistency.
     """
-    
+
     def __init__(self, config_path: str = "backend/feature_store/features.yaml"):
         self.features: Dict[str, FeatureDefinition] = {}
         self._load_config(config_path)
@@ -23,13 +26,13 @@ class FeatureRegistry:
 
     def _load_config(self, path: str):
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
-                
-            for item in data.get('features', []):
+
+            for item in data.get("features", []):
                 feature = FeatureDefinition(**item)
                 self.features[feature.name] = feature
-                
+
         except Exception as e:
             raise RuntimeError(f"Failed to load feature registry from {path}: {e}")
 

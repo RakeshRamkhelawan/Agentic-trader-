@@ -1,6 +1,9 @@
 import pytest
+
 from backend.execution.shadow_portfolio import ShadowPortfolioManager
-from backend.schemas.orders import OrderRequest, OrderSide, OrderType, OrderStatus
+from backend.schemas.orders import (OrderRequest, OrderSide, OrderStatus,
+                                    OrderType)
+
 
 @pytest.fixture
 def manager():

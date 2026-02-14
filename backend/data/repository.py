@@ -7,12 +7,13 @@ Provides a consistent interface for database interactions with:
 - Type-safe async methods
 """
 
-from typing import TypeVar, Generic, Type, Optional, List, Any, Dict, Union
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID
+
+from pydantic import BaseModel
+from sqlalchemy import asc, delete, desc, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, delete, func, desc, asc
-from pydantic import BaseModel
 
 from backend.core.database import Base, SessionManager
 
@@ -31,23 +32,17 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         """
         Initialize repository for a specific SQLAlchemy model.
-        
+
         Args:
             model: The SQLAlchemy model class
         """
         self.model = model
 
-    async def get(
-        self, 
-        session: AsyncSession, 
-        id: Any
-    ) -> Optional[ModelType]:
+    async def get(self, session: AsyncSession, id: Any) -> Optional[ModelType]:
         """
         Get a single record by ID.
         """
-        result = await session.execute(
-            select(self.model).where(self.model.id == id)
-        )
+        result = await session.execute(select(self.model).where(self.model.id == id))
         return result.scalar_one_or_none()
 
     async def get_all(
@@ -56,25 +51,23 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         skip: int = 0,
         limit: int = 100,
         sort_by: str = "created_at",
-        descending: bool = True
+        descending: bool = True,
     ) -> List[ModelType]:
         """
         Get all records with pagination and sorting.
         """
         query = select(self.model)
-        
+
         # Apply sorting if field exists
         if hasattr(self.model, sort_by):
             order_col = getattr(self.model, sort_by)
             query = query.order_by(desc(order_col) if descending else asc(order_col))
-            
+
         result = await session.execute(query.offset(skip).limit(limit))
         return result.scalars().all()
 
     async def create(
-        self,
-        session: AsyncSession,
-        obj_in: Union[CreateSchemaType, Dict[str, Any]]
+        self, session: AsyncSession, obj_in: Union[CreateSchemaType, Dict[str, Any]]
     ) -> ModelType:
         """
         Create a new record.
@@ -94,7 +87,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self,
         session: AsyncSession,
         db_obj: ModelType,
-        obj_in: Union[UpdateSchemaType, Dict[str, Any]]
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
     ) -> ModelType:
         """
         Update an existing record.
@@ -114,11 +107,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await session.refresh(db_obj)
         return db_obj
 
-    async def delete(
-        self,
-        session: AsyncSession,
-        id: Any
-    ) -> Optional[ModelType]:
+    async def delete(self, session: AsyncSession, id: Any) -> Optional[ModelType]:
         """
         Delete a record by ID.
         """

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Callable, Awaitable, Optional
+from typing import Any, Awaitable, Callable, Dict, Optional
+
 
 class MessageBroker(ABC):
     """
@@ -20,7 +21,7 @@ class MessageBroker(ABC):
     async def publish(self, topic: str, key: str, payload: Dict[str, Any]):
         """
         Publish a message to a specific topic.
-        
+
         Args:
             topic: The stream/topic name (e.g. 'market_data', 'orders').
             key: Partition key (e.g. symbol 'BTC-EUR') for ordering guarantees.
@@ -29,10 +30,15 @@ class MessageBroker(ABC):
         pass
 
     @abstractmethod
-    async def subscribe(self, topic: str, group_id: str, callback: Callable[[Dict[str, Any]], Awaitable[None]]):
+    async def subscribe(
+        self,
+        topic: str,
+        group_id: str,
+        callback: Callable[[Dict[str, Any]], Awaitable[None]],
+    ):
         """
         Subscribe to a topic and process messages via a callback.
-        
+
         Args:
             topic: The topic to listen to.
             group_id: Consumer group ID (for load balancing).

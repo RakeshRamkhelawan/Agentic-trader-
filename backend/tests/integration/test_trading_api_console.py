@@ -1,6 +1,8 @@
 import pytest
 from httpx import AsyncClient
+
 from backend.models.orders import Order, OrderStatus
+
 
 @pytest.mark.asyncio
 async def test_trading_api_endpoints(async_client: AsyncClient, db_session, test_user_token):

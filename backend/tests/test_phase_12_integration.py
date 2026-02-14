@@ -25,26 +25,23 @@ Performance Targets:
 Total Test Coverage: 40+ tests across 8 test classes
 """
 
-import pytest
-import time
 import json
 import sys
-from pathlib import Path
-from typing import Dict, List, Optional, Any
-from threading import Thread
+import time
 from dataclasses import dataclass
+from pathlib import Path
+from threading import Thread
+from typing import Any, Dict, List, Optional
+
+import pytest
 
 # Add backend to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from orchestration.phase_12_real_agents import (
-    Phase12RealAgentCoordinator,
-    RealAgentLoader,
-    Phase12Decision,
-    AgentMetrics,
-    Phase12RealAgentConfig,
-)
-
+from orchestration.phase_12_real_agents import (AgentMetrics, Phase12Decision,
+                                                Phase12RealAgentConfig,
+                                                Phase12RealAgentCoordinator,
+                                                RealAgentLoader)
 
 # ============================================================================
 # MOCK AGENT FOR FALLBACK

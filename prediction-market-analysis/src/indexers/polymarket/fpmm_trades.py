@@ -20,9 +20,13 @@ FPMM_START_BLOCK = 4023693
 
 # Event signatures (keccak256 hashes)
 # FPMMBuy(address indexed buyer, uint256 investmentAmount, uint256 feeAmount, uint256 indexed outcomeIndex, uint256 outcomeTokensBought)
-FPMM_BUY_TOPIC = "0x" + Web3.keccak(text="FPMMBuy(address,uint256,uint256,uint256,uint256)").hex()
+FPMM_BUY_TOPIC = (
+    "0x" + Web3.keccak(text="FPMMBuy(address,uint256,uint256,uint256,uint256)").hex()
+)
 # FPMMSell(address indexed seller, uint256 returnAmount, uint256 feeAmount, uint256 indexed outcomeIndex, uint256 outcomeTokensSold)
-FPMM_SELL_TOPIC = "0x" + Web3.keccak(text="FPMMSell(address,uint256,uint256,uint256,uint256)").hex()
+FPMM_SELL_TOPIC = (
+    "0x" + Web3.keccak(text="FPMMSell(address,uint256,uint256,uint256,uint256)").hex()
+)
 
 DATA_DIR = Path("data/polymarket/legacy_trades")
 CURSOR_FILE = Path("data/polymarket/.legacy_backfill_block_cursor")
@@ -133,7 +137,9 @@ class PolymarketLegacyTradesIndexer(Indexer):
             is_buy=False,
         )
 
-    def _fetch_logs_with_retry(self, client: PolygonClient, topic: str, from_block: int, to_block: int) -> list[dict]:
+    def _fetch_logs_with_retry(
+        self, client: PolygonClient, topic: str, from_block: int, to_block: int
+    ) -> list[dict]:
         """Fetch logs for a topic, splitting range if too large."""
         try:
             return list(
@@ -153,13 +159,17 @@ class PolymarketLegacyTradesIndexer(Indexer):
                 return left + right
             raise
 
-    def _fetch_chunk(self, client: PolygonClient, from_block: int, to_block: int) -> tuple[list[FPMMTrade], int, int]:
+    def _fetch_chunk(
+        self, client: PolygonClient, from_block: int, to_block: int
+    ) -> tuple[list[FPMMTrade], int, int]:
         """Fetch a single chunk of trades. Used by thread pool."""
         trades: list[FPMMTrade] = []
 
         try:
             # Fetch buy logs
-            buy_logs = self._fetch_logs_with_retry(client, FPMM_BUY_TOPIC, from_block, to_block)
+            buy_logs = self._fetch_logs_with_retry(
+                client, FPMM_BUY_TOPIC, from_block, to_block
+            )
             for log in buy_logs:
                 try:
                     trades.append(self._decode_fpmm_buy(log))
@@ -167,7 +177,9 @@ class PolymarketLegacyTradesIndexer(Indexer):
                     tqdm.write(f"Error decoding FPMMBuy log: {e}")
 
             # Fetch sell logs
-            sell_logs = self._fetch_logs_with_retry(client, FPMM_SELL_TOPIC, from_block, to_block)
+            sell_logs = self._fetch_logs_with_retry(
+                client, FPMM_SELL_TOPIC, from_block, to_block
+            )
             for log in sell_logs:
                 try:
                     trades.append(self._decode_fpmm_sell(log))
@@ -232,7 +244,9 @@ class PolymarketLegacyTradesIndexer(Indexer):
             if not trades_batch:
                 return
             chunk_idx = get_next_chunk_idx()
-            chunk_path = DATA_DIR / f"trades_{chunk_idx}_{chunk_idx + BATCH_SIZE}.parquet"
+            chunk_path = (
+                DATA_DIR / f"trades_{chunk_idx}_{chunk_idx + BATCH_SIZE}.parquet"
+            )
             df = pd.DataFrame(trades_batch)
             df.to_parquet(chunk_path)
             total_saved += len(trades_batch)
@@ -252,14 +266,20 @@ class PolymarketLegacyTradesIndexer(Indexer):
         last_block_processed = from_block
 
         try:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self._max_workers) as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self._max_workers
+            ) as executor:
                 for batch_start in range(0, len(ranges), self._max_workers):
                     batch = ranges[batch_start : batch_start + self._max_workers]
                     fetched_at = datetime.utcnow()
 
                     # Submit all chunks in this batch
                     futures = {
-                        executor.submit(self._fetch_chunk, client, start, end): (start, end) for start, end in batch
+                        executor.submit(self._fetch_chunk, client, start, end): (
+                            start,
+                            end,
+                        )
+                        for start, end in batch
                     }
 
                     # Collect results (order doesn't matter for trades)
@@ -276,7 +296,9 @@ class PolymarketLegacyTradesIndexer(Indexer):
                             # Convert large ints to strings to avoid parquet overflow
                             trade_dict["amount"] = str(trade_dict["amount"])
                             trade_dict["fee_amount"] = str(trade_dict["fee_amount"])
-                            trade_dict["outcome_tokens"] = str(trade_dict["outcome_tokens"])
+                            trade_dict["outcome_tokens"] = str(
+                                trade_dict["outcome_tokens"]
+                            )
                             trade_dict["_fetched_at"] = fetched_at
                             all_trades.append(trade_dict)
 

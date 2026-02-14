@@ -4,10 +4,11 @@ Tests for LLM Provider Factory.
 TDD Test Suite - Write tests FIRST before implementation.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-from backend.llm.provider_interface import LLMProvider
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from backend.llm.provider_interface import LLMProvider
 
 pytestmark = pytest.mark.unit
 
