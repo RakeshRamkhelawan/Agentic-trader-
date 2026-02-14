@@ -69,6 +69,8 @@ class MovingAverageStrategy(Strategy):
         close_price = bar["close"]
         timestamp = bar.get("timestamp")
         if timestamp is None:
+            # Use current time as fallback for live trading
+            # Note: Backtests should always provide timestamps in bar data
             timestamp = datetime.now()
         bar_volume = bar.get("volume", 1000.0)
 
