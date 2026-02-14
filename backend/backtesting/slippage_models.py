@@ -5,12 +5,7 @@ Provides realistic market impact and slippage simulation for order execution.
 """
 
 from abc import ABC, abstractmethod
-from enum import Enum
-
-
-class OrderSide(str, Enum):
-    BUY = "buy"
-    SELL = "sell"
+from backend.backtesting.models import OrderSide
 
 
 class SlippageModel(ABC):
@@ -65,29 +60,30 @@ class VolumeSlippageModel(SlippageModel):
     Simulates realistic market impact where large orders move prices.
     """
 
-    def __init__(self, impact_factor: float = 0.1, base_bps: float = 2.0):
+    def __init__(self, impact_factor: float = 0.1, base_slippage_bps: float = 2.0, avg_bar_volume: float = 1000.0):
         """Initialize volume slippage model.
 
         Args:
             impact_factor: Multiplier for volume impact (default 0.1)
-            base_bps: Base slippage in basis points (default 2 bps)
+            base_slippage_bps: Base slippage in basis points (default 2 bps)
+            avg_bar_volume: Average bar volume for the asset (default 1000.0)
         """
         self.impact_factor = impact_factor
-        self.base_bps = base_bps
+        self.base_slippage_bps = base_slippage_bps
+        self.avg_bar_volume = avg_bar_volume
 
     def apply(
         self,
         price: float,
         quantity: float,
         side: OrderSide,
-        avg_bar_volume: float = 1000.0,
     ) -> tuple:
         """Apply volume-based slippage."""
-        volume_ratio = quantity / avg_bar_volume if avg_bar_volume > 0 else 0
+        volume_ratio = quantity / self.avg_bar_volume if self.avg_bar_volume > 0 else 0
 
         # Impact = base + (volume_ratio * impact_factor), capped at 100 bps
         volume_impact_bps = min(
-            100, self.base_bps + (volume_ratio * self.impact_factor * 10000)
+            100, self.base_slippage_bps + (volume_ratio * self.impact_factor * 10000)
         )
         slippage_pct = volume_impact_bps / 10000.0
         slippage_amount = price * quantity * slippage_pct
