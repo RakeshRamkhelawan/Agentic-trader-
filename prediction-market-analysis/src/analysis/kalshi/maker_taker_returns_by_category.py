@@ -129,12 +129,12 @@ class MakerTakerReturnsByCategoryAnalysis(Analysis):
             group_data = df[df["group"] == group]
 
             # Volume-weighted excess returns
-            taker_vol_weighted = (group_data["taker_excess"] * group_data["taker_contracts"]).sum() / group_data[
-                "taker_contracts"
-            ].sum()
-            maker_vol_weighted = (group_data["maker_excess"] * group_data["maker_contracts"]).sum() / group_data[
-                "maker_contracts"
-            ].sum()
+            taker_vol_weighted = (
+                group_data["taker_excess"] * group_data["taker_contracts"]
+            ).sum() / group_data["taker_contracts"].sum()
+            maker_vol_weighted = (
+                group_data["maker_excess"] * group_data["maker_contracts"]
+            ).sum() / group_data["maker_contracts"].sum()
 
             group_stats.append(
                 {

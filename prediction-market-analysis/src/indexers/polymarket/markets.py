@@ -56,7 +56,10 @@ class PolymarketMarketsIndexer(Indexer):
                 while len(all_markets) >= CHUNK_SIZE:
                     chunk = all_markets[:CHUNK_SIZE]
                     chunk_start = total - len(all_markets)
-                    chunk_path = DATA_DIR / f"markets_{chunk_start}_{chunk_start + CHUNK_SIZE}.parquet"
+                    chunk_path = (
+                        DATA_DIR
+                        / f"markets_{chunk_start}_{chunk_start + CHUNK_SIZE}.parquet"
+                    )
                     pd.DataFrame(chunk).to_parquet(chunk_path)
                     all_markets = all_markets[CHUNK_SIZE:]
 
@@ -68,7 +71,10 @@ class PolymarketMarketsIndexer(Indexer):
         # Save remaining markets
         if all_markets:
             chunk_start = total - len(all_markets)
-            chunk_path = DATA_DIR / f"markets_{chunk_start}_{chunk_start + len(all_markets)}.parquet"
+            chunk_path = (
+                DATA_DIR
+                / f"markets_{chunk_start}_{chunk_start + len(all_markets)}.parquet"
+            )
             pd.DataFrame(all_markets).to_parquet(chunk_path)
 
         if OFFSET_FILE.exists():

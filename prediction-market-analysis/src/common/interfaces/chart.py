@@ -198,7 +198,9 @@ def area_chart(
 ) -> ChartConfig:
     """Create an area chart configuration."""
     yKeys = [y] if isinstance(y, str) else y
-    return ChartConfig(type=ChartType.AREA, data=data, xKey=x, yKeys=yKeys, stacked=stacked, **kwargs)
+    return ChartConfig(
+        type=ChartType.AREA, data=data, xKey=x, yKeys=yKeys, stacked=stacked, **kwargs
+    )
 
 
 def pie_chart(
@@ -208,7 +210,9 @@ def pie_chart(
     **kwargs: Any,
 ) -> ChartConfig:
     """Create a pie chart configuration."""
-    return ChartConfig(type=ChartType.PIE, data=data, nameKey=name, valueKey=value, **kwargs)
+    return ChartConfig(
+        type=ChartType.PIE, data=data, nameKey=name, valueKey=value, **kwargs
+    )
 
 
 def scatter_chart(
@@ -239,7 +243,9 @@ def heatmap(
     **kwargs: Any,
 ) -> ChartConfig:
     """Create a heatmap configuration."""
-    return ChartConfig(type=ChartType.HEATMAP, data=data, xKey=x, yKey=y, valueKey=value, **kwargs)
+    return ChartConfig(
+        type=ChartType.HEATMAP, data=data, xKey=x, yKey=y, valueKey=value, **kwargs
+    )
 
 
 def treemap(

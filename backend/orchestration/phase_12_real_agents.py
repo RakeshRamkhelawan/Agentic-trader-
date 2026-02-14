@@ -48,8 +48,10 @@ logger = logging.getLogger(__name__)
 # ENUMS
 # ============================================================================
 
+
 class DecisionAction(Enum):
     """Market decision actions."""
+
     HOLD = 0
     LONG = 1
     SHORT = 2
@@ -59,9 +61,11 @@ class DecisionAction(Enum):
 # DATA CLASSES
 # ============================================================================
 
+
 @dataclass
 class Phase12Decision:
     """Complete decision from real agent coordinator."""
+
     action: int  # 0=hold, 1=long, 2=short
     confidence: float  # [0, 1]
     reasoning: str  # Human-readable explanation
@@ -74,6 +78,7 @@ class Phase12Decision:
 @dataclass
 class AgentMetrics:
     """Metrics for a single agent."""
+
     call_count: int = 0
     total_latency: float = 0.0
     average_latency: float = 0.0
@@ -85,6 +90,7 @@ class AgentMetrics:
 @dataclass
 class Phase12RealAgentConfig:
     """Configuration for Phase12RealAgentCoordinator."""
+
     agent_timeout: float = 5.0  # Timeout per agent in seconds
     fallback_action: int = 0  # Action if all agents fail
     fallback_confidence: float = 0.5  # Confidence for fallback
@@ -99,6 +105,7 @@ class Phase12RealAgentConfig:
 # ABSTRACT AGENT INTERFACE
 # ============================================================================
 
+
 class Agent(ABC):
     """Abstract base class for agents."""
 
@@ -112,7 +119,7 @@ class Agent(ABC):
     def analyze(self) -> Dict[str, Any]:
         """
         Analyze market and return decision.
-        
+
         Returns:
             {
                 "action": int (0=hold, 1=long, 2=short),
@@ -127,6 +134,7 @@ class Agent(ABC):
 # REAL AGENT DISCOVERY AND LOADING
 # ============================================================================
 
+
 class RealAgentLoader:
     """Loader for real agent implementations."""
 
@@ -134,10 +142,10 @@ class RealAgentLoader:
     def load_sentiment_agent(config_path: Optional[str] = None) -> Optional[Agent]:
         """
         Load real SentimentAgent from backend/agents/sentiment/.
-        
+
         Args:
             config_path: Optional path to agent configuration
-            
+
         Returns:
             Initialized SentimentAgent instance or None if not found
         """
@@ -156,10 +164,10 @@ class RealAgentLoader:
     def load_market_regime_agent(config_path: Optional[str] = None) -> Optional[Agent]:
         """
         Load real MarketRegimeAgent from backend/agents/market_regime/.
-        
+
         Args:
             config_path: Optional path to agent configuration
-            
+
         Returns:
             Initialized MarketRegimeAgent instance or None if not found
         """
@@ -177,10 +185,10 @@ class RealAgentLoader:
     def load_risk_governor(config_path: Optional[str] = None) -> Optional[Agent]:
         """
         Load real RiskGovernor from backend/agents/risk_governor/.
-        
+
         Args:
             config_path: Optional path to agent configuration
-            
+
         Returns:
             Initialized RiskGovernor instance or None if not found
         """
@@ -199,10 +207,11 @@ class RealAgentLoader:
 # PHASE 12 REAL AGENT COORDINATOR
 # ============================================================================
 
+
 class Phase12RealAgentCoordinator:
     """
     Coordinates real cognitive agents for unified decision making.
-    
+
     Orchestrates SentimentAgent, MarketRegimeAgent, and RiskGovernor
     with proper error handling, state management, and performance tracking.
     """
@@ -210,7 +219,7 @@ class Phase12RealAgentCoordinator:
     def __init__(self, config: Phase12RealAgentConfig):
         """
         Initialize Phase12RealAgentCoordinator.
-        
+
         Args:
             config: Phase12RealAgentConfig instance
         """
@@ -220,13 +229,13 @@ class Phase12RealAgentCoordinator:
         self.agent_metrics: Dict[str, AgentMetrics] = {}
         self.decision_history: List[Phase12Decision] = []
         self.lock = threading.RLock()
-        
+
         logger.info("Phase12RealAgentCoordinator initialized")
 
     def register_agent(self, agent: Agent, weight: float = 1.0) -> None:
         """
         Register a real agent with the coordinator.
-        
+
         Args:
             agent: Agent instance to register
             weight: Weight for decision aggregation (default 1.0)
@@ -240,64 +249,68 @@ class Phase12RealAgentCoordinator:
     def register_all_real_agents(self, config_path: Optional[str] = None) -> int:
         """
         Discover and register all real agents.
-        
+
         Args:
             config_path: Optional configuration path for agents
-            
+
         Returns:
             Number of agents successfully registered
         """
         registered_count = 0
-        
+
         # Load SentimentAgent
         sentiment = RealAgentLoader.load_sentiment_agent(config_path)
         if sentiment:
             self.register_agent(sentiment, self.config.sentiment_weight)
             registered_count += 1
-        
+
         # Load MarketRegimeAgent
         market_regime = RealAgentLoader.load_market_regime_agent(config_path)
         if market_regime:
             self.register_agent(market_regime, self.config.market_regime_weight)
             registered_count += 1
-        
+
         # Load RiskGovernor
         risk_governor = RealAgentLoader.load_risk_governor(config_path)
         if risk_governor:
             self.register_agent(risk_governor, self.config.risk_governor_weight)
             registered_count += 1
-        
+
         logger.info(f"Registered {registered_count} real agents")
         return registered_count
 
     def execute_agent(self, agent_name: str, agent: Agent) -> Dict[str, Any]:
         """
         Execute a single real agent with timeout and error handling.
-        
+
         Args:
             agent_name: Name of agent being executed
             agent: Agent instance to execute
-            
+
         Returns:
             Agent decision dict or fallback dict
         """
         start_time = time.time()
-        
+
         try:
             # Call agent's analyze method
             decision = agent.analyze()
-            
+
             # Validate decision format
             if not isinstance(decision, dict):
-                logger.error(f"Agent {agent_name} returned invalid type: {type(decision)}")
+                logger.error(
+                    f"Agent {agent_name} returned invalid type: {type(decision)}"
+                )
                 return self._create_fallback_decision()
-            
-            if not all(key in decision for key in ["action", "confidence", "reasoning"]):
+
+            if not all(
+                key in decision for key in ["action", "confidence", "reasoning"]
+            ):
                 logger.error(f"Agent {agent_name} missing required fields in decision")
                 return self._create_fallback_decision()
-            
+
             latency = time.time() - start_time
-            
+
             # Update metrics
             with self.lock:
                 metrics = self.agent_metrics[agent_name]
@@ -306,102 +319,104 @@ class Phase12RealAgentCoordinator:
                 metrics.average_latency = metrics.total_latency / metrics.call_count
                 metrics.last_decision = decision
                 metrics.last_execution_time = latency
-            
+
             logger.debug(f"Agent {agent_name} executed in {latency:.3f}s")
             return decision
-            
+
         except Exception as e:
             logger.error(f"Agent {agent_name} failed: {e}")
-            
+
             with self.lock:
                 metrics = self.agent_metrics[agent_name]
                 metrics.failure_count += 1
-            
+
             return self._create_fallback_decision()
 
     def execute_agents_parallel(self) -> Dict[str, Dict[str, Any]]:
         """
         Execute all registered agents in parallel.
-        
+
         Returns:
             Dict mapping agent names to their decisions
         """
         results = {}
         threads = []
         results_lock = threading.Lock()
-        
+
         def worker(agent_name: str, agent: Agent):
             decision = self.execute_agent(agent_name, agent)
             with results_lock:
                 results[agent_name] = decision
-        
+
         # Launch all agent threads
         for agent_name, agent in self.agents.items():
             thread = threading.Thread(
-                target=worker,
-                args=(agent_name, agent),
-                daemon=False
+                target=worker, args=(agent_name, agent), daemon=False
             )
             thread.start()
             threads.append(thread)
-        
+
         # Wait for all threads to complete
         for thread in threads:
             thread.join(timeout=self.config.agent_timeout)
-        
+
         # Ensure all agents are in results (use fallback if timeout)
         for agent_name in self.agents:
             if agent_name not in results:
                 logger.warning(f"Agent {agent_name} timed out, using fallback")
                 results[agent_name] = self._create_fallback_decision()
-        
+
         return results
 
-    def aggregate_decisions(self, agent_decisions: Dict[str, Dict[str, Any]]) -> tuple[int, float, str]:
+    def aggregate_decisions(
+        self, agent_decisions: Dict[str, Dict[str, Any]]
+    ) -> tuple[int, float, str]:
         """
         Aggregate decisions from all agents using weighted averaging.
-        
+
         Args:
             agent_decisions: Dict mapping agent names to decisions
-            
+
         Returns:
             (aggregated_action, aggregated_confidence, combined_reasoning)
         """
         if not agent_decisions:
             logger.warning("No agent decisions to aggregate")
             return 0, 0.5, "No agents available"
-        
+
         # Extract decisions and weights
         actions = []
         confidences = []
         reasoning_parts = []
-        
+
         for agent_name, decision in agent_decisions.items():
             action = decision.get("action", 0)
             confidence = decision.get("confidence", 0.5)
             reasoning = decision.get("reasoning", "")
             weight = self.agent_weights.get(agent_name, 1.0)
-            
+
             actions.append(action)
             confidences.append(confidence * weight)
-            
+
             if reasoning:
                 reasoning_parts.append(f"{agent_name}: {reasoning}")
-        
+
         # Calculate weighted average confidence
         total_weight = sum(self.agent_weights.values())
         avg_confidence = sum(confidences) / total_weight if total_weight > 0 else 0.5
         avg_confidence = min(1.0, max(0.0, avg_confidence))  # Clamp to [0, 1]
-        
+
         # Determine action from weighted sum
         weighted_actions = []
         for agent_name, decision in agent_decisions.items():
             action = decision.get("action", 0)
             weight = self.agent_weights.get(agent_name, 1.0)
             weighted_actions.append(action * weight)
-        
-        avg_action_value = sum(weighted_actions) / total_weight if total_weight > 0 else 0
-        
+
+        avg_action_value = (
+            sum(weighted_actions) / total_weight if total_weight > 0 else 0
+        )
+
         # Convert to action (round to nearest valid action)
         if avg_action_value < 0.5:
             final_action = 0  # HOLD
@@ -409,82 +424,90 @@ class Phase12RealAgentCoordinator:
             final_action = 1  # LONG
         else:
             final_action = 2  # SHORT
-        
+
         # Combine reasoning
-        combined_reasoning = " | ".join(reasoning_parts) if reasoning_parts else "No reasoning available"
-        
+        combined_reasoning = (
+            " | ".join(reasoning_parts) if reasoning_parts else "No reasoning available"
+        )
+
         return final_action, avg_confidence, combined_reasoning
 
     def make_decision(self) -> Phase12Decision:
         """
         Execute all agents and make unified decision.
-        
+
         Returns:
             Phase12Decision with complete decision information
         """
         start_time = time.time()
-        
+
         # Execute all agents in parallel
         agent_decisions = self.execute_agents_parallel()
-        
+
         # Aggregate decisions
         action, confidence, reasoning = self.aggregate_decisions(agent_decisions)
-        
+
         # Create decision object
         decision = Phase12Decision(
             action=action,
             confidence=confidence,
             reasoning=reasoning,
             agent_inputs=agent_decisions,
-            aggregation_weights=dict(self.agent_weights)
+            aggregation_weights=dict(self.agent_weights),
         )
-        
+
         # Store in history
         with self.lock:
             self.decision_history.append(decision)
-            
+
             # Trim history if needed
             if len(self.decision_history) > self.config.max_decision_history:
-                self.decision_history = self.decision_history[-self.config.max_decision_history:]
-        
+                self.decision_history = self.decision_history[
+                    -self.config.max_decision_history :
+                ]
+
         latency = time.time() - start_time
-        logger.info(f"Decision made in {latency:.3f}s: action={action}, confidence={confidence:.2f}")
-        
+        logger.info(
+            f"Decision made in {latency:.3f}s: action={action}, confidence={confidence:.2f}"
+        )
+
         return decision
 
     def get_metrics(self) -> Dict[str, Any]:
         """
         Get system-wide metrics.
-        
+
         Returns:
             Dict with aggregate metrics
         """
         with self.lock:
             total_decisions = len(self.decision_history)
-            
+
             confidences = [d.confidence for d in self.decision_history]
             avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
-            
+
             action_counts = {0: 0, 1: 0, 2: 0}
             for decision in self.decision_history:
                 action_counts[decision.action] += 1
-            
+
             return {
                 "decisions_made": total_decisions,
                 "average_confidence": avg_confidence,
                 "action_distribution": action_counts,
-                "last_decision": self.decision_history[-1] if self.decision_history else None,
+                "last_decision": (
+                    self.decision_history[-1] if self.decision_history else None
+                ),
                 "agents_registered": len(self.agents),
-                "agents_available": list(self.agents.keys())
+                "agents_available": list(self.agents.keys()),
             }
 
     def get_agent_statistics(self, agent_name: Optional[str] = None) -> Dict[str, Any]:
         """
         Get statistics for specific agent or all agents.
-        
+
         Args:
             agent_name: Specific agent name or None for all agents
-            
+
         Returns:
             Dict with agent statistics
         """
@@ -492,7 +515,7 @@ class Phase12RealAgentCoordinator:
             if agent_name:
                 if agent_name not in self.agent_metrics:
                     return {"error": f"Agent {agent_name} not found"}
-                
+
                 metrics = self.agent_metrics[agent_name]
                 return {
                     "name": agent_name,
@@ -500,7 +523,7 @@ class Phase12RealAgentCoordinator:
                     "average_latency": metrics.average_latency,
                     "failure_count": metrics.failure_count,
                     "last_execution_time": metrics.last_execution_time,
-                    "weight": self.agent_weights.get(agent_name, 1.0)
+                    "weight": self.agent_weights.get(agent_name, 1.0),
                 }
             else:
                 result = {}
@@ -509,17 +532,19 @@ class Phase12RealAgentCoordinator:
                         "call_count": metrics.call_count,
                         "average_latency": metrics.average_latency,
                         "failure_count": metrics.failure_count,
-                        "weight": self.agent_weights.get(name, 1.0)
+                        "weight": self.agent_weights.get(name, 1.0),
                     }
                 return result
 
-    def get_decision_history(self, limit: Optional[int] = None) -> List[Phase12Decision]:
+    def get_decision_history(
+        self, limit: Optional[int] = None
+    ) -> List[Phase12Decision]:
         """
         Get decision history.
-        
+
         Args:
             limit: Maximum number of decisions to return
-            
+
         Returns:
             List of Phase12Decision objects
         """
@@ -537,20 +562,20 @@ class Phase12RealAgentCoordinator:
                 metrics.total_latency = 0.0
                 metrics.average_latency = 0.0
                 metrics.failure_count = 0
-        
+
         logger.info("Metrics reset")
 
     def _create_fallback_decision(self) -> Dict[str, Any]:
         """
         Create a fallback decision when agent fails.
-        
+
         Returns:
             Fallback decision dict
         """
         return {
             "action": self.config.fallback_action,
             "confidence": self.config.fallback_confidence,
-            "reasoning": "Fallback decision - agent failed to respond"
+            "reasoning": "Fallback decision - agent failed to respond",
         }
 
 
@@ -558,49 +583,48 @@ class Phase12RealAgentCoordinator:
 # HELPER FUNCTIONS FOR TESTING
 # ============================================================================
 
+
 def create_real_agent_coordinator(
-    config_path: Optional[str] = None,
-    config: Optional[Phase12RealAgentConfig] = None
+    config_path: Optional[str] = None, config: Optional[Phase12RealAgentConfig] = None
 ) -> Phase12RealAgentCoordinator:
     """
     Create a Phase12RealAgentCoordinator with all real agents.
-    
+
     Args:
         config_path: Optional configuration path for agents
         config: Optional Phase12RealAgentConfig (uses defaults if None)
-        
+
     Returns:
         Configured Phase12RealAgentCoordinator
     """
     if config is None:
         config = Phase12RealAgentConfig()
-    
+
     coordinator = Phase12RealAgentCoordinator(config)
     coordinator.register_all_real_agents(config_path)
-    
+
     return coordinator
 
 
 def create_coordinator_with_agents(
-    agents: List[Agent],
-    config: Optional[Phase12RealAgentConfig] = None
+    agents: List[Agent], config: Optional[Phase12RealAgentConfig] = None
 ) -> Phase12RealAgentCoordinator:
     """
     Create coordinator with specific agents.
-    
+
     Args:
         agents: List of Agent instances to register
         config: Optional Phase12RealAgentConfig
-        
+
     Returns:
         Configured Phase12RealAgentCoordinator
     """
     if config is None:
         config = Phase12RealAgentConfig()
-    
+
     coordinator = Phase12RealAgentCoordinator(config)
-    
+
     for agent in agents:
         coordinator.register_agent(agent)
-    
+
     return coordinator

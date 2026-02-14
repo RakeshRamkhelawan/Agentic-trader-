@@ -91,13 +91,29 @@ class MakerTakerGapOverTimeAnalysis(Analysis):
 
         # Merge to compute gap
         merged = taker_df.merge(maker_df, on="quarter", suffixes=("_taker", "_maker"))
-        merged["gap"] = (merged["excess_return_maker"] - merged["excess_return_taker"]) * 100
+        merged["gap"] = (
+            merged["excess_return_maker"] - merged["excess_return_taker"]
+        ) * 100
 
         # Prepare output dataframe
         output_df = merged[
-            ["quarter", "excess_return_taker", "excess_return_maker", "gap", "n_trades_taker", "volume_usd_taker"]
+            [
+                "quarter",
+                "excess_return_taker",
+                "excess_return_maker",
+                "gap",
+                "n_trades_taker",
+                "volume_usd_taker",
+            ]
         ].copy()
-        output_df.columns = ["quarter", "taker_return", "maker_return", "gap_pp", "n_trades", "volume_usd"]
+        output_df.columns = [
+            "quarter",
+            "taker_return",
+            "maker_return",
+            "gap_pp",
+            "n_trades",
+            "volume_usd",
+        ]
         output_df["taker_return"] = output_df["taker_return"] * 100
         output_df["maker_return"] = output_df["maker_return"] * 100
 
@@ -115,7 +131,10 @@ class MakerTakerGapOverTimeAnalysis(Analysis):
         df["quarter"] = pd.to_datetime(df["quarter"])
         quarters = df["quarter"].values
         x = np.arange(len(quarters))
-        quarter_labels = [f"{pd.Timestamp(q).year} Q{(pd.Timestamp(q).month - 1) // 3 + 1}" for q in quarters]
+        quarter_labels = [
+            f"{pd.Timestamp(q).year} Q{(pd.Timestamp(q).month - 1) // 3 + 1}"
+            for q in quarters
+        ]
 
         # Plot returns
         ax1.plot(
@@ -149,7 +168,9 @@ class MakerTakerGapOverTimeAnalysis(Analysis):
                 break
 
         if election_idx is not None:
-            ax1.axvline(x=election_idx, color="blue", linestyle=":", linewidth=1.5, alpha=0.7)
+            ax1.axvline(
+                x=election_idx, color="blue", linestyle=":", linewidth=1.5, alpha=0.7
+            )
             ax1.annotate(
                 "2024 Election\n& Legal Victory",
                 xy=(election_idx, ax1.get_ylim()[1] * 0.8),

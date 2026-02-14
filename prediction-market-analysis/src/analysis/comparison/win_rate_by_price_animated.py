@@ -47,18 +47,30 @@ class WinRateByPriceAnimatedAnalysis(Analysis):
         base_dir = Path(__file__).parent.parent.parent.parent
 
         # Kalshi paths
-        self.kalshi_trades_dir = Path(kalshi_trades_dir or base_dir / "data" / "kalshi" / "trades")
-        self.kalshi_markets_dir = Path(kalshi_markets_dir or base_dir / "data" / "kalshi" / "markets")
+        self.kalshi_trades_dir = Path(
+            kalshi_trades_dir or base_dir / "data" / "kalshi" / "trades"
+        )
+        self.kalshi_markets_dir = Path(
+            kalshi_markets_dir or base_dir / "data" / "kalshi" / "markets"
+        )
 
         # Polymarket paths
-        self.polymarket_trades_dir = Path(polymarket_trades_dir or base_dir / "data" / "polymarket" / "trades")
-        self.polymarket_legacy_trades_dir = Path(
-            polymarket_legacy_trades_dir or base_dir / "data" / "polymarket" / "legacy_trades"
+        self.polymarket_trades_dir = Path(
+            polymarket_trades_dir or base_dir / "data" / "polymarket" / "trades"
         )
-        self.polymarket_markets_dir = Path(polymarket_markets_dir or base_dir / "data" / "polymarket" / "markets")
-        self.polymarket_blocks_dir = Path(polymarket_blocks_dir or base_dir / "data" / "polymarket" / "blocks")
+        self.polymarket_legacy_trades_dir = Path(
+            polymarket_legacy_trades_dir
+            or base_dir / "data" / "polymarket" / "legacy_trades"
+        )
+        self.polymarket_markets_dir = Path(
+            polymarket_markets_dir or base_dir / "data" / "polymarket" / "markets"
+        )
+        self.polymarket_blocks_dir = Path(
+            polymarket_blocks_dir or base_dir / "data" / "polymarket" / "blocks"
+        )
         self.collateral_lookup_path = Path(
-            collateral_lookup_path or base_dir / "data" / "polymarket" / "fpmm_collateral_lookup.json"
+            collateral_lookup_path
+            or base_dir / "data" / "polymarket" / "fpmm_collateral_lookup.json"
         )
 
     def run(self) -> AnalysisOutput:
@@ -88,9 +100,20 @@ class WinRateByPriceAnimatedAnalysis(Analysis):
         # Create figure
         fig, ax = plt.subplots(figsize=(10, 7))
 
-        (poly_line,) = ax.plot([], [], color="#3B82F6", linewidth=2, label="Polymarket (Actual)")
-        (kalshi_line,) = ax.plot([], [], color="#10B981", linewidth=2, label="Kalshi (Actual)")
-        ax.plot([0, 100], [0, 100], linestyle="--", color="#6B7280", linewidth=1.5, label="Implied")
+        (poly_line,) = ax.plot(
+            [], [], color="#3B82F6", linewidth=2, label="Polymarket (Actual)"
+        )
+        (kalshi_line,) = ax.plot(
+            [], [], color="#10B981", linewidth=2, label="Kalshi (Actual)"
+        )
+        ax.plot(
+            [0, 100],
+            [0, 100],
+            linestyle="--",
+            color="#6B7280",
+            linewidth=1.5,
+            label="Implied",
+        )
 
         info_text = ax.text(
             0.02,
@@ -142,7 +165,12 @@ class WinRateByPriceAnimatedAnalysis(Analysis):
             k_total = k_data.get("total", 0)
             if k_total >= 100:
                 prices = sorted(k_data["by_price"].keys())
-                win_rates = [100.0 * k_data["by_price"][p]["wins"] / k_data["by_price"][p]["total"] for p in prices]
+                win_rates = [
+                    100.0
+                    * k_data["by_price"][p]["wins"]
+                    / k_data["by_price"][p]["total"]
+                    for p in prices
+                ]
                 kalshi_line.set_data(prices, win_rates)
             else:
                 kalshi_line.set_data([], [])
@@ -152,7 +180,12 @@ class WinRateByPriceAnimatedAnalysis(Analysis):
             p_total = p_data.get("total", 0)
             if p_total >= 100:
                 prices = sorted(p_data["by_price"].keys())
-                win_rates = [100.0 * p_data["by_price"][p]["wins"] / p_data["by_price"][p]["total"] for p in prices]
+                win_rates = [
+                    100.0
+                    * p_data["by_price"][p]["wins"]
+                    / p_data["by_price"][p]["total"]
+                    for p in prices
+                ]
                 poly_line.set_data(prices, win_rates)
             else:
                 poly_line.set_data([], [])
@@ -174,7 +207,10 @@ class WinRateByPriceAnimatedAnalysis(Analysis):
         output_rows = []
         if valid_weeks:
             final_week = valid_weeks[-1]
-            for platform, data in [("kalshi", kalshi_cumulative), ("polymarket", poly_cumulative)]:
+            for platform, data in [
+                ("kalshi", kalshi_cumulative),
+                ("polymarket", poly_cumulative),
+            ]:
                 week_data = data.get(final_week, {}).get("by_price", {})
                 for price, vals in week_data.items():
                     output_rows.append(
@@ -286,7 +322,9 @@ class WinRateByPriceAnimatedAnalysis(Analysis):
 
         for _, row in markets_df.iterrows():
             try:
-                prices = json.loads(row["outcome_prices"]) if row["outcome_prices"] else None
+                prices = (
+                    json.loads(row["outcome_prices"]) if row["outcome_prices"] else None
+                )
                 if not prices or len(prices) != 2:
                     continue
                 p0, p1 = float(prices[0]), float(prices[1])
@@ -299,7 +337,9 @@ class WinRateByPriceAnimatedAnalysis(Analysis):
                 else:
                     continue
 
-                token_ids = json.loads(row["clob_token_ids"]) if row["clob_token_ids"] else None
+                token_ids = (
+                    json.loads(row["clob_token_ids"]) if row["clob_token_ids"] else None
+                )
                 if token_ids and len(token_ids) == 2:
                     token_won[token_ids[0]] = winning_outcome == 0
                     token_won[token_ids[1]] = winning_outcome == 1
@@ -313,20 +353,31 @@ class WinRateByPriceAnimatedAnalysis(Analysis):
 
         # Register CTF token mapping
         con.execute("CREATE TABLE token_resolution (token_id VARCHAR, won BOOLEAN)")
-        con.executemany("INSERT INTO token_resolution VALUES (?, ?)", list(token_won.items()))
+        con.executemany(
+            "INSERT INTO token_resolution VALUES (?, ?)", list(token_won.items())
+        )
 
         # Filter FPMM to USDC markets only
         if self.collateral_lookup_path.exists():
             with open(self.collateral_lookup_path) as f:
                 collateral_lookup = json.load(f)
             usdc_markets = {
-                addr.lower() for addr, info in collateral_lookup.items() if info["collateral_symbol"] == "USDC"
+                addr.lower()
+                for addr, info in collateral_lookup.items()
+                if info["collateral_symbol"] == "USDC"
             }
-            fpmm_resolution = {k: v for k, v in fpmm_resolution.items() if k in usdc_markets}
+            fpmm_resolution = {
+                k: v for k, v in fpmm_resolution.items() if k in usdc_markets
+            }
 
-        con.execute("CREATE TABLE fpmm_resolution (fpmm_address VARCHAR, winning_outcome BIGINT)")
+        con.execute(
+            "CREATE TABLE fpmm_resolution (fpmm_address VARCHAR, winning_outcome BIGINT)"
+        )
         if fpmm_resolution:
-            con.executemany("INSERT INTO fpmm_resolution VALUES (?, ?)", list(fpmm_resolution.items()))
+            con.executemany(
+                "INSERT INTO fpmm_resolution VALUES (?, ?)",
+                list(fpmm_resolution.items()),
+            )
 
         # Create blocks lookup table
         con.execute(

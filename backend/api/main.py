@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 from contextlib import asynccontextmanager
@@ -32,6 +31,7 @@ from backend.core.config.settings import settings
 # JWT validation
 try:
     from jose import jwt, JWTError
+
     JOSE_AVAILABLE = True
 except ImportError:
     JOSE_AVAILABLE = False
@@ -54,57 +54,64 @@ async def market_data_publisher():
     logger.info("Starting Market Data Publisher...")
     trading_service = get_trading_service()
     from backend.core.cache_layer import get_cache
+
     cache = get_cache()
-    
+
     while True:
         try:
             # 1. Get all markets from cache (populated by sync task)
             # We check multiple possible keys to be robust
-            markets = await cache.get("markets:revolut") or await cache.get("markets:kraken")
-            
+            markets = await cache.get("markets:revolut") or await cache.get(
+                "markets:kraken"
+            )
+
             if markets:
                 # Limit initial broadcast frequency for many symbols
-                for market in markets[:30]: # Broadcast top 30 frequently
+                for market in markets[:30]:  # Broadcast top 30 frequently
                     symbol = market.get("symbol", "").replace("-", "/")
-                    if not symbol: continue
-                    
+                    if not symbol:
+                        continue
+
                     # In a real app, we'd fetch fresh prices here or from a stream
                     # For demo 'wow', we can simulate small price movements if ticker stagnant
                     price = market.get("price", 0.0)
-                    
+
                     # Broadcast to WebSocket
                     await ws_manager.broadcast_to_channel(
                         f"ticker.{market['symbol']}",
                         {
                             "type": "update",
                             "data": {
-                                "symbol": market['symbol'],
+                                "symbol": market["symbol"],
                                 "price": price,
                                 "change": market.get("change", 0.0),
                                 "volume": market.get("volume", "0"),
-                                "timestamp": datetime.now(timezone.utc).isoformat()
-                            }
-                        }
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                            },
+                        },
                     )
             else:
-                logger.debug("Market Data Publisher: Cache empty, waiting for sync task...")
-                
+                logger.debug(
+                    "Market Data Publisher: Cache empty, waiting for sync task..."
+                )
+
         except Exception as e:
             logger.error(f"Market Data Publisher Error: {e}")
-            
-        await asyncio.sleep(2) # Broadcast cycle every 2s
+
+        await asyncio.sleep(2)  # Broadcast cycle every 2s
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("API Server Starting...")
-    
+
     # Re-enabled: Background Publisher now uses SessionManager.system_admin_session()
     task = asyncio.create_task(market_data_publisher())
     logger.info("Market Data Publisher STARTED")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("API Server Shutting Down...")
     task.cancel()
@@ -134,16 +141,24 @@ app.add_middleware(
 # Prometheus Middleware
 app.add_middleware(PrometheusMiddleware)
 
+
 # Security Headers Middleware
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none';"
-    response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none';"
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=31536000; includeSubDomains"
+    )
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; frame-ancestors 'none';"
+    )
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; frame-ancestors 'none';"
+    )
     return response
+
 
 # Global Exception Handler (Sanitization)
 @app.exception_handler(Exception)
@@ -156,11 +171,12 @@ async def global_exception_handler(request: Request, exc: Exception):
         logger.error(f"Global Exception: {exc}", exc_info=True)
         return JSONResponse(
             status_code=500,
-            content={"detail": "Internal Server Error. Please contact support."}
+            content={"detail": "Internal Server Error. Please contact support."},
         )
     # Re-raise to let FastAPI's default debug handler catch it in dev
     # (Or return a detailed JSON response if preferred)
     raise exc
+
 
 # ============================================================================
 # AUTH MIDDLEWARE - JWT Token Validation
@@ -190,7 +206,7 @@ token_validator = JWTValidator(
     jwks_url=jwks_url,
     issuer=settings.AUTH0_ISSUER,
     audience=settings.AUTH0_API_AUDIENCE,
-    algorithms=[settings.AUTH0_ALGORITHM]
+    algorithms=[settings.AUTH0_ALGORITHM],
 )
 
 # Add AuthMiddleware AFTER CORS (middleware order: last added = first executed)
@@ -198,16 +214,19 @@ app.add_middleware(AuthMiddleware, jwt_validator=token_validator)
 
 # Mount Routers
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
-app.include_router(trading_api.router) # Prefix defined in router
-app.include_router(user_settings_api.router, prefix="/api/v1/settings", tags=["settings"])
+app.include_router(trading_api.router)  # Prefix defined in router
+app.include_router(
+    user_settings_api.router, prefix="/api/v1/settings", tags=["settings"]
+)
 app.include_router(approval_api.router, prefix="/api/v1/approvals", tags=["approvals"])
 app.include_router(analytics_api.router, prefix="/api/v1/analytics", tags=["analytics"])
 app.include_router(backtest_api.router, prefix="/api/v1/backtest", tags=["backtesting"])
 app.include_router(prediction_api.router, prefix="/api/v1", tags=["prediction"])
-app.include_router(ws_router) # /ws endpoint
+app.include_router(ws_router)  # /ws endpoint
 
 # Metrics Endpoint
 app.add_route("/metrics", metrics_endpoint)
+
 
 @app.get("/health")
 def health_check():

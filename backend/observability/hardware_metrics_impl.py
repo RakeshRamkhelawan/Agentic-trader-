@@ -22,9 +22,11 @@ logger = logging.getLogger(__name__)
 # DATA STRUCTURES
 # ============================================================================
 
+
 @dataclass
 class NetworkMetrics:
     """Network performance metrics."""
+
     latency_ms: float = 0.0
     bandwidth_mbps: float = 0.0
     packet_loss_percent: float = 0.0
@@ -35,6 +37,7 @@ class NetworkMetrics:
 @dataclass
 class ComputeMetrics:
     """CPU and processing metrics."""
+
     cpu_percent: float = 0.0
     memory_percent: float = 0.0
     thermal_throttling: bool = False
@@ -46,6 +49,7 @@ class ComputeMetrics:
 @dataclass
 class StorageMetrics:
     """Disk and storage metrics."""
+
     disk_io_mbps: float = 0.0
     disk_free_gb: float = 0.0
     disk_used_percent: float = 0.0
@@ -58,6 +62,7 @@ class StorageMetrics:
 @dataclass
 class DataFlowMetrics:
     """Queue and message flow metrics."""
+
     queue_depth: int = 0
     active_connections: int = 0
     pool_utilization_percent: float = 0.0
@@ -70,6 +75,7 @@ class DataFlowMetrics:
 @dataclass
 class AggregatedMetrics:
     """All metrics aggregated together."""
+
     timestamp: datetime = field(default_factory=datetime.now)
     network: NetworkMetrics = field(default_factory=NetworkMetrics)
     compute: ComputeMetrics = field(default_factory=ComputeMetrics)
@@ -81,6 +87,7 @@ class AggregatedMetrics:
 # ============================================================================
 # HARDWARE METRICS COLLECTOR
 # ============================================================================
+
 
 class HardwareMetricsCollector(ABC):
     """Abstract base for real-time hardware metrics collection."""
@@ -108,18 +115,18 @@ class HardwareMetricsCollector(ABC):
     def collect_all_metrics(self) -> AggregatedMetrics:
         """Collect all metrics together."""
         overall_load = (
-            self.collect_compute_metrics().cpu_percent / 100.0 * 0.4 +
-            self.collect_dataflow_metrics().pool_utilization_percent / 100.0 * 0.3 +
-            (1.0 - self.collect_storage_metrics().disk_free_gb / 1000.0) * 0.3
+            self.collect_compute_metrics().cpu_percent / 100.0 * 0.4
+            + self.collect_dataflow_metrics().pool_utilization_percent / 100.0 * 0.3
+            + (1.0 - self.collect_storage_metrics().disk_free_gb / 1000.0) * 0.3
         )
-        
+
         return AggregatedMetrics(
             timestamp=datetime.now(),
             network=self.collect_network_metrics(),
             compute=self.collect_compute_metrics(),
             storage=self.collect_storage_metrics(),
             dataflow=self.collect_dataflow_metrics(),
-            overall_system_load=min(1.0, max(0.0, overall_load))
+            overall_system_load=min(1.0, max(0.0, overall_load)),
         )
 
     async def stream_metrics(self, interval_seconds: float = 1.0):
@@ -142,17 +149,17 @@ class RealHardwareMetricsCollector(HardwareMetricsCollector):
         try:
             # Network latency (simplified - would use ping3 in production)
             latency_ms = 100.0
-            
+
             # Network I/O
             net_io = psutil.net_io_counters()
             bandwidth_mbps = (net_io.bytes_sent + net_io.bytes_recv) / 1_000_000
-            
+
             return NetworkMetrics(
                 latency_ms=latency_ms,
                 bandwidth_mbps=bandwidth_mbps,
                 packet_loss_percent=0.0,
                 active_connections=len(psutil.net_connections()),
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
         except Exception as e:
             logger.warning(f"Network metrics collection failed: {e}")
@@ -169,7 +176,7 @@ class RealHardwareMetricsCollector(HardwareMetricsCollector):
                 thermal_throttling=False,  # Would read from /proc/cpuinfo
                 available_cores=psutil.cpu_count(),
                 process_memory_mb=psutil.Process().memory_info().rss / 1_000_000,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
         except Exception as e:
             logger.warning(f"Compute metrics collection failed: {e}")
@@ -178,18 +185,18 @@ class RealHardwareMetricsCollector(HardwareMetricsCollector):
     def collect_storage_metrics(self) -> StorageMetrics:
         """Collect real disk/storage metrics."""
         try:
-            disk_usage = psutil.disk_usage('/')
+            disk_usage = psutil.disk_usage("/")
             io_counters = psutil.disk_io_counters()
-            
+
             # Calculate I/O throughput
             now = time.time()
             elapsed = now - self._last_io_time
             bytes_written = io_counters.write_bytes - self._last_io_counters.write_bytes
             disk_io_mbps = (bytes_written / elapsed / 1_000_000) if elapsed > 0 else 0
-            
+
             self._last_io_counters = io_counters
             self._last_io_time = now
-            
+
             return StorageMetrics(
                 disk_io_mbps=disk_io_mbps,
                 disk_free_gb=disk_usage.free / (1024**3),
@@ -197,7 +204,7 @@ class RealHardwareMetricsCollector(HardwareMetricsCollector):
                 write_latency_ms=5.0,
                 io_queue_depth=0,
                 last_backup_hours_ago=0,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
         except Exception as e:
             logger.warning(f"Storage metrics collection failed: {e}")
@@ -214,7 +221,7 @@ class RealHardwareMetricsCollector(HardwareMetricsCollector):
                 avg_message_latency_ms=50.0,
                 cache_hit_rate_percent=75.0,
                 failure_rate_percent=0.0,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
         except Exception as e:
             logger.warning(f"DataFlow metrics collection failed: {e}")
@@ -224,6 +231,7 @@ class RealHardwareMetricsCollector(HardwareMetricsCollector):
 # ============================================================================
 # METRICS AGGREGATOR
 # ============================================================================
+
 
 class MetricsAggregator:
     """Aggregates metrics over time and provides statistics."""
@@ -257,17 +265,17 @@ class MetricsAggregator:
         with self._lock:
             if not self.network_history:
                 return {}
-            
+
             latencies = [m.latency_ms for m in self.network_history]
             bandwidths = [m.bandwidth_mbps for m in self.network_history]
-            
+
             return {
-                'avg_latency': sum(latencies) / len(latencies),
-                'p95_latency': self._percentile(latencies, 95),
-                'p99_latency': self._percentile(latencies, 99),
-                'min_latency': min(latencies),
-                'max_latency': max(latencies),
-                'avg_bandwidth': sum(bandwidths) / len(bandwidths),
+                "avg_latency": sum(latencies) / len(latencies),
+                "p95_latency": self._percentile(latencies, 95),
+                "p99_latency": self._percentile(latencies, 99),
+                "min_latency": min(latencies),
+                "max_latency": max(latencies),
+                "avg_bandwidth": sum(bandwidths) / len(bandwidths),
             }
 
     def get_compute_stats(self) -> Dict[str, float]:
@@ -275,16 +283,16 @@ class MetricsAggregator:
         with self._lock:
             if not self.compute_history:
                 return {}
-            
+
             cpus = [m.cpu_percent for m in self.compute_history]
             mems = [m.memory_percent for m in self.compute_history]
-            
+
             return {
-                'avg_cpu': sum(cpus) / len(cpus),
-                'p95_cpu': self._percentile(cpus, 95),
-                'peak_cpu': max(cpus),
-                'avg_memory': sum(mems) / len(mems),
-                'peak_memory': max(mems),
+                "avg_cpu": sum(cpus) / len(cpus),
+                "p95_cpu": self._percentile(cpus, 95),
+                "peak_cpu": max(cpus),
+                "avg_memory": sum(mems) / len(mems),
+                "peak_memory": max(mems),
             }
 
     def get_storage_stats(self) -> Dict[str, float]:
@@ -292,15 +300,15 @@ class MetricsAggregator:
         with self._lock:
             if not self.storage_history:
                 return {}
-            
+
             ios = [m.disk_io_mbps for m in self.storage_history]
             spaces = [m.disk_free_gb for m in self.storage_history]
-            
+
             return {
-                'avg_disk_io': sum(ios) / len(ios),
-                'peak_disk_io': max(ios) if ios else 0,
-                'avg_disk_free': sum(spaces) / len(spaces),
-                'min_disk_free': min(spaces) if spaces else 0,
+                "avg_disk_io": sum(ios) / len(ios),
+                "peak_disk_io": max(ios) if ios else 0,
+                "avg_disk_free": sum(spaces) / len(spaces),
+                "min_disk_free": min(spaces) if spaces else 0,
             }
 
     def get_dataflow_stats(self) -> Dict[str, float]:
@@ -308,39 +316,47 @@ class MetricsAggregator:
         with self._lock:
             if not self.dataflow_history:
                 return {}
-            
+
             queues = [m.queue_depth for m in self.dataflow_history]
             latencies = [m.avg_message_latency_ms for m in self.dataflow_history]
-            
+
             return {
-                'avg_queue_depth': sum(queues) / len(queues),
-                'max_queue_depth': max(queues) if queues else 0,
-                'avg_message_latency': sum(latencies) / len(latencies),
-                'p95_message_latency': self._percentile(latencies, 95),
+                "avg_queue_depth": sum(queues) / len(queues),
+                "max_queue_depth": max(queues) if queues else 0,
+                "avg_message_latency": sum(latencies) / len(latencies),
+                "p95_message_latency": self._percentile(latencies, 95),
             }
 
     def detect_trend(self, metric_type: str, lookback_samples: int = 10) -> str:
         """Detect trend in metrics."""
         with self._lock:
-            history = getattr(self, f'{metric_type}_history', deque())
-            
+            history = getattr(self, f"{metric_type}_history", deque())
+
             if len(history) < 2:
-                return 'stable'
-            
+                return "stable"
+
             recent = list(history)[-lookback_samples:]
             if len(recent) < 2:
-                return 'stable'
-            
-            first_half_avg = sum([m.__dict__[list(m.__dict__.keys())[0]] 
-                                 for m in recent[:len(recent)//2]]) / (len(recent)//2)
-            second_half_avg = sum([m.__dict__[list(m.__dict__.keys())[0]] 
-                                  for m in recent[len(recent)//2:]]) / (len(recent) - len(recent)//2)
-            
+                return "stable"
+
+            first_half_avg = sum(
+                [
+                    m.__dict__[list(m.__dict__.keys())[0]]
+                    for m in recent[: len(recent) // 2]
+                ]
+            ) / (len(recent) // 2)
+            second_half_avg = sum(
+                [
+                    m.__dict__[list(m.__dict__.keys())[0]]
+                    for m in recent[len(recent) // 2 :]
+                ]
+            ) / (len(recent) - len(recent) // 2)
+
             if second_half_avg > first_half_avg * 1.1:
-                return 'degrading'
+                return "degrading"
             elif second_half_avg < first_half_avg * 0.9:
-                return 'improving'
-            return 'stable'
+                return "improving"
+            return "stable"
 
     def get_metric_correlation(self, metric1: str, metric2: str) -> float:
         """Calculate correlation between metrics."""
@@ -351,6 +367,7 @@ class MetricsAggregator:
 # ============================================================================
 # ADAPTIVE COHERENCE CALCULATOR
 # ============================================================================
+
 
 class AdaptiveCoherenceCalculator:
     """Maps hardware metrics to Mahabhutas coherence values."""
@@ -364,10 +381,10 @@ class AdaptiveCoherenceCalculator:
         base = 1.0
         latency_penalty = network_metrics.latency_ms * 0.00015
         packet_loss_penalty = network_metrics.packet_loss_percent * 0.01
-        
+
         coherence = base - latency_penalty - packet_loss_penalty
         coherence = max(0.3, min(1.0, coherence))
-        
+
         return self.apply_damping(32, coherence)
 
     def calculate_vayu_coherence(self, config_state: Dict[str, Any]) -> float:
@@ -381,10 +398,10 @@ class AdaptiveCoherenceCalculator:
         cpu_penalty = max(0, (compute_metrics.cpu_percent - 50) * 0.01)
         memory_penalty = max(0, (compute_metrics.memory_percent - 70) * 0.01)
         thermal_penalty = 0.25 if compute_metrics.thermal_throttling else 0
-        
+
         coherence = base - cpu_penalty - memory_penalty - thermal_penalty
         coherence = max(0.3, min(1.0, coherence))
-        
+
         return self.apply_damping(34, coherence)
 
     def calculate_apas_coherence(self, dataflow_metrics: DataFlowMetrics) -> float:
@@ -393,10 +410,10 @@ class AdaptiveCoherenceCalculator:
         queue_penalty = max(0, (dataflow_metrics.queue_depth - 10) * 0.01)
         latency_penalty = dataflow_metrics.avg_message_latency_ms * 0.0001
         cache_bonus = max(0, (dataflow_metrics.cache_hit_rate_percent - 50) * 0.005)
-        
+
         coherence = base - queue_penalty - latency_penalty + cache_bonus
         coherence = max(0.3, min(1.0, coherence))
-        
+
         return self.apply_damping(35, coherence)
 
     def calculate_prithvi_coherence(self, storage_metrics: StorageMetrics) -> float:
@@ -405,10 +422,10 @@ class AdaptiveCoherenceCalculator:
         disk_penalty = max(0, (50 - storage_metrics.disk_free_gb) * 0.01)
         io_penalty = storage_metrics.write_latency_ms * 0.005
         backup_penalty = 0.3 if storage_metrics.last_backup_hours_ago > 24 else 0
-        
+
         coherence = base - disk_penalty - io_penalty - backup_penalty
         coherence = max(0.3, min(1.0, coherence))
-        
+
         return self.apply_damping(36, coherence)
 
     def apply_damping(self, layer: int, new_coherence: float) -> float:
@@ -427,6 +444,7 @@ class AdaptiveCoherenceCalculator:
 # METRICS MONITOR
 # ============================================================================
 
+
 class MetricsMonitor:
     """Monitors metrics for anomalies and generates alerts."""
 
@@ -439,61 +457,75 @@ class MetricsMonitor:
     def update_baseline(self, metrics: AggregatedMetrics) -> None:
         """Update baseline statistics."""
         self.sample_count += 1
-        
+
         if self.sample_count <= self.baseline_samples:
-            if 'cpu_values' not in self.baseline:
-                self.baseline['cpu_values'] = []
-                self.baseline['memory_values'] = []
-            
-            self.baseline['cpu_values'].append(metrics.compute.cpu_percent)
-            self.baseline['memory_values'].append(metrics.compute.memory_percent)
-            
+            if "cpu_values" not in self.baseline:
+                self.baseline["cpu_values"] = []
+                self.baseline["memory_values"] = []
+
+            self.baseline["cpu_values"].append(metrics.compute.cpu_percent)
+            self.baseline["memory_values"].append(metrics.compute.memory_percent)
+
             if self.sample_count == self.baseline_samples:
                 # Compute baseline stats
-                self.baseline['cpu_mean'] = sum(self.baseline['cpu_values']) / len(self.baseline['cpu_values'])
-                self.baseline['memory_mean'] = sum(self.baseline['memory_values']) / len(self.baseline['memory_values'])
+                self.baseline["cpu_mean"] = sum(self.baseline["cpu_values"]) / len(
+                    self.baseline["cpu_values"]
+                )
+                self.baseline["memory_mean"] = sum(
+                    self.baseline["memory_values"]
+                ) / len(self.baseline["memory_values"])
 
     def check_for_anomalies(self, metrics: AggregatedMetrics) -> List[str]:
         """Check for anomalies."""
         alerts = []
-        
+
         if not self.baseline:
             return alerts
-        
+
         # Simple anomaly detection
         if metrics.compute.cpu_percent > 90:
             alerts.append("CPU anomaly detected")
-        
+
         if metrics.storage.disk_free_gb < 50:
             alerts.append("Low disk space anomaly")
-        
+
         return alerts
 
-    def generate_alerts(self, metrics: AggregatedMetrics, coherence_values: Dict[int, float]) -> List[str]:
+    def generate_alerts(
+        self, metrics: AggregatedMetrics, coherence_values: Dict[int, float]
+    ) -> List[str]:
         """Generate alerts."""
         alerts = []
-        
+
         # Coherence alerts
         for layer, coherence in coherence_values.items():
             if coherence < 0.5:
-                element = {32: 'Network', 33: 'Config', 34: 'Compute',
-                          35: 'DataFlow', 36: 'Storage'}.get(layer)
+                element = {
+                    32: "Network",
+                    33: "Config",
+                    34: "Compute",
+                    35: "DataFlow",
+                    36: "Storage",
+                }.get(layer)
                 alerts.append(f"⚠️ {element} coherence low: {coherence:.2f}")
-        
+
         # Latency alert
         if metrics.network.latency_ms > 2000:
-            alerts.append(f"⚠️ Network latency critical: {metrics.network.latency_ms:.0f}ms")
-        
+            alerts.append(
+                f"⚠️ Network latency critical: {metrics.network.latency_ms:.0f}ms"
+            )
+
         # Disk alert
         if metrics.storage.disk_free_gb < 50:
             alerts.append(f"⚠️ Low disk space: {metrics.storage.disk_free_gb:.1f}GB")
-        
+
         return alerts
 
 
 # ============================================================================
 # INTEGRATION HELPER
 # ============================================================================
+
 
 class Phase15MetricsIntegration:
     """High-level integration helper for SystemIdentity."""
@@ -509,7 +541,7 @@ class Phase15MetricsIntegration:
         metrics = self.collector.collect_all_metrics()
         self.aggregator.add_metrics(metrics)
         self.monitor.update_baseline(metrics)
-        
+
         coherence_values = {
             32: self.coherence_calc.calculate_akasha_coherence(metrics.network),
             33: self.coherence_calc.calculate_vayu_coherence({}),
@@ -517,22 +549,22 @@ class Phase15MetricsIntegration:
             35: self.coherence_calc.calculate_apas_coherence(metrics.dataflow),
             36: self.coherence_calc.calculate_prithvi_coherence(metrics.storage),
         }
-        
+
         return coherence_values
 
     def get_system_health_report(self) -> Dict[str, Any]:
         """Get comprehensive health report."""
         metrics = self.collector.collect_all_metrics()
         coherence = self.get_adaptive_coherence()
-        
+
         return {
-            'metrics': {
-                'network': vars(metrics.network),
-                'compute': vars(metrics.compute),
-                'storage': vars(metrics.storage),
-                'dataflow': vars(metrics.dataflow),
+            "metrics": {
+                "network": vars(metrics.network),
+                "compute": vars(metrics.compute),
+                "storage": vars(metrics.storage),
+                "dataflow": vars(metrics.dataflow),
             },
-            'coherence': coherence,
-            'alerts': self.monitor.generate_alerts(metrics, coherence),
-            'overall_system_load': metrics.overall_system_load,
+            "coherence": coherence,
+            "alerts": self.monitor.generate_alerts(metrics, coherence),
+            "overall_system_load": metrics.overall_system_load,
         }

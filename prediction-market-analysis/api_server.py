@@ -2,6 +2,7 @@
 Prediction Market Intelligence Service - FastAPI Application
 Main entry point for the API server.
 """
+
 import logging
 from contextlib import asynccontextmanager
 from typing import Dict, Any
@@ -20,8 +21,7 @@ from src.api.middleware import MetricsMiddleware
 
 # Logging configuration
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -35,23 +35,23 @@ async def lifespan(app: FastAPI):
     # === STARTUP ===
     logger.info("🚀 Starting Prediction Market Intelligence Service...")
     logger.info("📊 Initializing DuckDB connection...")
-    
+
     # Initialize services
     try:
         initialize_services(data_dir="/app/data")
         logger.info("✅ Analysis services initialized")
     except Exception as e:
         logger.warning(f"⚠️  Could not initialize analysis services: {e}")
-    
+
     # Initialize connections (can be extended later)
     from datetime import datetime
+
     app.state.startup_time = datetime.now()
-    
+
     yield
-    
+
     # === SHUTDOWN ===
     logger.info("👋 Shutting down Prediction Market Intelligence Service...")
-
 
 
 # Create FastAPI application
@@ -62,7 +62,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # CORS Middleware
@@ -96,7 +96,7 @@ async def root() -> Dict[str, Any]:
         "service": "prediction-market-intelligence",
         "version": "1.0.0",
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
     }
 
 
@@ -110,17 +110,14 @@ async def global_exception_handler(request, exc):
         content={
             "error": "internal_server_error",
             "message": "An unexpected error occurred",
-            "detail": str(exc) if app.debug else None
-        }
+            "detail": str(exc) if app.debug else None,
+        },
     )
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
-        "api_server:app",
-        host="0.0.0.0",
-        port=8002,
-        reload=True,
-        log_level="info"
+        "api_server:app", host="0.0.0.0", port=8002, reload=True, log_level="info"
     )

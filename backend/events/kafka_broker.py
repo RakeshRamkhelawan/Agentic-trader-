@@ -10,6 +10,7 @@ except ImportError:
 
 from backend.events.message_broker import MessageBroker
 
+
 class KafkaBroker(MessageBroker):
     """
     Enterprise-grade Kafka/Redpanda Broker implementation.
@@ -19,17 +20,17 @@ class KafkaBroker(MessageBroker):
     def __init__(self, bootstrap_servers: str = "localhost:9092"):
         if AIOKafkaProducer is None:
             raise ImportError("aiokafka not installed. Run: pip install aiokafka")
-            
+
         self.bootstrap_servers = bootstrap_servers
         self.producer: Optional[AIOKafkaProducer] = None
         self.consumer: Optional[AIOKafkaConsumer] = None
-        
+
     async def connect(self):
         """Connect producer."""
         self.producer = AIOKafkaProducer(
             bootstrap_servers=self.bootstrap_servers,
-            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-            key_serializer=lambda k: k.encode('utf-8') if k else None
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+            key_serializer=lambda k: k.encode("utf-8") if k else None,
         )
         await self.producer.start()
 
@@ -44,11 +45,16 @@ class KafkaBroker(MessageBroker):
         """Publish message with strict guarantees."""
         if not self.producer:
             raise RuntimeError("Producer not connected. Call connect() first.")
-            
+
         # send_and_wait guarantees the broker acknowledged receipt (Durability)
         await self.producer.send_and_wait(topic, value=payload, key=key)
 
-    async def subscribe(self, topic: str, group_id: str, callback: Callable[[Dict[str, Any]], Awaitable[None]]):
+    async def subscribe(
+        self,
+        topic: str,
+        group_id: str,
+        callback: Callable[[Dict[str, Any]], Awaitable[None]],
+    ):
         """
         Subscribe loop (runs forever).
         Note: This blocks the current task, so run it with asyncio.create_task()
@@ -57,12 +63,12 @@ class KafkaBroker(MessageBroker):
             topic,
             bootstrap_servers=self.bootstrap_servers,
             group_id=group_id,
-            value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-            auto_offset_reset='latest'
+            value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+            auto_offset_reset="latest",
         )
-        
+
         await self.consumer.start()
-        
+
         try:
             async for msg in self.consumer:
                 await callback(msg.value)

@@ -44,7 +44,9 @@ class PolymarketClient:
             return [Market.from_dict(m) for m in data]
         return [Market.from_dict(m) for m in data.get("markets", data)]
 
-    def iter_markets(self, limit: int = 500, offset: int = 0) -> Generator[tuple[list[Market], int], None, None]:
+    def iter_markets(
+        self, limit: int = 500, offset: int = 0
+    ) -> Generator[tuple[list[Market], int], None, None]:
         """Iterate through all markets using offset pagination.
 
         Yields:
@@ -83,7 +85,9 @@ class PolymarketClient:
             return [Trade.from_dict(t) for t in data]
         return [Trade.from_dict(t) for t in data.get("trades", data)]
 
-    def iter_trades(self, limit: int = 500, offset: int = 0) -> Generator[tuple[list[Trade], int], None, None]:
+    def iter_trades(
+        self, limit: int = 500, offset: int = 0
+    ) -> Generator[tuple[list[Trade], int], None, None]:
         """Iterate through all trades using offset pagination.
 
         Note: The Polymarket data API does not support filtering by market.

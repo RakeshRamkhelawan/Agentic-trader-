@@ -1,7 +1,7 @@
-
 import asyncio
 import asyncpg
 import sys
+
 
 async def enable_timescale():
     dsn = "postgresql://postgres:postgres@localhost:5455/trading_db"
@@ -9,7 +9,7 @@ async def enable_timescale():
     try:
         conn = await asyncpg.connect(dsn)
         print("[SUCCESS] Connected to 'trading_db'")
-        
+
         try:
             await conn.execute("CREATE EXTENSION IF NOT EXISTS timescaledb;")
             print("[ENABLED] Extension 'timescaledb'")
@@ -22,7 +22,8 @@ async def enable_timescale():
     except Exception as e:
         print(f"[FAILED] {e}")
 
+
 if __name__ == "__main__":
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(enable_timescale())

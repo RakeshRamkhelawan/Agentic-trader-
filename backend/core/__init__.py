@@ -12,12 +12,12 @@ from backend.core.decision_discriminator import DecisionDiscriminator
 from backend.core.system_identity import SystemIdentity
 
 __all__ = [
-    'VibrationalAnalyzer',
-    'FrequencyDecomposition',
-    'SensoryProcessor',
-    'MemorySystem',
-    'MemoryTrace',
-    'MemoryCluster',
-    'DecisionDiscriminator',
-    'SystemIdentity',
+    "VibrationalAnalyzer",
+    "FrequencyDecomposition",
+    "SensoryProcessor",
+    "MemorySystem",
+    "MemoryTrace",
+    "MemoryCluster",
+    "DecisionDiscriminator",
+    "SystemIdentity",
 ]

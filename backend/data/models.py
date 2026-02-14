@@ -9,11 +9,11 @@ from backend.core.database import Base
 
 # Identity & Access
 from backend.models.user_settings import (
-    User, 
-    UserPreferences, 
-    UserProfile, 
-    UserSecurity, 
-    APIKey
+    User,
+    UserPreferences,
+    UserProfile,
+    UserSecurity,
+    APIKey,
 )
 
 # Trading & Market

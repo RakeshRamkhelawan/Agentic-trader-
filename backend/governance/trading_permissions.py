@@ -11,6 +11,7 @@ from datetime import datetime, UTC
 
 class TradingPermission(str, Enum):
     """Trading permissions."""
+
     VIEW_MODE = "trading:view_mode"
     SET_NOTIFY_ONLY = "trading:set_notify_only"
     SET_AUTO = "trading:set_auto"
@@ -19,33 +20,37 @@ class TradingPermission(str, Enum):
 
 class TradingRole(str, Enum):
     """Trading user roles."""
-    VIEWER = "viewer"       # Read-only access
-    OPERATOR = "operator"   # Can set NOTIFY_ONLY mode
-    ADMIN = "admin"         # Full access including AUTO mode
+
+    VIEWER = "viewer"  # Read-only access
+    OPERATOR = "operator"  # Can set NOTIFY_ONLY mode
+    ADMIN = "admin"  # Full access including AUTO mode
 
 
 # Role → Permissions mapping
 ROLE_PERMISSIONS = {
-    TradingRole.VIEWER: {
-        TradingPermission.VIEW_MODE
-    },
+    TradingRole.VIEWER: {TradingPermission.VIEW_MODE},
     TradingRole.OPERATOR: {
         TradingPermission.VIEW_MODE,
-        TradingPermission.SET_NOTIFY_ONLY
+        TradingPermission.SET_NOTIFY_ONLY,
     },
     TradingRole.ADMIN: {
         TradingPermission.VIEW_MODE,
         TradingPermission.SET_NOTIFY_ONLY,
         TradingPermission.SET_AUTO,
-        TradingPermission.EMERGENCY_SHUTDOWN
-    }
+        TradingPermission.EMERGENCY_SHUTDOWN,
+    },
 }
 
 
 class PermissionDeniedError(Exception):
     """Exception raised when user lacks required permission."""
-    
-    def __init__(self, user_id: str, permission: TradingPermission, role: Optional[TradingRole] = None):
+
+    def __init__(
+        self,
+        user_id: str,
+        permission: TradingPermission,
+        role: Optional[TradingRole] = None,
+    ):
         self.user_id = user_id
         self.permission = permission
         self.role = role
@@ -57,11 +62,11 @@ class PermissionDeniedError(Exception):
 def has_permission(role: TradingRole, permission: TradingPermission) -> bool:
     """
     Check of role een specifieke permission heeft.
-    
+
     Args:
         role: User role
         permission: Required permission
-    
+
     Returns:
         True if role has permission
     """
@@ -71,10 +76,10 @@ def has_permission(role: TradingRole, permission: TradingPermission) -> bool:
 def get_required_permission_for_mode(mode: str) -> TradingPermission:
     """
     Get required permission voor trading mode.
-    
+
     Args:
         mode: Trading mode ('notify_only' or 'auto')
-    
+
     Returns:
         Required permission
     """
