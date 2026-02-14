@@ -15,3 +15,4 @@ pdbpp==0.12.0.post1
 semgrep==1.135.0
 mcp==1.12.2 # GEDOWNGGRADE voor semgrep-mcp compatibiliteit
 semgrep-mcp==0.9.0
+pywin32==311; platform_system=="Windows"  # Windows-only, required by mcp
