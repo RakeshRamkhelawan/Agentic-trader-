@@ -5,19 +5,18 @@ Service voor permission checks en tracking van mode changes.
 """
 
 import logging
-from typing import Optional, Dict, Any, List
-from datetime import datetime, UTC
-from sqlalchemy import Column, String, Integer, DateTime, Text
+from datetime import UTC, datetime
+from typing import Any, Dict, List, Optional
+
+from sqlalchemy import Column, DateTime, Integer, String, Text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from backend.core.database import Base
-from backend.governance.trading_permissions import (
-    TradingRole,
-    TradingPermission,
-    PermissionDeniedError,
-    has_permission,
-)
+from backend.governance.trading_permissions import (PermissionDeniedError,
+                                                    TradingPermission,
+                                                    TradingRole,
+                                                    has_permission)
 
 logger = logging.getLogger(__name__)
 

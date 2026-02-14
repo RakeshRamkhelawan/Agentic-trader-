@@ -12,20 +12,21 @@ ColdPathCoordinator characteristics:
 - Deterministic decision aggregation
 """
 
-import pytest
-import time
 import tempfile
-from threading import Thread
-from unittest.mock import MagicMock, patch, call
+import time
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from threading import Thread
+from typing import Any, Dict, Optional
+from unittest.mock import MagicMock, call, patch
+
+import pytest
 
 from backend.execution.fast_config import FastConfigManager
 from backend.execution.hot_path_engine import ExecutionDecision
-from backend.orchestration.cold_path_coordinator import (
-    ColdPathCoordinator, CoordinatorDecision, CoordinatorMetrics, AgentMetrics
-)
-
+from backend.orchestration.cold_path_coordinator import (AgentMetrics,
+                                                         ColdPathCoordinator,
+                                                         CoordinatorDecision,
+                                                         CoordinatorMetrics)
 
 pytestmark = pytest.mark.unit
 

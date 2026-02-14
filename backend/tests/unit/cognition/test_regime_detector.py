@@ -1,5 +1,8 @@
 import pytest
-from backend.services.cognitive_orchestrator import RegimeDetector, MarketRegime
+
+from backend.services.cognitive_orchestrator import (MarketRegime,
+                                                     RegimeDetector)
+
 
 def test_detect_bull_market():
     """Happy Path: Price > SMA = Bull."""

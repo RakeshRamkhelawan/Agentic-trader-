@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timedelta
-from backend.backtesting.models import BacktestConfig, BacktestResult
-from backend.backtesting.engine import BacktestEngine
+
+from fastapi import APIRouter, Depends, HTTPException
+
 from backend.backtesting.data_feed import MockDataFeed
+from backend.backtesting.engine import BacktestEngine
+from backend.backtesting.models import BacktestConfig, BacktestResult
 from backend.backtesting.strategies.simple_ma import MovingAverageStrategy
 
 router = APIRouter()

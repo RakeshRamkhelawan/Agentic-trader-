@@ -4,11 +4,12 @@ Phase E Tests: Advanced Risk Analytics & Commercialization.
 Tests for E.1 (VaR, Stress Testing, Kelly Criterion) and E.2 (Multi-tenant, API Gateway).
 """
 
-import pytest
 from datetime import datetime
-from backend.risk.stress_tester import StressTestSuite, StressScenario
-from backend.risk.kelly_criterion import KellyCriterion
 
+import pytest
+
+from backend.risk.kelly_criterion import KellyCriterion
+from backend.risk.stress_tester import StressScenario, StressTestSuite
 
 # ============================================
 # E.1.2: STRESS TESTING SUITE TESTS
@@ -211,7 +212,8 @@ class TestKellyCriterion:
 # ============================================
 
 from fastapi.testclient import TestClient
-from backend.api.gateway import create_gateway, APIGateway
+
+from backend.api.gateway import APIGateway, create_gateway
 
 
 class TestAPIGateway:

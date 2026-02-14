@@ -1,6 +1,7 @@
-import pytest
 import sys
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 # --- FIX: Mock aiokafka module BEFORE importing KafkaBroker ---
 # Dit is nodig omdat de echte module anders ImportError gooit bij import
@@ -11,6 +12,7 @@ sys.modules["aiokafka"] = mock_aiokafka
 
 # Nu kunnen we veilig importeren
 from backend.events.kafka_broker import KafkaBroker
+
 
 @pytest.mark.asyncio
 async def test_kafka_connect_fails():

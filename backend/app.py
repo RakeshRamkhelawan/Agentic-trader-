@@ -7,6 +7,7 @@ Run with: uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+
 from backend.api.gateway import APIGateway
 from backend.api.websocket_manager import ws_manager
 from backend.services.market_data_streamer import market_streamer

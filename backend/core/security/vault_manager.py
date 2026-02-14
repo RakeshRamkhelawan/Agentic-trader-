@@ -7,10 +7,10 @@ Provides secure secret management with:
 - Fallback to environment variables (dev mode)
 """
 
-import os
 import logging
-from typing import List, Optional
+import os
 from functools import lru_cache
+from typing import List, Optional
 
 try:
     import hvac

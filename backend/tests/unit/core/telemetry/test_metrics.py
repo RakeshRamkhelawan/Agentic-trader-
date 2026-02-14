@@ -1,7 +1,10 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from prometheus_client import CollectorRegistry
+
 from backend.core.telemetry.metrics import PrometheusMetrics
+
 
 @pytest.fixture(autouse=True)
 def reset_registry():

@@ -4,9 +4,11 @@ Receives raw market data and transforms to cognitive representation.
 Equivalent to Manas (mind's sensory processing function).
 """
 
-from typing import Dict, Any, List
-import numpy as np
 import time
+from typing import Any, Dict, List
+
+import numpy as np
+
 from backend.core.frequency_analysis import VibrationalAnalyzer
 
 

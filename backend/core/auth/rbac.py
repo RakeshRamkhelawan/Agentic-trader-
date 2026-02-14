@@ -6,10 +6,10 @@ Provides FastAPI dependency-style decorators for role enforcement.
 
 import logging
 from functools import wraps
-from typing import List, Callable, Any, Union
+from typing import Any, Callable, List, Union
 
-from fastapi import HTTPException, Request, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from backend.core.auth.models import TokenPayload
 

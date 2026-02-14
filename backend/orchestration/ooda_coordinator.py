@@ -5,36 +5,29 @@ Coordineert de volledige Observe -> Orient -> Decide -> Act cyclus.
 """
 
 import logging
-import uuid
 import time
-from typing import Dict, Any, Optional, Callable, AsyncContextManager
+import uuid
 from enum import Enum
+from typing import Any, AsyncContextManager, Callable, Dict, Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.agents.data_scout_agent import DataScoutAgent
 from backend.agents.analyst_agent import AnalystAgent
-from backend.agents.trader_agent import TraderAgent
-from backend.agents.risk_manager_agent import RiskManagerAgent
+from backend.agents.data_scout_agent import DataScoutAgent
 from backend.agents.orchestrator_agent import OrchestratorAgent
+from backend.agents.risk_manager_agent import RiskManagerAgent
+from backend.agents.trader_agent import TraderAgent
 from backend.core.adapters.system_bridge import CognitiveBridge
-from backend.governance.circuit_breaker import (
-    CircuitBreaker,
-    CircuitBreakerTrippedError,
-)
-from backend.governance.decision_audit import AuditLogger
-from backend.core.schemas.ooda_types import (
-    Observation,
-    Orientation,
-    TradeProposal,
-    RiskAssessment,
-    RiskDecision,
-    ExecutionPlan,
-    PortfolioState,
-    CapitalAllocation,
-)
-from backend.governance.agent_gatekeeper import AgentRole
+from backend.core.schemas.ooda_types import (CapitalAllocation, ExecutionPlan,
+                                             Observation, Orientation,
+                                             PortfolioState, RiskAssessment,
+                                             RiskDecision, TradeProposal)
 from backend.execution.fast_config import FastConfig
 from backend.execution.order_executor import OrderExecutor
+from backend.governance.agent_gatekeeper import AgentRole
+from backend.governance.circuit_breaker import (CircuitBreaker,
+                                                CircuitBreakerTrippedError)
+from backend.governance.decision_audit import AuditLogger
 
 logger = logging.getLogger(__name__)
 
@@ -501,9 +494,8 @@ class OODALoopCoordinator:
         """
         # Import here to avoid circular dependency
         from backend.governance.permission_service import PermissionService
-        from backend.governance.trading_permissions import (
-            get_required_permission_for_mode,
-        )
+        from backend.governance.trading_permissions import \
+            get_required_permission_for_mode
 
         # Permission check
         if permission_service:

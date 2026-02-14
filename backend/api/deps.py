@@ -4,10 +4,10 @@ Shares common logic like Tenant ID extraction and Database Session setup with RL
 """
 
 import os
+from typing import Any, AsyncGenerator, Dict, Optional
 
 from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import AsyncGenerator, Dict, Any, Optional
 
 # Import raw session maker from database.py
 # Import SessionManager from database.py
@@ -15,7 +15,7 @@ from backend.core.database import SessionManager
 
 # JWT handling
 try:
-    from jose import jwt, JWTError
+    from jose import JWTError, jwt
 
     JOSE_AVAILABLE = True
 except ImportError:

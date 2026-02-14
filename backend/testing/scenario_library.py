@@ -4,16 +4,14 @@ Scenario Library - Pre-built test scenarios.
 Quick access to common market scenarios.
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
-from backend.testing.market_datasets import MarketScenario, EvaluationDataset
-from backend.testing.synthetic_data import (
-    generate_trending_market,
-    generate_ranging_market,
-    generate_volatile_market,
-    generate_flash_crash,
-)
 from backend.core.schemas.ooda_types import MarketRegime
+from backend.testing.market_datasets import EvaluationDataset, MarketScenario
+from backend.testing.synthetic_data import (generate_flash_crash,
+                                            generate_ranging_market,
+                                            generate_trending_market,
+                                            generate_volatile_market)
 
 
 class ScenarioLibrary:

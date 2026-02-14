@@ -1,12 +1,16 @@
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from backend.core.auth.jwt_validator import JWTValidator, TokenExpiredError, InvalidSignatureError
-from backend.core.auth.models import TokenPayload
-from backend.core.auth import context
-from backend.core.auth.middleware import AuthMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+
+from backend.core.auth import context
+from backend.core.auth.jwt_validator import (InvalidSignatureError,
+                                             JWTValidator, TokenExpiredError)
+from backend.core.auth.middleware import AuthMiddleware
+from backend.core.auth.models import TokenPayload
+
 
 @pytest.fixture
 def mock_jwks_response():

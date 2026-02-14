@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import Dict, Any, List, Optional
-from backend.backtesting.strategy import Strategy
+from typing import Any, Dict, List, Optional
+
+from backend.backtesting.fill_models import FillModel
 from backend.backtesting.models import OrderSide
 from backend.backtesting.position_sizing import PositionSizer
-from backend.backtesting.fill_models import FillModel
 from backend.backtesting.slippage_models import SlippageModel
+from backend.backtesting.strategy import Strategy
 
 
 class MovingAverageStrategy(Strategy):

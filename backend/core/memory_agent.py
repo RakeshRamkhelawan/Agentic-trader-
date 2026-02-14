@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 try:
     import chromadb
@@ -8,9 +8,10 @@ try:
 except ImportError:
     chromadb = None
 
-from backend.core.config.settings import settings
-from backend.core.auth.context import get_current_tenant_optional
 from threading import Lock
+
+from backend.core.auth.context import get_current_tenant_optional
+from backend.core.config.settings import settings
 
 
 class MemoryAgent:

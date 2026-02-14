@@ -5,11 +5,12 @@ Defines payload structures for events emitted during the OODA loop.
 These events enable decoupling between agents and observers.
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
-from datetime import datetime, UTC
+from datetime import UTC, datetime
+from typing import Any, Dict, Optional
 
-from .ooda_types import TradeProposal, ExecutionOutcome
+from pydantic import BaseModel, Field
+
+from .ooda_types import ExecutionOutcome, TradeProposal
 
 
 class MarketTickEvent(BaseModel):

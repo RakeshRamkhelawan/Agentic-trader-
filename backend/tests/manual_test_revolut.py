@@ -1,15 +1,15 @@
 import asyncio
 import logging
-import sys
 import os
+import sys
 
 # Add project root to path
 sys.path.append(os.getcwd())
 
 from backend.core.config.settings import settings
-from backend.services.trading_service import get_trading_service
-from backend.core.database import AsyncSessionLocal
 from backend.core.context import set_tenant_context
+from backend.core.database import AsyncSessionLocal
+from backend.services.trading_service import get_trading_service
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO)

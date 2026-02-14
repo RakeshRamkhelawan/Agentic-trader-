@@ -4,8 +4,9 @@ EventBus using Redis Streams.
 Provides publish/subscribe capabilities using Redis Streams with consumer groups.
 """
 
-import redis.asyncio as redis
 from typing import Any, Dict, List, Optional
+
+import redis.asyncio as redis
 
 
 class EventBus:

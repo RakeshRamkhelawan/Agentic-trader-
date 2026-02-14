@@ -24,15 +24,14 @@ Integration:
 ColdPath → FastConfig → HotPath (reads config, <1ms execution)
 """
 
+import logging
 import time
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional, Callable
-from threading import Lock, RLock
 from pathlib import Path
-import logging
+from threading import Lock, RLock
+from typing import Any, Callable, Dict, List, Optional
 
-from backend.execution.fast_config import FastConfigManager, FALLBACK_CONFIG
-
+from backend.execution.fast_config import FALLBACK_CONFIG, FastConfigManager
 
 logger = logging.getLogger(__name__)
 

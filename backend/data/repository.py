@@ -7,12 +7,13 @@ Provides a consistent interface for database interactions with:
 - Type-safe async methods
 """
 
-from typing import TypeVar, Generic, Type, Optional, List, Any, Dict, Union
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID
+
+from pydantic import BaseModel
+from sqlalchemy import asc, delete, desc, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, delete, func, desc, asc
-from pydantic import BaseModel
 
 from backend.core.database import Base, SessionManager
 

@@ -4,13 +4,15 @@ Tests for Refactored BaseAgent with Dependency Injection.
 TDD Test Suite - Write tests FIRST before refactoring.
 """
 
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
 from backend.agents.base_agent import BaseAgent
-from backend.llm.provider_interface import LLMProvider
 from backend.events.event_bus import EventBus
 from backend.events.schemas import AgentThought
+from backend.llm.provider_interface import LLMProvider
 
 
 class ConcreteAgent(BaseAgent):

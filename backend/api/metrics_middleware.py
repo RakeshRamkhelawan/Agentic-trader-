@@ -4,11 +4,13 @@ Metrics middleware for FastAPI.
 Automatically records request metrics (latency and count) for all endpoints.
 """
 
-import time
 import logging
+import time
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+
 from backend.observability.metrics import REQUEST_COUNT, REQUEST_LATENCY
 
 logger = logging.getLogger(__name__)

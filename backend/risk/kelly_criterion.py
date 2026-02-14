@@ -11,9 +11,9 @@ Where:
 - q = 1 - p = probability of losing
 """
 
+import logging
 from dataclasses import dataclass
 from typing import Optional, Tuple
-import logging
 
 
 @dataclass

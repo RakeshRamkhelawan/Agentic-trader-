@@ -8,17 +8,18 @@ Supports:
 - CCXT integration with smart mock fallback
 """
 
-import logging
 import asyncio
-from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta
+import logging
 import random
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.services.user_settings_service import get_settings_service
-from backend.execution.ccxt_adapter import CCXTAdapter
-from backend.core.compliance.decorators import audit_decision
 from backend.core.cache_layer import get_cache
+from backend.core.compliance.decorators import audit_decision
+from backend.execution.ccxt_adapter import CCXTAdapter
+from backend.services.user_settings_service import get_settings_service
 
 logger = logging.getLogger(__name__)
 
@@ -397,6 +398,7 @@ class TradingService:
     async def get_portfolio(self, db: AsyncSession, tenant_id: str) -> Dict[str, Any]:
         """Get portfolio holdings and stats from DB (Local Tracking) and/or Exchange."""
         from sqlalchemy import select
+
         from backend.models.orders import Order, OrderStatus
 
         # 1. Calculate Local Portfolio from Order History (DB)
@@ -533,6 +535,7 @@ class TradingService:
     ) -> List[Dict[str, Any]]:
         """Get trade history from DB."""
         from sqlalchemy import select
+
         from backend.models.orders import Order
 
         query = (
@@ -653,7 +656,8 @@ class TradingService:
         self, db: AsyncSession, tenant_id: str
     ) -> List[Dict[str, Any]]:
         """Fetch all active orders (SUBMITTED, PENDING_APPROVAL, APPROVED, PARTIALLY_FILLED)."""
-        from sqlalchemy import select, or_
+        from sqlalchemy import or_, select
+
         from backend.models.orders import Order, OrderStatus
 
         query = (
@@ -704,7 +708,8 @@ class TradingService:
         """
         Internal implementation of cancel all.
         """
-        from sqlalchemy import select, or_
+        from sqlalchemy import or_, select
+
         from backend.models.orders import Order, OrderStatus
 
         # 1. Fetch active orders
@@ -775,7 +780,8 @@ class TradingService:
         """
         Fetch historical orders (FILLED, FAILED, CANCELLED, REJECTED).
         """
-        from sqlalchemy import select, or_
+        from sqlalchemy import or_, select
+
         from backend.models.orders import Order, OrderStatus
 
         query = (
@@ -818,8 +824,8 @@ class TradingService:
         Args:
             tick_data: Dict matching MarketTick model (symbol, price, etc.)
         """
-        from backend.models.market_data import MarketTick
         from backend.core.database import AsyncSessionLocal
+        from backend.models.market_data import MarketTick
 
         async with AsyncSessionLocal() as session:
             tick = MarketTick(
@@ -841,8 +847,8 @@ class TradingService:
         """
         Bulk store market ticks.
         """
-        from backend.models.market_data import MarketTick
         from backend.core.database import AsyncSessionLocal
+        from backend.models.market_data import MarketTick
 
         if not ticks_data:
             return
@@ -868,6 +874,7 @@ class TradingService:
         Used to calculate change% when API doesn't provide it.
         """
         from sqlalchemy import select, text
+
         from backend.core.database import AsyncSessionLocal
         from backend.models.market_data import MarketTick
 
@@ -912,8 +919,8 @@ class TradingService:
         """
         Store OHLCV candle to TimescaleDB hypertable.
         """
-        from backend.models.market_data import MarketCandle
         from backend.core.database import AsyncSessionLocal
+        from backend.models.market_data import MarketCandle
 
         async with AsyncSessionLocal() as session:
             candle = MarketCandle(

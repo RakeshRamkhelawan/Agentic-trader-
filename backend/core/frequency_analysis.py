@@ -4,9 +4,10 @@ All manifestation can be reduced to frequency patterns.
 Uses FFT for spectral analysis without explicit symbolic terminology.
 """
 
-import numpy as np
-from typing import Dict, List, Tuple
 from dataclasses import dataclass
+from typing import Dict, List, Tuple
+
+import numpy as np
 
 
 @dataclass

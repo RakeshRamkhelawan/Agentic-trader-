@@ -11,10 +11,8 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from backend.services.prediction_market_client import (
-    get_prediction_client,
-    PredictionSignal,
-)
+from backend.services.prediction_market_client import (PredictionSignal,
+                                                       get_prediction_client)
 
 logger = logging.getLogger(__name__)
 
@@ -453,7 +451,7 @@ async def get_service_status() -> ServiceStatusResponse:
         logger.warning(f"Health check failed: {e}")
         is_healthy = False
 
-    from datetime import datetime, UTC
+    from datetime import UTC, datetime
 
     return ServiceStatusResponse(
         enabled=client.enabled,

@@ -1,14 +1,18 @@
-import pytest
-from unittest.mock import MagicMock
 from datetime import datetime
+from unittest.mock import MagicMock
 
-# Importeer alle componenten die we hebben gebouwd
-from backend.services.cognitive_orchestrator import RegimeDetector, MarketRegime, AgentMessage
-from backend.risk.validators import RiskValidator, RiskViolationError
-from backend.execution.smart_order_router import SmartOrderRouter
+import pytest
+
 from backend.execution.shadow_portfolio import ShadowPortfolioManager
-from backend.schemas.orders import OrderRequest, OrderSide, OrderType, OrderStatus
+from backend.execution.smart_order_router import SmartOrderRouter
+from backend.risk.validators import RiskValidator, RiskViolationError
 from backend.schemas.market_data import MarketTick
+from backend.schemas.orders import (OrderRequest, OrderSide, OrderStatus,
+                                    OrderType)
+# Importeer alle componenten die we hebben gebouwd
+from backend.services.cognitive_orchestrator import (AgentMessage,
+                                                     MarketRegime,
+                                                     RegimeDetector)
 
 # --- FIXTURES VOOR DE HELE KETEN ---
 

@@ -5,10 +5,11 @@ Automatische stopzetting van trading bij gevaarlijke condities.
 """
 
 import logging
-from datetime import datetime, timedelta, UTC
-from typing import Dict, Any, Optional
+from datetime import UTC, datetime, timedelta
 from enum import Enum
-from sqlalchemy import Column, String, Float, DateTime, Integer, Boolean
+from typing import Any, Dict, Optional
+
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 

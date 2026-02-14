@@ -17,10 +17,11 @@ Usage with Revolut X:
 
 import asyncio
 import logging
-from typing import Optional, Dict, Protocol
-from datetime import datetime, UTC
+from datetime import UTC, datetime
+from typing import Dict, Optional, Protocol
 
-from backend.core.schemas.ooda_types import ExecutionPlan, ExecutionOutcome, Order
+from backend.core.schemas.ooda_types import (ExecutionOutcome, ExecutionPlan,
+                                             Order)
 from backend.governance.agent_gatekeeper import AgentGatekeeper, ToolPermission
 
 

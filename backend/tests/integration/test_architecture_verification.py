@@ -1,13 +1,14 @@
 
-import pytest
 import asyncio
-from httpx import AsyncClient, ASGITransport
 from uuid import uuid4
+
+import pytest
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
+
+from backend.api.auth_api import hash_password
 from backend.api.main import app
 from backend.core.database import SessionManager
-from backend.api.auth_api import hash_password
-
 
 # ============================================================================
 # TEST SUITE

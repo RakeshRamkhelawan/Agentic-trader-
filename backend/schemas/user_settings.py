@@ -2,10 +2,11 @@
 User Settings Schemas - Pydantic models for user settings API.
 """
 
-from pydantic import BaseModel, Field, EmailStr
-from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+from typing import List, Optional
+
+from pydantic import BaseModel, EmailStr, Field
 
 
 class ThemeType(str, Enum):

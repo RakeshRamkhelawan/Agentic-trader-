@@ -2,13 +2,14 @@
 Trading API - Endpoints for market data, portfolio, and history.
 """
 
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
-from backend.services.trading_service import get_trading_service, TradingService
-from backend.api.deps import get_db, get_current_tenant_id, get_current_user
+from backend.api.deps import get_current_tenant_id, get_current_user, get_db
+from backend.services.trading_service import (TradingService,
+                                              get_trading_service)
 
 router = APIRouter(prefix="/api/v1/trading", tags=["trading"])
 

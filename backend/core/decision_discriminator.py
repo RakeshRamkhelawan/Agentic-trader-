@@ -4,9 +4,11 @@ Makes choices based on perception and memory.
 Equivalent to Buddhi (discriminative intellect function).
 """
 
-from typing import Dict, Any, List, Optional, Tuple
-import numpy as np
 import time
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+
 from backend.core.memory_system import MemorySystem
 
 

@@ -15,15 +15,15 @@ Mahabhutas (Physical Elements - Layers 32-36):
 Test coverage: 60+ test specifications across 8 test classes
 """
 
-import pytest
-import numpy as np
 import asyncio
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+import pytest
 
 from backend.config.schemas import TattvaConfig, TattvaLayer
 from backend.core.system_identity import SystemIdentity
-
 
 # ============================================================================
 # FIXTURES

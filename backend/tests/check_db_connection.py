@@ -2,8 +2,9 @@
 import asyncio
 import os
 import secrets
-from sqlalchemy.ext.asyncio import create_async_engine
+
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 

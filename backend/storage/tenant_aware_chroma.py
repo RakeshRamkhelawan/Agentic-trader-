@@ -6,7 +6,7 @@ by prefixing collection names with tenant_id.
 """
 
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

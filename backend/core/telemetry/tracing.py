@@ -1,10 +1,10 @@
 from opentelemetry import trace
+from opentelemetry.instrumentation.asyncio import \
+    AsyncioInstrumentor  # Voor async context
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
-from opentelemetry.instrumentation.asyncio import (
-    AsyncioInstrumentor,
-)  # Voor async context
+from opentelemetry.sdk.trace.export import (ConsoleSpanExporter,
+                                            SimpleSpanProcessor)
 
 
 def setup_tracing(service_name: str):

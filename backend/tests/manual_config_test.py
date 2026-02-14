@@ -1,6 +1,6 @@
 import asyncio
-import sys
 import os
+import sys
 from datetime import datetime, timezone
 
 # Setup async loop for windows
@@ -15,8 +15,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from backend.core.database import SessionManager
-from backend.services.config_service import config_service
 from backend.models.config import RuntimeConfig
+from backend.services.config_service import config_service
 
 
 async def test_config_service():

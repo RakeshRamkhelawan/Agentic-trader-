@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from backend.backtesting.exchange import SimulatedExchange
-from backend.backtesting.position_sizing import PositionSizer, FixedQuantitySizer
 from backend.backtesting.fill_models import FillModel, FullFillModel
-from backend.backtesting.slippage_models import SlippageModel, FixedSlippageModel
+from backend.backtesting.position_sizing import (FixedQuantitySizer,
+                                                 PositionSizer)
+from backend.backtesting.slippage_models import (FixedSlippageModel,
+                                                 SlippageModel)
 
 
 class Strategy(ABC):

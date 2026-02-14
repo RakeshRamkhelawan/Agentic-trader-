@@ -9,11 +9,11 @@ Provides:
 
 import logging
 import time
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
+from typing import Any, Dict, Optional
 
 try:
-    from jose import jwt, jwk, JWTError
+    from jose import JWTError, jwk, jwt
     from jose.exceptions import JWKError
 
     JOSE_AVAILABLE = True

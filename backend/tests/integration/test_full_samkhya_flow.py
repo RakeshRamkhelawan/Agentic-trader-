@@ -1,23 +1,28 @@
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from datetime import datetime
 import asyncio
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
 
-# --- Samkhya Geinspireerde Componenten ---
-from backend.services.cognitive_orchestrator import CognitiveOrchestrator, AgentMessage, RegimeDetector
-from backend.services.research_agent import ResearchAgent, analyze_text_with_llm
-from backend.services.macro_agent import MacroAgent
-from backend.services.valuation_agent import ValuationAgent
-from backend.risk.validators import RiskValidator, RiskViolationError
-from backend.execution.shadow_portfolio import ShadowPortfolioManager
-from backend.schemas.orders import OrderRequest, OrderSide, OrderType, OrderStatus
-from backend.schemas.market_data import MarketTick
-from backend.schemas.guna import GunaVector
+import pytest
+
 from backend.core.agent_registry import AgentRegistry
 from backend.core.guna_quantifier import GunaQuantifier
+from backend.core.memory_agent import \
+    MemoryAgent  # Importeer de echte MemoryAgent voor spec
+from backend.execution.shadow_portfolio import ShadowPortfolioManager
+from backend.risk.validators import RiskValidator, RiskViolationError
+from backend.schemas.guna import GunaVector
+from backend.schemas.market_data import MarketTick
+from backend.schemas.orders import (OrderRequest, OrderSide, OrderStatus,
+                                    OrderType)
+# --- Samkhya Geinspireerde Componenten ---
+from backend.services.cognitive_orchestrator import (AgentMessage,
+                                                     CognitiveOrchestrator,
+                                                     RegimeDetector)
 from backend.services.intent_monitor import IntentMonitor
-from backend.core.memory_agent import MemoryAgent # Importeer de echte MemoryAgent voor spec
-
+from backend.services.macro_agent import MacroAgent
+from backend.services.research_agent import (ResearchAgent,
+                                             analyze_text_with_llm)
+from backend.services.valuation_agent import ValuationAgent
 
 # --- FIXTURES ---
 

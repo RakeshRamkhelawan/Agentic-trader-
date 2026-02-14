@@ -6,18 +6,14 @@ signalen van andere agents en bewaakt de algehele systeemcoherentie.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
-from datetime import datetime, UTC
+from datetime import UTC, datetime
+from typing import Any, Dict, List, Optional
 
 from backend.agents.base_agent import BaseAgent
+from backend.core.schemas.ooda_types import (Observation, Orientation,
+                                             ResearchHypothesis,
+                                             RiskAssessment, TradeProposal)
 from backend.governance.agent_gatekeeper import AgentRole
-from backend.core.schemas.ooda_types import (
-    Observation,
-    Orientation,
-    TradeProposal,
-    RiskAssessment,
-    ResearchHypothesis,
-)
 
 logger = logging.getLogger(__name__)
 
