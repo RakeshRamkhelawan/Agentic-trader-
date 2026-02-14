@@ -1,7 +1,9 @@
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, AsyncMock, patch
+
 from backend.api.main import app
 from backend.core.auth.middleware import AuthMiddleware
 
@@ -86,7 +88,7 @@ def test_expired_token(mock_middleware_validator):
 def test_valid_token_access(mock_middleware_validator):
     """Happy path confirm to ensure test setup is correct."""
     from backend.core.auth.models import TokenPayload
-    
+
     # Mock successful validation
     mock_middleware_validator.return_value = TokenPayload(
         sub="user123",

@@ -1,10 +1,13 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from backend.services.cognitive_orchestrator import CognitiveOrchestrator
-from backend.schemas.agent_messages import AgentMessage
+
+import pytest
+
+from backend.core.auth.context import clear_context, set_current_tenant
 from backend.core.exceptions import QuotaExceededError
 from backend.llm.usage_tracker import UsageTracker
-from backend.core.auth.context import set_current_tenant, clear_context
+from backend.schemas.agent_messages import AgentMessage
+from backend.services.cognitive_orchestrator import CognitiveOrchestrator
+
 
 @pytest.fixture
 def mock_usage_tracker():

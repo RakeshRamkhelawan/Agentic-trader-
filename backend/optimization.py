@@ -6,9 +6,9 @@ FastAPI performance, security, and reliability.
 """
 
 import logging
-from typing import Optional, Any, Dict
-from functools import lru_cache, wraps
 import time
+from functools import lru_cache, wraps
+from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.gzip import GZIPMiddleware

@@ -9,10 +9,10 @@ Supported models:
   - deepseek-reasoner  (DeepSeek-R1, chain-of-thought reasoning)
 """
 
-import os
 import json
-import re
 import logging
+import os
+import re
 from typing import Optional, Type, TypeVar
 
 from pydantic import BaseModel

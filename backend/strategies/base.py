@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from backend.market_data.models import UnifiedMarketEvent
 
 

@@ -1,14 +1,14 @@
 import asyncio
-import uuid
 import random
-from typing import Dict, List, Optional
-from datetime import datetime
-from backend.execution.broker_interface import ExecutionInterface
-from backend.execution.backtest_engine import BacktestEngine
-from backend.schemas.market_data import OrderStatus, OrderUpdate, TickerUpdate
-
+import uuid
 # Placeholder for OrderRequest until verified
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, List, Optional
+
+from backend.execution.backtest_engine import BacktestEngine
+from backend.execution.broker_interface import ExecutionInterface
+from backend.schemas.market_data import OrderStatus, OrderUpdate, TickerUpdate
 
 
 @dataclass

@@ -5,18 +5,14 @@ Contrarian perspective generators voor bias detection.
 """
 
 import logging
+from datetime import UTC, datetime
 from typing import List, Optional
-from datetime import datetime, UTC
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import (
-    Observation,
-    Orientation,
-    ResearchHypothesis,
-    MarketRegime,
-)
-from backend.governance.agent_gatekeeper import AgentRole
+from backend.core.schemas.ooda_types import (MarketRegime, Observation,
+                                             Orientation, ResearchHypothesis)
 from backend.core.security.prompt_guard import PromptGuard
+from backend.governance.agent_gatekeeper import AgentRole
 
 
 class BullResearcher(BaseAgent):

@@ -6,7 +6,7 @@ Creates trending, ranging, volatile, en crash scenarios.
 
 import math
 import random
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from typing import List
 
 from backend.testing.market_datasets import OHLCV

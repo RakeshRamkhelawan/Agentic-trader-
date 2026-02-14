@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Dict, Optional, List, Any
-import pandas as pd
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+import pandas as pd
 
 
 class DataFeed(ABC):

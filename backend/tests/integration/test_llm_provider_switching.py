@@ -4,16 +4,16 @@ Integration Tests for LLM Provider Switching.
 Tests factory pattern with environment-based provider switching.
 """
 
-import pytest
 import os
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from pydantic import BaseModel
 
-from backend.llm.factory import create_llm_provider, LLMFactory
+from backend.agents.sentiment_agent import SentimentAgent
+from backend.llm.factory import LLMFactory, create_llm_provider
 from backend.llm.providers.gemini import GeminiProvider
 from backend.llm.providers.ollama import OllamaProvider
-from backend.agents.sentiment_agent import SentimentAgent
-
 
 pytestmark = pytest.mark.integration
 

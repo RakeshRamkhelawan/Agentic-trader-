@@ -4,16 +4,14 @@ Wraps RevolutXClient for integration with OrderExecutor
 """
 
 import logging
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
-from backend.integrations.revolut_x_client import (
-    RevolutXClient,
-    OrderSide as RevolutOrderSide,
-    OrderType as RevolutOrderType,
-    Order as RevolutOrder,
-)
 from backend.core.schemas.ooda_types import Order
+from backend.integrations.revolut_x_client import Order as RevolutOrder
+from backend.integrations.revolut_x_client import OrderSide as RevolutOrderSide
+from backend.integrations.revolut_x_client import OrderType as RevolutOrderType
+from backend.integrations.revolut_x_client import RevolutXClient
 
 logger = logging.getLogger(__name__)
 

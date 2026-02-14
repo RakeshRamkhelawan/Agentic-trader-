@@ -2,8 +2,9 @@
 Pytest configuration for proper test isolation.
 """
 
-import pytest
 import sys
+
+import pytest
 
 
 @pytest.fixture(scope="function", autouse=True)

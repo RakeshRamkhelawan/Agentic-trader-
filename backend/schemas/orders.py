@@ -1,8 +1,9 @@
 import uuid
+from datetime import datetime
 from enum import Enum
 from typing import Optional
-from datetime import datetime
-from pydantic import BaseModel, Field, model_validator, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class OrderSide(str, Enum):

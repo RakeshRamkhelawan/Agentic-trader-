@@ -6,6 +6,7 @@ Pydantic models for type-safe event passing between agents.
 
 from datetime import datetime, timezone
 from typing import Any, Dict, Literal, Optional
+
 from pydantic import BaseModel, Field, field_validator
 
 

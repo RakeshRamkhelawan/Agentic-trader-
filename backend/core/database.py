@@ -2,10 +2,11 @@
 Database Verification - Async SQLAlchemy Setup.
 """
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, declarative_base
-from typing import AsyncGenerator
 import os
+from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Default to internal docker URL if not set
 DATABASE_URL = os.getenv(
@@ -25,6 +26,7 @@ Base = declarative_base()
 # SESSION FACTORY (Pillar II: Context-Agnostic DAL)
 # ============================================================================
 from contextlib import asynccontextmanager
+
 from backend.core.context import set_tenant_context
 
 

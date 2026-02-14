@@ -4,9 +4,11 @@ Unhappy Path Tests for EventBus.
 Tests error conditions, edge cases, and failure scenarios.
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 import redis.asyncio as redis
-from unittest.mock import AsyncMock, MagicMock, patch
+
 from backend.events.event_bus import EventBus
 
 

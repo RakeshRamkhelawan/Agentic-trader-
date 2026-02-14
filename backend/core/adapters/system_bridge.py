@@ -6,11 +6,12 @@ die de bestaande SystemIdentity verwacht.
 """
 
 import logging
-import numpy as np
-from typing import Dict, Any
+from typing import Any, Dict
 
-from backend.core.system_identity import SystemIdentity
+import numpy as np
+
 from backend.core.schemas.ooda_types import Observation
+from backend.core.system_identity import SystemIdentity
 
 logger = logging.getLogger(__name__)
 

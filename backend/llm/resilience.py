@@ -1,8 +1,8 @@
 import asyncio
-import time
 import logging
+import time
 from enum import Enum
-from typing import Callable, Any, Optional
+from typing import Any, Callable, Optional
 
 _logger = logging.getLogger(__name__)
 

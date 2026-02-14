@@ -1,11 +1,14 @@
 import asyncio
 import uuid
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import select, delete
+
+from sqlalchemy import delete, select
+
 from backend.core.database import AsyncSessionLocal
-from backend.models.market_data import MarketTick
 from backend.execution.backtest_engine import BacktestEngine
-from backend.execution.paper_exchange import PaperExchange, OrderRequest, OrderStatus
+from backend.execution.paper_exchange import (OrderRequest, OrderStatus,
+                                              PaperExchange)
+from backend.models.market_data import MarketTick
 
 SYMBOL = "BTC-EUR"
 START_TIME = datetime.now(timezone.utc) - timedelta(days=1)

@@ -4,10 +4,10 @@ Handles interaction with Kraken (and other exchanges) via CCXT.
 """
 
 import asyncio
+import json
 import logging
 import os
-import json
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 try:
     import ccxt.pro as ccxt
@@ -79,8 +79,9 @@ class ExecutionGateway:
 
     async def _init_ccxt_exchange(self, exchange_id: str):
         """Helper to init CCXT exchange."""
-        import ccxt.async_support as ccxt
         import os
+
+        import ccxt.async_support as ccxt
 
         try:
             api_key = os.getenv(f"{exchange_id.upper()}_API_KEY")
@@ -184,11 +185,10 @@ class ExecutionGateway:
             if target == "revolut":
                 # Convert standard params to OrderRequest
                 import uuid
-                from backend.adapters.revolut_adapter import (
-                    OrderRequest,
-                    OrderSide,
-                    OrderType,
-                )
+
+                from backend.adapters.revolut_adapter import (OrderRequest,
+                                                              OrderSide,
+                                                              OrderType)
 
                 # Revolut symbol usually 'BTC-USD', we might need mapping
                 rev_symbol = symbol.replace("/", "-")

@@ -1,6 +1,7 @@
 import pytest
-from backend.services.intent_monitor import IntentMonitor
+
 from backend.schemas.guna import GunaVector
+from backend.services.intent_monitor import IntentMonitor
 
 # --- CONFIG ---
 IDEAL_GUNA_BALANCE = GunaVector(sattva=0.4, rajas=0.3, tamas=0.3) # Gewenste balans

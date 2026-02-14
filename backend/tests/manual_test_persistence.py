@@ -1,19 +1,21 @@
 import asyncio
 import logging
-import sys
 import os
+import sys
 from datetime import datetime
+
 import numpy as np
 
 # Add project root to path
 sys.path.append(os.getcwd())
 
-from backend.core.memory_system import MemorySystem
-from backend.services.trading_service import get_trading_service
-from backend.core.database import AsyncSessionLocal
-from backend.models.market_data import MarketTick, MarketCandle
-from backend.models.agent_experience import AgentExperience
 from sqlalchemy import select
+
+from backend.core.database import AsyncSessionLocal
+from backend.core.memory_system import MemorySystem
+from backend.models.agent_experience import AgentExperience
+from backend.models.market_data import MarketCandle, MarketTick
+from backend.services.trading_service import get_trading_service
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO)

@@ -1,7 +1,8 @@
 import asyncio
 import json
-import requests
 import sys
+
+import requests
 
 # Try to import websockets, fail gracefully if not installed
 try:

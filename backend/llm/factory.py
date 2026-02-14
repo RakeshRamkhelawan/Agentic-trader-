@@ -5,16 +5,16 @@ This factory enables easy switching between different LLM providers
 based on environment configuration or explicit parameters.
 """
 
-from typing import Optional, Dict, Any
-import os
 import logging
+import os
+from typing import Any, Dict, Optional
 
 _logger = logging.getLogger(__name__)
 
 from backend.llm.provider_interface import LLMProvider
+from backend.llm.providers.deepseek import DeepSeekProvider
 from backend.llm.providers.gemini import GeminiProvider
 from backend.llm.providers.ollama import OllamaProvider
-from backend.llm.providers.deepseek import DeepSeekProvider
 
 
 class LLMFactory:

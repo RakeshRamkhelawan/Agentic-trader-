@@ -15,19 +15,16 @@ Design:
 - Tracks config version for staleness detection
 """
 
-import time
 import asyncio
+import time
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from backend.execution.fast_config import FastConfigManager, FALLBACK_CONFIG
-from backend.execution.broker_interface import (
-    ExecutionInterface,
-    OrderRequest,
-    OrderSide,
-    OrderType,
-)
+from backend.execution.broker_interface import (ExecutionInterface,
+                                                OrderRequest, OrderSide,
+                                                OrderType)
+from backend.execution.fast_config import FALLBACK_CONFIG, FastConfigManager
 
 
 @dataclass

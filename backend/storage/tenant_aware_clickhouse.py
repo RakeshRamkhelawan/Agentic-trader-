@@ -5,12 +5,13 @@ Wraps ClickHouseClient to automatically inject tenant_id filters,
 enforcing multi-tenant data isolation at the query level.
 """
 
-import re
 import logging
+import re
 from typing import Any, Dict, List, Optional
 
+from backend.core.auth.context import (get_current_tenant,
+                                       get_current_tenant_optional)
 from backend.storage.clickhouse_client import ClickHouseClient
-from backend.core.auth.context import get_current_tenant, get_current_tenant_optional
 
 logger = logging.getLogger(__name__)
 

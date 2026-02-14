@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from backend.core.memory_agent import MemoryAgent  # GEWIJZIGD
 from backend.schemas.agent_messages import AgentMessage  # GEWIJZIGD
 

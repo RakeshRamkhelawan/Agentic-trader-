@@ -1,7 +1,8 @@
-import pytest
-import sys
 import os
+import sys
 import time
+
+import pytest
 
 
 def main():

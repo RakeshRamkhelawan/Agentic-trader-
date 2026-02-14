@@ -15,15 +15,15 @@ Test coverage:
 - Integration with Phase 12 agents (backward compatibility)
 """
 
-import pytest
-import numpy as np
 import asyncio
-from typing import Dict, Any, List
 from datetime import datetime
+from typing import Any, Dict, List
+
+import numpy as np
+import pytest
 
 from backend.config.schemas import TattvaConfig, TattvaLayer
 from backend.core.system_identity import SystemIdentity
-
 
 # ============================================================================
 # FIXTURES

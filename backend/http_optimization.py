@@ -9,10 +9,10 @@ This module provides optimized HTTP client configurations with:
 - Request deduplication
 """
 
-import logging
-from typing import Optional, Dict, Any
-from datetime import datetime, timedelta
 import hashlib
+import logging
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

@@ -1,10 +1,12 @@
 
-import pytest
 import os
-from unittest.mock import AsyncMock, MagicMock, patch, ANY
-from backend.execution.exchange_adapter import ExchangeAdapter
-from cryptography.hazmat.primitives import serialization
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
+
+import pytest
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+
+from backend.execution.exchange_adapter import ExchangeAdapter
 
 # Mock Key Data (Needs to be valid structure for serialization load)
 MOCK_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEILxSKu5u8pA+A2HPCjIaZMf8QWEg04T8HzOnnyokNQ1t\n-----END PRIVATE KEY-----"

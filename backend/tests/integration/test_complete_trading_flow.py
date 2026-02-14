@@ -4,18 +4,18 @@ Integration Tests for Complete Trading Flow.
 Tests full pipeline: MarketTick → Agent Analysis → EventBus → Storage
 """
 
-import pytest
 import asyncio
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from pydantic import BaseModel
 
-from backend.events.event_bus import EventBus
-from backend.events.schemas import MarketTick, AgentThought
-from backend.storage.clickhouse_client import ClickHouseClient
 from backend.agents.sentiment_agent import SentimentAgent
+from backend.events.event_bus import EventBus
+from backend.events.schemas import AgentThought, MarketTick
 from backend.llm.provider_interface import LLMProvider
-
+from backend.storage.clickhouse_client import ClickHouseClient
 
 pytestmark = pytest.mark.integration
 

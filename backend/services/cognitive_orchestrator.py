@@ -8,35 +8,35 @@ Responsibility:
 """
 
 import asyncio
-import logging
-import uuid
 import json
+import logging
 import time
-from typing import List, Dict, Any, Optional, Callable
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
-from backend.core.agent_registry import AgentRegistry, ToolRegistry, AgentProfile
+from backend.core.agent_registry import (AgentProfile, AgentRegistry,
+                                         ToolRegistry)
+from backend.core.auth.context import (get_current_tenant_optional,
+                                       tenant_context)
+from backend.core.exceptions import QuotaExceededError
 from backend.core.guna_quantifier import GunaQuantifier
-from backend.services.intent_monitor import IntentMonitor
-from backend.schemas.guna import GunaVector
-from backend.schemas.agent_messages import AgentMessage
 from backend.core.memory_agent import MemoryAgent
 from backend.core.regime_detector import RegimeDetector
-from backend.core.telemetry.tracing import setup_tracing, get_tracer
 from backend.core.telemetry.metrics import PrometheusMetrics  # NIEUW
+from backend.core.telemetry.tracing import get_tracer, setup_tracing
 from backend.llm.usage_tracker import UsageTracker
-from backend.core.exceptions import QuotaExceededError
-from backend.core.exceptions import QuotaExceededError
-from backend.core.auth.context import get_current_tenant_optional, tenant_context
-
+from backend.risk.validators import RiskValidator
+from backend.schemas.agent_messages import AgentMessage
+from backend.schemas.guna import GunaVector
+from backend.services.execution_gateway import ExecutionGateway
+from backend.services.intent_monitor import IntentMonitor
+from backend.services.macro_agent import MacroAgent
 # Importeer alle agents die de Orchestrator moet kennen
 from backend.services.research_agent import ResearchAgent
-from backend.services.macro_agent import MacroAgent
 from backend.services.valuation_agent import ValuationAgent
-from backend.risk.validators import RiskValidator
-from backend.services.execution_gateway import ExecutionGateway
 
 # Initialiseer de tracer en metrics voor deze service
 tracer = get_tracer("cognitive.orchestrator")
@@ -119,7 +119,8 @@ class CognitiveOrchestrator:
                         memory_agent=memory, message_bus=self.handle_message
                     )
                 elif agent_id == "risk_guardian_v1":
-                    from backend.services.risk_guardian_agent import RiskGuardianAgent
+                    from backend.services.risk_guardian_agent import \
+                        RiskGuardianAgent
 
                     # Use Factory if possible, or direct init
                     self.agents[agent_id] = RiskGuardianAgent(
@@ -497,9 +498,10 @@ class CognitiveOrchestrator:
 
     async def start_market_consumer(self):
         """Start consuming market data from Redis."""
-        import redis.asyncio as redis
-        from backend.core.config.settings import settings
         import msgpack
+        import redis.asyncio as redis
+
+        from backend.core.config.settings import settings
 
         self.logger.info("Starting Market Data Consumer...")
         redis_client = redis.from_url(settings.REDIS_URL, decode_responses=False)
@@ -531,8 +533,9 @@ class CognitiveOrchestrator:
 
     async def handle_market_tick(self, event: Dict[str, Any]):
         """Process incoming market tick with full validation and dispatch."""
-        from backend.market_data.models import UnifiedMarketEvent, EventType
         import time as _time
+
+        from backend.market_data.models import EventType, UnifiedMarketEvent
 
         try:
             # 1. DESERIALIZE & VALIDATE
@@ -582,8 +585,8 @@ async def main():
     logging.info("Starting Cognitive Orchestrator Service...")
 
     # Initialize ClickHouse Client
-    from backend.storage.clickhouse_client import ClickHouseClient
     from backend.market_data.sinks.clickhouse_writer import ClickHouseWriter
+    from backend.storage.clickhouse_client import ClickHouseClient
 
     clickhouse_client = ClickHouseClient()
     # Connect needs to happen in loop
@@ -597,10 +600,11 @@ async def main():
     )
 
     # Initialize SignalBridge with RedisPublisher for Decoupled Broadcasting
-    from backend.services.signal_bridge import SignalBridge
-    from backend.market_data.sinks.redis_publisher import RedisPublisher
     import redis.asyncio as redis
+
     from backend.core.config.settings import settings
+    from backend.market_data.sinks.redis_publisher import RedisPublisher
+    from backend.services.signal_bridge import SignalBridge
 
     redis_client = redis.from_url(settings.REDIS_URL, decode_responses=False)
     redis_publisher = RedisPublisher(redis_client, stream_key="market_events")

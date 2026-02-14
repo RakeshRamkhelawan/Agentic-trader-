@@ -8,20 +8,20 @@ Endpoints:
 - GET /me - Get current user info
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Request, status
-from pydantic import BaseModel, EmailStr, Field, field_validator
-from typing import Optional, List
-from datetime import datetime, timedelta, timezone
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-
-import uuid
 import re
-from backend.models.user_settings import User, UserProfile, UserPreferences
+import uuid
+from datetime import datetime, timedelta, timezone
+from typing import List, Optional
 
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 # JWT
 from jose import jwt
+from pydantic import BaseModel, EmailStr, Field, field_validator
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from backend.models.user_settings import User, UserPreferences, UserProfile
 
 # Password hashing
 try:

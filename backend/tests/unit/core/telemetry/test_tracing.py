@@ -1,10 +1,13 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from backend.core.telemetry.tracing import setup_tracing, get_tracer
+
+import pytest
 from opentelemetry import trace
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor, ConsoleSpanExporter
+from opentelemetry.sdk.trace.export import (ConsoleSpanExporter,
+                                            SimpleSpanProcessor)
+
+from backend.core.telemetry.tracing import get_tracer, setup_tracing
 
 # --- FIXTURES ---
 

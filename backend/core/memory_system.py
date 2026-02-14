@@ -4,11 +4,12 @@ Stores impressions (patterns) and learns from experience.
 Equivalent to Chitta (consciousness/memory function).
 """
 
-from typing import Dict, Any, List, Optional, Tuple
-from collections import deque
-import numpy as np
-from dataclasses import dataclass, field
 import time
+from collections import deque
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 
 
 @dataclass
@@ -66,8 +67,9 @@ class MemorySystem:
         Hydrate memory from persistent storage (Postgres).
         Loads the most recent 'capacity' experiences.
         """
+        from sqlalchemy import desc, select
+
         from backend.models.agent_experience import AgentExperience
-        from sqlalchemy import select, desc
 
         async with self._db_factory() as session:
             # Query recent experiences
