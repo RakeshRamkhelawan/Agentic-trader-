@@ -11,6 +11,7 @@ Responsibility:
 import asyncio
 import logging
 
+
 async def main():
     logging.basicConfig(level=logging.INFO)
     logging.info("Starting Market Data Processor...")
@@ -18,6 +19,7 @@ async def main():
     # TODO: Connect to Kafka
     while True:
         await asyncio.sleep(1)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

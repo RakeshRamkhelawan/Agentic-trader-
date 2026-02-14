@@ -2,6 +2,7 @@
 Signals Router
 Provides endpoints for retrieving market intelligence signals.
 """
+
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
@@ -14,7 +15,7 @@ from src.api.schemas.signal import (
     SignalsResponse,
     MarketSource,
     SignalCategory,
-    SignalType
+    SignalType,
 )
 
 router = APIRouter()
@@ -24,23 +25,27 @@ router = APIRouter()
     "/signals",
     response_model=SignalsResponse,
     summary="Get Market Signals",
-    description="Retrieve market intelligence signals from prediction markets"
+    description="Retrieve market intelligence signals from prediction markets",
 )
 async def get_signals(
     market: Optional[MarketSource] = Query(None, description="Filter by market"),
     category: Optional[SignalCategory] = Query(None, description="Filter by category"),
-    signal_type: Optional[SignalType] = Query(None, description="Filter by signal type"),
-    min_confidence: float = Query(0.0, ge=0.0, le=1.0, description="Minimum confidence"),
+    signal_type: Optional[SignalType] = Query(
+        None, description="Filter by signal type"
+    ),
+    min_confidence: float = Query(
+        0.0, ge=0.0, le=1.0, description="Minimum confidence"
+    ),
     symbol: Optional[str] = Query(None, description="Filter by symbol"),
     limit: int = Query(10, ge=1, le=100, description="Max results"),
-    offset: int = Query(0, ge=0, description="Pagination offset")
+    offset: int = Query(0, ge=0, description="Pagination offset"),
 ) -> SignalsResponse:
     """
     Get market intelligence signals.
-    
+
     Signals are derived from prediction market data and can be used by
     OODA agents for decision making.
-    
+
     Args:
         market: Filter by prediction market source
         category: Filter by market category
@@ -49,7 +54,7 @@ async def get_signals(
         symbol: Filter by related trading symbol
         limit: Maximum number of results
         offset: Pagination offset
-    
+
     Returns:
         SignalsResponse with list of matching signals
     """
@@ -60,14 +65,11 @@ async def get_signals(
         min_confidence=min_confidence,
         symbol=symbol,
         limit=limit,
-        offset=offset
+        offset=offset,
     )
-    
+
     return SignalsResponse(
-        signals=signals,
-        total=len(signals),
-        limit=limit,
-        offset=offset
+        signals=signals, total=len(signals), limit=limit, offset=offset
     )
 
 
@@ -75,27 +77,27 @@ async def get_signals(
     "/signals/{signal_id}",
     response_model=MarketSignal,
     summary="Get Signal by ID",
-    description="Retrieve a specific signal by its ID"
+    description="Retrieve a specific signal by its ID",
 )
 async def get_signal_by_id(signal_id: str) -> MarketSignal:
     """
     Get a specific signal by ID.
-    
+
     Args:
         signal_id: Unique signal identifier
-    
+
     Returns:
         MarketSignal if found
-    
+
     Raises:
         HTTPException 404 if signal not found
     """
     if not signal_id.startswith("sig_"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Signal {signal_id} not found"
+            detail=f"Signal {signal_id} not found",
         )
-    
+
     return MarketSignal(
         id=signal_id,
         market=MarketSource.KALSHI,
@@ -103,12 +105,9 @@ async def get_signal_by_id(signal_id: str) -> MarketSignal:
         signal_type=SignalType.BULLISH,
         confidence=0.75,
         symbol="BTC",
-        indicators={
-            "maker_advantage": 0.02,
-            "volume_change_24h": 1.5
-        },
+        indicators={"maker_advantage": 0.02, "volume_change_24h": 1.5},
         timestamp=datetime.now(timezone.utc),
-        metadata={"source": "mock"}
+        metadata={"source": "mock"},
     )
 
 
@@ -119,10 +118,10 @@ def _generate_mock_signals(
     min_confidence: float,
     symbol: Optional[str],
     limit: int,
-    offset: int
+    offset: int,
 ) -> List[MarketSignal]:
     """Generate mock signals for API development."""
-    
+
     mock_signals = [
         MarketSignal(
             id=f"sig_{uuid.uuid4().hex[:8]}",
@@ -134,13 +133,13 @@ def _generate_mock_signals(
             indicators={
                 "maker_advantage": 0.025,
                 "volume_change_24h": 2.1,
-                "sentiment_score": 0.85
+                "sentiment_score": 0.85,
             },
             timestamp=datetime.now(timezone.utc) - timedelta(minutes=5),
             metadata={
                 "source_market": "Will Bitcoin exceed $100k by March 2026?",
-                "current_price": 0.72
-            }
+                "current_price": 0.72,
+            },
         ),
         MarketSignal(
             id=f"sig_{uuid.uuid4().hex[:8]}",
@@ -152,13 +151,13 @@ def _generate_mock_signals(
             indicators={
                 "maker_advantage": -0.01,
                 "volume_change_24h": 0.8,
-                "sentiment_score": 0.35
+                "sentiment_score": 0.35,
             },
             timestamp=datetime.now(timezone.utc) - timedelta(minutes=15),
             metadata={
                 "source_market": "Will S&P 500 drop 10% in Q1 2026?",
-                "current_price": 0.28
-            }
+                "current_price": 0.28,
+            },
         ),
         MarketSignal(
             id=f"sig_{uuid.uuid4().hex[:8]}",
@@ -167,21 +166,18 @@ def _generate_mock_signals(
             signal_type=SignalType.NEUTRAL,
             confidence=0.55,
             symbol=None,
-            indicators={
-                "maker_advantage": 0.001,
-                "volume_change_24h": 1.0
-            },
+            indicators={"maker_advantage": 0.001, "volume_change_24h": 1.0},
             timestamp=datetime.now(timezone.utc) - timedelta(hours=1),
             metadata={
                 "source_market": "Will Fed raise rates in March?",
-                "current_price": 0.50
-            }
-        )
+                "current_price": 0.50,
+            },
+        ),
     ]
-    
+
     # Apply filters
     filtered = mock_signals
-    
+
     if market:
         filtered = [s for s in filtered if s.market == market]
     if category:
@@ -191,7 +187,9 @@ def _generate_mock_signals(
     if min_confidence > 0:
         filtered = [s for s in filtered if s.confidence >= min_confidence]
     if symbol:
-        filtered = [s for s in filtered if s.symbol and symbol.upper() in s.symbol.upper()]
-    
+        filtered = [
+            s for s in filtered if s.symbol and symbol.upper() in s.symbol.upper()
+        ]
+
     # Apply pagination
-    return filtered[offset:offset + limit]
+    return filtered[offset : offset + limit]

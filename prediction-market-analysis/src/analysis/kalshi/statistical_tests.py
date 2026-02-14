@@ -93,7 +93,9 @@ class StatisticalTestsAnalysis(Analysis):
         summary_rows = []
         for test_name, test_results in results.items():
             for metric, value in test_results.items():
-                summary_rows.append({"test": test_name, "metric": metric, "value": value})
+                summary_rows.append(
+                    {"test": test_name, "metric": metric, "value": value}
+                )
 
         df = pd.DataFrame(summary_rows)
 
@@ -118,7 +120,9 @@ class StatisticalTestsAnalysis(Analysis):
         ).df()
 
         # Group by price deciles
-        trade_size_by_price["price_bin"] = pd.cut(trade_size_by_price["price"], bins=10, labels=False) + 1
+        trade_size_by_price["price_bin"] = (
+            pd.cut(trade_size_by_price["price"], bins=10, labels=False) + 1
+        )
 
         price_bin_results = []
         for price_bin in range(1, 11):
@@ -130,7 +134,9 @@ class StatisticalTestsAnalysis(Analysis):
             maker_sizes = subset["maker_size"].values
 
             # Mann-Whitney U test (non-parametric)
-            u_stat, p_value = mannwhitneyu(maker_sizes, taker_sizes, alternative="greater")
+            u_stat, p_value = mannwhitneyu(
+                maker_sizes, taker_sizes, alternative="greater"
+            )
 
             # Effect size (rank-biserial correlation)
             n1, n2 = len(maker_sizes), len(taker_sizes)
@@ -212,15 +218,23 @@ class StatisticalTestsAnalysis(Analysis):
         asymmetry_results = []
 
         for price in test_prices:
-            yes_data = yes_no_by_price[(yes_no_by_price["side"] == "YES") & (yes_no_by_price["price"] == price)]
-            no_data = yes_no_by_price[(yes_no_by_price["side"] == "NO") & (yes_no_by_price["price"] == price)]
+            yes_data = yes_no_by_price[
+                (yes_no_by_price["side"] == "YES") & (yes_no_by_price["price"] == price)
+            ]
+            no_data = yes_no_by_price[
+                (yes_no_by_price["side"] == "NO") & (yes_no_by_price["price"] == price)
+            ]
 
             if len(yes_data) < 100 or len(no_data) < 100:
                 continue
 
             # Weighted win rates
-            yes_win_rate = (yes_data["won"] * yes_data["contracts"]).sum() / yes_data["contracts"].sum()
-            no_win_rate = (no_data["won"] * no_data["contracts"]).sum() / no_data["contracts"].sum()
+            yes_win_rate = (yes_data["won"] * yes_data["contracts"]).sum() / yes_data[
+                "contracts"
+            ].sum()
+            no_win_rate = (no_data["won"] * no_data["contracts"]).sum() / no_data[
+                "contracts"
+            ].sum()
 
             # For significance: use contract-weighted proportions test
             yes_n = yes_data["contracts"].sum()
@@ -279,10 +293,14 @@ class StatisticalTestsAnalysis(Analysis):
         category_trades["group"] = category_trades["category"].apply(get_group)
 
         # Compute taker excess return per trade for each category
-        category_trades["taker_excess"] = category_trades["taker_won"] - category_trades["taker_price"] / 100
+        category_trades["taker_excess"] = (
+            category_trades["taker_won"] - category_trades["taker_price"] / 100
+        )
 
         # Pairwise comparisons: Finance vs others
-        finance_data = category_trades[category_trades["group"] == "Finance"]["taker_excess"].values
+        finance_data = category_trades[category_trades["group"] == "Finance"][
+            "taker_excess"
+        ].values
         pairwise_results = []
 
         # Get unique groups
@@ -291,7 +309,9 @@ class StatisticalTestsAnalysis(Analysis):
         for group in groups:
             if group == "Finance":
                 continue
-            other_data = category_trades[category_trades["group"] == group]["taker_excess"].values
+            other_data = category_trades[category_trades["group"] == group][
+                "taker_excess"
+            ].values
 
             if len(other_data) < 100:
                 continue
@@ -317,7 +337,9 @@ class StatisticalTestsAnalysis(Analysis):
         df = pd.DataFrame(pairwise_results)
         return df.sort_values("diff_pp", ascending=False)
 
-    def _test_trade_size_performance(self, con: duckdb.DuckDBPyConnection) -> dict[str, float]:
+    def _test_trade_size_performance(
+        self, con: duckdb.DuckDBPyConnection
+    ) -> dict[str, float]:
         """Test 4: Trade size -> performance relationship."""
         trade_perf = con.execute(
             f"""
@@ -351,7 +373,9 @@ class StatisticalTestsAnalysis(Analysis):
         # Binned regression
         binned = (
             trade_perf.groupby("size_bin", observed=True)
-            .agg({"excess": "mean", "log_size": "mean", "trade_size": ["mean", "count"]})
+            .agg(
+                {"excess": "mean", "log_size": "mean", "trade_size": ["mean", "count"]}
+            )
             .reset_index()
         )
         binned.columns = ["size_bin", "mean_excess", "mean_log_size", "mean_size", "n"]
@@ -359,13 +383,22 @@ class StatisticalTestsAnalysis(Analysis):
 
         # Weighted linear regression on binned data
         weights = np.sqrt(binned["n"])
-        coeffs = np.polyfit(binned["mean_log_size"], binned["mean_excess"], 1, w=weights)
+        coeffs = np.polyfit(
+            binned["mean_log_size"], binned["mean_excess"], 1, w=weights
+        )
         slope, intercept = coeffs
 
         # R-squared
         predicted = slope * binned["mean_log_size"] + intercept
         ss_res = np.sum(weights * (binned["mean_excess"] - predicted) ** 2)
-        ss_tot = np.sum(weights * (binned["mean_excess"] - np.average(binned["mean_excess"], weights=weights)) ** 2)
+        ss_tot = np.sum(
+            weights
+            * (
+                binned["mean_excess"]
+                - np.average(binned["mean_excess"], weights=weights)
+            )
+            ** 2
+        )
         r_squared = 1 - ss_res / ss_tot
 
         return {
@@ -436,8 +469,12 @@ class StatisticalTestsAnalysis(Analysis):
             no_data["excess"] = no_data["won"] - no_data["price"] / 100
 
             # Weighted means
-            yes_excess = (yes_data["excess"] * yes_data["contracts"]).sum() / yes_data["contracts"].sum()
-            no_excess = (no_data["excess"] * no_data["contracts"]).sum() / no_data["contracts"].sum()
+            yes_excess = (yes_data["excess"] * yes_data["contracts"]).sum() / yes_data[
+                "contracts"
+            ].sum()
+            no_excess = (no_data["excess"] * no_data["contracts"]).sum() / no_data[
+                "contracts"
+            ].sum()
 
             # For significance: sample and run t-test
             yes_sample = np.repeat(

@@ -14,6 +14,7 @@ setup_tracing("metrics-server")
 tracer = get_tracer("metrics.server")
 # Metrics worden automatisch globaal geregistreerd
 
+
 @app.get("/metrics")
 async def get_metrics():
     """
@@ -22,6 +23,7 @@ async def get_metrics():
     with tracer.start_as_current_span("get_metrics_endpoint"):
         latest_metrics = generate_latest()
         return Response(content=latest_metrics, media_type="text/plain")
+
 
 if __name__ == "__main__":
     # Start uvicorn server

@@ -1,6 +1,7 @@
 """
 Run test suite and generate summary.
 """
+
 import subprocess
 import re
 import os
@@ -18,7 +19,9 @@ if str(project_root) not in sys.path:
 
 test_dir = Path("backend/tests/unit")
 test_files = list(test_dir.glob("*.py"))
-test_dirs = [d for d in test_dir.iterdir() if d.is_dir() and d.name not in ['__pycache__']]
+test_dirs = [
+    d for d in test_dir.iterdir() if d.is_dir() and d.name not in ["__pycache__"]
+]
 
 total_passed = 0
 total_failed = 0
@@ -35,55 +38,69 @@ for test_file in sorted(test_files):
         result = subprocess.run(
             ["python", "-m", "pytest", str(test_file), "-q", "--tb=no"],
             capture_output=True,
-            text=True
+            text=True,
         )
-        
+
         # Parse output
         output = result.stdout + result.stderr
-        match = re.search(r'(\d+) passed', output)
+        match = re.search(r"(\d+) passed", output)
         passed = int(match.group(1)) if match else 0
-        
-        match_failed = re.search(r'(\d+) failed', output)
+
+        match_failed = re.search(r"(\d+) failed", output)
         failed = int(match_failed.group(1)) if match_failed else 0
-        
-        match_error = re.search(r'(\d+) error', output)
+
+        match_error = re.search(r"(\d+) error", output)
         errors = int(match_error.group(1)) if match_error else 0
-        
+
         total_passed += passed
         total_failed += failed
         total_errors += errors
-        
-        status = "✅" if (passed > 0 and failed == 0 and errors == 0) else "⚠️" if errors > 0 else "❌"
-        test_results.append(f"{status} {test_file.name}: {passed} passed, {failed} failed, {errors} errors")
+
+        status = (
+            "✅"
+            if (passed > 0 and failed == 0 and errors == 0)
+            else "⚠️" if errors > 0 else "❌"
+        )
+        test_results.append(
+            f"{status} {test_file.name}: {passed} passed, {failed} failed, {errors} errors"
+        )
 
 # Test subdirectories (careful with cognition/core due to Prometheus)
-safe_dirs = ['execution', 'feature_store', 'risk', 'schemas']
+safe_dirs = ["execution", "feature_store", "risk", "schemas"]
 for test_subdir in [d for d in test_dirs if d.name in safe_dirs]:
     result = subprocess.run(
         ["python", "-m", "pytest", str(test_subdir), "-q", "--tb=no"],
         capture_output=True,
-        text=True
+        text=True,
     )
-    
+
     output = result.stdout + result.stderr
-    match = re.search(r'(\d+) passed', output)
+    match = re.search(r"(\d+) passed", output)
     passed = int(match.group(1)) if match else 0
-    
-    match_failed = re.search(r'(\d+) failed', output)
+
+    match_failed = re.search(r"(\d+) failed", output)
     failed = int(match_failed.group(1)) if match_failed else 0
-    
-    match_error = re.search(r'(\d+) error', output)
+
+    match_error = re.search(r"(\d+) error", output)
     errors = int(match_error.group(1)) if match_error else 0
-    
+
     total_passed += passed
     total_failed += failed
     total_errors += errors
-    
-    status = "✅" if (passed > 0 and failed == 0 and errors == 0) else "⚠️" if errors > 0 else "❌"
-    test_results.append(f"{status} {test_subdir.name}/: {passed} passed, {failed} failed, {errors} errors")
+
+    status = (
+        "✅"
+        if (passed > 0 and failed == 0 and errors == 0)
+        else "⚠️" if errors > 0 else "❌"
+    )
+    test_results.append(
+        f"{status} {test_subdir.name}/: {passed} passed, {failed} failed, {errors} errors"
+    )
 
 # Skip problematic cognition/core directories (Prometheus registry issue)
-print("\n⚠️  Note: Skipping cognition/ and core/ tests due to Prometheus registry initialization issues.")
+print(
+    "\n⚠️  Note: Skipping cognition/ and core/ tests due to Prometheus registry initialization issues."
+)
 print("   These directories have 40+ tests but require separate test harness.")
 
 # Print results
@@ -99,11 +116,12 @@ print("=" * 80)
 if total_failed == 0 and total_errors == 0:
     print("✅ ALL ENABLED TESTS PASSED!")
 else:
-    print(f"⚠️  Some tests need attention: {total_failed} failures, {total_errors} errors")
+    print(
+        f"⚠️  Some tests need attention: {total_failed} failures, {total_errors} errors"
+    )
 
 print(f"\n📊 Summary:")
 print(f"  - Unit Tests (without cognition/core): {total_passed} passing ✅")
 print(f"  - Cognition Tests: ~20 tests (skipped due to registry isolation)")
 print(f"  - Core Tests: ~20 tests (skipped due to registry isolation)")
 print(f"  - Total Estimated: ~260+ tests passing")
-

@@ -10,14 +10,14 @@ from .circuit_breaker import (
     CircuitBreakerState,
     CircuitBreakerTrippedError,
     BreakerState,
-    TripReason
+    TripReason,
 )
 from .trading_permissions import (
     TradingPermission,
     TradingRole,
     PermissionDeniedError,
     has_permission,
-    get_required_permission_for_mode
+    get_required_permission_for_mode,
 )
 from .permission_service import PermissionService, TradingModeChange
 
@@ -35,5 +35,5 @@ __all__ = [
     "has_permission",
     "get_required_permission_for_mode",
     "PermissionService",
-    "TradingModeChange"
+    "TradingModeChange",
 ]

@@ -95,7 +95,9 @@ class PolymarketTradesIndexer(Indexer):
             if not trades_batch:
                 return
             chunk_idx = get_next_chunk_idx()
-            chunk_path = DATA_DIR / f"trades_{chunk_idx}_{chunk_idx + BATCH_SIZE}.parquet"
+            chunk_path = (
+                DATA_DIR / f"trades_{chunk_idx}_{chunk_idx + BATCH_SIZE}.parquet"
+            )
             df = pd.DataFrame(trades_batch)
             df.to_parquet(chunk_path)
             total_saved += len(trades_batch)

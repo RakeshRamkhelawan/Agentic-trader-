@@ -43,17 +43,12 @@ class EventBus:
         """
         if not self.client:
             raise RuntimeError("EventBus not connected. Call connect() first.")
-        
+
         message_id = await self.client.xadd(stream, event_data)
         return message_id.decode()
 
     async def subscribe(
-        self,
-        stream: str,
-        group: str,
-        consumer: str,
-        count: int = 10,
-        block: int = 1000
+        self, stream: str, group: str, consumer: str, count: int = 10, block: int = 1000
     ) -> List[Dict[str, Any]]:
         """
         Subscribe to stream using consumer group.
@@ -70,33 +65,32 @@ class EventBus:
         """
         if not self.client:
             raise RuntimeError("EventBus not connected. Call connect() first.")
-        
+
         response = await self.client.xreadgroup(
             groupname=group,
             consumername=consumer,
             streams={stream: ">"},
             count=count,
-            block=block
+            block=block,
         )
-        
+
         messages = []
         if response:
             for stream_name, stream_messages in response:
                 for message_id, message_data in stream_messages:
-                    messages.append({
-                        "id": message_id.decode(),
-                        "data": {
-                            k.decode(): v.decode() for k, v in message_data.items()
+                    messages.append(
+                        {
+                            "id": message_id.decode(),
+                            "data": {
+                                k.decode(): v.decode() for k, v in message_data.items()
+                            },
                         }
-                    })
-        
+                    )
+
         return messages
 
     async def create_consumer_group(
-        self,
-        stream: str,
-        group: str,
-        id: str = "0"
+        self, stream: str, group: str, id: str = "0"
     ) -> None:
         """
         Create consumer group for stream.
@@ -108,7 +102,7 @@ class EventBus:
         """
         if not self.client:
             raise RuntimeError("EventBus not connected. Call connect() first.")
-        
+
         await self.client.xgroup_create(stream, group, id=id, mkstream=True)
 
     async def ack(self, stream: str, group: str, message_id: str) -> int:
@@ -125,5 +119,5 @@ class EventBus:
         """
         if not self.client:
             raise RuntimeError("EventBus not connected. Call connect() first.")
-        
+
         return await self.client.xack(stream, group, message_id)

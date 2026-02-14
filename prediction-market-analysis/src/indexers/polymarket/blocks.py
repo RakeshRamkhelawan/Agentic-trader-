@@ -30,7 +30,9 @@ class PolymarketBlocksIndexer(Indexer):
             description="Fetches block timestamps for every block",
         )
 
-    def _fetch_timestamp(self, client: PolygonClient, block_number: int) -> Optional[tuple[int, int]]:
+    def _fetch_timestamp(
+        self, client: PolygonClient, block_number: int
+    ) -> Optional[tuple[int, int]]:
         """Fetch timestamp for a single block. Returns (block_number, unix_timestamp)."""
         try:
             unix_timestamp = client.get_block_timestamp(block_number)
@@ -39,7 +41,9 @@ class PolymarketBlocksIndexer(Indexer):
             tqdm.write(f"Error fetching block {block_number}: {e}")
             return None
 
-    def _interpolate_timestamps(self, sampled: list[tuple[int, int]], start_block: int, end_block: int) -> list[dict]:
+    def _interpolate_timestamps(
+        self, sampled: list[tuple[int, int]], start_block: int, end_block: int
+    ) -> list[dict]:
         """Interpolate timestamps for all blocks between sampled points."""
         sampled_sorted = sorted(sampled, key=lambda x: x[0])
         records = []
@@ -54,13 +58,17 @@ class PolymarketBlocksIndexer(Indexer):
             for block in range(block_a, block_b):
                 offset = block - block_a
                 interpolated_ts = ts_a + (ts_diff * offset) // block_diff
-                timestamp_str = datetime.fromtimestamp(interpolated_ts, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                timestamp_str = datetime.fromtimestamp(
+                    interpolated_ts, tz=timezone.utc
+                ).strftime("%Y-%m-%dT%H:%M:%SZ")
                 records.append({"block_number": block, "timestamp": timestamp_str})
 
         # Add the last sampled block
         if sampled_sorted:
             last_block, last_ts = sampled_sorted[-1]
-            timestamp_str = datetime.fromtimestamp(last_ts, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            timestamp_str = datetime.fromtimestamp(last_ts, tz=timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
             records.append({"block_number": last_block, "timestamp": timestamp_str})
 
         return records
@@ -118,7 +126,9 @@ class PolymarketBlocksIndexer(Indexer):
             bucket_end = min(current_bucket_start + BUCKET_SIZE, latest_block + 1)
 
             # Only fetch every SAMPLE_INTERVAL blocks, plus bucket boundaries
-            sampled_blocks = list(range(current_bucket_start, bucket_end, SAMPLE_INTERVAL))
+            sampled_blocks = list(
+                range(current_bucket_start, bucket_end, SAMPLE_INTERVAL)
+            )
             if sampled_blocks[-1] != bucket_end - 1:
                 sampled_blocks.append(bucket_end - 1)
 
@@ -127,8 +137,13 @@ class PolymarketBlocksIndexer(Indexer):
             )
 
             sampled_timestamps = []
-            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-                futures = {executor.submit(self._fetch_timestamp, client, block): block for block in sampled_blocks}
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=MAX_WORKERS
+            ) as executor:
+                futures = {
+                    executor.submit(self._fetch_timestamp, client, block): block
+                    for block in sampled_blocks
+                }
 
                 for future in tqdm(
                     concurrent.futures.as_completed(futures),
@@ -140,14 +155,18 @@ class PolymarketBlocksIndexer(Indexer):
                         sampled_timestamps.append(result)
 
             if sampled_timestamps:
-                records = self._interpolate_timestamps(sampled_timestamps, current_bucket_start, bucket_end)
+                records = self._interpolate_timestamps(
+                    sampled_timestamps, current_bucket_start, bucket_end
+                )
                 self._save_bucket(records, current_bucket_start, bucket_end)
 
             current_bucket_start = bucket_end
 
         print("\nIndexing complete")
 
-    def _save_bucket(self, records: list[dict], start_block: int, end_block: int) -> None:
+    def _save_bucket(
+        self, records: list[dict], start_block: int, end_block: int
+    ) -> None:
         """Save a bucket of records to a parquet file."""
         df = pd.DataFrame(records)
         df = df.sort_values("block_number").reset_index(drop=True)

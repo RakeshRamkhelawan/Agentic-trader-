@@ -29,11 +29,18 @@ class PolymarketWinRateByPriceAnalysis(Analysis):
             description="Polymarket win rate vs price market calibration analysis",
         )
         base_dir = Path(__file__).parent.parent.parent.parent
-        self.trades_dir = Path(trades_dir or base_dir / "data" / "polymarket" / "trades")
-        self.legacy_trades_dir = Path(legacy_trades_dir or base_dir / "data" / "polymarket" / "legacy_trades")
-        self.markets_dir = Path(markets_dir or base_dir / "data" / "polymarket" / "markets")
+        self.trades_dir = Path(
+            trades_dir or base_dir / "data" / "polymarket" / "trades"
+        )
+        self.legacy_trades_dir = Path(
+            legacy_trades_dir or base_dir / "data" / "polymarket" / "legacy_trades"
+        )
+        self.markets_dir = Path(
+            markets_dir or base_dir / "data" / "polymarket" / "markets"
+        )
         self.collateral_lookup_path = Path(
-            collateral_lookup_path or base_dir / "data" / "polymarket" / "fpmm_collateral_lookup.json"
+            collateral_lookup_path
+            or base_dir / "data" / "polymarket" / "fpmm_collateral_lookup.json"
         )
 
     def run(self) -> AnalysisOutput:
@@ -55,7 +62,9 @@ class PolymarketWinRateByPriceAnalysis(Analysis):
 
         for _, row in markets_df.iterrows():
             try:
-                prices = json.loads(row["outcome_prices"]) if row["outcome_prices"] else None
+                prices = (
+                    json.loads(row["outcome_prices"]) if row["outcome_prices"] else None
+                )
                 if not prices or len(prices) != 2:
                     continue
                 p0, p1 = float(prices[0]), float(prices[1])
@@ -70,7 +79,9 @@ class PolymarketWinRateByPriceAnalysis(Analysis):
                     continue
 
                 # CTF token resolution
-                token_ids = json.loads(row["clob_token_ids"]) if row["clob_token_ids"] else None
+                token_ids = (
+                    json.loads(row["clob_token_ids"]) if row["clob_token_ids"] else None
+                )
                 if token_ids and len(token_ids) == 2:
                     token_won[token_ids[0]] = winning_outcome == 0
                     token_won[token_ids[1]] = winning_outcome == 1
@@ -85,21 +96,32 @@ class PolymarketWinRateByPriceAnalysis(Analysis):
 
         # Step 2: Register CTF token mapping
         con.execute("CREATE TABLE token_resolution (token_id VARCHAR, won BOOLEAN)")
-        con.executemany("INSERT INTO token_resolution VALUES (?, ?)", list(token_won.items()))
+        con.executemany(
+            "INSERT INTO token_resolution VALUES (?, ?)", list(token_won.items())
+        )
 
         # Step 3: Filter FPMM resolution to USDC markets only
         if self.collateral_lookup_path.exists():
             with open(self.collateral_lookup_path) as f:
                 collateral_lookup = json.load(f)
             usdc_markets = {
-                addr.lower() for addr, info in collateral_lookup.items() if info["collateral_symbol"] == "USDC"
+                addr.lower()
+                for addr, info in collateral_lookup.items()
+                if info["collateral_symbol"] == "USDC"
             }
-            fpmm_resolution = {k: v for k, v in fpmm_resolution.items() if k in usdc_markets}
+            fpmm_resolution = {
+                k: v for k, v in fpmm_resolution.items() if k in usdc_markets
+            }
 
         # Register FPMM resolution table
-        con.execute("CREATE TABLE fpmm_resolution (fpmm_address VARCHAR, winning_outcome BIGINT)")
+        con.execute(
+            "CREATE TABLE fpmm_resolution (fpmm_address VARCHAR, winning_outcome BIGINT)"
+        )
         if fpmm_resolution:
-            con.executemany("INSERT INTO fpmm_resolution VALUES (?, ?)", list(fpmm_resolution.items()))
+            con.executemany(
+                "INSERT INTO fpmm_resolution VALUES (?, ?)",
+                list(fpmm_resolution.items()),
+            )
 
         # Step 4: Build CTF trade positions query
         ctf_trades_query = f"""
@@ -245,7 +267,9 @@ class PolymarketWinRateByPriceAnalysis(Analysis):
             "total_trades": int(total_trades),
         }
 
-    def _create_figure(self, df: pd.DataFrame, metrics: dict | None = None) -> plt.Figure:
+    def _create_figure(
+        self, df: pd.DataFrame, metrics: dict | None = None
+    ) -> plt.Figure:
         """Create the matplotlib figure."""
         fig, ax = plt.subplots(figsize=(10, 10))
         ax.scatter(
