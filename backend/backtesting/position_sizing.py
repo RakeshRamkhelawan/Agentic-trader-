@@ -5,6 +5,7 @@ Provides intelligent position sizing strategies (fixed, percentage, Kelly Criter
 """
 
 from abc import ABC, abstractmethod
+import warnings
 
 
 class PositionSizer(ABC):
@@ -177,7 +178,6 @@ class KellyCriterionSizer(PositionSizer):
 
         # Warn if Kelly suggests not trading (negative expectancy)
         if kelly_fraction < 0:
-            import warnings
             warnings.warn(
                 f"Kelly Criterion suggests not trading: negative expectancy "
                 f"(kelly_fraction={kelly_fraction:.4f}, win_rate={p:.2f}, avg_win/loss={b:.2f}). "
