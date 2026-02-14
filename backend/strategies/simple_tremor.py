@@ -1,6 +1,7 @@
-from typing import Optional, Dict, List, Any
-from backend.strategies.base import BaseStrategy
+from typing import Any, Dict, List, Optional
+
 from backend.market_data.models import UnifiedMarketEvent
+from backend.strategies.base import BaseStrategy
 
 
 class SimpleTremorStrategy(BaseStrategy):

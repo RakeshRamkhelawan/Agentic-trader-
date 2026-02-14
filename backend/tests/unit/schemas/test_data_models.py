@@ -1,7 +1,8 @@
+import uuid
+from datetime import datetime
+
 import pytest
 from pydantic import ValidationError
-from datetime import datetime
-import uuid
 
 # We importeren de classes die we NOG NIET hebben gemaakt (TDD)
 from backend.schemas.market_data import MarketTick

@@ -1,9 +1,12 @@
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from backend.services.cognitive_orchestrator import CognitiveOrchestrator
-from backend.schemas.agent_messages import AgentMessage
+
 from backend.core.auth.context import get_current_tenant_optional
+from backend.schemas.agent_messages import AgentMessage
+from backend.services.cognitive_orchestrator import CognitiveOrchestrator
+
 
 @pytest.mark.asyncio
 async def test_orchestrator_propagates_tenant_context_from_message():
@@ -77,7 +80,7 @@ async def test_orchestrator_uses_existing_context_if_message_has_none():
     )
     
     # Set context directly
-    from backend.core.auth.context import set_current_tenant, clear_context
+    from backend.core.auth.context import clear_context, set_current_tenant
     set_current_tenant("existing-tenant")
     
     try:

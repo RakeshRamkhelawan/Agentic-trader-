@@ -1,7 +1,9 @@
-import pandas as pd
+from typing import Dict, List, Tuple
+
 import numpy as np
-from typing import List, Dict, Tuple
-from backend.backtesting.models import BacktestMetrics, Trade, OrderSide
+import pandas as pd
+
+from backend.backtesting.models import BacktestMetrics, OrderSide, Trade
 
 
 class MetricsCalculator:

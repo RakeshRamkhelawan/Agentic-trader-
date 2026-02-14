@@ -1,10 +1,13 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from backend.services.cognitive_orchestrator import CognitiveOrchestrator, AgentMessage
-from backend.schemas.guna import GunaVector
+
 from backend.core.agent_registry import AgentProfile
-from backend.services.research_agent import ResearchAgent
+from backend.schemas.guna import GunaVector
+from backend.services.cognitive_orchestrator import (AgentMessage,
+                                                     CognitiveOrchestrator)
 from backend.services.macro_agent import MacroAgent
+from backend.services.research_agent import ResearchAgent
 from backend.services.valuation_agent import ValuationAgent
 
 # --- FIXTURES ---

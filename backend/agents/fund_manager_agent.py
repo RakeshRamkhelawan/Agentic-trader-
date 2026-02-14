@@ -6,16 +6,12 @@ Enforces portfolio-level risk constraints (max limits, exposure).
 """
 
 import logging
-from typing import Optional, Dict, Any
 from datetime import datetime, timezone
+from typing import Any, Dict, Optional
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import (
-    TradeProposal,
-    RiskAssessment,
-    PortfolioState,
-    CapitalAllocation,
-)
+from backend.core.schemas.ooda_types import (CapitalAllocation, PortfolioState,
+                                             RiskAssessment, TradeProposal)
 from backend.governance.agent_gatekeeper import AgentRole
 
 

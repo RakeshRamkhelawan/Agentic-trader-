@@ -1,8 +1,9 @@
-from sqlalchemy import Column, String, Float, DateTime, Enum, JSON, ForeignKey
-from sqlalchemy.orm import relationship
-from datetime import datetime
-import uuid
 import enum
+import uuid
+from datetime import datetime
+
+from sqlalchemy import JSON, Column, DateTime, Enum, Float, ForeignKey, String
+from sqlalchemy.orm import relationship
 
 from backend.core.database import Base
 

@@ -6,10 +6,13 @@ Endpoints:
 """
 
 import asyncio
-import uuid
 import logging
+import uuid
 from typing import Optional
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, HTTPException
+
+from fastapi import (APIRouter, HTTPException, Query, WebSocket,
+                     WebSocketDisconnect)
+
 from backend.api.websocket_manager import ws_manager
 
 logger = logging.getLogger(__name__)

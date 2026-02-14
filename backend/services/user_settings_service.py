@@ -4,32 +4,26 @@ User Settings Service - Manages user profile, security, and preferences via Data
 Now uses PostgreSQL via SQLAlchemy + AsyncPG.
 """
 
+import json
+import logging
+import os
+from typing import List, Optional
+
+from cryptography.fernet import Fernet
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
-from typing import Optional, List
-import logging
-from cryptography.fernet import Fernet
-import os
-import json
 
-from backend.schemas.user_settings import (
-    UserProfile,
-    NotificationSettings,
-    SecuritySettings,
-    AppearanceSettings,
-    UserPreferences,
-    BrokerAPIKey,
-    BrokerAPIKeyCreate,
-    ExchangeType,
-)
-from backend.models.user_settings import (
-    User as DBUser,
-    UserProfile as DBUserProfile,
-    UserSecurity as DBUserSecurity,
-    UserPreferences as DBUserPreferences,
-    APIKey as DBAPIKey,
-)
+from backend.models.user_settings import APIKey as DBAPIKey
+from backend.models.user_settings import User as DBUser
+from backend.models.user_settings import UserPreferences as DBUserPreferences
+from backend.models.user_settings import UserProfile as DBUserProfile
+from backend.models.user_settings import UserSecurity as DBUserSecurity
+from backend.schemas.user_settings import (AppearanceSettings, BrokerAPIKey,
+                                           BrokerAPIKeyCreate, ExchangeType,
+                                           NotificationSettings,
+                                           SecuritySettings, UserPreferences,
+                                           UserProfile)
 
 logger = logging.getLogger(__name__)
 

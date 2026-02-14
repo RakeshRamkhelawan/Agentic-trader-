@@ -5,15 +5,9 @@ This package contains type-safe Pydantic models that define the
 data contracts between agents in the OODA loop.
 """
 
-from .ooda_types import (
-    MarketRegime,
-    Observation,
-    Orientation,
-    TradeProposal,
-    RiskAssessment,
-    ExecutionPlan,
-    ExecutionOutcome,
-)
+from .ooda_types import (ExecutionOutcome, ExecutionPlan, MarketRegime,
+                         Observation, Orientation, RiskAssessment,
+                         TradeProposal)
 
 __all__ = [
     "MarketRegime",

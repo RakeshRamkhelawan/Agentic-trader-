@@ -5,11 +5,13 @@ Analyseert marktdata en genereert technische en sentiment indicatoren.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
+
 import numpy as np
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import Observation, Orientation, MarketRegime
+from backend.core.schemas.ooda_types import (MarketRegime, Observation,
+                                             Orientation)
 from backend.governance.agent_gatekeeper import AgentRole
 
 logger = logging.getLogger(__name__)

@@ -1,36 +1,32 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timezone
 
+from fastapi import Depends, FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from backend.api import (analytics_api, approval_api, backtest_api,
+                         prediction_api, trading_api, user_settings_api)
 # Routers
 from backend.api.auth_api import router as auth_router
-from backend.api import trading_api
-from backend.api import user_settings_api
-from backend.api import approval_api
-from backend.api.websocket_endpoints import router as ws_router
-from backend.api import analytics_api
-from backend.api import backtest_api
-from backend.api import prediction_api
-from backend.observability.metrics import PrometheusMiddleware, metrics_endpoint
-
-# Services
-from backend.services.trading_service import get_trading_service
-from backend.api.websocket_manager import ws_manager
 from backend.api.deps import get_db
-
+from backend.api.websocket_endpoints import router as ws_router
+from backend.api.websocket_manager import ws_manager
+from backend.core.auth.jwt_validator import JWTValidator
 # Auth Middleware
 from backend.core.auth.middleware import AuthMiddleware
 from backend.core.auth.models import TokenPayload
-from backend.core.auth.jwt_validator import JWTValidator
 from backend.core.config.settings import settings
+from backend.observability.metrics import (PrometheusMiddleware,
+                                           metrics_endpoint)
+# Services
+from backend.services.trading_service import get_trading_service
 
 # JWT validation
 try:
-    from jose import jwt, JWTError
+    from jose import JWTError, jwt
 
     JOSE_AVAILABLE = True
 except ImportError:

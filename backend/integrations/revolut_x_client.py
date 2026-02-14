@@ -3,22 +3,23 @@ Revolut X Crypto Exchange REST API Client
 Official implementation based on https://developer.revolut.com/docs/x-api/revolut-x-crypto-exchange-rest-api
 """
 
-import os
-import json
 import asyncio
-import httpx
-import logging
-import time
 import base64
+import json
+import logging
+import os
+import time
 import uuid
-from typing import Optional, Dict, List, Any
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from dotenv import load_dotenv
+from typing import Any, Dict, List, Optional
+
+import httpx
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from dotenv import load_dotenv
 
 load_dotenv()
 

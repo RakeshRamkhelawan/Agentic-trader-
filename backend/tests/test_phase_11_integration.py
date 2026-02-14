@@ -19,23 +19,18 @@ Test Categories:
 Total: 35 test stubs
 """
 
-import time
-import pytest
-from unittest.mock import MagicMock, patch
-from threading import Thread
-import tempfile
 import os
+import tempfile
+import time
+from threading import Thread
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from backend.orchestration.phase_11_integration import (
-    Phase11IntegrationCoordinator,
-    Phase11IntegrationConfig,
-    MockSentimentAgent,
-    MockMarketRegimeAgent,
-    MockRiskGovernor,
-    create_test_coordinator,
-    create_coordinator_with_custom_agents
-)
-
+    MockMarketRegimeAgent, MockRiskGovernor, MockSentimentAgent,
+    Phase11IntegrationConfig, Phase11IntegrationCoordinator,
+    create_coordinator_with_custom_agents, create_test_coordinator)
 
 # ============================================================================
 # TEST FIXTURES

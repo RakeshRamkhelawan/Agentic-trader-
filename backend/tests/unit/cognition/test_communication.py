@@ -1,5 +1,7 @@
 import pytest
+
 from backend.services.cognitive_orchestrator import AgentMessage, AgentProtocol
+
 
 def test_create_valid_message():
     """Happy Path: Geldig bericht."""

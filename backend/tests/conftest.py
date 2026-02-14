@@ -3,10 +3,11 @@ Test configuration for integration tests.
 Adds project root to Python path to allow 'backend' module imports.
 """
 
-import sys
 import os
+import sys
+
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 # Add project root (two levels up from this file) to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -34,14 +35,16 @@ async def async_client() -> AsyncClient:
         yield client
 
 
+from uuid import uuid4
+
 # ============================================================================
 # SHARED DATABASE FIXTURES
 # ============================================================================
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+
 import backend.core.database
 from backend.core.database import SessionManager
-from uuid import uuid4
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -82,12 +85,8 @@ def unique_email():
 # ============================================================================
 # SHARED AGENT FIXTURES
 # ============================================================================
-from backend.core.schemas.ooda_types import (
-    Observation,
-    Orientation,
-    TradeProposal,
-    MarketRegime,
-)
+from backend.core.schemas.ooda_types import (MarketRegime, Observation,
+                                             Orientation, TradeProposal)
 
 
 @pytest.fixture
@@ -148,9 +147,11 @@ def sample_proposal():
     )
 
 
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import AsyncMock, Mock
+
 from backend.agents.fund_manager_agent import FundManagerAgent
-from backend.core.schemas.ooda_types import PortfolioState, RiskAssessment, RiskDecision
+from backend.core.schemas.ooda_types import (PortfolioState, RiskAssessment,
+                                             RiskDecision)
 
 
 @pytest.fixture
@@ -215,7 +216,7 @@ def sample_risk_assessment():
     )
 
 
-from backend.agents.researcher_agents import BullResearcher, BearResearcher
+from backend.agents.researcher_agents import BearResearcher, BullResearcher
 
 
 @pytest.fixture

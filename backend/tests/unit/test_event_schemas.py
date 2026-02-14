@@ -4,15 +4,13 @@ Tests for Event Schemas.
 TDD Test Suite - Write tests FIRST before implementation.
 """
 
-import pytest
 from datetime import datetime, timezone
+
+import pytest
 from pydantic import ValidationError
-from backend.events.schemas import (
-    MarketTick,
-    AgentThought,
-    TradeProposal,
-    EventBase
-)
+
+from backend.events.schemas import (AgentThought, EventBase, MarketTick,
+                                    TradeProposal)
 
 
 @pytest.mark.unit

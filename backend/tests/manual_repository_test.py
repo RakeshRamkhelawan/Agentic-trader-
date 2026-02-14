@@ -1,10 +1,10 @@
 import asyncio
+import os
 import sys
 import uuid
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
 
-import os
+from pydantic import BaseModel, ConfigDict
 
 # Setup async loop for windows
 if sys.platform == "win32":
@@ -17,9 +17,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from backend.data.repository import BaseRepository
-from backend.data.models import DecisionAuditLog
 from backend.core.database import SessionManager
+from backend.data.models import DecisionAuditLog
+from backend.data.repository import BaseRepository
 
 
 # Define Pydantic schemas for the test

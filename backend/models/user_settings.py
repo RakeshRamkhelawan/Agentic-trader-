@@ -2,10 +2,12 @@
 Database Models for User Settings.
 """
 
-from sqlalchemy import Column, String, Boolean, JSON, DateTime, ForeignKey, Text
-from sqlalchemy.orm import relationship
-from datetime import datetime
 import uuid
+from datetime import datetime
+
+from sqlalchemy import (JSON, Boolean, Column, DateTime, ForeignKey, String,
+                        Text)
+from sqlalchemy.orm import relationship
 
 from backend.core.database import Base
 

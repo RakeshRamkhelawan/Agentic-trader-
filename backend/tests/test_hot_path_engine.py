@@ -10,16 +10,17 @@ HotPathEngine characteristics:
 - Zero allocation: Minimal memory operations
 """
 
-import pytest
-import time
 import tempfile
+import time
 from pathlib import Path
 from threading import Thread
 from unittest.mock import MagicMock, patch
 
-from backend.execution.fast_config import FastConfigManager, FALLBACK_CONFIG
-from backend.execution.hot_path_engine import HotPathEngine, ExecutionDecision, HotPathExecutor
+import pytest
 
+from backend.execution.fast_config import FALLBACK_CONFIG, FastConfigManager
+from backend.execution.hot_path_engine import (ExecutionDecision,
+                                               HotPathEngine, HotPathExecutor)
 
 pytestmark = pytest.mark.unit
 

@@ -7,14 +7,14 @@ Provides:
 - Public key upload to exchange APIs
 """
 
-import os
 import logging
+import os
 from datetime import datetime, timedelta
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.backends import default_backend
 
 logger = logging.getLogger(__name__)
 

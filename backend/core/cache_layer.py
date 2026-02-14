@@ -4,8 +4,10 @@ Async Cache Layer - High-performance Redis-based caching.
 
 import json
 import logging
-from typing import Any, Optional, Union, Dict, List
+from typing import Any, Dict, List, Optional, Union
+
 import redis.asyncio as redis
+
 from backend.core.config.settings import settings
 
 logger = logging.getLogger(__name__)

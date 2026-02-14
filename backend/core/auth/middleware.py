@@ -8,18 +8,15 @@ Provides:
 """
 
 import logging
-from typing import Optional, Callable
 from functools import wraps
+from typing import Callable, Optional
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from backend.core.auth.context import (
-    set_current_tenant,
-    set_current_user,
-    clear_context,
-)
+from backend.core.auth.context import (clear_context, set_current_tenant,
+                                       set_current_user)
 from backend.core.auth.models import TokenPayload
 
 logger = logging.getLogger(__name__)

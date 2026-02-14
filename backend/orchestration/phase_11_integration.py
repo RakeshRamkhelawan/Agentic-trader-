@@ -14,9 +14,9 @@ All agents follow the standard interface:
 
 import logging
 import time
-from dataclasses import dataclass
-from typing import Dict, Any
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 

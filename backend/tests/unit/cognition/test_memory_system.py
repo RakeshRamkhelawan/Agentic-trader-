@@ -1,6 +1,8 @@
-import pytest
 import chromadb
+import pytest
+
 from backend.services.cognitive_orchestrator import MemoryAgent
+
 
 # --- FIXTURE ---
 @pytest.fixture

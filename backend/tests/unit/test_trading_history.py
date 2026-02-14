@@ -1,7 +1,10 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
-from backend.services.trading_service import TradingService
+
+import pytest
+
 from backend.models.orders import Order, OrderStatus
+from backend.services.trading_service import TradingService
+
 
 @pytest.mark.asyncio
 async def test_get_order_history():

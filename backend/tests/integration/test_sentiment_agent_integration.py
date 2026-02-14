@@ -4,17 +4,17 @@ Integration Tests for SentimentAgent End-to-End Flow.
 Tests complete sentiment analysis pipeline with EventBus and LLM.
 """
 
-import pytest
 import asyncio
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from pydantic import BaseModel
 
 from backend.agents.sentiment_agent import SentimentAgent
 from backend.events.event_bus import EventBus
-from backend.events.schemas import MarketTick, AgentThought
+from backend.events.schemas import AgentThought, MarketTick
 from backend.llm.provider_interface import LLMProvider
-
 
 pytestmark = pytest.mark.integration
 

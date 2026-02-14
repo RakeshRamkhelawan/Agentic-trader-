@@ -6,13 +6,15 @@ Provides similarity search for historical scenarios and strategy playbooks.
 """
 
 import logging
-from typing import List, Optional, Dict, Any
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, Float, DateTime, Index
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import declarative_base
+from typing import Any, Dict, List, Optional
+
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import select, func
+from sqlalchemy import (Column, DateTime, Float, Index, Integer, String, Text,
+                        func, select)
+from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
+                                    create_async_engine)
+from sqlalchemy.orm import declarative_base
 
 logger = logging.getLogger(__name__)
 

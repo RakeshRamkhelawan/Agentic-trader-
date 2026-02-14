@@ -1,9 +1,9 @@
-import json
 import asyncio
-from typing import Dict, Any, Callable, Awaitable, Optional
+import json
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 try:
-    from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
+    from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 except ImportError:
     AIOKafkaProducer = None
     AIOKafkaConsumer = None

@@ -10,11 +10,12 @@ Tests cover:
 - Unhappy paths: Invalid/missing/expired tokens return 401
 - Public routes bypass authentication
 """
-import pytest
-from httpx import AsyncClient, ASGITransport
 from datetime import datetime, timedelta, timezone
-from jose import jwt
 from unittest.mock import patch
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+from jose import jwt
 
 # Import the app
 from backend.api.main import app

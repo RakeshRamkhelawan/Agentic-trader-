@@ -4,15 +4,13 @@ Unhappy Path Tests for Event Schemas.
 Tests validation errors, edge cases, and invalid data.
 """
 
-import pytest
 from datetime import datetime, timezone
+
+import pytest
 from pydantic import ValidationError
-from backend.events.schemas import (
-    MarketTick,
-    AgentThought,
-    TradeProposal,
-    EventBase
-)
+
+from backend.events.schemas import (AgentThought, EventBase, MarketTick,
+                                    TradeProposal)
 
 
 @pytest.mark.unit

@@ -4,13 +4,15 @@ Sentiment Agent using LLM for market sentiment analysis.
 Uses LLM's generate_structured to analyze market sentiment from context.
 """
 
-from backend.agents.base_agent import BaseAgent
-from typing import Dict, Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
+
 from pydantic import BaseModel, Field
 
+from backend.agents.base_agent import BaseAgent
+
 if TYPE_CHECKING:
-    from backend.llm.provider_interface import LLMProvider
     from backend.events.event_bus import EventBus
+    from backend.llm.provider_interface import LLMProvider
 
 
 class SentimentAnalysis(BaseModel):

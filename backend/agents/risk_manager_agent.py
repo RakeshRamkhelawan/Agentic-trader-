@@ -5,15 +5,11 @@ Beoordeelt trade proposals en genereert RiskAssessment (approve/reject).
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import (
-    TradeProposal,
-    RiskAssessment,
-    RiskDecision,
-    MarketRegime,
-)
+from backend.core.schemas.ooda_types import (MarketRegime, RiskAssessment,
+                                             RiskDecision, TradeProposal)
 from backend.execution.fast_config import FastConfig
 from backend.governance.agent_gatekeeper import AgentRole
 

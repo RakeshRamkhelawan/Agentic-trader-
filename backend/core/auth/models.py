@@ -3,8 +3,8 @@ Auth Models - Data structures for authentication system.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
 
 
 @dataclass

@@ -1,7 +1,8 @@
 import logging
 from math import sqrt
-from backend.schemas.guna import GunaVector
+
 from backend.core.telemetry.metrics import PrometheusMetrics  # NIEUW
+from backend.schemas.guna import GunaVector
 
 # Initialiseer metrics voor deze service
 metrics = PrometheusMetrics("intent_monitor")  # NIEUW

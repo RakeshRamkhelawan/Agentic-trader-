@@ -1,7 +1,8 @@
 
 import asyncio
-import sys
 import os
+import sys
+
 from sqlalchemy import text
 
 # Add current directory to path
@@ -10,7 +11,7 @@ sys.path.append(os.getcwd())
 async def main():
     print("Starting SessionManager check...")
     try:
-        from backend.core.database import SessionManager, AsyncSessionLocal
+        from backend.core.database import AsyncSessionLocal, SessionManager
         
         print("Creating session with system_admin_session()...")
         async with SessionManager.system_admin_session() as session:

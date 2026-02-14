@@ -7,8 +7,8 @@ used by the DecisionAuditLog model (datetime.now(UTC)).
 Revision ID: fix_audit_timestamp_tz
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers
 revision = "fix_audit_ts_tz"

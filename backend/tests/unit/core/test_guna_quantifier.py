@@ -1,4 +1,5 @@
 import pytest
+
 from backend.core.guna_quantifier import GunaQuantifier
 from backend.schemas.guna import GunaVector
 

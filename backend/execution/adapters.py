@@ -2,10 +2,11 @@
 Execution Adapters.
 """
 
-from typing import Optional, List, Dict
 import logging
-from backend.execution.order_executor import ExchangeAdapter
+from typing import Dict, List, Optional
+
 from backend.core.schemas.ooda_types import Order
+from backend.execution.order_executor import ExchangeAdapter
 
 
 class StubExchangeAdapter(ExchangeAdapter):

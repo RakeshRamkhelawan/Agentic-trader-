@@ -3,15 +3,15 @@ Integration tests for cognitive system with event bus and agents.
 Validates full cycle: Market Data → Cognitive Processing → Decision → Execution.
 """
 
-import pytest
 import asyncio
-import numpy as np
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Any, Dict
 from unittest.mock import AsyncMock, MagicMock
 
-from backend.core.system_identity import SystemIdentity
+import numpy as np
+import pytest
 
+from backend.core.system_identity import SystemIdentity
 
 pytestmark = pytest.mark.integration
 

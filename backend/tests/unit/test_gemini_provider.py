@@ -4,11 +4,12 @@ Tests for Gemini LLM Provider.
 TDD Test Suite - Write tests FIRST before implementation.
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from pydantic import BaseModel
-from backend.llm.provider_interface import LLMProvider
 
+import pytest
+from pydantic import BaseModel
+
+from backend.llm.provider_interface import LLMProvider
 
 pytestmark = pytest.mark.unit
 

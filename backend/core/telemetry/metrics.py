@@ -1,10 +1,5 @@
-from prometheus_client import (
-    Gauge,
-    Counter,
-    Histogram,
-    generate_latest,
-    CollectorRegistry,
-)
+from prometheus_client import (CollectorRegistry, Counter, Gauge, Histogram,
+                               generate_latest)
 
 
 class PrometheusMetrics:

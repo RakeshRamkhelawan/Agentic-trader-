@@ -3,20 +3,21 @@ Revolut X Trading Client
 Handles crypto trading on Revolut X platform via official API
 """
 
-import os
-import json
 import asyncio
-import httpx
+import json
 import logging
-from typing import Optional, Dict, List, Any
-from datetime import datetime, timedelta
-from dataclasses import dataclass
-from enum import Enum
-import jwt
-from pathlib import Path
-from dotenv import load_dotenv
+import os
 import time
 import uuid
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import httpx
+import jwt
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()

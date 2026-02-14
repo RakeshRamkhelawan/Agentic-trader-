@@ -1,8 +1,9 @@
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List, Tuple
-from dataclasses import dataclass, field
-from pydantic import BaseModel, Field, ConfigDict
+from typing import List, Optional, Tuple
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class OrderStatus(str, Enum):

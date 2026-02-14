@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Callable, Awaitable, Optional
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 
 class MessageBroker(ABC):

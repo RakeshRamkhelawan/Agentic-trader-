@@ -1,6 +1,7 @@
 import os
-from typing import Optional, List
 from functools import cached_property
+from typing import List, Optional
+
 from pydantic import Field  # Explicit import
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

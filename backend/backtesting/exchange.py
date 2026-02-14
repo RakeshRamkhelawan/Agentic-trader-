@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Optional
-from backend.backtesting.models import Trade, OrderSide, Position
+
+from backend.backtesting.models import OrderSide, Position, Trade
 
 
 class SimulatedExchange:

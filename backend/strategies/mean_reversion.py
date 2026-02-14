@@ -1,8 +1,10 @@
-from typing import Optional, Dict, List, Any
-import pandas as pd
 import logging
-from backend.strategies.base import BaseStrategy
+from typing import Any, Dict, List, Optional
+
+import pandas as pd
+
 from backend.market_data.models import UnifiedMarketEvent
+from backend.strategies.base import BaseStrategy
 
 logger = logging.getLogger(__name__)
 
