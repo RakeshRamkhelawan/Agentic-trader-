@@ -3,11 +3,21 @@ OrderExecutor - Order Execution Engine
 
 Handles actual order placement, monitoring, en execution quality tracking.
 This is the execution component voor the OODA pipeline.
+
+Usage with Revolut X:
+    from backend.execution.revolut_x_adapter import RevolutXAdapter
+    from backend.execution.order_executor import OrderExecutor
+    
+    adapter = RevolutXAdapter()
+    await adapter.connect()
+    
+    executor = OrderExecutor(exchange_adapter=adapter)
+    outcome = await executor.execute_trade(execution_plan)
 """
 
 import asyncio
 import logging
-from typing import Optional, Dict
+from typing import Optional, Dict, Protocol
 from datetime import datetime, UTC
 
 from backend.core.schemas.ooda_types import (
@@ -21,6 +31,34 @@ from backend.governance.agent_gatekeeper import AgentGatekeeper, ToolPermission
 class ExecutionError(Exception):
     """Execution error exception."""
     pass
+
+
+class ExchangeAdapterProtocol(Protocol):
+    """
+    Exchange adapter protocol for type checking.
+    
+    Any exchange adapter (mock, Revolut X, CCXT, etc.) must implement
+    these methods to be compatible with OrderExecutor.
+    """
+    
+    async def place_order(
+        self,
+        symbol: str,
+        side: str,
+        order_type: str,
+        quantity: float,
+        price: Optional[float] = None
+    ) -> Order:
+        """Place order on exchange"""
+        ...
+    
+    async def get_order_status(self, order_id: str) -> Order:
+        """Get order status from exchange"""
+        ...
+    
+    async def cancel_order(self, order_id: str) -> bool:
+        """Cancel order on exchange"""
+        ...
 
 
 class ExchangeAdapter:
@@ -114,11 +152,23 @@ class OrderExecutor:
     
     Handles actual order placement on exchanges with slippage
     monitoring en timeout handling.
+    
+    Usage with Revolut X (production):
+        from backend.execution.revolut_x_adapter import RevolutXAdapter
+        
+        adapter = RevolutXAdapter()
+        await adapter.connect()
+        
+        executor = OrderExecutor(exchange_adapter=adapter)
+        outcome = await executor.execute_trade(execution_plan)
+    
+    Usage with mock (testing):
+        executor = OrderExecutor()  # Uses default mock adapter
     """
     
     def __init__(
         self,
-        exchange_adapter: Optional[ExchangeAdapter] = None,
+        exchange_adapter: Optional[ExchangeAdapterProtocol] = None,
         max_slippage_bps: int = 50,  # 0.5% max slippage
         order_timeout: int = 30,  # 30 seconds
         gatekeeper: Optional[AgentGatekeeper] = None
@@ -127,10 +177,11 @@ class OrderExecutor:
         Initialize OrderExecutor.
         
         Args:
-            exchange_adapter: Exchange API adapter
-            max_slippage_bps: Max acceptable slippage in basis points
+            exchange_adapter: Exchange adapter (RevolutXAdapter, CCXT, or None for mock)
+                            ⚠️ None = MOCK adapter (testing only, no real orders!)
+            max_slippage_bps: Max acceptable slippage in basis points (50 = 0.5%)
             order_timeout: Order fill timeout in seconds
-            gatekeeper: Agent authorization service
+            gatekeeper: Agent authorization service (optional)
         """
         self.exchange = exchange_adapter or ExchangeAdapter()
         self.max_slippage_bps = max_slippage_bps
@@ -138,6 +189,13 @@ class OrderExecutor:
         self.gatekeeper = gatekeeper or AgentGatekeeper()
         self.active_orders: Dict[str, Order] = {}
         self.logger = logging.getLogger(self.__class__.__name__)
+        
+        # Log which adapter is being used
+        adapter_type = type(self.exchange).__name__
+        if adapter_type == "ExchangeAdapter":
+            self.logger.warning("[WARNING] Using MOCK ExchangeAdapter - orders will NOT be placed on real exchange!")
+        else:
+            self.logger.info(f"[SUCCESS] Using {adapter_type} for order execution")
     
     async def execute_trade(
         self,

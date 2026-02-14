@@ -157,7 +157,7 @@ class RiskManagerAgent(BaseAgent):
             
             logger.info(
                 f"Risk assessment: {proposal.symbol} {proposal.side} "
-                f"→ {decision.value} (score={assessment.risk_score:.2f})"
+                f"-> {decision.value} (score={assessment.risk_score:.2f})"
             )
             
             return assessment
