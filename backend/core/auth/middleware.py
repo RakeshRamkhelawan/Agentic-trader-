@@ -108,6 +108,13 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # Exact match
         if path in self.PUBLIC_PATHS:
             return True
+        
+        # Prefix match (paths ending with *)
+        for public_path in self.PUBLIC_PATHS:
+            if public_path.endswith("*"):
+                prefix = public_path[:-1]  # Remove the *
+                if path.startswith(prefix):
+                    return True
         # Prefix match for API docs
         if path.startswith("/docs") or path.startswith("/redoc"):
             return True

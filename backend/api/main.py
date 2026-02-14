@@ -15,6 +15,7 @@ from backend.api import approval_api
 from backend.api.websocket_endpoints import router as ws_router
 from backend.api import analytics_api
 from backend.api import backtest_api
+from backend.api import prediction_api
 from backend.observability.metrics import PrometheusMiddleware, metrics_endpoint
 
 # Services
@@ -179,6 +180,8 @@ AuthMiddleware.PUBLIC_PATHS = {
     "/api/v1/auth/callback",
     "/ws",
     "/metrics",
+    "/api/v1/health",  # Prediction service health endpoint
+    "/api/v1/prediction/*",  # Allow public access to all prediction endpoints for integration tests
 }
 
 # Use JWTValidator with Auth0 config
@@ -200,6 +203,7 @@ app.include_router(user_settings_api.router, prefix="/api/v1/settings", tags=["s
 app.include_router(approval_api.router, prefix="/api/v1/approvals", tags=["approvals"])
 app.include_router(analytics_api.router, prefix="/api/v1/analytics", tags=["analytics"])
 app.include_router(backtest_api.router, prefix="/api/v1/backtest", tags=["backtesting"])
+app.include_router(prediction_api.router, prefix="/api/v1", tags=["prediction"])
 app.include_router(ws_router) # /ws endpoint
 
 # Metrics Endpoint

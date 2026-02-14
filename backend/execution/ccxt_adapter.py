@@ -228,6 +228,98 @@ class CCXTAdapter(ExecutionInterface):
             logger.error(f"Get ticker failed: {e}")
             return {}
     
+    # ==================== DATA SCOUT COMPATIBLE METHODS ====================
+    
+    async def fetch_ticker(self, symbol: str) -> Dict[str, Any]:
+        """
+        Fetch ticker data (DataScout compatible).
+        
+        Args:
+            symbol: Trading pair (e.g., 'BTC/USDT')
+        
+        Returns:
+            Dict with: last, volume, bid, ask, timestamp
+        """
+        if not self._exchange:
+            return {
+                'last': 45000.0,
+                'volume': 100.0,
+                'bid': 44999.0,
+                'ask': 45001.0,
+                'timestamp': datetime.now().timestamp()
+            }
+        
+        try:
+            ticker = await asyncio.to_thread(self._exchange.fetch_ticker, symbol)
+            return {
+                'last': ticker.get('last', 0),
+                'volume': ticker.get('baseVolume', 0),  # BTC volume
+                'bid': ticker.get('bid', 0),
+                'ask': ticker.get('ask', 0),
+                'timestamp': ticker.get('timestamp', datetime.now().timestamp())
+            }
+        except Exception as e:
+            logger.error(f"fetch_ticker failed for {symbol}: {e}")
+            raise ValueError(f"Failed to fetch ticker: {e}")
+    
+    async def fetch_orderbook(self, symbol: str, limit: int = 10) -> Dict[str, Any]:
+        """
+        Fetch orderbook snapshot (DataScout compatible).
+        
+        Args:
+            symbol: Trading pair (e.g., 'BTC/USDT')
+            limit: Number of levels per side
+        
+        Returns:
+            Dict with: bids [[price, size], ...], asks [[price, size], ...]
+        """
+        if not self._exchange:
+            return {
+                'bids': [[44999.0, 1.0], [44998.0, 0.5]],
+                'asks': [[45001.0, 1.0], [45002.0, 0.5]]
+            }
+        
+        try:
+            orderbook = await asyncio.to_thread(
+                self._exchange.fetch_order_book,
+                symbol,
+                limit
+            )
+            return {
+                'bids': orderbook.get('bids', [])[:limit],
+                'asks': orderbook.get('asks', [])[:limit],
+                'timestamp': orderbook.get('timestamp', datetime.now().timestamp())
+            }
+        except Exception as e:
+            logger.error(f"fetch_orderbook failed for {symbol}: {e}")
+            return {'bids': [], 'asks': []}
+    
+    async def fetch_funding_rate(self, symbol: str) -> float:
+        """
+        Fetch funding rate for perpetual contracts (DataScout compatible).
+        
+        Args:
+            symbol: Trading pair
+        
+        Returns:
+            Funding rate (0.0 if not applicable)
+        """
+        if not self._exchange:
+            return 0.0001  # Mock
+        
+        try:
+            # Only applicable for perpetual/futures contracts
+            if hasattr(self._exchange, 'fetch_funding_rate'):
+                funding = await asyncio.to_thread(
+                    self._exchange.fetch_funding_rate,
+                    symbol
+                )
+                return funding.get('fundingRate', 0.0)
+            return 0.0  # Spot market has no funding
+        except Exception as e:
+            logger.debug(f"fetch_funding_rate not available for {symbol}: {e}")
+            return 0.0
+    
     async def cancel_all_orders(self):
         """Cancel all open orders."""
         if not self._exchange:
