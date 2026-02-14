@@ -1,28 +1,32 @@
 """
 Async Cache Layer - High-performance Redis-based caching.
 """
+
 import json
 import logging
-from typing import Any, Optional, Union, Dict, List
+from typing import Any, Dict, List, Optional, Union
+
 import redis.asyncio as redis
+
 from backend.core.config.settings import settings
 
 logger = logging.getLogger(__name__)
+
 
 class AsyncCacheLayer:
     """
     Asynchronous cache manager for the Agentic Trader Platform.
     Wraps Redis to provide typed access and standard patterns.
     """
-    
-    _instance: Optional['AsyncCacheLayer'] = None
+
+    _instance: Optional["AsyncCacheLayer"] = None
 
     def __init__(self, redis_url: str = None):
         self.redis_url = redis_url or settings.REDIS_URL
         self.client: Optional[redis.Redis] = None
 
     @classmethod
-    def get_instance(cls) -> 'AsyncCacheLayer':
+    def get_instance(cls) -> "AsyncCacheLayer":
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
@@ -91,7 +95,9 @@ class AsyncCacheLayer:
         """Get cached tickers."""
         return await self.get(f"tickers:{source}")
 
-    async def set_tickers(self, tickers: Dict[str, Any], source: str = "aggregator", ttl: int = 60):
+    async def set_tickers(
+        self, tickers: Dict[str, Any], source: str = "aggregator", ttl: int = 60
+    ):
         """Cache tickers."""
         await self.set(f"tickers:{source}", tickers, ttl=ttl)
 
@@ -99,9 +105,12 @@ class AsyncCacheLayer:
         """Get cached instruments list for an exchange."""
         return await self.get(f"instruments:{exchange}")
 
-    async def set_instruments(self, instruments: List[Dict[str, Any]], exchange: str, ttl: int = 3600):
+    async def set_instruments(
+        self, instruments: List[Dict[str, Any]], exchange: str, ttl: int = 3600
+    ):
         """Cache instruments list."""
         await self.set(f"instruments:{exchange}", instruments, ttl=ttl)
+
 
 # Global Accessor
 def get_cache() -> AsyncCacheLayer:

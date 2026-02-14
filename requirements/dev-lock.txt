@@ -427,7 +427,7 @@ pytz==2025.2
     # via
     #   clickhouse-connect
     #   pandas
-pywin32==311
+pywin32==311; platform_system=="Windows"
     # via mcp
 pyyaml==6.0.3
     # via

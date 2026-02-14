@@ -165,13 +165,18 @@ def _make_polymarket_markets() -> pd.DataFrame:
     )
 
 
-def _make_polymarket_blocks(ctf_trades: pd.DataFrame, legacy_trades: pd.DataFrame) -> pd.DataFrame:
+def _make_polymarket_blocks(
+    ctf_trades: pd.DataFrame, legacy_trades: pd.DataFrame
+) -> pd.DataFrame:
     """Build blocks DataFrame with an entry for every exact block_number in trades.
 
     Needed by PolymarketTradesOverTimeAnalysis (direct join) and volume/animated
     analyses (bucketed join — all blocks fall in bucket 0 since block_number < 10800).
     """
-    block_numbers = sorted(set(ctf_trades["block_number"].tolist()) | set(legacy_trades["block_number"].tolist()))
+    block_numbers = sorted(
+        set(ctf_trades["block_number"].tolist())
+        | set(legacy_trades["block_number"].tolist())
+    )
     base_time = pd.Timestamp("2024-06-01 12:00:00", tz="UTC")
 
     return pd.DataFrame(
@@ -239,7 +244,10 @@ def collateral_lookup_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
     p.write_text(
         json.dumps(
             {
-                "0xfpmm_address_a": {"collateral_symbol": "USDC", "collateral_decimals": 6},
+                "0xfpmm_address_a": {
+                    "collateral_symbol": "USDC",
+                    "collateral_decimals": 6,
+                },
             }
         )
     )

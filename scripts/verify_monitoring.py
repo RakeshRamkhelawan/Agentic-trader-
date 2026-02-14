@@ -54,22 +54,18 @@ class MonitoringVerifier:
                 self.add_check(
                     "Metrics endpoint accessible",
                     True,
-                    f"Status: {response.status_code}"
+                    f"Status: {response.status_code}",
                 )
                 return True
             else:
                 self.add_check(
                     "Metrics endpoint accessible",
                     False,
-                    f"Status: {response.status_code}"
+                    f"Status: {response.status_code}",
                 )
                 return False
         except Exception as e:
-            self.add_check(
-                "Metrics endpoint accessible",
-                False,
-                f"Error: {str(e)}"
-            )
+            self.add_check("Metrics endpoint accessible", False, f"Error: {str(e)}")
             return False
 
     def check_metrics_format(self) -> bool:
@@ -89,7 +85,7 @@ class MonitoringVerifier:
             self.add_check(
                 "Metrics format valid",
                 valid,
-                f"HELP: {has_help}, TYPE: {has_type}, Metrics: {has_metrics}"
+                f"HELP: {has_help}, TYPE: {has_type}, Metrics: {has_metrics}",
             )
             return valid
         except Exception as e:
@@ -109,7 +105,7 @@ class MonitoringVerifier:
                 "prediction_request_duration_seconds",
                 "prediction_signals_generated_total",
                 "prediction_analysis_jobs_total",
-                "prediction_circuit_breaker_state"
+                "prediction_circuit_breaker_state",
             ]
 
             missing = []
@@ -121,7 +117,7 @@ class MonitoringVerifier:
             self.add_check(
                 "Required metrics present",
                 passed,
-                f"Found: {len(required_metrics) - len(missing)}/{len(required_metrics)}"
+                f"Found: {len(required_metrics) - len(missing)}/{len(required_metrics)}",
             )
             if missing:
                 print(f"       Missing: {', '.join(missing)}")
@@ -136,9 +132,7 @@ class MonitoringVerifier:
             response = self.client.get(f"{self.prometheus_url}/api/v1/status/config")
             passed = response.status_code == 200
             self.add_check(
-                "Prometheus connectivity",
-                passed,
-                f"Status: {response.status_code}"
+                "Prometheus connectivity", passed, f"Status: {response.status_code}"
             )
             return passed
         except Exception as e:
@@ -150,20 +144,26 @@ class MonitoringVerifier:
         try:
             response = self.client.get(f"{self.prometheus_url}/api/v1/targets")
             if response.status_code != 200:
-                self.add_check("Prometheus targets", False, f"Status: {response.status_code}")
+                self.add_check(
+                    "Prometheus targets", False, f"Status: {response.status_code}"
+                )
                 return False
 
             data = response.json()
             targets = data.get("data", {}).get("activeTargets", [])
-            
+
             # Find prediction-intelligence target
-            pred_targets = [t for t in targets if t.get("labels", {}).get("job") == "prediction-intelligence"]
-            
+            pred_targets = [
+                t
+                for t in targets
+                if t.get("labels", {}).get("job") == "prediction-intelligence"
+            ]
+
             if not pred_targets:
                 self.add_check(
                     "Prediction intelligence target",
                     False,
-                    "Target not found in Prometheus"
+                    "Target not found in Prometheus",
                 )
                 return False
 
@@ -172,7 +172,7 @@ class MonitoringVerifier:
             self.add_check(
                 "Prediction intelligence target",
                 state,
-                f"Health: {target.get('health')}"
+                f"Health: {target.get('health')}",
             )
             return state
         except Exception as e:
@@ -186,20 +186,22 @@ class MonitoringVerifier:
             query = "prediction_requests_total"
             url = f"{self.prometheus_url}/api/v1/query"
             params = {"query": query}
-            
+
             response = self.client.get(url, params=params)
             if response.status_code != 200:
-                self.add_check("Metric data available", False, f"Query failed: {response.status_code}")
+                self.add_check(
+                    "Metric data available",
+                    False,
+                    f"Query failed: {response.status_code}",
+                )
                 return False
 
             data = response.json()
             results = data.get("data", {}).get("result", [])
-            
+
             passed = len(results) > 0
             self.add_check(
-                "Metric data available",
-                passed,
-                f"Found {len(results)} metric series"
+                "Metric data available", passed, f"Found {len(results)} metric series"
             )
             return passed
         except Exception as e:
@@ -258,12 +260,12 @@ def main():
     parser.add_argument(
         "--metrics-url",
         default="http://localhost:8002/metrics",
-        help="Metrics endpoint URL (default: http://localhost:8002/metrics)"
+        help="Metrics endpoint URL (default: http://localhost:8002/metrics)",
     )
     parser.add_argument(
         "--prometheus-url",
         default="http://localhost:9090",
-        help="Prometheus server URL (default: http://localhost:9090)"
+        help="Prometheus server URL (default: http://localhost:9090)",
     )
 
     args = parser.parse_args()

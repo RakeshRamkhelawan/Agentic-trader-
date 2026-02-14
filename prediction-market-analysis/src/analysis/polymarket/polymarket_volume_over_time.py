@@ -31,11 +31,18 @@ class PolymarketVolumeOverTimeAnalysis(Analysis):
             description="Quarterly notional volume analysis for Polymarket",
         )
         base_dir = Path(__file__).parent.parent.parent.parent
-        self.trades_dir = Path(trades_dir or base_dir / "data" / "polymarket" / "trades")
-        self.legacy_trades_dir = Path(legacy_trades_dir or base_dir / "data" / "polymarket" / "legacy_trades")
-        self.blocks_dir = Path(blocks_dir or base_dir / "data" / "polymarket" / "blocks")
+        self.trades_dir = Path(
+            trades_dir or base_dir / "data" / "polymarket" / "trades"
+        )
+        self.legacy_trades_dir = Path(
+            legacy_trades_dir or base_dir / "data" / "polymarket" / "legacy_trades"
+        )
+        self.blocks_dir = Path(
+            blocks_dir or base_dir / "data" / "polymarket" / "blocks"
+        )
         self.collateral_lookup_path = Path(
-            collateral_lookup_path or base_dir / "data" / "polymarket" / "fpmm_collateral_lookup.json"
+            collateral_lookup_path
+            or base_dir / "data" / "polymarket" / "fpmm_collateral_lookup.json"
         )
 
     def run(self) -> AnalysisOutput:
@@ -45,7 +52,11 @@ class PolymarketVolumeOverTimeAnalysis(Analysis):
         # Load USDC market addresses from collateral lookup (only include USDC markets)
         with open(self.collateral_lookup_path) as f:
             collateral_lookup = json.load(f)
-        usdc_markets = [addr for addr, info in collateral_lookup.items() if info["collateral_symbol"] == "USDC"]
+        usdc_markets = [
+            addr
+            for addr, info in collateral_lookup.items()
+            if info["collateral_symbol"] == "USDC"
+        ]
 
         # Create blocks lookup table with bucket index for efficient joining
         con.execute(
@@ -61,7 +72,9 @@ class PolymarketVolumeOverTimeAnalysis(Analysis):
 
         # Register USDC markets as a table for filtering
         con.execute("CREATE TABLE usdc_markets (fpmm_address VARCHAR)")
-        con.executemany("INSERT INTO usdc_markets VALUES (?)", [(addr,) for addr in usdc_markets])
+        con.executemany(
+            "INSERT INTO usdc_markets VALUES (?)", [(addr,) for addr in usdc_markets]
+        )
 
         # Legacy FPMM trades: amount is in USDC (6 decimals) for USDC-collateralized markets
         # Only include markets with USDC collateral
@@ -118,7 +131,10 @@ class PolymarketVolumeOverTimeAnalysis(Analysis):
         bars = ax.bar(df["quarter"], df["volume_usd"] / 1e6, width=80, color="#4C72B0")
         bars[-1].set_hatch("//")
         bars[-1].set_edgecolor((1, 1, 1, 0.3))
-        labels = [f"${v / 1e3:.2f}B" if v > 999 else f"${v:.2f}M" for v in df["volume_usd"] / 1e6]
+        labels = [
+            f"${v / 1e3:.2f}B" if v > 999 else f"${v:.2f}M"
+            for v in df["volume_usd"] / 1e6
+        ]
         ax.bar_label(
             bars,
             labels=labels,

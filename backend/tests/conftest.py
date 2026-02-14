@@ -2,42 +2,50 @@
 Test configuration for integration tests.
 Adds project root to Python path to allow 'backend' module imports.
 """
-import sys
+
 import os
+import sys
+
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 # Add project root (two levels up from this file) to Python path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Verify backend module is importable
 try:
     import backend
+
     print(f"[OK] Successfully imported backend module from {backend.__file__}")
 except ImportError as e:
     print(f"[FAIL] Failed to import backend module: {e}")
     print(f"  Python path: {sys.path}")
+
 
 @pytest.fixture
 async def async_client() -> AsyncClient:
     """Async HTTPX client for FastAPI app with auto lifespan."""
     # Import inside fixture to avoid circular imports during collection
     from backend.api.main import app
-    
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
 
+
+from uuid import uuid4
+
 # ============================================================================
 # SHARED DATABASE FIXTURES
 # ============================================================================
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+
 import backend.core.database
 from backend.core.database import SessionManager
-from uuid import uuid4
+
 
 @pytest.fixture(scope="function", autouse=True)
 async def patch_database_engine():
@@ -46,38 +54,40 @@ async def patch_database_engine():
     # Ensure it's using asyncpg
     if "postgresql://" in db_url and "asyncpg" not in db_url:
         db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
-        
+
     engine = create_async_engine(db_url, echo=False)
-    TestingSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
-    
+    TestingSessionLocal = sessionmaker(
+        bind=engine, class_=AsyncSession, expire_on_commit=False
+    )
+
     # Patch
     original = backend.core.database.AsyncSessionLocal
     backend.core.database.AsyncSessionLocal = TestingSessionLocal
-    
+
     yield
-    
+
     # Restore
     backend.core.database.AsyncSessionLocal = original
     await engine.dispose()
+
 
 @pytest.fixture
 async def system_db():
     async with SessionManager.system_admin_session() as session:
         yield session
 
+
 @pytest.fixture
 def unique_email():
     return f"test_user_{uuid4().hex[:8]}@example.com"
 
+
 # ============================================================================
 # SHARED AGENT FIXTURES
 # ============================================================================
-from backend.core.schemas.ooda_types import (
-    Observation,
-    Orientation,
-    TradeProposal,
-    MarketRegime
-)
+from backend.core.schemas.ooda_types import (MarketRegime, Observation,
+                                             Orientation, TradeProposal)
+
 
 @pytest.fixture
 def sample_observation():
@@ -87,12 +97,13 @@ def sample_observation():
         price=50000.0,
         volume=100.5,
         orderbook={
-            'bids': [[49999, 10.0], [49998, 5.0]],
-            'asks': [[50001, 8.0], [50002, 3.0]]
+            "bids": [[49999, 10.0], [49998, 5.0]],
+            "asks": [[50001, 8.0], [50002, 3.0]],
         },
         funding_rate=0.0001,
-        social_sentiment=0.5
+        social_sentiment=0.5,
     )
+
 
 @pytest.fixture
 def bullish_orientation():
@@ -103,8 +114,9 @@ def bullish_orientation():
         indicators={"rsi": 65.0, "macd": 100.0},
         core_sentiment=0.8,
         rag_context=["Historical bull run pattern detected"],
-        confidence=0.75
+        confidence=0.75,
     )
+
 
 @pytest.fixture
 def bearish_orientation():
@@ -114,8 +126,9 @@ def bearish_orientation():
         regime=MarketRegime.TRENDING_DOWN,
         indicators={"rsi": 35.0, "macd": -50.0},
         core_sentiment=0.3,
-        confidence=0.70
+        confidence=0.70,
     )
+
 
 @pytest.fixture
 def sample_proposal():
@@ -130,30 +143,39 @@ def sample_proposal():
         take_profit=52000.0,
         rationale="Bullish momentum",
         strategy_id="momentum_v1",
-        confidence=0.75
+        confidence=0.75,
     )
 
-from unittest.mock import Mock, AsyncMock
+
+from unittest.mock import AsyncMock, Mock
+
 from backend.agents.fund_manager_agent import FundManagerAgent
-from backend.core.schemas.ooda_types import PortfolioState, RiskAssessment, RiskDecision
+from backend.core.schemas.ooda_types import (PortfolioState, RiskAssessment,
+                                             RiskDecision)
+
 
 @pytest.fixture
 def mock_data_source():
     """Mock data source."""
     source = Mock()
-    source.fetch_ticker = AsyncMock(return_value={
-        'last': 50000.0,
-        'volume': 100.5,
-        'bid': 49999.0,
-        'ask': 50001.0,
-        'timestamp': 1234567890.0
-    })
-    source.fetch_orderbook = AsyncMock(return_value={
-        'bids': [[49999, 10.0], [49998, 5.0]],
-        'asks': [[50001, 8.0], [50002, 3.0]]
-    })
+    source.fetch_ticker = AsyncMock(
+        return_value={
+            "last": 50000.0,
+            "volume": 100.5,
+            "bid": 49999.0,
+            "ask": 50001.0,
+            "timestamp": 1234567890.0,
+        }
+    )
+    source.fetch_orderbook = AsyncMock(
+        return_value={
+            "bids": [[49999, 10.0], [49998, 5.0]],
+            "asks": [[50001, 8.0], [50002, 3.0]],
+        }
+    )
     source.fetch_funding_rate = AsyncMock(return_value=0.0001)
     return source
+
 
 @pytest.fixture
 def mock_event_bus():
@@ -162,14 +184,14 @@ def mock_event_bus():
     bus.publish = AsyncMock(return_value="msg-id-123")
     return bus
 
+
 @pytest.fixture
 def fund_manager():
     """Create FundManager instance."""
     return FundManagerAgent(
-        max_position_pct=0.10,
-        max_total_exposure=0.90,
-        kelly_multiplier=0.5
+        max_position_pct=0.10, max_total_exposure=0.90, kelly_multiplier=0.5
     )
+
 
 @pytest.fixture
 def sample_portfolio():
@@ -178,8 +200,9 @@ def sample_portfolio():
         total_equity=10000.0,
         available_capital=5000.0,
         total_exposure_pct=0.50,
-        num_open_positions=2
+        num_open_positions=2,
     )
+
 
 @pytest.fixture
 def sample_risk_assessment():
@@ -189,15 +212,18 @@ def sample_risk_assessment():
         decision=RiskDecision.APPROVE,
         rationale="Low risk trade with strong risk/reward ratio",
         risk_score=0.3,
-        win_probability=0.6
+        win_probability=0.6,
     )
 
-from backend.agents.researcher_agents import BullResearcher, BearResearcher
+
+from backend.agents.researcher_agents import BearResearcher, BullResearcher
+
 
 @pytest.fixture
 def bull_researcher():
     """Create BullResearcher instance."""
     return BullResearcher()
+
 
 @pytest.fixture
 def bear_researcher():

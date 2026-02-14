@@ -1,11 +1,12 @@
-import pytest
 import os
-import yaml
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
+import pytest
+import yaml
+
 # We importeren classes die nog niet bestaan (TDD)
-from backend.feature_store.registry import FeatureRegistry, FeatureDefinition
+from backend.feature_store.registry import FeatureDefinition, FeatureRegistry
 from backend.feature_store.service import FeatureService
 
 # --- FIXTURES ---

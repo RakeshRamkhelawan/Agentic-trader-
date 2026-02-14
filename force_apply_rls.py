@@ -1,25 +1,25 @@
-
 import sys
 import os
 from sqlalchemy import create_engine, text
 from backend.core.config.settings import settings
 
+
 def apply_rls_fix():
     print("🔧 Applying RLS Fix (Sync)...")
-    
+
     # Candidate URLs (SYNC)
     # Default settings.DATABASE_URL is likely sync "postgresql://..."
     urls = [
         "postgresql://trader:trading_secure@localhost:5455/trading_db",
         "postgresql://app:app_secure@localhost:5455/trading_db",
-        "postgresql://rsram@localhost:5432/agentic_trader", # Default
-        "postgresql://postgres@localhost:5432/agentic_trader", # Root fallback
-        str(settings.DATABASE_URL) # From settings
+        "postgresql://rsram@localhost:5432/agentic_trader",  # Default
+        "postgresql://postgres@localhost:5432/agentic_trader",  # Root fallback
+        str(settings.DATABASE_URL),  # From settings
     ]
-    
+
     engine = None
     connected = False
-    
+
     for url in urls:
         print(f"Trying connection: {url}")
         try:
@@ -34,7 +34,7 @@ def apply_rls_fix():
         except Exception as e:
             print(f"❌ Failed: {e}")
             curr_engine.dispose()
-            
+
     if not connected:
         print("CRITICAL: All connection attempts failed. Cannot apply RLS fix.")
         return
@@ -97,14 +97,14 @@ def apply_rls_fix():
                 OR current_setting('app.current_tenant', true)::text = 'system_admin'
             )
         )
-        """
+        """,
     ]
-    
+
     with engine.begin() as conn:
         for sql in sqls:
             print(f"Executing: {sql[:50]}...")
             conn.execute(text(sql))
-            
+
     engine.dispose()
     print("✅ RLS Policies Updated Successfully")
 

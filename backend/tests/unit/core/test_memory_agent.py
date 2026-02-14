@@ -1,7 +1,10 @@
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
+
 from backend.core.memory_agent import MemoryAgent
+
 
 @pytest.fixture
 def mock_chroma_client():

@@ -1,7 +1,10 @@
-import pytest
 import os
 from unittest.mock import MagicMock, patch
-from backend.storage.migrations.migration_manager import MigrationManager, MigrationError
+
+import pytest
+
+from backend.storage.migrations.migration_manager import (MigrationError,
+                                                          MigrationManager)
 
 # --- UNHAPPY PATHS ---
 

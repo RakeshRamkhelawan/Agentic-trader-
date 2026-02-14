@@ -1,11 +1,14 @@
 
-import pytest
 import asyncio
-from httpx import AsyncClient
-from uuid import uuid4
-from sqlalchemy import text
-from backend.models.orders import OrderStatus
 from datetime import datetime
+from uuid import uuid4
+
+import pytest
+from httpx import AsyncClient
+from sqlalchemy import text
+
+from backend.models.orders import OrderStatus
+
 
 @pytest.mark.asyncio
 async def test_13_create_order(async_client, system_db):
@@ -52,7 +55,7 @@ async def test_14_rls_orders_isolation(system_db):
     CRITICAL: Verify Orders are isolated by Tenant ID.
     """
     from backend.core.database import SessionManager
-    
+
     # 1. Setup: Two Tenants
     tenant_a = f"tenant-A-{uuid4().hex[:8]}"
     tenant_b = f"tenant-B-{uuid4().hex[:8]}"
@@ -95,7 +98,7 @@ async def test_15_system_admin_orders_access(system_db):
     Verify System Admin can see orders from ALL tenants.
     """
     from backend.core.database import SessionManager
-    
+
     # Setup
     tenant_c = f"tenant-C-{uuid4().hex[:8]}"
     order_c_id = str(uuid4())

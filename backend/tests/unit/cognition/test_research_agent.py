@@ -1,8 +1,11 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 import respx
 from httpx import Response
-from unittest.mock import MagicMock, AsyncMock
+
 from backend.services.research_agent import ResearchAgent
+
 
 @pytest.fixture
 def mock_memory():

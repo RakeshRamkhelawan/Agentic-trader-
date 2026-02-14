@@ -1,12 +1,14 @@
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List, Tuple
-from dataclasses import dataclass, field
-from pydantic import BaseModel, Field, ConfigDict
+from typing import List, Optional, Tuple
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class OrderStatus(str, Enum):
     """Order status enum for execution updates."""
+
     PENDING = "pending"
     OPEN = "open"
     PARTIALLY_FILLED = "partially_filled"
@@ -21,12 +23,13 @@ class MarketTick(BaseModel):
     Standardized Market Data Event.
     Represents a single trade or quote update.
     """
+
     symbol: str
     price: float = Field(gt=0, description="Price must be positive")
     volume: float = Field(ge=0, description="Volume cannot be negative")
     timestamp: datetime = Field(default_factory=datetime.now)
     source: str = "unknown"
-    
+
     # Performance optimalisatie voor Pydantic V2
     model_config = ConfigDict(frozen=True)
 
@@ -34,6 +37,7 @@ class MarketTick(BaseModel):
 @dataclass
 class TickerUpdate:
     """Real-time price ticker update from WebSocket stream."""
+
     symbol: str
     bid: float
     ask: float
@@ -41,12 +45,12 @@ class TickerUpdate:
     volume_24h: float
     timestamp: datetime = field(default_factory=datetime.utcnow)
     source: str = "unknown"
-    
+
     @property
     def spread(self) -> float:
         """Calculate bid-ask spread."""
         return self.ask - self.bid
-    
+
     @property
     def mid_price(self) -> float:
         """Calculate mid price."""
@@ -56,21 +60,22 @@ class TickerUpdate:
 @dataclass
 class OrderBook:
     """Order book snapshot from WebSocket stream."""
+
     symbol: str
     bids: List[Tuple[float, float]]  # [(price, size), ...]
     asks: List[Tuple[float, float]]  # [(price, size), ...]
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    
+
     @property
     def best_bid(self) -> Optional[float]:
         """Get best bid price."""
         return self.bids[0][0] if self.bids else None
-    
+
     @property
     def best_ask(self) -> Optional[float]:
         """Get best ask price."""
         return self.asks[0][0] if self.asks else None
-    
+
     @property
     def spread(self) -> Optional[float]:
         """Calculate spread."""
@@ -82,6 +87,7 @@ class OrderBook:
 @dataclass
 class OrderUpdate:
     """Order status update from WebSocket stream."""
+
     order_id: str
     status: OrderStatus
     filled_qty: float
@@ -89,4 +95,4 @@ class OrderUpdate:
     timestamp: datetime = field(default_factory=datetime.utcnow)
     remaining_qty: float = 0.0
     fee: float = 0.0
-    fee_currency: str = "" 
+    fee_currency: str = ""

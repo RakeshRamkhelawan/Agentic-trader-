@@ -65,7 +65,11 @@ class Indexer(ABC):
                 continue
 
             for _, obj in inspect.getmembers(module, inspect.isclass):
-                if issubclass(obj, cls) and obj is not cls and not inspect.isabstract(obj):
+                if (
+                    issubclass(obj, cls)
+                    and obj is not cls
+                    and not inspect.isabstract(obj)
+                ):
                     indexers.append(obj)
 
         return indexers

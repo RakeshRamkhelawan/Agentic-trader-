@@ -81,7 +81,9 @@ class YesVsNoByPriceAnalysis(Analysis):
         ).df()
 
         # Calculate percentages for 100% stacked bar
-        df["total"] = df["taker_yes"] + df["taker_no"] + df["maker_yes"] + df["maker_no"]
+        df["total"] = (
+            df["taker_yes"] + df["taker_no"] + df["maker_yes"] + df["maker_no"]
+        )
         df["taker_yes_pct"] = df["taker_yes"] / df["total"] * 100
         df["taker_no_pct"] = df["taker_no"] / df["total"] * 100
         df["maker_yes_pct"] = df["maker_yes"] / df["total"] * 100
@@ -96,7 +98,13 @@ class YesVsNoByPriceAnalysis(Analysis):
         """Create the matplotlib figure."""
         fig, ax = plt.subplots(figsize=(12, 6))
 
-        ax.bar(df["price"], df["taker_yes_pct"], width=1, color="#2ecc71", label="Taker YES")
+        ax.bar(
+            df["price"],
+            df["taker_yes_pct"],
+            width=1,
+            color="#2ecc71",
+            label="Taker YES",
+        )
         ax.bar(
             df["price"],
             df["maker_yes_pct"],

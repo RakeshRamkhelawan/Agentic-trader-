@@ -98,7 +98,9 @@ class WinRateByTradeSizeAnalysis(Analysis):
         ci_upper = df["ci_upper"].values * 100
 
         # Plot confidence band
-        ax.fill_between(x, ci_lower, ci_upper, alpha=0.2, color="#4C72B0", label="95% CI")
+        ax.fill_between(
+            x, ci_lower, ci_upper, alpha=0.2, color="#4C72B0", label="95% CI"
+        )
 
         # Plot line
         ax.plot(

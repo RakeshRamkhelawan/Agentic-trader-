@@ -133,7 +133,9 @@ class MakerVsTakerReturnsAnalysis(Analysis):
         """Create the matplotlib figure."""
         df_sorted = df.sort_values("price")
         maker_counterparty = (
-            df_sorted.set_index("price")["maker_excess"].reindex(100 - df_sorted["price"].values).values
+            df_sorted.set_index("price")["maker_excess"]
+            .reindex(100 - df_sorted["price"].values)
+            .values
         )
 
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -153,8 +155,15 @@ class MakerVsTakerReturnsAnalysis(Analysis):
             label="Maker (counterparty)",
             alpha=0.8,
         )
-        ax.fill_between(df_sorted["price"], df_sorted["taker_excess"] * 100, alpha=0.2, color="#e74c3c")
-        ax.fill_between(df_sorted["price"], maker_counterparty * 100, alpha=0.2, color="#2ecc71")
+        ax.fill_between(
+            df_sorted["price"],
+            df_sorted["taker_excess"] * 100,
+            alpha=0.2,
+            color="#e74c3c",
+        )
+        ax.fill_between(
+            df_sorted["price"], maker_counterparty * 100, alpha=0.2, color="#2ecc71"
+        )
         ax.axhline(y=0, color="gray", linestyle="--", linewidth=0.8)
         ax.set_xlabel("Contract Price (cents)")
         ax.set_ylabel("Excess Return (pp)")
@@ -172,7 +181,9 @@ class MakerVsTakerReturnsAnalysis(Analysis):
             {
                 "price": int(row["price"]),
                 "Taker": round(row["taker_excess"] * 100, 2),
-                "Maker (counterparty)": round(maker_by_price.get(100 - row["price"], 0) * 100, 2),
+                "Maker (counterparty)": round(
+                    maker_by_price.get(100 - row["price"], 0) * 100, 2
+                ),
             }
             for _, row in df.iterrows()
         ]

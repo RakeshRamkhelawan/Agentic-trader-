@@ -14,24 +14,19 @@ Test Classes:
 All tests are production-ready with proper fixtures and assertions.
 """
 
-import pytest
 import asyncio
-from datetime import datetime, timedelta, timezone
-from typing import Dict, Any
-from unittest.mock import Mock, AsyncMock, patch
 import statistics
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 # Import classes from production implementation
-from backend.api.dashboard import (
-    MetricsProvider,
-    RealMetricsProvider,
-    DashboardAPI,
-    RealtimeMetricsService,
-    AlertService,
-    HistoricalAnalyticsService,
-    DashboardIntegration,
-)
-
+from backend.api.dashboard import (AlertService, DashboardAPI,
+                                   DashboardIntegration,
+                                   HistoricalAnalyticsService, MetricsProvider,
+                                   RealMetricsProvider, RealtimeMetricsService)
 
 # ============================================================================
 # FIXTURES

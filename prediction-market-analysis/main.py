@@ -28,7 +28,9 @@ def analyze(name: str | None = None):
             for analysis_cls in analyses:
                 instance = analysis_cls()
                 print(f"Running: {instance.name}")
-                saved = instance.save(output_dir, formats=["png", "pdf", "csv", "json", "gif"])
+                saved = instance.save(
+                    output_dir, formats=["png", "pdf", "csv", "json", "gif"]
+                )
                 for fmt, path in saved.items():
                     print(f"  {fmt}: {path}")
             print("\nAll analyses complete.")
@@ -39,7 +41,9 @@ def analyze(name: str | None = None):
             instance = analysis_cls()
             if instance.name == name:
                 print(f"\nRunning: {instance.name}\n")
-                saved = instance.save(output_dir, formats=["png", "pdf", "csv", "json", "gif"])
+                saved = instance.save(
+                    output_dir, formats=["png", "pdf", "csv", "json", "gif"]
+                )
                 print("Saved files:")
                 for fmt, path in saved.items():
                     print(f"  {fmt}: {path}")
@@ -77,7 +81,9 @@ def analyze(name: str | None = None):
         for analysis_cls in analyses:
             instance = analysis_cls()
             print(f"Running: {instance.name}")
-            saved = instance.save(output_dir, formats=["png", "pdf", "csv", "json", "gif"])
+            saved = instance.save(
+                output_dir, formats=["png", "pdf", "csv", "json", "gif"]
+            )
             for fmt, path in saved.items():
                 print(f"  {fmt}: {path}")
         print("\nAll analyses complete.")

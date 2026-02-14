@@ -26,9 +26,15 @@ class PolymarketTradesOverTimeAnalysis(Analysis):
             description="Trade counts per block on Polymarket",
         )
         base_dir = Path(__file__).parent.parent.parent.parent
-        self.trades_dir = Path(trades_dir or base_dir / "data" / "polymarket" / "trades")
-        self.legacy_trades_dir = Path(legacy_trades_dir or base_dir / "data" / "polymarket" / "legacy_trades")
-        self.blocks_dir = Path(blocks_dir or base_dir / "data" / "polymarket" / "blocks")
+        self.trades_dir = Path(
+            trades_dir or base_dir / "data" / "polymarket" / "trades"
+        )
+        self.legacy_trades_dir = Path(
+            legacy_trades_dir or base_dir / "data" / "polymarket" / "legacy_trades"
+        )
+        self.blocks_dir = Path(
+            blocks_dir or base_dir / "data" / "polymarket" / "blocks"
+        )
 
     def run(self) -> AnalysisOutput:
         """Execute the analysis and return outputs."""

@@ -6,13 +6,15 @@ Provides similarity search for historical scenarios and strategy playbooks.
 """
 
 import logging
-from typing import List, Optional, Dict, Any
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, Float, DateTime, Index
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import declarative_base
+from typing import Any, Dict, List, Optional
+
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import select, func
+from sqlalchemy import (Column, DateTime, Float, Index, Integer, String, Text,
+                        func, select)
+from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
+                                    create_async_engine)
+from sqlalchemy.orm import declarative_base
 
 logger = logging.getLogger(__name__)
 
@@ -21,35 +23,32 @@ Base = declarative_base()
 
 class VectorStoreError(Exception):
     """Base exception for vector store operations."""
+
     pass
 
 
 class TradingKnowledge(Base):
     """
     Trading knowledge with vector embeddings.
-    
+
     Stores strategy playbooks, macro events, and historical scenarios
     for retrieval during the Orient phase of OODA.
     """
+
     __tablename__ = "trading_knowledge"
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     content = Column(Text, nullable=False, comment="Knowledge content")
     embedding = Column(Vector(384), nullable=False, comment="Embedding vector")
     category = Column(
-        String(50),
-        nullable=False,
-        comment="Category: playbook, macro_event, scenario"
+        String(50), nullable=False, comment="Category: playbook, macro_event, scenario"
     )
     asset = Column(String(20), nullable=True, comment="Related asset symbol")
     timestamp = Column(
-        DateTime,
-        default=datetime.utcnow,
-        nullable=False,
-        comment="Creation timestamp"
+        DateTime, default=datetime.utcnow, nullable=False, comment="Creation timestamp"
     )
     metadata_json = Column(Text, nullable=True, comment="Additional metadata as JSON")
-    
+
     __table_args__ = (
         Index("idx_category_asset", "category", "asset"),
         Index("idx_embedding_vector", "embedding", postgresql_using="ivfflat"),
@@ -59,10 +58,10 @@ class TradingKnowledge(Base):
 class VectorMemory:
     """
     Async vector memory interface for trading knowledge.
-    
+
     Provides embedding storage and similarity search using pgvector.
     """
-    
+
     def __init__(
         self,
         connection_string: str,
@@ -71,7 +70,7 @@ class VectorMemory:
     ):
         """
         Initialize vector memory.
-        
+
         Args:
             connection_string: PostgreSQL connection string with asyncpg driver
             embedding_dim: Dimension of embedding vectors (default 384 for all-MiniLM-L6-v2)
@@ -79,7 +78,7 @@ class VectorMemory:
         """
         self.connection_string = connection_string
         self.embedding_dim = embedding_dim
-        
+
         try:
             self.engine = create_async_engine(
                 connection_string,
@@ -94,26 +93,26 @@ class VectorMemory:
         except Exception as e:
             logger.error(f"Failed to initialize vector memory: {e}")
             raise VectorStoreError(f"Initialization failed: {e}") from e
-    
+
     async def initialize_schema(self):
         """
         Create tables and extensions if they don't exist.
-        
+
         Requires pgvector extension to be available.
         """
         try:
             async with self.engine.begin() as conn:
                 # Enable pgvector extension
                 await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
-                
+
                 # Create tables
                 await conn.run_sync(Base.metadata.create_all)
-                
+
             logger.info("Vector memory schema initialized")
         except Exception as e:
             logger.error(f"Schema initialization failed: {e}")
             raise VectorStoreError(f"Schema init failed: {e}") from e
-    
+
     async def insert(
         self,
         content: str,
@@ -124,17 +123,17 @@ class VectorMemory:
     ) -> int:
         """
         Insert trading knowledge with embedding.
-        
+
         Args:
             content: Knowledge content text
             embedding: Embedding vector (must match embedding_dim)
             category: Knowledge category (playbook, macro_event, scenario)
             asset: Related asset symbol (optional)
             metadata: Additional metadata dict (optional)
-        
+
         Returns:
             ID of inserted record
-        
+
         Raises:
             VectorStoreError: On insertion failure
         """
@@ -142,11 +141,11 @@ class VectorMemory:
             raise VectorStoreError(
                 f"Embedding dimension mismatch: expected {self.embedding_dim}, got {len(embedding)}"
             )
-        
+
         try:
             async with self.async_session() as session:
                 import json
-                
+
                 knowledge = TradingKnowledge(
                     content=content,
                     embedding=embedding,
@@ -154,18 +153,20 @@ class VectorMemory:
                     asset=asset,
                     metadata_json=json.dumps(metadata) if metadata else None,
                 )
-                
+
                 session.add(knowledge)
                 await session.commit()
                 await session.refresh(knowledge)
-                
-                logger.info(f"Inserted knowledge ID {knowledge.id} (category={category})")
+
+                logger.info(
+                    f"Inserted knowledge ID {knowledge.id} (category={category})"
+                )
                 return knowledge.id
-                
+
         except Exception as e:
             logger.error(f"Insert failed: {e}")
             raise VectorStoreError(f"Insert failed: {e}") from e
-    
+
     async def search_similar(
         self,
         query_embedding: List[float],
@@ -176,17 +177,17 @@ class VectorMemory:
     ) -> List[Dict[str, Any]]:
         """
         Search for similar knowledge using cosine distance.
-        
+
         Args:
             query_embedding: Query embedding vector
             limit: Maximum results to return
             category: Filter by category (optional)
             asset: Filter by asset (optional)
             distance_threshold: Maximum cosine distance (default 1.0)
-        
+
         Returns:
             List of dicts with keys: id, content, distance, category, asset
-        
+
         Raises:
             VectorStoreError: On search failure
         """
@@ -194,7 +195,7 @@ class VectorMemory:
             raise VectorStoreError(
                 f"Query embedding dimension mismatch: expected {self.embedding_dim}"
             )
-        
+
         try:
             async with self.async_session() as session:
                 # Build query with filters
@@ -203,29 +204,32 @@ class VectorMemory:
                     TradingKnowledge.content,
                     TradingKnowledge.category,
                     TradingKnowledge.asset,
-                    TradingKnowledge.embedding.cosine_distance(query_embedding).label("distance")
+                    TradingKnowledge.embedding.cosine_distance(query_embedding).label(
+                        "distance"
+                    ),
                 )
-                
+
                 if category:
                     stmt = stmt.where(TradingKnowledge.category == category)
                 if asset:
                     stmt = stmt.where(TradingKnowledge.asset == asset)
-                
+
                 stmt = stmt.where(
-                    TradingKnowledge.embedding.cosine_distance(query_embedding) < distance_threshold
+                    TradingKnowledge.embedding.cosine_distance(query_embedding)
+                    < distance_threshold
                 )
                 stmt = stmt.order_by("distance")
                 stmt = stmt.limit(limit)
-                
+
                 result = await session.execute(stmt)
                 rows = result.all()
-                
+
                 # Log search
                 logger.info(
                     f"Vector search: {len(rows)} results "
                     f"(category={category}, asset={asset}, limit={limit})"
                 )
-                
+
                 return [
                     {
                         "id": row.id,
@@ -236,11 +240,11 @@ class VectorMemory:
                     }
                     for row in rows
                 ]
-                
+
         except Exception as e:
             logger.error(f"Search failed: {e}")
             raise VectorStoreError(f"Search failed: {e}") from e
-    
+
     async def close(self):
         """Close database connections."""
         await self.engine.dispose()

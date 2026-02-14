@@ -95,7 +95,16 @@ class MakerReturnsByDirectionAnalysis(Analysis):
         df_no = df[df["maker_side"] == "NO"].copy()
 
         comparison = pd.merge(
-            df_yes[["price", "win_rate", "excess_return", "n_trades", "contracts", "volume_usd"]].rename(
+            df_yes[
+                [
+                    "price",
+                    "win_rate",
+                    "excess_return",
+                    "n_trades",
+                    "contracts",
+                    "volume_usd",
+                ]
+            ].rename(
                 columns={
                     "win_rate": "yes_win_rate",
                     "excess_return": "yes_excess",
@@ -104,7 +113,16 @@ class MakerReturnsByDirectionAnalysis(Analysis):
                     "volume_usd": "yes_volume",
                 }
             ),
-            df_no[["price", "win_rate", "excess_return", "n_trades", "contracts", "volume_usd"]].rename(
+            df_no[
+                [
+                    "price",
+                    "win_rate",
+                    "excess_return",
+                    "n_trades",
+                    "contracts",
+                    "volume_usd",
+                ]
+            ].rename(
                 columns={
                     "win_rate": "no_win_rate",
                     "excess_return": "no_excess",
@@ -161,8 +179,16 @@ class MakerReturnsByDirectionAnalysis(Analysis):
         chart_data = [
             {
                 "price": int(row["price"]),
-                "Maker bought YES": round(row["yes_excess"] * 100, 2) if pd.notna(row["yes_excess"]) else None,
-                "Maker bought NO": round(row["no_excess"] * 100, 2) if pd.notna(row["no_excess"]) else None,
+                "Maker bought YES": (
+                    round(row["yes_excess"] * 100, 2)
+                    if pd.notna(row["yes_excess"])
+                    else None
+                ),
+                "Maker bought NO": (
+                    round(row["no_excess"] * 100, 2)
+                    if pd.notna(row["no_excess"])
+                    else None
+                ),
             }
             for _, row in df.iterrows()
         ]

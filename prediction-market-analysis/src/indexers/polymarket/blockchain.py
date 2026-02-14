@@ -17,7 +17,9 @@ CTF_EXCHANGE = "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E"
 NEGRISK_CTF_EXCHANGE = "0xC5d563A36AE78145C45a50134d48A1215220f80a"
 
 # OrderFilled event signature
-ORDER_FILLED_TOPIC = "0xd0a08e8c493f9c94f29311604c9de1b4e8c8d4c06bd0c789af57f2d65bfec0f6"
+ORDER_FILLED_TOPIC = (
+    "0xd0a08e8c493f9c94f29311604c9de1b4e8c8d4c06bd0c789af57f2d65bfec0f6"
+)
 
 # ABI for OrderFilled event
 ORDER_FILLED_ABI = {
@@ -108,7 +110,9 @@ class PolygonClient:
         self.w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
         # Create contract instances for decoding
-        self.ctf_exchange = self.w3.eth.contract(address=Web3.to_checksum_address(CTF_EXCHANGE), abi=[ORDER_FILLED_ABI])
+        self.ctf_exchange = self.w3.eth.contract(
+            address=Web3.to_checksum_address(CTF_EXCHANGE), abi=[ORDER_FILLED_ABI]
+        )
         self.negrisk_exchange = self.w3.eth.contract(
             address=Web3.to_checksum_address(NEGRISK_CTF_EXCHANGE),
             abi=[ORDER_FILLED_ABI],
@@ -149,7 +153,11 @@ class PolygonClient:
         contract_address: str = CTF_EXCHANGE,
     ) -> list[BlockchainTrade]:
         """Fetch OrderFilled events from a block range."""
-        contract = self.ctf_exchange if contract_address.lower() == CTF_EXCHANGE.lower() else self.negrisk_exchange
+        contract = (
+            self.ctf_exchange
+            if contract_address.lower() == CTF_EXCHANGE.lower()
+            else self.negrisk_exchange
+        )
 
         logs = self.w3.eth.get_logs(
             {
@@ -170,7 +178,9 @@ class PolygonClient:
 
         return trades
 
-    def _fetch_chunk(self, start: int, end: int, contract_address: str) -> tuple[list[BlockchainTrade], int, int]:
+    def _fetch_chunk(
+        self, start: int, end: int, contract_address: str
+    ) -> tuple[list[BlockchainTrade], int, int]:
         """Fetch a single chunk of trades. Used by thread pool."""
         try:
             trades = self.get_trades(start, end, contract_address)
@@ -222,7 +232,10 @@ class PolygonClient:
             for batch_start in range(0, len(ranges), max_workers):
                 batch = ranges[batch_start : batch_start + max_workers]
                 futures = {
-                    executor.submit(self._fetch_chunk, start, end, contract_address): (start, end)
+                    executor.submit(self._fetch_chunk, start, end, contract_address): (
+                        start,
+                        end,
+                    )
                     for start, end in batch
                 }
 
