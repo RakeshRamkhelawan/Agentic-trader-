@@ -5,12 +5,16 @@ Verzamelt en normaliseert marktdata tot gestandaardiseerde Observation objects.
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime, UTC
 
 from backend.agents.base_agent import BaseAgent
 from backend.core.schemas.ooda_types import Observation
 from backend.governance.agent_gatekeeper import AgentRole
+from backend.services.prediction_market_client import (
+    get_prediction_client,
+    PredictionSignal
+)
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +108,9 @@ class DataScoutAgent(BaseAgent):
             if include_funding:
                 obs_data['funding_rate'] = await self._fetch_funding_rate(symbol)
             
+            # Fetch prediction market signals
+            obs_data['prediction_signals'] = await self._fetch_prediction_signals(symbol)
+            
             # Create Observation (with validation)
             observation = Observation(**obs_data)
             
@@ -195,6 +202,42 @@ class DataScoutAgent(BaseAgent):
         except Exception as e:
             logger.debug(f"Funding rate not available for {symbol}: {e}")
             return None
+    
+    async def _fetch_prediction_signals(self, symbol: str) -> List[Dict[str, Any]]:
+        """
+        Fetch prediction market signals for symbol.
+        
+        Args:
+            symbol: Trading symbol (BTC, ETH, etc.)
+        
+        Returns:
+            List of signal dicts, empty if service unavailable
+        """
+        try:
+            client = get_prediction_client()
+            signals = await client.get_signals(
+                symbol=symbol,
+                min_confidence=0.5,
+                limit=5
+            )
+            
+            # Convert to dict format for Observation
+            return [
+                {
+                    "id": s.id,
+                    "market": s.market,
+                    "category": s.category,
+                    "signal_type": s.signal_type,
+                    "confidence": s.confidence,
+                    "indicators": s.indicators,
+                    "timestamp": s.timestamp.isoformat(),
+                    "metadata": s.metadata
+                }
+                for s in signals
+            ]
+        except Exception as e:
+            logger.warning(f"Failed to fetch prediction signals for {symbol}: {e}")
+            return []
     
     async def _log_observation(self, trace_id: str, observation: Observation):
         """
