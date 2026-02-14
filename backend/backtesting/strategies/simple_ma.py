@@ -136,8 +136,12 @@ class MovingAverageStrategy(Strategy):
                 )
 
         # Update portfolio value for position sizing
-        portfolio_value = self.exchange.cash + sum(
-            position.quantity * (self.prices[sym][-1] if sym in self.prices and self.prices[sym] else position.current_price)
-            for sym, position in self.exchange.positions.items()
-        )
+        portfolio_value = self.exchange.cash
+        for sym, position in self.exchange.positions.items():
+            # Use latest price for the symbol if available, otherwise use position's current price
+            if sym in self.prices and self.prices[sym]:
+                price = self.prices[sym][-1]
+            else:
+                price = position.current_price
+            portfolio_value += position.quantity * price
         self.update_portfolio_value(portfolio_value)

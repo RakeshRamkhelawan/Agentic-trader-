@@ -181,7 +181,8 @@ class KellyCriterionSizer(PositionSizer):
             warnings.warn(
                 f"Kelly Criterion suggests not trading: negative expectancy "
                 f"(kelly_fraction={kelly_fraction:.4f}, win_rate={p:.2f}, avg_win/loss={b:.2f}). "
-                f"Position size set to 0."
+                f"Position size set to 0.",
+                stacklevel=2
             )
 
         # Use fractional Kelly for safety (typically 0.25x)
