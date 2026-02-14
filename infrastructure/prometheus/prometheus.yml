@@ -9,3 +9,8 @@ scrape_configs:
   - job_name: 'cognitive-orchestrator'
     static_configs:
       - targets: ['metrics-server:8001'] # Haalt metrics op van onze metrics-server
+  - job_name: 'prediction-intelligence'
+    static_configs:
+      - targets: ['prediction-intelligence:8002'] # Prediction market intelligence service
+    metrics_path: '/metrics'
+    scrape_interval: 15s

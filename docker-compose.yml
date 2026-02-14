@@ -7,6 +7,7 @@ services:
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:v23.3.10
     container_name: redpanda
+    restart: on-failure
     command:
       - redpanda start
       - --smp 1 # Beperk CPU gebruik voor dev
@@ -26,11 +27,19 @@ services:
       - "28082:28082"
     volumes:
       - redpanda_data:/var/lib/redpanda/data
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
     healthcheck:
       test: [ "CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'" ]
-      interval: 10s
+      interval: 15s
       timeout: 5s
-      retries: 5
+      retries: 3
 
   # Web UI for Redpanda (Optional but super useful)
   redpanda-console:
@@ -63,39 +72,77 @@ services:
   postgres:
     image: timescale/timescaledb:latest-pg15
     container_name: postgres
+    restart: on-failure
     ports:
       - "5455:5432"
     environment:
       - POSTGRES_USER=trader
       - POSTGRES_PASSWORD=trading_secure
       - POSTGRES_DB=trading_db
+      - POSTGRES_INITDB_ARGS=-c max_connections=200 -c shared_buffers=256MB
     volumes:
       - postgres_data_final:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U trader -d trading_db" ]
-      interval: 10s
+      interval: 15s
       timeout: 5s
-      retries: 5
+      retries: 3
 
-  # 3a. Hot Store (Redis)
   redis:
     image: redis:7.2-alpine
     container_name: redis
+    restart: on-failure
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
-  # 4. Semantic Memory (ChromaDB - Vector Store)
   chromadb:
     image: chromadb/chroma:0.5.0
     container_name: chromadb
+    restart: on-failure
     ports:
       - "8000:8000"
     volumes:
       - chromadb_data:/chroma/chroma
     environment:
       - IS_PERSISTENT=TRUE
+      - CHROMA_HOST=0.0.0.0
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   # 5. Prometheus (Metrics Monitoring)
   prometheus:
@@ -132,7 +179,7 @@ services:
       context: .
       dockerfile: infrastructure/docker/Dockerfile
     container_name: trading-engine
-    restart: unless-stopped
+    restart: on-failure:5
     depends_on:
       - redpanda
       - clickhouse
@@ -152,6 +199,14 @@ services:
       - ./.env:/app/.env
       - ./backend/config/agent_profiles.yaml:/app/backend/config/agent_profiles.yaml # Mount agent profiles
     command: python backend/services/cognitive_orchestrator.py # Start de Orchestrator
+    deploy:
+      resources:
+        limits:
+          cpus: '3'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
 
   # API Server (Main Entrypoint)
   api-server:
@@ -159,7 +214,7 @@ services:
       context: .
       dockerfile: infrastructure/docker/Dockerfile
     container_name: api-server
-    restart: unless-stopped
+    restart: on-failure:5
     depends_on:
       - trading-engine # Zodat metrics van trading-engine kunnen worden opgehaald
     environment:
@@ -171,7 +226,67 @@ services:
     volumes:
       - ./backend:/app/backend
       - ./.env:/app/env
-    command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 # Start de Unified API
+    command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 --workers 2 # Start de Unified API
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 3G
+        reservations:
+          cpus: '1'
+          memory: 1.5G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # Prediction Market Intelligence Service
+  # Analyzes Kalshi & Polymarket data for market intelligence signals
+  prediction-intelligence:
+    build:
+      context: ./prediction-market-analysis
+      dockerfile: Dockerfile
+    container_name: prediction_intelligence
+    restart: on-failure:5
+    ports:
+      - "8002:8002"
+    volumes:
+      # Persistent data storage (parquet files)
+      - ./prediction-market-analysis/data:/app/data
+      # Cache for DuckDB queries
+      - prediction_market_cache:/app/.cache
+      # Output directory for analyses
+      - ./prediction-market-analysis/output:/app/output
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SERVICE_NAME=prediction-intelligence
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # Database connections (shared with main platform)
+      - DATABASE_URL=postgresql+asyncpg://trader:trading_secure@postgres:5432/trading_db
+      - REDIS_URL=redis://redis:6379/2
+      # External API keys (optional)
+      - KALSHI_API_KEY=${KALSHI_API_KEY:-}
+      - POLYGON_RPC=${POLYGON_RPC:-https://polygon-rpc.com}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2.5G
+        reservations:
+          cpus: '1'
+          memory: 1.5G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
 
 volumes:
   postgres_data_final:
@@ -181,3 +296,4 @@ volumes:
   chromadb_data:
   prometheus_data:
   grafana_data:
+  prediction_market_cache:

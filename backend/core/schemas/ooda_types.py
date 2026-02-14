@@ -62,6 +62,10 @@ class Observation(BaseModel):
         default_factory=dict,
         description="Raw ticker data from exchange"
     )
+    prediction_signals: list = Field(
+        default_factory=list,
+        description="Signals from prediction market intelligence service"
+    )
 
 
 class Orientation(BaseModel):
