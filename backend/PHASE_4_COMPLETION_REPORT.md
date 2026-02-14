@@ -7,7 +7,7 @@
 
 Successfully implemented **comprehensive Phase 4 advanced backtesting infrastructure** with:
 - **22/22 tests passing** (17 unit + 5 integration) ✅
-- **99% code coverage** on core modules
+- **~92% average code coverage** on core modules
 - **Production-ready position sizing, slippage, and fill models**
 - **Full strategy integration** with dynamic positioning
 
@@ -15,14 +15,14 @@ Successfully implemented **comprehensive Phase 4 advanced backtesting infrastruc
 
 ## Deliverables
 
-### 1. Slippage Models (95 lines, 94% coverage)
+### 1. Slippage Models (96 lines, 94% coverage)
 **File**: `backend/backtesting/slippage_models.py`
 
 - **FixedSlippageModel**: 5 basis points uniform cost
 - **VolumeSlippageModel**: Market impact scaled by order size vs. volume
 - Used in `on_bar()` callback for realistic execution costs
 
-### 2. Fill Models (127 lines, 94% coverage)
+### 2. Fill Models (99 lines, 94% coverage)
 **File**: `backend/backtesting/fill_models.py`
 
 - **FullFillModel**: All-or-nothing execution
@@ -30,7 +30,7 @@ Successfully implemented **comprehensive Phase 4 advanced backtesting infrastruc
 - **ProportionalFillModel**: Proportional to volume ratio
 - Handles insufficient liquidity gracefully
 
-### 3. Position Sizing (258 lines, 91% coverage)
+### 3. Position Sizing (230 lines, 91% coverage)
 **File**: `backend/backtesting/position_sizing.py`
 
 5 implementations covering different market regimes:
@@ -111,13 +111,13 @@ Successfully implemented **comprehensive Phase 4 advanced backtesting infrastruc
 
 | Module | Lines | Coverage | Status |
 |--------|-------|----------|--------|
-| slippage_models.py | 95 | 94% | ✅ |
-| fill_models.py | 127 | 94% | ✅ |
-| position_sizing.py | 258 | 91% | ✅ |
+| slippage_models.py | 96 | 94% | ✅ |
+| fill_models.py | 99 | 94% | ✅ |
+| position_sizing.py | 230 | 91% | ✅ |
 | metrics.py | 150 | 87% | ✅ |
 | strategy.py | 60 | 100% | ✅ |
 | simple_ma.py | 110 | 94% | ✅ |
-| **Total** | **800** | **93%** | **✅** |
+| **Total** | **745** | **~92%** | **✅** |
 
 **Test Coverage**: 22/22 passing (100% pass rate)
 

@@ -95,13 +95,15 @@ class RiskBasedSizer(PositionSizer):
     Requires stop loss level to calculate quantity.
     """
 
-    def __init__(self, risk_per_trade_pct: float = 0.01):
+    def __init__(self, risk_per_trade_pct: float = 0.01, stop_loss_pct: float = 0.02):
         """Initialize risk-based sizer.
 
         Args:
             risk_per_trade_pct: Max risk % per trade (default 1%)
+            stop_loss_pct: Distance to stop loss as % of price (default 2%)
         """
         self.risk_per_trade_pct = risk_per_trade_pct
+        self.stop_loss_pct = stop_loss_pct
 
     def calculate_quantity(
         self,
@@ -109,21 +111,16 @@ class RiskBasedSizer(PositionSizer):
         price: float,
         portfolio_value: float,
         risk_per_trade: float = 0.01,
-        stop_loss_pct: float = 0.02,
     ) -> float:
-        """Calculate quantity based on risk per trade.
-
-        Args:
-            stop_loss_pct: Distance to stop loss as % of price (default 2%)
-        """
-        if price <= 0 or stop_loss_pct <= 0:
+        """Calculate quantity based on risk per trade."""
+        if price <= 0 or self.stop_loss_pct <= 0:
             return 0.0
 
         # Max loss = portfolio_value * risk_per_trade_pct
         max_loss = portfolio_value * self.risk_per_trade_pct
 
         # Price movement per unit = price * stop_loss_pct
-        loss_per_unit = price * stop_loss_pct
+        loss_per_unit = price * self.stop_loss_pct
 
         # Quantity = max_loss / loss_per_unit * signal_strength
         quantity = (max_loss / loss_per_unit) * signal_strength
@@ -178,6 +175,15 @@ class KellyCriterionSizer(PositionSizer):
 
         kelly_fraction = (b * p - q) / b if b > 0 else 0.0
 
+        # Warn if Kelly suggests not trading (negative expectancy)
+        if kelly_fraction < 0:
+            import warnings
+            warnings.warn(
+                f"Kelly Criterion suggests not trading: negative expectancy "
+                f"(kelly_fraction={kelly_fraction:.4f}, win_rate={p:.2f}, avg_win/loss={b:.2f}). "
+                f"Position size set to 0."
+            )
+
         # Use fractional Kelly for safety (typically 0.25x)
         position_fraction = max(0.0, min(0.5, kelly_fraction * self.fractional_kelly))
 
@@ -192,15 +198,17 @@ class VolatilityScaledSizer(PositionSizer):
     Maintains more consistent risk across different market regimes.
     """
 
-    def __init__(self, target_vol: float = 0.02, base_pct: float = 0.02):
+    def __init__(self, target_vol: float = 0.02, base_pct: float = 0.02, current_volatility: float = 0.02):
         """Initialize volatility-scaled sizer.
 
         Args:
             target_vol: Target volatility level (default 2%)
             base_pct: Base % of portfolio at target volatility (default 2%)
+            current_volatility: Initial market volatility (e.g., trailing std dev, default 2%)
         """
         self.target_vol = target_vol
         self.base_pct = base_pct
+        self.current_volatility = current_volatility
 
     def calculate_quantity(
         self,
@@ -208,18 +216,13 @@ class VolatilityScaledSizer(PositionSizer):
         price: float,
         portfolio_value: float,
         risk_per_trade: float = 0.01,
-        current_volatility: float = 0.02,
     ) -> float:
-        """Calculate volatility-adjusted quantity.
-
-        Args:
-            current_volatility: Current market volatility (e.g., trailing std dev)
-        """
-        if price <= 0 or current_volatility <= 0:
+        """Calculate volatility-adjusted quantity."""
+        if price <= 0 or self.current_volatility <= 0:
             return 0.0
 
         # Inverse relationship: when volatility is high, reduce position size
-        vol_adjustment = self.target_vol / current_volatility
+        vol_adjustment = self.target_vol / self.current_volatility
 
         quantity = (
             portfolio_value * self.base_pct * vol_adjustment * signal_strength
