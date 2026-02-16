@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
     CLICKHOUSE_HOST: str = "localhost"
     CLICKHOUSE_PORT: int = 8123
+    CLICKHOUSE_USER: str = "default"
+    CLICKHOUSE_PASSWORD: str = ""
+    CLICKHOUSE_DB: str = "trading_db"
     REDIS_URL: str = "redis://localhost:6379/0"
     CHROMA_HOST: str = "localhost"
     CHROMA_PORT: int = 8000
@@ -49,8 +52,11 @@ class Settings(BaseSettings):
     REVOLUT_API_KEY_ENV: Optional[str] = Field(None, validation_alias="REVOLUT_API_KEY")
     REVOLUT_PRIVATE_KEY_PATH: str = "revolut_private.pem"
     REVOLUT_SANDBOX: bool = True
-    _jwt_secret_key: Optional[str] = None
-    _database_url: Optional[str] = None
+    _jwt_secret_key: Optional[str] = None # Deprecated, use env field below
+    JWT_SECRET_KEY_ENV: Optional[str] = Field(None, validation_alias="JWT_SECRET_KEY")
+    
+    _database_url: Optional[str] = None # Deprecated, use env field below
+    DATABASE_URL_ENV: Optional[str] = Field(None, validation_alias="DATABASE_URL")
 
     # --- AUTH0 CONFIGURATION ---
     AUTH0_DOMAIN: str = "agentictrader.eu.auth0.com"
@@ -64,6 +70,16 @@ class Settings(BaseSettings):
     # --- RISK LIMITS (Hardcoded defaults for safety) ---
     MAX_ORDER_SIZE_EUR: float = 1000.0
     MAX_DAILY_LOSS_EUR: float = 50.0
+    
+    # --- LOCATION (for Vedic Calculations) ---
+    LATITUDE: float = 28.6139  # New Delhi (Default)
+    LONGITUDE: float = 77.2090
+
+    # --- MARKET DATA (Phase 2) ---
+    EXCHANGE_ID: str = "kraken"
+    EXCHANGE_API_KEY: Optional[str] = Field(default=None, validation_alias="KRAKEN_API_KEY")
+    EXCHANGE_SECRET: Optional[str] = Field(default=None, validation_alias="KRAKEN_SECRET")
+    ENABLE_REALTIME_DATA: bool = False
 
     # Pydantic Settings Config
     model_config = SettingsConfigDict(
@@ -123,7 +139,7 @@ class Settings(BaseSettings):
             if value:
                 return value
         # No fallback default - must be explicitly set in .env or Vault
-        return self._jwt_secret_key or ""
+        return self.JWT_SECRET_KEY_ENV or self._jwt_secret_key or ""
 
     @property
     def DATABASE_URL(self) -> str:
@@ -132,7 +148,7 @@ class Settings(BaseSettings):
             value = self._vault_manager.get_secret("database", "url")
             if value:
                 return value
-        return self._database_url or "postgresql://localhost:5432/agentic_trader"
+        return self.DATABASE_URL_ENV or self._database_url or "postgresql+asyncpg://localhost:5432/agentic_trader"
 
 
 # Singleton instance

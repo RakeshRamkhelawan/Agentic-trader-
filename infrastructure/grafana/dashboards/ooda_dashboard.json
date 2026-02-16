@@ -1,0 +1,108 @@
+{
+  "dashboard": {
+    "title": "Samkhya OODA Loop Monitor",
+    "timezone": "utc",
+    "editable": true,
+    "panels": [
+      {
+        "id": 1,
+        "title": "OODA Cycle Frequency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(samkhya_ooda_cycles_total[5m])",
+            "legendFormat": "Cycles/sec"
+          }
+        ],
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8}
+      },
+      {
+        "id": 2,
+        "title": "OODA Phase Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(samkhya_ooda_phase_duration_seconds_bucket{phase=\"observe\"}[5m]))",
+            "legendFormat": "Observe P95"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(samkhya_ooda_phase_duration_seconds_bucket{phase=\"orient\"}[5m]))",
+            "legendFormat": "Orient P95"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(samkhya_ooda_phase_duration_seconds_bucket{phase=\"decide\"}[5m]))",
+            "legendFormat": "Decide P95"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(samkhya_ooda_phase_duration_seconds_bucket{phase=\"act\"}[5m]))",
+            "legendFormat": "Act P95"
+          }
+        ],
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8}
+      },
+      {
+        "id": 3,
+        "title": "Decision Outcomes",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (decision) (samkhya_decisions_total)",
+            "legendFormat": "{{decision}}"
+          }
+        ],
+        "gridPos": {"x": 0, "y": 8, "w": 8, "h": 8}
+      },
+      {
+        "id": 4,
+        "title": "Circuit Breaker Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "samkhya_circuit_breaker_state",
+            "legendFormat": "{{name}}"
+          }
+        ],
+        "gridPos": {"x": 8, "y": 8, "w": 8, "h": 8}
+      },
+      {
+        "id": 5,
+        "title": "Elemental Agent Prana",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "samkhya_agent_prana",
+            "legendFormat": "{{element}}"
+          }
+        ],
+        "gridPos": {"x": 16, "y": 8, "w": 8, "h": 8}
+      },
+      {
+        "id": 6,
+        "title": "Guna Distribution",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "samkhya_guna_weights",
+            "legendFormat": "{{guna}}"
+          }
+        ],
+        "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8}
+      },
+      {
+        "id": 7,
+        "title": "Active Strategies",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "samkhya_active_strategies",
+            "legendFormat": "{{strategy}}"
+          }
+        ],
+        "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8}
+      }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 27,
+    "version": 1
+  }
+}

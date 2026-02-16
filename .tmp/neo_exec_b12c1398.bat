@@ -1,0 +1,2 @@
+if not exist "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\docs\planning" mkdir "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\docs\planning"
+echo Planning documentation directory created

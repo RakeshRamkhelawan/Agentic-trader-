@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from backend.market_data.models import UnifiedMarketEvent
+from backend.core.market_data.models import UnifiedMarketEvent
 from backend.strategies.base import BaseStrategy
 
 logger = logging.getLogger(__name__)

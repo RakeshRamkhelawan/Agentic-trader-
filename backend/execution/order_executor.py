@@ -22,6 +22,7 @@ from typing import Dict, Optional, Protocol
 
 from backend.core.schemas.ooda_types import (ExecutionOutcome, ExecutionPlan,
                                              Order)
+from backend.core.security.audit_logger import AuditEventType, AuditLogger
 from backend.governance.agent_gatekeeper import AgentGatekeeper, ToolPermission
 
 
@@ -185,6 +186,7 @@ class OrderExecutor:
         self.max_slippage_bps = max_slippage_bps
         self.order_timeout = order_timeout
         self.gatekeeper = gatekeeper or AgentGatekeeper()
+        self.audit_logger = AuditLogger(service_name="order_executor")
         self.active_orders: Dict[str, Order] = {}
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -222,14 +224,39 @@ class OrderExecutor:
             )
         except PermissionError as e:
             self.logger.error(f"Authorization failed for trade execution: {e}")
+            
+            # Audit Log: Authorization Denied
+            self.audit_logger.log_authz_check(
+                agent_name=execution_plan.caller_name,
+                role=execution_plan.caller_role,
+                permission=ToolPermission.TRADE_EXECUTION,
+                granted=False,
+                trace_id=execution_plan.trace_id
+            )
+            
             return ExecutionOutcome(
                 trace_id=execution_plan.trace_id,
                 success=False,
                 error=f"Permission denied: {str(e)}",
             )
+            
+        # Audit Log: Authorization Granted
+        self.audit_logger.log_authz_check(
+            agent_name=execution_plan.caller_name,
+            role=execution_plan.caller_role,
+            permission=ToolPermission.TRADE_EXECUTION,
+            granted=True,
+            trace_id=execution_plan.trace_id
+        )
 
         # 1. Pre-execution checks
         if not await self._pre_execution_checks(execution_plan):
+            # Audit Log: Pre-check Validation Failure
+            self.audit_logger.log_trade_attempt(
+                execution_plan=execution_plan,
+                outcome="BLOCKED",
+                details={"reason": "pre_execution_checks_failed"},
+            )
             return ExecutionOutcome(
                 trace_id=execution_plan.trace_id,
                 success=False,
@@ -250,6 +277,14 @@ class OrderExecutor:
 
         except Exception as e:
             self.logger.error(f"Order placement failed: {e}")
+            
+            # Audit Log: Order Placement Failure
+            self.audit_logger.log_trade_attempt(
+                execution_plan=execution_plan,
+                outcome="FAILED",
+                details={"error": str(e)},
+            )
+            
             return ExecutionOutcome(
                 trace_id=execution_plan.trace_id,
                 success=False,
@@ -260,6 +295,12 @@ class OrderExecutor:
         try:
             filled_order = await self._wait_for_fill(order, timeout=self.order_timeout)
         except ExecutionError as e:
+            # Audit Log: Execution Failure (Timeout/Rejection)
+            self.audit_logger.log_trade_attempt(
+                 execution_plan=execution_plan,
+                 outcome="FAILED",
+                 details={"order_id": order.order_id, "error": str(e)}
+            )
             return ExecutionOutcome(
                 trace_id=execution_plan.trace_id, success=False, error=str(e)
             )
@@ -277,6 +318,19 @@ class OrderExecutor:
             )
 
         # 5. Return outcome
+        
+        # Audit Log: Successful Execution
+        self.audit_logger.log_trade_attempt(
+            execution_plan=execution_plan,
+            outcome="EXECUTED",
+            details={
+                "order_id": filled_order.order_id,
+                "filled_qty": filled_order.filled_quantity,
+                "avg_price": filled_order.avg_fill_price,
+                "slippage_bps": slippage_bps
+            }
+        )
+
         return ExecutionOutcome(
             trace_id=execution_plan.trace_id,
             success=True,

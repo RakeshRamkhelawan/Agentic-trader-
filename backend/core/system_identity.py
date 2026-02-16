@@ -23,7 +23,10 @@ import numpy as np
 from backend.config.schemas import TattvaConfig, TattvaLayer
 from backend.core.decision_discriminator import DecisionDiscriminator
 from backend.core.memory_system import MemorySystem
+from backend.core.memory_system import MemorySystem
 from backend.core.sensory_processor import SensoryProcessor
+from backend.core.navagraha.service import NavagrahaService
+from backend.core.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +46,7 @@ class SystemIdentity:
     def __init__(self, tattva_config: Optional[TattvaConfig] = None):
         """Initialize all cognitive subsystems and Tattva layers."""
         # Core cognitive subsystems
+        self.navagraha_service = NavagrahaService() # Interface to Cosmic Time
         self.sensory_processor = SensoryProcessor()  # Input processing (Jnanendriyas)
         self.memory_system = MemorySystem()  # Pattern storage (Chitta)
         self.decision_maker = DecisionDiscriminator(  # Decision logic (Buddhi)
@@ -139,6 +143,12 @@ class SystemIdentity:
                 tattva_traversal["layers_traversed"].append(layer_num)
                 tattva_traversal["coherence_per_layer"][layer_num] = layer_coherence
 
+            # Fetch Navagraha State for current cycle
+            navagraha_state = await self.navagraha_service.get_current_state(
+                lat=settings.LATITUDE,
+                lon=settings.LONGITUDE
+            )
+
             # ========== SENSE: Layers 16-25 (Tanmatras + Jnanendriyas) ==========
             # Sense organs (Jnanendriyas) collect input through subtle elements (Tanmatras)
 
@@ -149,6 +159,7 @@ class SystemIdentity:
                 orderbook_imbalance=orderbook_imbalance,
                 funding_rate=funding_rate,
                 social_sentiment=social_sentiment,
+                navagraha_state=navagraha_state
             )
 
             # Track sensory layer traversal
@@ -162,7 +173,7 @@ class SystemIdentity:
             # ========== DECIDE: Layer 14 (Buddhi - Discrimination) ==========
             # 2. BUDDHI: Discriminate and decide
             action, confidence, rationale = self.decision_maker.discriminate(
-                perception, self.action_space
+                perception, self.action_space, navagraha_state
             )
 
             # Update Layer 14 coherence with decision quality
@@ -348,7 +359,14 @@ class SystemIdentity:
         # Apply specific restriction effects
         if layer.layer_number == 7:  # Kala (Time)
             # Time restricts parallel processing
+            # Phase 1.4: Rahu Kala Check - If in "bad time", coherence drops significantly
+            # We need context here, but _traverse_tattva_layer context usage is limited.
+            # However, we can check if we have a way to access current Navagraha state.
+            # For now, we'll assume Kala layer coherence is modulated by System State if we stored it?
+            # Or better, we define a property on self if we fetched it at cycle start.
             base_coherence = 0.95
+             # NOTE:Ideally we should pass navagraha_state in context, but loop structure is rigid.
+             # We can optimize later. For now, rely on Sensory modulation for heavy lifting.
         elif layer.layer_number == 8:  # Vidya (Knowledge limit)
             # Knowledge bandwidth restricts simultaneous awareness
             base_coherence = 0.93

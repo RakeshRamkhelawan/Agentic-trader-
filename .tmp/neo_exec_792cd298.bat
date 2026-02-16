@@ -1,0 +1,1 @@
+python -c "import jose, httpx, hvac" 2>nul || pip install python-jose[cryptography] httpx hvac
