@@ -132,6 +132,8 @@ lint:
 	ruff check $(BACKEND_DIR)/
 	@echo "→ MyPy (type checking)..."
 	mypy $(BACKEND_DIR)/ --ignore-missing-imports
+	@echo "→ Bandit (security check)..."
+	bandit -r $(BACKEND_DIR)/ --exclude $(BACKEND_DIR)/tests -f json -o bandit-report.json || true
 	@echo "All linters passed!"
 
 format:

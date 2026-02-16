@@ -24,6 +24,11 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
   - **Structured Logging**: Geïmplementeerd `structlog` voor JSON-logging en `AuditLogger` voor beveiligingsevents.
   - **Security Regression**: Testsuite toegevoegd die RBAC en Gatekeeper-regels afdwingt.
   - **Observability**: `security_violations_total` metric toegevoegd aan Prometheus.
+- **Epic 13: Cleanup & Consolidation (VOLTOOID)**:
+  - **Infrastructure Cleanup**: Verwijderen van redundante `infra/` folder en verouderde Docker-bestanden.
+  - **Script Consolidatie**: Operationele scripts verplaatst naar `backend/scripts/ops/` voor betere organisatie.
+  - **CI/CD Optimalisatie**: GitHub Actions pipeline verbeterd met linters, Docker build verificatie en security scans.
+  - **Lokale Automatisering**: `pre-commit` en `pre-push` hooks geactiveerd voor automatische kwaliteitscuontroles.
 - **Cleanup & Commit**: Alle wijzigingen (inclusief nieuwe scripts en `.gitignore` fix) zijn gecommit en gepusht.
 
 ## 3. Key Files
@@ -39,9 +44,9 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
 - **Semantic XML Delimitation**: Using XML tags in prompts significantly improves the LLM's ability to distinguish between its instructions and the raw data it needs to process.
 - **Merge Strategy**: Bij complexe repository-regels (zoals PR-verplichtingen) is een gecombineerde integratiebranch met revert en nieuwe feature-merge de meest schaalbare manier om de `main` branch consistent te houden.
 - **Samkhya Progressie**: De succesvolle merge van Phase 10 vormt het fundament voor de verdere opschaling naar productie.
+- **Automatisering**: Het vroegtijdig activeren van CI/CD en lokale `pre-commit` hooks voorkomt "breaking changes" en houdt de codebase op een hoog kwaliteitsniveau zonder handmatig werk.
 
-## 5. Next Steps
-- **Epic 13: Deployment & Infrastructure**:
-  - Container hardening (multi-stage, non-root).
-  - Kubernetes/Helm configuratie.
-  - CI/CD pipeline setup.
+## 5. Volgende Stappen
+- **Monitoring & Dashboarding**: Uitbreiden van Grafana dashboards met Navagraha-specifieke metrics.
+- **Kubernetes Deployment**: Implementatie van Helm charts voor schaalbare orchestratie.
+- **Agent Evolution**: Verdere verfijning van agent-coöperatie in complexe marktomstandigheden.
