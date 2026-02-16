@@ -8,15 +8,15 @@ from pydantic import BaseModel, Field
 class ElementType(str, Enum):
     EARTH = "earth"  # Prithvi
     WATER = "water"  # Jala
-    FIRE = "fire"    # Agni
-    AIR = "air"      # Vayu
+    FIRE = "fire"  # Agni
+    AIR = "air"  # Vayu
     ETHER = "ether"  # Akasha
 
 
 class ElementalAgent(ABC):
     """
     Abstract base class for Elemental Agents (Mahabhutas).
-    
+
     Each agent represents one of the 5 elements and manages a specific
     aspect of the trading system (Risk, Liquidity, Execution, Strategy, Context).
     """
@@ -29,14 +29,16 @@ class ElementalAgent(ABC):
         self.state: Dict[str, Any] = {}
 
     @abstractmethod
-    def process_cycle(self, perception: Dict[str, Any], system_state: Dict[str, Any]) -> Dict[str, Any]:
+    def process_cycle(
+        self, perception: Dict[str, Any], system_state: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Process a market cycle.
-        
+
         Args:
             perception: Current system perception (from SensoryProcessor)
             system_state: Current overall system state
-            
+
         Returns:
             Dict containing agent's decision/output for this cycle.
         """

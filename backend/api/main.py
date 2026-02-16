@@ -1,16 +1,16 @@
 import asyncio
 import logging
-import structlog
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
+import structlog
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.api import (analytics_api, approval_api, backtest_api,
-                         prediction_api, trading_api, user_settings_api,
-                         navagraha_api, agents_api, ooda_api) # Added new APIs
+from backend.api import (agents_api, analytics_api,  # Added new APIs
+                         approval_api, backtest_api, navagraha_api, ooda_api,
+                         prediction_api, trading_api, user_settings_api)
 # Routers
 from backend.api.auth_api import router as auth_router
 from backend.api.deps import get_db
@@ -21,20 +21,21 @@ from backend.core.auth.jwt_validator import JWTValidator
 from backend.core.auth.middleware import AuthMiddleware
 from backend.core.auth.models import TokenPayload
 from backend.core.config.settings import settings
-from backend.observability.metrics import (PrometheusMiddleware,
-                                           metrics_endpoint)
-from backend.core.telemetry.logging_config import configure_logging
-# Services
-from backend.services.trading_service import get_trading_service
 from backend.core.navagraha.service import NavagrahaService
 from backend.core.system_identity import SystemIdentity
+from backend.core.telemetry.logging_config import configure_logging
+from backend.observability.metrics import (PrometheusMiddleware,
+                                           metrics_endpoint)
 from backend.services.cognitive_orchestrator import CognitiveOrchestrator
+# Services
+from backend.services.trading_service import get_trading_service
 
 # ... (JWT setup)
 
 # Configure structured logging
 configure_logging()
 logger = structlog.get_logger("API")
+
 
 # ... (Market Data Publisher)
 # Background Task: Market Data Publisher
@@ -105,26 +106,30 @@ async def system_state_publisher(app: FastAPI):
             # 1. Navagraha Update
             if hasattr(app.state, "navagraha_service") and app.state.navagraha_service:
                 # Use default location (Delhi) or configure system default
-                state = await app.state.navagraha_service.get_current_state(28.61, 77.20)
-                await ws_manager.broadcast_navagraha_update(state.model_dump(mode='json'))
+                state = await app.state.navagraha_service.get_current_state(
+                    28.61, 77.20
+                )
+                await ws_manager.broadcast_navagraha_update(
+                    state.model_dump(mode="json")
+                )
 
             # 2. OODA/System Identity Update
             if hasattr(app.state, "system_identity") and app.state.system_identity:
                 stats = app.state.system_identity.get_system_statistics()
                 # Create a simplified OODA update payload
                 ooda_update = {
-                    "phase": "ORIENT", # TODO: Get dynamic phase
+                    "phase": "ORIENT",  # TODO: Get dynamic phase
                     "cycle_id": f"cycle_{stats['system_state']['total_experiences']}",
-                    "coherence": stats['system_state']['coherence'],
-                    "confidence": stats['system_state']['confidence'],
-                    "timestamp": datetime.now(timezone.utc).isoformat()
+                    "coherence": stats["system_state"]["coherence"],
+                    "confidence": stats["system_state"]["confidence"],
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
                 await ws_manager.broadcast_ooda_update(ooda_update)
 
         except Exception as e:
             logger.error(f"System State Publisher Error: {e}")
-            
-        await asyncio.sleep(5) # Update every 5 seconds
+
+        await asyncio.sleep(5)  # Update every 5 seconds
 
 
 @asynccontextmanager
@@ -147,15 +152,15 @@ async def lifespan(app: FastAPI):
         # We initialize it here to be accessible via API
         # Note: In a microservices setup, this might be a remote RPC client.
         app.state.orchestrator = CognitiveOrchestrator(
-            agent_registry=None, # Use default
+            agent_registry=None,  # Use default
             usage_tracker=None,  # Optional
-            audit_logger=None    # Optional
+            audit_logger=None,  # Optional
         )
         logger.info("Cognitive Orchestrator Initialized")
-        
+
         # Start Orchestrator Background Tasks (if any)
         # e.g., consumer_task = asyncio.create_task(app.state.orchestrator.start_market_consumer())
-        
+
     except Exception as e:
         logger.error(f"Failed to initialize backend services: {e}", exc_info=True)
         # We define them as None to avoid AttributeErrors, but app might be unstable
@@ -165,7 +170,9 @@ async def lifespan(app: FastAPI):
 
     # Re-enabled: Background Publisher now uses SessionManager.system_admin_session()
     market_task = asyncio.create_task(market_data_publisher())
-    system_task = asyncio.create_task(system_state_publisher(app)) # Start System Publisher
+    system_task = asyncio.create_task(
+        system_state_publisher(app)
+    )  # Start System Publisher
     logger.info("Background Publishers STARTED")
 
     yield

@@ -4,9 +4,9 @@ from typing import Any, Dict, Optional
 
 
 class CircuitState(str, Enum):
-    CLOSED = "closed"       # Normal operation
-    OPEN = "open"           # Circuit is broken (failures exceed threshold)
-    HALF_OPEN = "half_open" # Testing recovery
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Circuit is broken (failures exceed threshold)
+    HALF_OPEN = "half_open"  # Testing recovery
 
 
 class CircuitBreaker:
@@ -55,13 +55,17 @@ class CircuitBreaker:
     def _trip_circuit(self):
         """Transition to OPEN state."""
         self.state = CircuitState.OPEN
-        print(f"Content-Type: application/json\n\nCircuit {self.name} TRIPPED to OPEN state.")
+        print(
+            f"Content-Type: application/json\n\nCircuit {self.name} TRIPPED to OPEN state."
+        )
 
     def _close_circuit(self):
         """Transition back to CLOSED state."""
         self.state = CircuitState.CLOSED
         self.failure_count = 0
-        print(f"Content-Type: application/json\n\nCircuit {self.name} CLOSED (Recovered).")
+        print(
+            f"Content-Type: application/json\n\nCircuit {self.name} CLOSED (Recovered)."
+        )
 
     def allow_request(self) -> bool:
         """Check if request is allowed."""

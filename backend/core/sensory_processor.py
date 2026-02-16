@@ -5,13 +5,12 @@ Equivalent to Manas (mind's sensory processing function).
 """
 
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import numpy as np
-from typing import Optional
-from backend.core.navagraha.models import NavagrahaState
 
 from backend.core.frequency_analysis import VibrationalAnalyzer
+from backend.core.navagraha.models import NavagrahaState
 
 
 class SensoryProcessor:
@@ -74,16 +73,16 @@ class SensoryProcessor:
 
         # 4. Calculate phase alignment (coherence between price and volume)
         phase_alignment = self._calculate_phase_alignment(price_freq, volume_freq)
-        
+
         # Apply Navagraha Modulations
         coherence = float(price_freq.coherence)
         guna_context = {}
-        
+
         if navagraha_state:
             # Rahu Kala Penalty: If active, reduce coherence (distortion)
             if navagraha_state.rahu_kala_active:
                 coherence *= 0.8  # 20% penalty
-            
+
             # Inject Guna Context
             guna_context = navagraha_state.guna_distribution.model_dump()
 
@@ -105,7 +104,9 @@ class SensoryProcessor:
             "price_amplitude": float(price_freq.amplitude),
             "volume_amplitude": float(volume_freq.amplitude),
             "guna_context": guna_context,
-            "rahu_kala_active": navagraha_state.rahu_kala_active if navagraha_state else False
+            "rahu_kala_active": (
+                navagraha_state.rahu_kala_active if navagraha_state else False
+            ),
         }
 
         # 6. Buffer for temporal analysis

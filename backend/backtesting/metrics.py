@@ -14,10 +14,10 @@ class MetricsCalculator:
 
     @staticmethod
     def calculate(
-        equity_curve: List[Dict], 
-        initial_capital: float, 
+        equity_curve: List[Dict],
+        initial_capital: float,
         trades: List[Trade] = None,
-        trading_days_per_year: int = 365
+        trading_days_per_year: int = 365,
     ) -> BacktestMetrics:
         """Calculate comprehensive backtesting metrics.
 

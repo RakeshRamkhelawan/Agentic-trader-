@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Callable, Dict, List, Optional, Any
+from typing import Any, Callable, Dict, List, Optional
 
 import websockets
 
@@ -28,11 +28,11 @@ class WebSocketManager:
             self.connection = await websockets.connect(self.url)
             self.is_running = True
             logger.info(f"Connected to WebSocket: {self.url}")
-            
+
             # Resubscribe if we have pending subscriptions
             if self.subscriptions:
                 await self.subscribe(self.subscriptions)
-                
+
             asyncio.create_task(self._listen())
         except Exception as e:
             logger.error(f"WebSocket connection failed: {e}")
@@ -60,9 +60,9 @@ class WebSocketManager:
         msg = {
             "event": "subscribe",
             "pair": symbols,
-            "subscription": {"name": "ticker"}
+            "subscription": {"name": "ticker"},
         }
-        
+
         try:
             await self.connection.send(json.dumps(msg))
             self.subscriptions = list(set(self.subscriptions + symbols))
@@ -80,7 +80,7 @@ class WebSocketManager:
             try:
                 message = await self.connection.recv()
                 data = json.loads(message)
-                
+
                 # Filter out heartbeats or system events if needed
                 # For now, pass everything to callbacks
                 for callback in self.callbacks:
@@ -88,7 +88,7 @@ class WebSocketManager:
                         callback(data)
                     except Exception as cb_err:
                         logger.error(f"Callback error: {cb_err}")
-                        
+
             except websockets.ConnectionClosed:
                 logger.warning("WebSocket connection closed")
                 await self._reconnect()

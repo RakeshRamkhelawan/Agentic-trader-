@@ -19,20 +19,20 @@ audit_logger = logging.getLogger("audit")
 
 class AuditEventType(str, Enum):
     """Types of audit events."""
-    
+
     AUTH_LOGIN = "AUTH_LOGIN"
     AUTH_LOGOUT = "AUTH_LOGOUT"
     AUTH_FAILED = "AUTH_FAILED"
-    
+
     AUTHZ_CHECK = "AUTHZ_CHECK"
     AUTHZ_GRANTED = "AUTHZ_GRANTED"
     AUTHZ_DENIED = "AUTHZ_DENIED"
-    
+
     TRADE_REQUESTED = "TRADE_REQUESTED"
     TRADE_EXECUTED = "TRADE_EXECUTED"
     TRADE_FAILED = "TRADE_FAILED"
     TRADE_BLOCKED = "TRADE_BLOCKED"
-    
+
     SYSTEM_STARTUP = "SYSTEM_STARTUP"
     SYSTEM_SHUTDOWN = "SYSTEM_SHUTDOWN"
     CONFIG_CHANGE = "CONFIG_CHANGE"
@@ -42,7 +42,7 @@ class AuditLogger:
     """
     Structured logger for security audit trails.
     """
-    
+
     def __init__(self, service_name: str = "agentic_trader"):
         self.service_name = service_name
 
@@ -54,7 +54,7 @@ class AuditLogger:
         resource: str,
         output_status: str,
         details: Optional[Dict[str, Any]] = None,
-        trace_id: Optional[str] = None
+        trace_id: Optional[str] = None,
     ) -> None:
         """
         Log an audit event.
@@ -78,11 +78,11 @@ class AuditLogger:
             "action": action,
             "resource": resource,
             "status": output_status,
-            "details": details or {}
+            "details": details or {},
         }
-        
+
         # Log as a JSON string for easy parsing by monitoring tools (Splunk, ELK, etc.)
-        # We use level INFO for audit logs. 
+        # We use level INFO for audit logs.
         # Configure the 'audit' logger to write to a separate file in production.
         audit_logger.info(json.dumps(event))
 
@@ -92,12 +92,14 @@ class AuditLogger:
         role: str,
         permission: str,
         granted: bool,
-        trace_id: Optional[str] = None
+        trace_id: Optional[str] = None,
     ):
         """Helper for logging authorization checks."""
         status = "GRANTED" if granted else "DENIED"
-        event_type = AuditEventType.AUTHZ_GRANTED if granted else AuditEventType.AUTHZ_DENIED
-        
+        event_type = (
+            AuditEventType.AUTHZ_GRANTED if granted else AuditEventType.AUTHZ_DENIED
+        )
+
         self.log_event(
             event_type=event_type,
             actor=f"agent:{agent_name}",
@@ -105,7 +107,7 @@ class AuditLogger:
             resource="gatekeeper",
             output_status=status,
             details={"role": role},
-            trace_id=trace_id
+            trace_id=trace_id,
         )
 
     def log_trade_attempt(
@@ -113,7 +115,7 @@ class AuditLogger:
         execution_plan: Any,
         outcome: str,
         details: Dict[str, Any],
-        trace_id: Optional[str] = None
+        trace_id: Optional[str] = None,
     ):
         """Helper for logging trade execution attempts."""
         self.log_event(
@@ -126,7 +128,7 @@ class AuditLogger:
                 "symbol": execution_plan.symbol,
                 "quantity": execution_plan.quantity,
                 "role": execution_plan.caller_role,
-                **details
+                **details,
             },
-            trace_id=execution_plan.trace_id or trace_id
+            trace_id=execution_plan.trace_id or trace_id,
         )

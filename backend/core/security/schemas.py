@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List
-from datetime import datetime, UTC
+from datetime import UTC, datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class IdentityPayload(BaseModel):
@@ -11,11 +12,11 @@ class IdentityPayload(BaseModel):
                 "email": "trader@example.com",
                 "email_verified": True,
                 "name": "John Trader",
-                "picture": "https://example.com/avatar.jpg"
+                "picture": "https://example.com/avatar.jpg",
             }
         }
     )
-    
+
     sub: str = Field(..., description="Subject (user ID)")
     email: Optional[str] = Field(None, description="User email")
     email_verified: bool = Field(False, description="Email verification status")
@@ -34,11 +35,11 @@ class TokenClaims(BaseModel):
                 "iat": 1735603200,
                 "iss": "https://auth.agentic-trader.com/",
                 "aud": "https://api.agentic-trader.com",
-                "email": "trader@example.com"
+                "email": "trader@example.com",
             }
         }
     )
-    
+
     sub: str = Field(..., description="Subject (user ID)")
     tenant_id: str = Field("default", description="Tenant identifier")
     roles: List[str] = Field(default_factory=list, description="User roles")
@@ -49,13 +50,13 @@ class TokenClaims(BaseModel):
     email: Optional[str] = Field(None, description="User email")
     scope: Optional[str] = Field(None, description="OAuth2 scopes")
     azp: Optional[str] = Field(None, description="Authorized party")
-    
+
     def is_expired(self) -> bool:
         return datetime.now(UTC).timestamp() > self.exp
-    
+
     def has_role(self, role: str) -> bool:
         return role in self.roles
-    
+
     def has_any_role(self, required_roles: List[str]) -> bool:
         return bool(set(self.roles) & set(required_roles))
 
@@ -72,11 +73,11 @@ class OIDCUserInfo(BaseModel):
                 "family_name": "User",
                 "picture": "https://example.com/avatar.jpg",
                 "locale": "en-US",
-                "updated_at": 1735603200
+                "updated_at": 1735603200,
             }
         }
     )
-    
+
     sub: str
     email: Optional[str] = None
     email_verified: Optional[bool] = False
@@ -97,11 +98,11 @@ class SecretMetadata(BaseModel):
                 "version": 3,
                 "created_at": "2026-01-01T00:00:00Z",
                 "updated_at": "2026-02-14T00:00:00Z",
-                "rotation_policy": "monthly"
+                "rotation_policy": "monthly",
             }
         }
     )
-    
+
     path: str = Field(..., description="Secret path in vault")
     key: str = Field(..., description="Secret key name")
     version: Optional[int] = Field(None, description="Secret version")

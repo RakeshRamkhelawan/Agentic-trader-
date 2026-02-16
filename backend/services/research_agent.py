@@ -92,7 +92,8 @@ class ResearchAgent:
         # Convert dict to UnifiedMarketEvent if needed, or Strategy handles dict?
         # BaseStrategy expects UnifiedMarketEvent. Use helper or robust casting.
 
-        from backend.core.market_data.models import EventType, UnifiedMarketEvent
+        from backend.core.market_data.models import (EventType,
+                                                     UnifiedMarketEvent)
 
         # Try to construct event from dict
         try:

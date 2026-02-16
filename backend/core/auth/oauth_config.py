@@ -1,5 +1,7 @@
 from typing import Optional
+
 from pydantic import BaseModel, Field
+
 
 class OIDCConfig(BaseModel):
     client_id: str = Field(..., env="OAUTH_CLIENT_ID")
@@ -7,17 +9,18 @@ class OIDCConfig(BaseModel):
     discovery_url: str = Field(..., env="OAUTH_DISCOVERY_URL")
     audiences: list[str] = ["api://default"]
 
+
 class OAuthConfig:
     """
     Configuration for OAuth2/OIDC integration.
     """
-    
+
     def __init__(self):
         # In a real app, load from env vars
         # For now, we stub this to avoid needing actual credentials in dev
-        self.enabled = False 
+        self.enabled = False
         self.oidc_config: Optional[OIDCConfig] = None
-        
+
     def validate_token(self, token: str) -> dict:
         """
         Stub for JWT validation.
@@ -28,9 +31,9 @@ class OAuthConfig:
         """
         if not self.enabled:
             return {"sub": "mock_user", "scope": "read write"}
-            
+
         # Mock validation
         if token == "invalid":
             raise ValueError("Invalid token")
-            
+
         return {"sub": "user_123", "tenant_id": "tenant_abc"}
