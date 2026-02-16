@@ -34,7 +34,7 @@ jobs:
       - name: Install Quality Tools
         run: |
           python -m pip install --upgrade pip
-          pip install black isort ruff mypy
+          pip install black isort ruff mypy bandit
           if [ -f requirements/dev-lock.txt ]; then
             pip install -r requirements/dev-lock.txt
           elif [ -f requirements/dev.txt ]; then
@@ -59,8 +59,8 @@ jobs:
 
       - name: Security Scan with Bandit
         run: |
-          pip install bandit
-          bandit -r backend/ -f json -o bandit-report.json || true
+          bandit -r backend/ --exclude backend/tests -f json -o bandit-report.json || true
+          ls -la bandit-report.json || echo "Bandit report not found"
         continue-on-error: true
 
       - name: Upload Bandit Report
