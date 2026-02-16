@@ -37,10 +37,10 @@ class DecisionDiscriminator:
         self.total_decisions = 0
 
     def discriminate(
-        self, 
-        perception: Dict[str, Any], 
+        self,
+        perception: Dict[str, Any],
         available_actions: List[int],
-        navagraha_state: Optional[NavagrahaState] = None
+        navagraha_state: Optional[NavagrahaState] = None,
     ) -> Tuple[int, float, str]:
         """
         Discriminate (choose) best action.
@@ -154,17 +154,17 @@ class DecisionDiscriminator:
 
         if navagraha_state:
             gunas = navagraha_state.guna_distribution
-            
+
             # Sattva: Clarity -> Easier to act (lower threshold)
             if gunas.sattva > 0.5:
                 current_threshold = 0.5
                 guna_rationale = " (Sattva boosted)"
-            
+
             # Tamas: Inertia -> Harder to act (higher threshold)
             if gunas.tamas > 0.4:
                 current_threshold = 0.7
                 guna_rationale = " (Tamas inhibited)"
-            
+
             # Rajas: Activity -> More exploration
             if gunas.rajas > 0.4:
                 current_exploration = min(0.3, self.exploration_rate * 2.0)

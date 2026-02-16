@@ -60,7 +60,7 @@ class Strategy(ABC):
         quantity: float,
         current_price: float,
         timestamp: datetime,
-        available_volume: float = float('inf'),
+        available_volume: float = float("inf"),
     ) -> Optional[Trade]:
         """
         Execute an order with slippage and fill model simulation.
@@ -78,8 +78,7 @@ class Strategy(ABC):
         """
         # Apply fill model to determine how much gets filled
         filled_quantity, unfilled_quantity = self.fill_model.compute_fill(
-            order_quantity=quantity,
-            available_volume=available_volume
+            order_quantity=quantity, available_volume=available_volume
         )
 
         # If nothing filled, return None
@@ -88,9 +87,7 @@ class Strategy(ABC):
 
         # Apply slippage model to get execution price
         execution_price, slippage_cost = self.slippage_model.apply(
-            price=current_price,
-            quantity=filled_quantity,
-            side=side
+            price=current_price, quantity=filled_quantity, side=side
         )
 
         # Execute the filled portion at the slipped price
@@ -99,7 +96,7 @@ class Strategy(ABC):
             side=side,
             quantity=filled_quantity,
             current_price=execution_price,
-            timestamp=timestamp
+            timestamp=timestamp,
         )
 
         return trade

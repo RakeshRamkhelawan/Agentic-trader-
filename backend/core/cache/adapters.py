@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import Optional, Any
-from datetime import datetime, timedelta
-import pickle
 import hashlib
 import json
+import pickle
+from abc import ABC, abstractmethod
 from collections import OrderedDict
+from datetime import datetime, timedelta
+from typing import Any, Optional
 
 
 class CacheAdapter(ABC):
@@ -38,11 +38,11 @@ class MemoryAdapter(CacheAdapter):
     async def get(self, key: str) -> Optional[Any]:
         if key not in self._cache:
             return None
-        
+
         if key in self._expiry and datetime.utcnow() > self._expiry[key]:
             await self.delete(key)
             return None
-        
+
         self._cache.move_to_end(key)
         return self._cache[key]
 
@@ -51,7 +51,7 @@ class MemoryAdapter(CacheAdapter):
             self._cache.move_to_end(key)
         elif len(self._cache) >= self._max_size:
             self._cache.popitem(last=False)
-            
+
         self._cache[key] = value
         self._expiry[key] = datetime.utcnow() + timedelta(seconds=ttl)
         return True
@@ -71,11 +71,11 @@ class MemoryAdapter(CacheAdapter):
     async def exists(self, key: str) -> bool:
         if key not in self._cache:
             return False
-        
+
         if key in self._expiry and datetime.utcnow() > self._expiry[key]:
             await self.delete(key)
             return False
-        
+
         return True
 
 
@@ -136,10 +136,10 @@ class ClickHouseAdapter(CacheAdapter):
                 LIMIT 1
             """
             result = await self._client.execute(query, {"key": key})
-            
+
             if not result:
                 return None
-            
+
             value_json = result[0][0]
             return json.loads(value_json)
         except Exception:
@@ -153,8 +153,7 @@ class ClickHouseAdapter(CacheAdapter):
                 VALUES (%(key)s, %(value)s, now() + INTERVAL %(ttl)s SECOND, now())
             """
             await self._client.execute(
-                query,
-                {"key": key, "value": value_json, "ttl": ttl}
+                query, {"key": key, "value": value_json, "ttl": ttl}
             )
             return True
         except Exception:

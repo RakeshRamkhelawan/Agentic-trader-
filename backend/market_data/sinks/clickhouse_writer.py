@@ -6,10 +6,12 @@ from backend.storage.clickhouse_client import ClickHouseClient
 
 logger = logging.getLogger(__name__)
 
+
 class ClickHouseWriter:
     """
     Writes data to ClickHouse in batches.
     """
+
     def __init__(
         self,
         client: ClickHouseClient,
@@ -48,7 +50,10 @@ class ClickHouseWriter:
                 now = asyncio.get_event_loop().time()
                 time_since_flush = now - last_flush
 
-                if buffer and (len(buffer) >= self.batch_size or time_since_flush >= self.flush_interval):
+                if buffer and (
+                    len(buffer) >= self.batch_size
+                    or time_since_flush >= self.flush_interval
+                ):
                     await self._flush(buffer)
                     buffer = []
                     last_flush = now
@@ -65,7 +70,7 @@ class ClickHouseWriter:
         """Flush buffer to ClickHouse."""
         if not buffer:
             return
-        
+
         try:
             # Assumes client has an insert method or execute
             # If client.insert doesn't exist, we might need to adjust based on ClickHouseClient implementation

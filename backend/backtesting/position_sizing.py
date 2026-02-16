@@ -4,8 +4,8 @@ Position Sizing Models for Backtesting Engine.
 Provides intelligent position sizing strategies (fixed, percentage, Kelly Criterion).
 """
 
-from abc import ABC, abstractmethod
 import warnings
+from abc import ABC, abstractmethod
 
 
 class PositionSizer(ABC):
@@ -182,7 +182,7 @@ class KellyCriterionSizer(PositionSizer):
                 f"Kelly Criterion suggests not trading: negative expectancy "
                 f"(kelly_fraction={kelly_fraction:.4f}, win_rate={p:.2f}, avg_win/loss={b:.2f}). "
                 f"Position size set to 0.",
-                stacklevel=2
+                stacklevel=2,
             )
 
         # Use fractional Kelly for safety (typically 0.25x)
@@ -199,7 +199,12 @@ class VolatilityScaledSizer(PositionSizer):
     Maintains more consistent risk across different market regimes.
     """
 
-    def __init__(self, target_vol: float = 0.02, base_pct: float = 0.02, current_volatility: float = 0.02):
+    def __init__(
+        self,
+        target_vol: float = 0.02,
+        base_pct: float = 0.02,
+        current_volatility: float = 0.02,
+    ):
         """Initialize volatility-scaled sizer.
 
         Args:

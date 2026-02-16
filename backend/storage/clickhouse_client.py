@@ -53,7 +53,9 @@ class ClickHouseClient:
 
     async def connect(self) -> None:
         """Establish connection to ClickHouse."""
-        print(f"DEBUG: ClickHouseClient connecting to {self.host}:{self.port} as user='{self.username}' with password='{self.password}'")
+        print(
+            f"DEBUG: ClickHouseClient connecting to {self.host}:{self.port} as user='{self.username}' with password='{self.password}'"
+        )
         try:
             self.client = await clickhouse_connect.get_async_client(
                 host=self.host,

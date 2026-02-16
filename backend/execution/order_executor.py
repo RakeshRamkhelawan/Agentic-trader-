@@ -224,29 +224,29 @@ class OrderExecutor:
             )
         except PermissionError as e:
             self.logger.error(f"Authorization failed for trade execution: {e}")
-            
+
             # Audit Log: Authorization Denied
             self.audit_logger.log_authz_check(
                 agent_name=execution_plan.caller_name,
                 role=execution_plan.caller_role,
                 permission=ToolPermission.TRADE_EXECUTION,
                 granted=False,
-                trace_id=execution_plan.trace_id
+                trace_id=execution_plan.trace_id,
             )
-            
+
             return ExecutionOutcome(
                 trace_id=execution_plan.trace_id,
                 success=False,
                 error=f"Permission denied: {str(e)}",
             )
-            
+
         # Audit Log: Authorization Granted
         self.audit_logger.log_authz_check(
             agent_name=execution_plan.caller_name,
             role=execution_plan.caller_role,
             permission=ToolPermission.TRADE_EXECUTION,
             granted=True,
-            trace_id=execution_plan.trace_id
+            trace_id=execution_plan.trace_id,
         )
 
         # 1. Pre-execution checks
@@ -277,14 +277,14 @@ class OrderExecutor:
 
         except Exception as e:
             self.logger.error(f"Order placement failed: {e}")
-            
+
             # Audit Log: Order Placement Failure
             self.audit_logger.log_trade_attempt(
                 execution_plan=execution_plan,
                 outcome="FAILED",
                 details={"error": str(e)},
             )
-            
+
             return ExecutionOutcome(
                 trace_id=execution_plan.trace_id,
                 success=False,
@@ -297,9 +297,9 @@ class OrderExecutor:
         except ExecutionError as e:
             # Audit Log: Execution Failure (Timeout/Rejection)
             self.audit_logger.log_trade_attempt(
-                 execution_plan=execution_plan,
-                 outcome="FAILED",
-                 details={"order_id": order.order_id, "error": str(e)}
+                execution_plan=execution_plan,
+                outcome="FAILED",
+                details={"order_id": order.order_id, "error": str(e)},
             )
             return ExecutionOutcome(
                 trace_id=execution_plan.trace_id, success=False, error=str(e)
@@ -318,7 +318,7 @@ class OrderExecutor:
             )
 
         # 5. Return outcome
-        
+
         # Audit Log: Successful Execution
         self.audit_logger.log_trade_attempt(
             execution_plan=execution_plan,
@@ -327,8 +327,8 @@ class OrderExecutor:
                 "order_id": filled_order.order_id,
                 "filled_qty": filled_order.filled_quantity,
                 "avg_price": filled_order.avg_fill_price,
-                "slippage_bps": slippage_bps
-            }
+                "slippage_bps": slippage_bps,
+            },
         )
 
         return ExecutionOutcome(

@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import ccxt.async_support as ccxt
-from ccxt.base.errors import NetworkError, RequestTimeout, ExchangeError
+from ccxt.base.errors import ExchangeError, NetworkError, RequestTimeout
 
 from backend.core.config.settings import settings
 from backend.core.market_data.circuit_breaker import CircuitBreaker
@@ -21,7 +21,7 @@ class ExchangeInterface:
         self.exchange_id = settings.EXCHANGE_ID
         self.api_key = settings.EXCHANGE_API_KEY
         self.secret = settings.EXCHANGE_SECRET
-        
+
         self.exchange = exchange_override
         self.circuit_breaker = CircuitBreaker(name=f"exchange_{self.exchange_id}")
 
@@ -32,11 +32,13 @@ class ExchangeInterface:
 
         try:
             exchange_class = getattr(ccxt, self.exchange_id)
-            self.exchange = exchange_class({
-                'apiKey': self.api_key,
-                'secret': self.secret,
-                'enableRateLimit': True,
-            })
+            self.exchange = exchange_class(
+                {
+                    "apiKey": self.api_key,
+                    "secret": self.secret,
+                    "enableRateLimit": True,
+                }
+            )
             await self.exchange.load_markets()
             logger.info(f"Initialized exchange: {self.exchange_id}")
         except Exception as e:
@@ -64,7 +66,7 @@ class ExchangeInterface:
             return None
         except ExchangeError as e:
             logger.error(f"Exchange error on {self.exchange_id}: {e}")
-            # Exchange errors (like invalid symbol) typically don't trip circuit, 
+            # Exchange errors (like invalid symbol) typically don't trip circuit,
             # but for 5xx they might. For now, treat as failure.
             await self.circuit_breaker.record_failure()
             return None
@@ -78,15 +80,23 @@ class ExchangeInterface:
             await self.initialize()
         return await self._execute_with_breaker(self.exchange.fetch_ticker, symbol)
 
-    async def fetch_ohlcv(self, symbol: str, timeframe: str = '1m', limit: int = 100) -> Optional[List[Any]]:
+    async def fetch_ohlcv(
+        self, symbol: str, timeframe: str = "1m", limit: int = 100
+    ) -> Optional[List[Any]]:
         if not self.exchange:
             await self.initialize()
-        return await self._execute_with_breaker(self.exchange.fetch_ohlcv, symbol, timeframe, limit=limit)
+        return await self._execute_with_breaker(
+            self.exchange.fetch_ohlcv, symbol, timeframe, limit=limit
+        )
 
-    async def fetch_order_book(self, symbol: str, limit: int = 25) -> Optional[Dict[str, Any]]:
+    async def fetch_order_book(
+        self, symbol: str, limit: int = 25
+    ) -> Optional[Dict[str, Any]]:
         if not self.exchange:
             await self.initialize()
-        return await self._execute_with_breaker(self.exchange.fetch_order_book, symbol, limit=limit)
+        return await self._execute_with_breaker(
+            self.exchange.fetch_order_book, symbol, limit=limit
+        )
 
     async def fetch_balance(self) -> Optional[Dict[str, Any]]:
         if not self.exchange:

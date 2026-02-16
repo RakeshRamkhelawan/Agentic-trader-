@@ -6,7 +6,9 @@ Configures structlog to output JSON in production and colored text in developmen
 
 import logging
 import sys
+
 import structlog
+
 from backend.core.config.settings import settings
 
 

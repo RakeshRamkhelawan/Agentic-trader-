@@ -284,9 +284,7 @@ class WebSocketManager:
             logger.info(f"Disconnecting stale connection: {conn_id}")
             await self.disconnect(conn_id)
 
-    async def broadcast_navagraha_update(
-        self, state: Dict[str, Any]
-    ) -> int:
+    async def broadcast_navagraha_update(self, state: Dict[str, Any]) -> int:
         """Broadcast Navagraha state update."""
         return await self.broadcast_to_channel(
             "navagraha.updates",
@@ -294,9 +292,7 @@ class WebSocketManager:
             message_type="update",
         )
 
-    async def broadcast_ooda_update(
-        self, cycle_state: Dict[str, Any]
-    ) -> int:
+    async def broadcast_ooda_update(self, cycle_state: Dict[str, Any]) -> int:
         """Broadcast OODA Cycle state update."""
         return await self.broadcast_to_channel(
             "ooda.updates",

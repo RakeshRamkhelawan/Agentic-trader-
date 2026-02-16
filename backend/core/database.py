@@ -68,10 +68,14 @@ tenant_session = SessionManager.tenant_session
 # ============================================================================
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
+
 from backend.core.auth.context import get_current_tenant_optional
 
+
 @event.listens_for(Engine, "before_cursor_execute")
-def receive_before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+def receive_before_cursor_execute(
+    conn, cursor, statement, parameters, context, executemany
+):
     """
     Inject tenant_id into the PostgreSQL session variable before any query.
     This enables Row Level Security (RLS) policies to filter data automatically.
@@ -84,17 +88,18 @@ def receive_before_cursor_execute(conn, cursor, statement, parameters, context, 
         return
     if stmt_str.strip().startswith("set app.current_tenant"):
         return
-    
+
     if tenant_id:
         # Use set_config for safe parameter binding with asyncpg
         conn.execute(
-            text("SELECT set_config('app.current_tenant', :tenant_id, false)"), 
-            {"tenant_id": tenant_id}
+            text("SELECT set_config('app.current_tenant', :tenant_id, false)"),
+            {"tenant_id": tenant_id},
         )
     else:
-        # If no tenant context (e.g. background job without context), 
-        # ensure no leakage or strict default. 
+        # If no tenant context (e.g. background job without context),
+        # ensure no leakage or strict default.
         # Ideally, background jobs should set a context too.
         pass
+
 
 from sqlalchemy import text

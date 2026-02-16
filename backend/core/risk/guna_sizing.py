@@ -1,9 +1,11 @@
 from enum import Enum
 
+
 class GunaType(str, Enum):
     SATTVA = "sattva"
     RAJAS = "rajas"
     TAMAS = "tamas"
+
 
 class GunaSizer:
     """
@@ -22,5 +24,5 @@ class GunaSizer:
             return 1.2
         elif guna == GunaType.TAMAS:
             # Inertia, confusion, delusion -> Reduce Size significantly or Halt
-            return 0.5 
+            return 0.5
         return 1.0
