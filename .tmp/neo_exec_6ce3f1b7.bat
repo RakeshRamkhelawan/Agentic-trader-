@@ -1,0 +1,2 @@
+cd /d c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621
+if exist frontend\package.json (type frontend\package.json) else (if exist package.json (type package.json) else (echo No package.json found))

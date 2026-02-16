@@ -1,0 +1,1 @@
+pip show pyswisseph kerykeion 2>nul || pip install pyswisseph kerykeion

@@ -53,13 +53,19 @@ class ClickHouseClient:
 
     async def connect(self) -> None:
         """Establish connection to ClickHouse."""
-        self.client = await clickhouse_connect.get_async_client(
-            host=self.host,
-            port=self.port,
-            database=self.database,
-            username=self.username,
-            password=self.password,
-        )
+        print(f"DEBUG: ClickHouseClient connecting to {self.host}:{self.port} as user='{self.username}' with password='{self.password}'")
+        try:
+            self.client = await clickhouse_connect.get_async_client(
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                username=self.username,
+                password=self.password,
+            )
+            print("DEBUG: ClickHouseClient connected successfully.")
+        except Exception as e:
+            print(f"DEBUG: ClickHouseClient connection failed: {e}")
+            raise
 
     async def disconnect(self) -> None:
         """Close connection to ClickHouse."""

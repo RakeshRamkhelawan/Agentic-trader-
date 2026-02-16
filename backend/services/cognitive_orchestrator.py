@@ -535,7 +535,7 @@ class CognitiveOrchestrator:
         """Process incoming market tick with full validation and dispatch."""
         import time as _time
 
-        from backend.market_data.models import EventType, UnifiedMarketEvent
+        from backend.core.market_data.models import EventType, UnifiedMarketEvent
 
         try:
             # 1. DESERIALIZE & VALIDATE
@@ -587,8 +587,16 @@ async def main():
     # Initialize ClickHouse Client
     from backend.market_data.sinks.clickhouse_writer import ClickHouseWriter
     from backend.storage.clickhouse_client import ClickHouseClient
+    from backend.core.config.settings import settings
 
-    clickhouse_client = ClickHouseClient()
+    clickhouse_client = ClickHouseClient(
+        host=settings.CLICKHOUSE_HOST,
+        port=settings.CLICKHOUSE_PORT,
+        username=settings.CLICKHOUSE_USER,
+        password=settings.CLICKHOUSE_PASSWORD,
+        database=settings.CLICKHOUSE_DB
+    )
+    
     # Connect needs to happen in loop
     await clickhouse_client.connect()
 

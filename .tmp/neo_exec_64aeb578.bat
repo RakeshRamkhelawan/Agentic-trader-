@@ -1,0 +1,2 @@
+cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621 && if not exist "venv" python -m venv venv
+cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621 && call venv\Scripts\activate.bat && pip list | findstr pytest

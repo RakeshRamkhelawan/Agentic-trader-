@@ -1,0 +1,1 @@
+cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621 && dir /b backend\tests 2>nul || echo No tests directory

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from backend.market_data.models import UnifiedMarketEvent
+from backend.core.market_data.models import UnifiedMarketEvent
 from backend.strategies.base import BaseStrategy
 
 

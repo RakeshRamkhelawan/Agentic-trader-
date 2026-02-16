@@ -1,0 +1,109 @@
+{
+  "dashboard": {
+    "title": "Samkhya Compliance & Risk Monitor",
+    "timezone": "utc",
+    "editable": true,
+    "panels": [
+      {
+        "id": 1,
+        "title": "Position Size Compliance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "samkhya_position_size_ratio",
+            "legendFormat": "{{symbol}}"
+          }
+        ],
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "thresholds": [
+          {"value": 0.05, "color": "red", "line": true}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "MiFID II Violations",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(samkhya_mifid_violations_total[24h]))",
+            "legendFormat": "Total Violations"
+          }
+        ],
+        "gridPos": {"x": 12, "y": 0, "w": 6, "h": 8},
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "red", "value": 1}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Trade Approval Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(samkhya_trade_approval_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95"
+          }
+        ],
+        "gridPos": {"x": 18, "y": 0, "w": 6, "h": 8}
+      },
+      {
+        "id": 4,
+        "title": "Audit Log Volume",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(samkhya_audit_logs_total[5m])",
+            "legendFormat": "{{action}}"
+          }
+        ],
+        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8}
+      },
+      {
+        "id": 5,
+        "title": "Best Execution Compliance",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "samkhya_best_execution_deviation",
+            "legendFormat": "{{venue}}"
+          }
+        ],
+        "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8}
+      },
+      {
+        "id": 6,
+        "title": "Circuit Breaker Trips",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(samkhya_circuit_breaker_trips_total[1h]))",
+            "legendFormat": "Last Hour"
+          }
+        ],
+        "gridPos": {"x": 0, "y": 16, "w": 8, "h": 6}
+      },
+      {
+        "id": 7,
+        "title": "PnL by Tenant",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "samkhya_portfolio_pnl",
+            "legendFormat": "{{tenant_id}}"
+          }
+        ],
+        "gridPos": {"x": 8, "y": 16, "w": 16, "h": 6}
+      }
+    ],
+    "refresh": "15s",
+    "schemaVersion": 27,
+    "version": 1
+  }
+}

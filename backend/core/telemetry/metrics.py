@@ -49,6 +49,40 @@ class PrometheusMetrics:
             registry=self._registry,
         )
 
+        # --- Business Logic Metrics ---
+        self.trades_executed_total = Counter(
+            f"{service_name}_trades_executed_total",
+            "Total trades executed.",
+            ["strategy", "agent", "status"], # Labels
+            registry=self._registry,
+        )
+        
+        self.pnl_realized_total = Counter(
+            f"{service_name}_pnl_realized_total",
+            "Total Realized PnL.",
+            registry=self._registry,
+        )
+        
+        self.compliance_blocks_total = Counter(
+            f"{service_name}_compliance_blocks_total",
+            "Total trades blocked by compliance.",
+            ["reason"],
+            registry=self._registry,
+        )
+        
+        self.websocket_connections = Gauge(
+            f"{service_name}_websocket_connections_active",
+            "Active WebSocket connections.",
+            registry=self._registry,
+        )
+
+        self.security_violations_total = Counter(
+            f"{service_name}_security_violations_total",
+            "Total number of security violations.",
+            ["violator", "action"],
+            registry=self._registry,
+        )
+
         # --- Guna Metrics (Globaal, dus zonder service_name prefix) ---
         # Only register if not already registered
         try:

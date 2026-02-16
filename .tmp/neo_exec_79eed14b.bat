@@ -1,0 +1,1 @@
+powershell -Command "$content = Get-Content 'c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\navagraha\ephemeris.py' -Raw; $lines = $content -split \"`n\"; $lines[108..115] -join \"`n\""

@@ -20,6 +20,10 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
   - ✅ **Revolut X**: Geverifieerd en werkend.
   - ⚠️ **Bybit/Kraken**: Nog steeds Auth errors (Bybit: 10010 IP restriction).
 - **Beveiliging hersteld**: De `.env` file is volledig gewist uit de git historie en wordt nu genegeerd.
+- **Epic 12: Production Quality Monitoring (VOLTOOID)**:
+  - **Structured Logging**: Geïmplementeerd `structlog` voor JSON-logging en `AuditLogger` voor beveiligingsevents.
+  - **Security Regression**: Testsuite toegevoegd die RBAC en Gatekeeper-regels afdwingt.
+  - **Observability**: `security_violations_total` metric toegevoegd aan Prometheus.
 - **Cleanup & Commit**: Alle wijzigingen (inclusief nieuwe scripts en `.gitignore` fix) zijn gecommit en gepusht.
 
 ## 3. Key Files
@@ -37,6 +41,7 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
 - **Samkhya Progressie**: De succesvolle merge van Phase 10 vormt het fundament voor de verdere opschaling naar productie.
 
 ## 5. Next Steps
-- Audit remaining high-risk execution paths for unauthorized tool access.
-- Implement security regression testing in CI/CD pipeline.
-- Progress to Epic 12: Production Quality Monitoring.
+- **Epic 13: Deployment & Infrastructure**:
+  - Container hardening (multi-stage, non-root).
+  - Kubernetes/Helm configuratie.
+  - CI/CD pipeline setup.

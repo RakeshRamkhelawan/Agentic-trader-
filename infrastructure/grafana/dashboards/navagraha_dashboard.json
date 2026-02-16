@@ -1,0 +1,126 @@
+{
+  "dashboard": {
+    "title": "Samkhya Navagraha Monitor",
+    "timezone": "utc",
+    "editable": true,
+    "panels": [
+      {
+        "id": 1,
+        "title": "Planetary Positions (Longitude)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "samkhya_planet_longitude",
+            "legendFormat": "{{planet}}"
+          }
+        ],
+        "gridPos": {"x": 0, "y": 0, "w": 24, "h": 10}
+      },
+      {
+        "id": 2,
+        "title": "Rahu Kala Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "samkhya_rahu_kala_active",
+            "legendFormat": "Active"
+          }
+        ],
+        "gridPos": {"x": 0, "y": 10, "w": 6, "h": 6},
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "red", "value": 1}
+              ]
+            },
+            "mappings": [
+              {"value": 0, "text": "Safe"},
+              {"value": 1, "text": "BLOCKED"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Current Dasha Period",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "samkhya_current_dasha",
+            "legendFormat": "{{planet}}"
+          }
+        ],
+        "gridPos": {"x": 6, "y": 10, "w": 6, "h": 6}
+      },
+      {
+        "id": 4,
+        "title": "Retrograde Planets",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "samkhya_planet_retrograde",
+            "legendFormat": "{{planet}}"
+          }
+        ],
+        "gridPos": {"x": 12, "y": 10, "w": 6, "h": 6}
+      },
+      {
+        "id": 5,
+        "title": "Planetary Aspects (Drishti)",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "samkhya_planetary_aspects",
+            "legendFormat": "{{from}} → {{to}}"
+          }
+        ],
+        "gridPos": {"x": 18, "y": 10, "w": 6, "h": 6}
+      },
+      {
+        "id": 6,
+        "title": "Ephemeris Cache Hit Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(samkhya_cache_hits_total{namespace=\"navagraha\"}[5m]) / (rate(samkhya_cache_hits_total{namespace=\"navagraha\"}[5m]) + rate(samkhya_cache_misses_total{namespace=\"navagraha\"}[5m]))",
+            "legendFormat": "Level {{level}}"
+          }
+        ],
+        "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8}
+      },
+      {
+        "id": 7,
+        "title": "Ephemeris Calculation Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(samkhya_ephemeris_calc_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(samkhya_ephemeris_calc_duration_seconds_bucket[5m]))",
+            "legendFormat": "P99"
+          }
+        ],
+        "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8}
+      },
+      {
+        "id": 8,
+        "title": "Nakshatra Influence",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "samkhya_nakshatra_weights",
+            "legendFormat": "{{nakshatra}}"
+          }
+        ],
+        "gridPos": {"x": 0, "y": 24, "w": 24, "h": 8}
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "version": 1
+  }
+}

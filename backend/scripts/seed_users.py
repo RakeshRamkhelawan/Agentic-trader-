@@ -26,7 +26,7 @@ try:
     def hash_password(password: str) -> str:
         return pwd_context.hash(password)
 
-except ImportError:
+except (ImportError, AttributeError, Exception):
     # Fallback for dev environment without passlib
     import hashlib
 

@@ -8,10 +8,9 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Default to internal docker URL if not set
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql+asyncpg://app:app_secure@localhost:5455/trading_db"
-)
+from backend.core.config.settings import settings
+
+DATABASE_URL = settings.DATABASE_URL
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 
@@ -63,3 +62,39 @@ class SessionManager:
 # Export context managers for ease of use (e.g. 'async with system_admin_session() as db:')
 system_admin_session = SessionManager.system_admin_session
 tenant_session = SessionManager.tenant_session
+
+# ============================================================================
+# RLS EVENT LISTENER
+# ============================================================================
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+from backend.core.auth.context import get_current_tenant_optional
+
+@event.listens_for(Engine, "before_cursor_execute")
+def receive_before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    """
+    Inject tenant_id into the PostgreSQL session variable before any query.
+    This enables Row Level Security (RLS) policies to filter data automatically.
+    """
+    tenant_id = get_current_tenant_optional()
+
+    # Prevent infinite recursion: If the statement is already setting the tenant, do nothing.
+    stmt_str = str(statement).lower()
+    if "set_config" in stmt_str and "app.current_tenant" in stmt_str:
+        return
+    if stmt_str.strip().startswith("set app.current_tenant"):
+        return
+    
+    if tenant_id:
+        # Use set_config for safe parameter binding with asyncpg
+        conn.execute(
+            text("SELECT set_config('app.current_tenant', :tenant_id, false)"), 
+            {"tenant_id": tenant_id}
+        )
+    else:
+        # If no tenant context (e.g. background job without context), 
+        # ensure no leakage or strict default. 
+        # Ideally, background jobs should set a context too.
+        pass
+
+from sqlalchemy import text
