@@ -271,6 +271,7 @@ AuthMiddleware.PUBLIC_PATHS = {
     "/api/v1/navagraha/current-state",
     "/api/v1/agents/status",
     "/api/v1/agents/chat",
+    "/api/v1/agents/run-cycle",
     "/api/v1/ooda/current-cycle",
     "/api/v1/monitoring/health",
     "/api/v1/monitoring/soul-context",
