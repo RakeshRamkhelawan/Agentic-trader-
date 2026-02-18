@@ -4,15 +4,15 @@ Prometheus metrics for Prediction Market Intelligence service.
 Defines all metrics exposed via the /metrics endpoint.
 """
 
-from prometheus_client import Counter, Gauge, Histogram, Info
+from prometheus_client import Counter, Gauge, Histogram
 
 # Service information
-SERVICE_INFO = Info(
-    "prediction_intelligence_service",
+SERVICE_VERSION = Gauge(
+    "prediction_intelligence_service_info",
     "Prediction Intelligence Service Information",
-    labelnames=["version", "environment"],
+    ["version", "environment"],
 )
-SERVICE_INFO.info({"version": "1.0.0", "environment": "production"})
+SERVICE_VERSION.labels(version="1.0.0", environment="production").set(1)
 
 # ============================================================================
 # REQUEST METRICS
@@ -21,16 +21,14 @@ SERVICE_INFO.info({"version": "1.0.0", "environment": "production"})
 REQUEST_COUNT = Counter(
     "prediction_requests_total",
     "Total HTTP requests processed",
-    labelnames=["method", "endpoint", "status"],
-    help="Counter for HTTP requests by method, endpoint, and status code",
+    ["method", "endpoint", "status"],
 )
 
 REQUEST_LATENCY = Histogram(
     "prediction_request_duration_seconds",
     "HTTP request latency in seconds",
-    labelnames=["method", "endpoint"],
+    ["method", "endpoint"],
     buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
-    help="Histogram of request latencies in seconds",
 )
 
 # ============================================================================
@@ -40,16 +38,14 @@ REQUEST_LATENCY = Histogram(
 SIGNALS_GENERATED = Counter(
     "prediction_signals_generated_total",
     "Total prediction signals generated",
-    labelnames=["market", "category", "signal_type"],
-    help="Counter for generated signals by market, category, and type",
+    ["market", "category", "signal_type"],
 )
 
 SIGNAL_CONFIDENCE = Histogram(
     "prediction_signal_confidence",
     "Distribution of signal confidence scores",
-    labelnames=["market"],
+    ["market"],
     buckets=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-    help="Histogram of signal confidence values",
 )
 
 # ============================================================================
@@ -59,16 +55,14 @@ SIGNAL_CONFIDENCE = Histogram(
 ANALYSIS_JOBS = Counter(
     "prediction_analysis_jobs_total",
     "Total analysis jobs executed",
-    labelnames=["analysis_type", "status"],
-    help="Counter for analysis jobs by type and completion status",
+    ["analysis_type", "status"],
 )
 
 ANALYSIS_DURATION = Histogram(
     "prediction_analysis_duration_seconds",
     "Analysis job execution duration in seconds",
-    labelnames=["analysis_type"],
+    ["analysis_type"],
     buckets=[1, 5, 10, 30, 60, 120, 300],
-    help="Histogram of analysis job durations",
 )
 
 # ============================================================================
@@ -78,16 +72,14 @@ ANALYSIS_DURATION = Histogram(
 DUCKDB_QUERIES = Counter(
     "prediction_duckdb_queries_total",
     "Total DuckDB queries executed",
-    labelnames=["query_type"],
-    help="Counter for DuckDB query operations",
+    ["query_type"],
 )
 
 DUCKDB_QUERY_DURATION = Histogram(
     "prediction_duckdb_query_duration_seconds",
     "DuckDB query execution duration in seconds",
-    labelnames=["query_type"],
+    ["query_type"],
     buckets=[0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0],
-    help="Histogram of DuckDB query durations",
 )
 
 # ============================================================================
@@ -97,15 +89,13 @@ DUCKDB_QUERY_DURATION = Histogram(
 CIRCUIT_BREAKER_STATE = Gauge(
     "prediction_circuit_breaker_state",
     "Circuit breaker state (0=closed, 1=open, 2=half_open)",
-    labelnames=["service"],
-    help="Gauge indicating circuit breaker state for external services",
+    ["service"],
 )
 
 CIRCUIT_BREAKER_TRANSITIONS = Counter(
     "prediction_circuit_breaker_transitions_total",
     "Total circuit breaker state transitions",
-    labelnames=["service", "from_state", "to_state"],
-    help="Counter for circuit breaker state transitions",
+    ["service", "from_state", "to_state"],
 )
 
 # ============================================================================
@@ -115,22 +105,19 @@ CIRCUIT_BREAKER_TRANSITIONS = Counter(
 CACHE_HITS = Counter(
     "prediction_cache_hits_total",
     "Total cache hits",
-    labelnames=["cache_type"],
-    help="Counter for cache hits",
+    ["cache_type"],
 )
 
 CACHE_MISSES = Counter(
     "prediction_cache_misses_total",
     "Total cache misses",
-    labelnames=["cache_type"],
-    help="Counter for cache misses",
+    ["cache_type"],
 )
 
 CACHE_SIZE = Gauge(
     "prediction_cache_size_bytes",
     "Current cache size in bytes",
-    labelnames=["cache_type"],
-    help="Gauge for current cache size",
+    ["cache_type"],
 )
 
 # ============================================================================
@@ -140,8 +127,7 @@ CACHE_SIZE = Gauge(
 ERRORS_TOTAL = Counter(
     "prediction_errors_total",
     "Total errors occurred",
-    labelnames=["error_type", "endpoint"],
-    help="Counter for errors by type and endpoint",
+    ["error_type", "endpoint"],
 )
 
 # ============================================================================

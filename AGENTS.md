@@ -9,7 +9,7 @@ This document provides essential information for AI coding agents working on the
 **Agentic Trader Platform** is a production-grade AI trading system featuring:
 
 - **Multi-Agent Cognitive System**: ReAct reasoning pattern with specialized agents (Research, Risk, Macro, Valuation)
-- **Advanced Risk Management**: VaR calculations, stress testing, Kelly criterion optimization
+- **Advanced Risk Management**: VaR calculations, stress testing, Kelly criterion optimization 
 - **Real-time Execution**: Smart order routing, shadow portfolios, multi-exchange support
 - **Enterprise Infrastructure**: ClickHouse analytics, Redis event bus, Kafka/Redpanda messaging
 - **Observability**: OpenTelemetry tracing, Prometheus metrics, structured logging

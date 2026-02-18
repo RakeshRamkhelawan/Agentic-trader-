@@ -1,7 +1,7 @@
 from typing import Dict
 
+from backend.core.regime_detector import MarketRegime
 from backend.core.risk.guna_sizing import GunaType
-from backend.core.schemas.ooda_types import MarketRegime
 from backend.core.strategy.implementations import (DefensiveStrategy,
                                                    MeanReversionStrategy,
                                                    TrendFollowingStrategy)

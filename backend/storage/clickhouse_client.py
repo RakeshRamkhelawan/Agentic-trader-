@@ -116,6 +116,9 @@ class ClickHouseClient:
         if not self.client:
             raise RuntimeError("Not connected. Call connect() first.")
 
+        if not data:
+            return
+
         # Automatic Tenant Injection
         tenant_id = get_current_tenant_optional()
         if tenant_id:
@@ -123,7 +126,23 @@ class ClickHouseClient:
                 if "tenant_id" not in item:
                     item["tenant_id"] = tenant_id
 
-        await self.client.insert(table, data, column_names=column_names)
+        # Filter out None values from data
+        data = [item for item in data if item is not None]
+        if not data:
+            return
+
+        # Extract column names from first data item to ensure consistency
+        if column_names is None:
+            column_names = list(data[0].keys())
+
+        # Convert data to list of tuples for clickhouse-connect
+        # This ensures proper column alignment
+        data_tuples = []
+        for item in data:
+            row = tuple(item.get(col) for col in column_names)
+            data_tuples.append(row)
+
+        await self.client.insert(table, data_tuples, column_names=column_names)
 
     async def create_table(self, schema: str) -> None:
         """

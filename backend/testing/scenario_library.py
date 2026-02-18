@@ -36,7 +36,7 @@ class ScenarioLibrary:
                 num_days=30,
                 volatility=0.01,
             ),
-            expected_regime=MarketRegime.TRENDING_UP,
+            expected_regime=MarketRegime.BULL,
             metadata={
                 "category": "trending",
                 "direction": "up",
@@ -63,7 +63,7 @@ class ScenarioLibrary:
                 num_days=30,
                 volatility=0.015,
             ),
-            expected_regime=MarketRegime.TRENDING_DOWN,
+            expected_regime=MarketRegime.BEAR,
             metadata={
                 "category": "trending",
                 "direction": "down",
@@ -87,7 +87,7 @@ class ScenarioLibrary:
             data_points=generate_ranging_market(
                 center_price=3000.0, range_pct=0.05, num_days=30
             ),
-            expected_regime=MarketRegime.RANGING,
+            expected_regime=MarketRegime.SIDEWAYS,
             metadata={
                 "category": "ranging",
                 "expected_trades": "range trading or avoid",
@@ -156,7 +156,7 @@ class ScenarioLibrary:
                 num_days=60,
                 volatility=0.008,
             ),
-            expected_regime=MarketRegime.TRENDING_UP,
+            expected_regime=MarketRegime.BULL,
             metadata={"category": "trending", "direction": "up", "strength": "gentle"},
         )
 
