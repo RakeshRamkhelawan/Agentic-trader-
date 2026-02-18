@@ -170,13 +170,13 @@ ARGUMENTS:
         High score = very contrarian (bullish in bear market)
         Low score = consensus (bullish in bull market)
         """
-        if regime == MarketRegime.TRENDING_DOWN:
+        if regime == MarketRegime.BEAR:
             return 0.9  # Very contrarian
         elif regime == MarketRegime.VOLATILE:
             return 0.7  # Moderately contrarian
-        elif regime == MarketRegime.RANGING:
+        elif regime == MarketRegime.SIDEWAYS:
             return 0.5  # Neutral
-        elif regime == MarketRegime.TRENDING_UP:
+        elif regime == MarketRegime.BULL:
             return 0.2  # Consensus view
         else:
             return 0.5
@@ -325,13 +325,13 @@ ARGUMENTS:
         High score = very contrarian (bearish in bull market)
         Low score = consensus (bearish in bear market)
         """
-        if regime == MarketRegime.TRENDING_UP:
+        if regime == MarketRegime.BULL:
             return 0.9  # Very contrarian
         elif regime == MarketRegime.VOLATILE:
             return 0.7  # Moderately contrarian
-        elif regime == MarketRegime.RANGING:
+        elif regime == MarketRegime.SIDEWAYS:
             return 0.5  # Neutral
-        elif regime == MarketRegime.TRENDING_DOWN:
+        elif regime == MarketRegime.BEAR:
             return 0.2  # Consensus view
         else:
             return 0.5

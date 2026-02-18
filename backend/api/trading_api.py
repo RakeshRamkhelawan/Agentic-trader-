@@ -38,7 +38,7 @@ async def get_markets(
 # ============================================================================
 
 
-@router.get("/candles/{symbol}")
+@router.get("/candles/{symbol:path}")
 async def get_candles(
     symbol: str,
     timeframe: str = "1m",

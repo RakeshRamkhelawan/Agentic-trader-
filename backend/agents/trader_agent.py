@@ -200,9 +200,9 @@ class TraderAgent(BaseAgent):
         Bepaal trade richting (buy/sell) van orientation.
 
         Simplified strategy logic:
-        - TRENDING_UP + high confidence → buy
-        - TRENDING_DOWN + high confidence → sell
-        - RANGING/VOLATILE → no trade
+        - BULL + high confidence → buy
+        - BEAR + high confidence → sell
+        - SIDEWAYS/VOLATILE → no trade
 
         Returns:
             "buy", "sell", or None
@@ -215,12 +215,12 @@ class TraderAgent(BaseAgent):
             return None
 
         # Regime-based decisions
-        if regime == MarketRegime.TRENDING_UP:
+        if regime == MarketRegime.BULL:
             return "buy"
-        elif regime == MarketRegime.TRENDING_DOWN:
+        elif regime == MarketRegime.BEAR:
             return "sell"
         else:
-            # RANGING, VOLATILE, UNKNOWN → geen trade
+            # SIDEWAYS, VOLATILE, UNKNOWN → geen trade
             return None
 
     def _calculate_position_size(
@@ -236,9 +236,9 @@ class TraderAgent(BaseAgent):
         """
         # Regime risk multipliers
         regime_multipliers = {
-            MarketRegime.TRENDING_UP: 1.2,
-            MarketRegime.TRENDING_DOWN: 1.2,
-            MarketRegime.RANGING: 0.8,
+            MarketRegime.BULL: 1.2,
+            MarketRegime.BEAR: 1.2,
+            MarketRegime.SIDEWAYS: 0.8,
             MarketRegime.VOLATILE: 0.5,
             MarketRegime.UNKNOWN: 0.5,
         }
@@ -294,9 +294,9 @@ class TraderAgent(BaseAgent):
         Returns:
             Leverage multiplier of None voor spot
         """
-        if regime in [MarketRegime.TRENDING_UP, MarketRegime.TRENDING_DOWN]:
+        if regime in [MarketRegime.BULL, MarketRegime.BEAR]:
             return 2.0
-        elif regime == MarketRegime.RANGING:
+        elif regime == MarketRegime.SIDEWAYS:
             return 1.0
         else:
             return None  # Spot trading

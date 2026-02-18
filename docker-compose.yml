@@ -46,8 +46,9 @@ services:
     image: docker.redpanda.com/redpandadata/console:v2.4.6
     container_name: redpanda-console
     restart: on-failure
-    entrypoint: /bin/sh
-    command: -c "echo \"kafka.brokers=redpanda:29092\" > /tmp/config.yaml && /app/console"
+    environment:
+      - KAFKA_BROKERS=redpanda:29092
+      - KAFKA_SASL_ENABLED=false
     ports:
       - "8081:8080"
     depends_on:
@@ -282,14 +283,15 @@ services:
       - CLICKHOUSE_PASSWORD=trading_secure
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
+      - ALLOWED_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000","http://frontend:3000"]
     ports:
       - "8003:8001"
     volumes:
       - ./backend:/app/backend
       - ./.env:/app/env
-    # command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 --workers 2 # Start de Unified API
-    entrypoint: [ "/bin/bash", "/app/backend/scripts/start.sh" ]
-    command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 --workers 2
+    user: "root"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["pip install python-multipart && uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 --workers 2"]
     deploy:
       resources:
         limits:
@@ -349,6 +351,40 @@ services:
       interval: 30s
       timeout: 10s
       start_period: 10s
+      retries: 3
+
+  # Frontend (Vite React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: on-failure:5
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8003
+      - VITE_WS_URL=ws://localhost:8003
+      - VITE_AUTH0_DOMAIN=agentictrader.eu.auth0.com
+      - VITE_AUTH0_CLIENT_ID=aO41wQ7VRzDoHavsdxamJpuSCa47wUJ8
+      - VITE_AUTH0_AUDIENCE=https://api.agentic-trader.com
+    depends_on:
+      api-server:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000" ]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
       retries: 3
 
 volumes:

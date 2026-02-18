@@ -17,10 +17,10 @@ from backend.governance.agent_gatekeeper import AgentRole
 class MarketRegime(str, Enum):
     """Current market regime classification."""
 
-    TRENDING_UP = "trending_up"
-    TRENDING_DOWN = "trending_down"
-    RANGING = "ranging"
-    VOLATILE = "volatile"
+    BULL = "BULL"
+    BEAR = "BEAR"
+    SIDEWAYS = "SIDEWAYS"
+    VOLATILE = "VOLATILE"
     UNKNOWN = "unknown"
 
 

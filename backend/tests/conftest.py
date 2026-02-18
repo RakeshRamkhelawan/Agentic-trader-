@@ -113,7 +113,7 @@ def bullish_orientation():
     """Bullish orientation fixture."""
     return Orientation(
         symbol="BTC/USDT",
-        regime=MarketRegime.TRENDING_UP,
+        regime=MarketRegime.BULL,
         indicators={"rsi": 65.0, "macd": 100.0},
         core_sentiment=0.8,
         rag_context=["Historical bull run pattern detected"],
@@ -126,7 +126,7 @@ def bearish_orientation():
     """Bearish orientation fixture."""
     return Orientation(
         symbol="BTC/USDT",
-        regime=MarketRegime.TRENDING_DOWN,
+        regime=MarketRegime.BEAR,
         indicators={"rsi": 35.0, "macd": -50.0},
         core_sentiment=0.3,
         confidence=0.70,

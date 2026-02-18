@@ -150,9 +150,9 @@ class AnalystAgent(BaseAgent):
 
         Simplified heuristiek:
         - VOLATILE: Hoge spread
-        - TRENDING_UP: RSI > 60
-        - TRENDING_DOWN: RSI < 40
-        - RANGING: Anders
+        - BULL: RSI > 60
+        - BEAR: RSI < 40
+        - SIDEWAYS: Anders
 
         Returns:
             MarketRegime enum
@@ -166,11 +166,11 @@ class AnalystAgent(BaseAgent):
 
         # Trend checks
         if rsi > 60:
-            return MarketRegime.TRENDING_UP
+            return MarketRegime.BULL
         elif rsi < 40:
-            return MarketRegime.TRENDING_DOWN
+            return MarketRegime.BEAR
         else:
-            return MarketRegime.RANGING
+            return MarketRegime.SIDEWAYS
 
     def _calculate_technical_confidence(self, indicators: Dict[str, float]) -> float:
         """

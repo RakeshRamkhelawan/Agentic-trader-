@@ -9,8 +9,7 @@ import redis.asyncio as redis
 from backend.core.config.settings import settings
 from backend.core.karma.episode_memory import EpisodeMemory
 from backend.core.navagraha.service import NavagrahaService
-from backend.core.regime_detector import RegimeDetector
-from backend.core.schemas.ooda_types import MarketRegime
+from backend.core.regime_detector import MarketRegime, RegimeDetector
 
 logger = logging.getLogger(__name__)
 
