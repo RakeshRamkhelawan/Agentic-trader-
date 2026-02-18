@@ -46,6 +46,9 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Type checking cache
+.mypy_cache/
 test_revolut_connectivity.py
 test_revolut_balance.py
 

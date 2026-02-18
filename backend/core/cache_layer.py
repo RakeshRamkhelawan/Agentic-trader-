@@ -21,7 +21,7 @@ class AsyncCacheLayer:
 
     _instance: Optional["AsyncCacheLayer"] = None
 
-    def __init__(self, redis_url: str = None):
+    def __init__(self, redis_url: Optional[str] = None):
         self.redis_url = redis_url or settings.REDIS_URL
         self.client: Optional[redis.Redis] = None
 

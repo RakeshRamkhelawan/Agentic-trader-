@@ -375,7 +375,7 @@ class UnifiedBacktestRunner:
             # ============================================
             # PHASE D: STRATEGY SELECTION
             # ============================================
-            strategy = self._select_strategy()
+            self._select_strategy()
 
             # ============================================
             # PHASE A: OODA LOOP - ACT

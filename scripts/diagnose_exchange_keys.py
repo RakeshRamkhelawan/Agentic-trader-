@@ -58,7 +58,7 @@ def main():
 
     # Revolut
     print("\n💳 REVOLUT:")
-    revolut_key_ok = check_env_var("REVOLUT_API_KEY")
+    check_env_var("REVOLUT_API_KEY")
     pem_path = os.getenv("REVOLUT_PRIVATE_KEY_PATH", "").strip('"').strip("'")
     if pem_path:
         from pathlib import Path

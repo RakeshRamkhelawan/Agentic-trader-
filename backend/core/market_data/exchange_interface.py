@@ -89,6 +89,8 @@ class ExchangeInterface:
     async def fetch_ticker(self, symbol: str) -> Optional[Dict[str, Any]]:
         if not self.exchange:
             await self.initialize()
+        if not self.exchange:
+            return None
         return await self._execute_with_breaker(self.exchange.fetch_ticker, symbol)
 
     async def fetch_ohlcv(
@@ -96,6 +98,8 @@ class ExchangeInterface:
     ) -> Optional[List[Any]]:
         if not self.exchange:
             await self.initialize()
+        if not self.exchange:
+            return None
         return await self._execute_with_breaker(
             self.exchange.fetch_ohlcv, symbol, timeframe, limit=limit
         )
@@ -105,6 +109,8 @@ class ExchangeInterface:
     ) -> Optional[Dict[str, Any]]:
         if not self.exchange:
             await self.initialize()
+        if not self.exchange:
+            return None
         return await self._execute_with_breaker(
             self.exchange.fetch_order_book, symbol, limit=limit
         )
@@ -112,4 +118,6 @@ class ExchangeInterface:
     async def fetch_balance(self) -> Optional[Dict[str, Any]]:
         if not self.exchange:
             await self.initialize()
+        if not self.exchange:
+            return None
         return await self._execute_with_breaker(self.exchange.fetch_balance)
