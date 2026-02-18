@@ -92,6 +92,89 @@ async def get_agents_status(
     }
 
 
+@router.post("/run-cycle")
+async def run_agent_cycle(
+    request: Request,
+    orchestrator: CognitiveOrchestrator = Depends(get_orchestrator),
+) -> Dict[str, Any]:
+    """
+    Manually trigger an agent analysis cycle.
+    Fetches current market data and returns AI-generated insights.
+    """
+    from backend.core.cache_layer import get_cache
+    from backend.schemas.agent_messages import AgentMessage
+    
+    cache = get_cache()
+    market_data = await cache.get("markets:all") or []
+    
+    if not market_data:
+        raise HTTPException(status_code=503, detail="No market data available")
+    
+    # Sort by change for analysis
+    sorted_markets = sorted(market_data, key=lambda x: x.get("change_24h", 0), reverse=True)
+    top_gainers = sorted_markets[:3]
+    top_losers = sorted_markets[-3:]
+    
+    # Generate insights using LLM
+    llm = _get_llm_service()
+    
+    market_summary = "Top Gainers:\n"
+    for m in top_gainers:
+        market_summary += f"- {m['symbol']}: ${m['price']:.2f} (+{m['change_24h']:.2f}%)\n"
+    
+    market_summary += "\nTop Losers:\n"
+    for m in top_losers:
+        market_summary += f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:.2f}%)\n"
+    
+    prompt = f"""Analyze this market data and provide trading insights:
+
+{market_summary}
+
+Provide:
+1. Overall market sentiment (bullish/bearish/neutral)
+2. Key assets to watch and why
+3. Risk assessment
+4. One actionable trading insight
+
+Keep it concise and specific."""
+
+    try:
+        response = await llm.provider.generate_text(
+            prompt=prompt,
+            system_prompt="You are an expert crypto trading analyst. Provide concise, actionable insights."
+        )
+        
+        # Trigger agents in background (fire and forget)
+        for agent_id in orchestrator.agents.keys():
+            if agent_id != "orchestrator_v1":
+                try:
+                    await orchestrator.handle_message(
+                        AgentMessage(
+                            source="api",
+                            target=agent_id,
+                            type="TIMER_TICK_1MIN",
+                            payload={
+                                "top_gainers": [{"symbol": m["symbol"], "change": m["change_24h"]} for m in top_gainers],
+                                "top_losers": [{"symbol": m["symbol"], "change": m["change_24h"]} for m in top_losers],
+                            },
+                        )
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to trigger agent {agent_id}: {e}")
+        
+        return {
+            "insights": response,
+            "market_data": {
+                "gainers": [{"symbol": m["symbol"], "price": m["price"], "change": m["change_24h"]} for m in top_gainers],
+                "losers": [{"symbol": m["symbol"], "price": m["price"], "change": m["change_24h"]} for m in top_losers],
+            },
+            "agents_triggered": len(orchestrator.agents) - 1,
+        }
+    except Exception as e:
+        logger.error(f"Failed to generate insights: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_agent(body: ChatRequest) -> ChatResponse:
     """
