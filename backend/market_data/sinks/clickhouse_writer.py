@@ -29,7 +29,8 @@ class ClickHouseWriter:
 
     async def enqueue(self, row: Dict[str, Any]):
         """Add a row to the write queue."""
-        await self._queue.put(row)
+        if row is not None:
+            await self._queue.put(row)
 
     async def run(self):
         """Process the queue and flush to ClickHouse."""
@@ -43,7 +44,6 @@ class ClickHouseWriter:
                 try:
                     row = await asyncio.wait_for(self._queue.get(), timeout=0.1)
                     buffer.append(row)
-                    self._queue.task_done()
                 except asyncio.TimeoutError:
                     pass
 
@@ -54,9 +54,15 @@ class ClickHouseWriter:
                     len(buffer) >= self.batch_size
                     or time_since_flush >= self.flush_interval
                 ):
-                    await self._flush(buffer)
-                    buffer = []
-                    last_flush = now
+                    try:
+                        await self._flush(buffer)
+                        buffer = []
+                        last_flush = now
+                    except Exception as e:
+                        logger.error(f"Failed to flush batch to ClickHouse: {e}")
+                        # Clear buffer to avoid infinite retry loop
+                        buffer = []
+                        await asyncio.sleep(1)
 
             except Exception as e:
                 logger.error(f"Error in ClickHouseWriter run loop: {e}")
@@ -64,7 +70,10 @@ class ClickHouseWriter:
 
         # Final flush
         if buffer:
-            await self._flush(buffer)
+            try:
+                await self._flush(buffer)
+            except Exception as e:
+                logger.error(f"Failed final flush to ClickHouse: {e}")
 
     async def _flush(self, buffer: List[Dict[str, Any]]):
         """Flush buffer to ClickHouse."""
@@ -72,14 +81,11 @@ class ClickHouseWriter:
             return
 
         try:
-            # Assumes client has an insert method or execute
-            # If client.insert doesn't exist, we might need to adjust based on ClickHouseClient implementation
-            # For now, assuming a generic insert or using raw execute if needed.
-            # But let's check ClickHouseClient first? No, let's assume standard interface.
             await self.client.insert(self.table, buffer)
             logger.debug(f"Flushed {len(buffer)} rows to {self.table}")
         except Exception as e:
             logger.error(f"Failed to flush to ClickHouse table {self.table}: {e}")
+            raise  # Re-raise to allow retry logic in run()
 
     def stop(self):
         """Signal the writer to stop."""

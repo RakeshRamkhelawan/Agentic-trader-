@@ -262,10 +262,14 @@ AuthMiddleware.PUBLIC_PATHS = {
     # Dashboard Data (Allow Public for Demo/Dev Mode)
     "/api/v1/navagraha/current-state",
     "/api/v1/agents/status",
+    "/api/v1/agents/chat",
     "/api/v1/ooda/current-cycle",
     "/api/v1/monitoring/health",
     "/api/v1/monitoring/soul-context",
     "/api/v1/monitoring/karma-summary",
+    # Trading Data (Allow Public for Demo/Dev Mode)
+    "/api/v1/trading/markets",
+    "/api/v1/trading/candles/*",
 }
 
 # Use JWTValidator with Auth0 config

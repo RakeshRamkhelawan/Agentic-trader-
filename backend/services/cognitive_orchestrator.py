@@ -173,6 +173,7 @@ class CognitiveOrchestrator:
             if self.message_writer:
                 try:
                     # Format for ClickHouse agent_events table
+                    # Schema: id, ts, type, source, target, tenant_id, conversation_id, symbol, price, payload
                     row = {
                         "id": message.id,
                         "ts": datetime.fromtimestamp(message.timestamp),
@@ -180,14 +181,20 @@ class CognitiveOrchestrator:
                         "source": message.source,
                         "target": message.target,
                         "tenant_id": effective_tenant,
-                        "payload": json.dumps(message.payload),  # Store raw JSON
-                        # Extract common fields for indexing if present
-                        "symbol": message.payload.get("symbol"),
+                        "conversation_id": message.payload.get("conversation_id")
+                        if isinstance(message.payload, dict)
+                        else None,
+                        "symbol": message.payload.get("symbol")
+                        if isinstance(message.payload, dict)
+                        else None,
                         "price": (
                             float(message.payload["price"])
-                            if "price" in message.payload and message.payload["price"]
+                            if isinstance(message.payload, dict)
+                            and "price" in message.payload
+                            and message.payload["price"]
                             else None
                         ),
+                        "payload": json.dumps(message.payload),  # Store raw JSON
                     }
                     # We might need to handle validation/conversion error inside loop,
                     # but here just enqueue.
@@ -558,7 +565,28 @@ class CognitiveOrchestrator:
 
             # 1b. PERSIST to ClickHouse (Async)
             if self.market_writer:
-                await self.market_writer.enqueue(unified.model_dump())
+                # Map UnifiedMarketEvent to market_events table schema
+                # Schema: event_type, venue, symbol, ts_exchange, ts_received, price, size, side, bid, ask, bids_price, bids_size, asks_price, asks_size
+                now = datetime.now()
+                row = {
+                    "event_type": unified.event_type.value
+                    if hasattr(unified.event_type, "value")
+                    else str(unified.event_type),
+                    "venue": unified.exchange,
+                    "symbol": unified.symbol,
+                    "ts_exchange": unified.timestamp,
+                    "ts_received": now,
+                    "price": unified.price if unified.price > 0 else None,
+                    "size": unified.volume if unified.volume > 0 else None,
+                    "side": None,  # Not available in UnifiedMarketEvent
+                    "bid": None,  # Not available in UnifiedMarketEvent
+                    "ask": None,  # Not available in UnifiedMarketEvent
+                    "bids_price": [],  # Empty arrays for now
+                    "bids_size": [],
+                    "asks_price": [],
+                    "asks_size": [],
+                }
+                await self.market_writer.enqueue(row)
 
             # 2. DISPATCH via AgentMessage pipeline
             msg = AgentMessage(
