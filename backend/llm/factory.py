@@ -7,14 +7,14 @@ based on environment configuration or explicit parameters.
 
 import logging
 import os
-from typing import Any, Dict, Optional
-
-_logger = logging.getLogger(__name__)
+from typing import Optional
 
 from backend.llm.provider_interface import LLMProvider
 from backend.llm.providers.deepseek import DeepSeekProvider
 from backend.llm.providers.gemini import GeminiProvider
 from backend.llm.providers.ollama import OllamaProvider
+
+_logger = logging.getLogger(__name__)
 
 
 class LLMFactory:

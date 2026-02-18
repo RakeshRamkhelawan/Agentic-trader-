@@ -8,7 +8,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
 from backend.schemas.orders import OrderRequest, OrderSide

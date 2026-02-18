@@ -1,38 +1,33 @@
-# Version Control
-.git/
+# Git
+.git
 .gitignore
-
-# Environment Variables
-.env*
-*.env
+.github
 
 # Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
+__pycache__
+*.pyc
+*.pyo
+*.pyd
 .Python
 env/
 venv/
 .venv/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
 
 # IDEs
 .vscode/
@@ -40,25 +35,16 @@ MANIFEST
 *.swp
 *.swo
 
-# Testing & Coverage
-tests/
-.pytest_cache/
-.coverage
-htmlcov/
-test_*.py
-
-# Documentation
+# Project specific
+frontend/
+node_modules/
+infra/
+scripts/
+infrastructure/k8s/
+infrastructure/terraform/
 docs/
 *.md
-
-# Logs
-*.log
-logs/
-
-# DevOps & Infrastructure
-infrastructure/k8s/
-scripts/
-
-# Custom UI
-frontend/node_modules/
-frontend/.next/
+LICENSE
+Makefile
+docker-compose.yml
+docker-compose.*.yml

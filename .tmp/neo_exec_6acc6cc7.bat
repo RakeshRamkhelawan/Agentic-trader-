@@ -1,0 +1,2 @@
+dir "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621" /b /s | findstr /i "\.md$ \.py$ \.ts$ \.tsx$ \.yaml$ \.yml$ \.json$" > project_files_list.txt 2>&1
+type project_files_list.txt | findstr /i "SAMKHYA_MASTER FASE_01 HANDOVER EPIC_01 backend\\api backend\\agents backend\\orchestration backend\\execution backend\\core docker-compose settings.py"

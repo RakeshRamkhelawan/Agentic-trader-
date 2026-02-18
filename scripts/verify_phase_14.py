@@ -5,10 +5,10 @@ Demonstrates complete Mahabhutas integration and coherence calculation
 """
 
 import asyncio
-import numpy as np
-import os
 import sys
 from pathlib import Path
+
+import numpy as np
 
 # Add project root to path for backend imports
 script_dir = Path(__file__).parent

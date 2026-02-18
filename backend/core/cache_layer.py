@@ -4,7 +4,7 @@ Async Cache Layer - High-performance Redis-based caching.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import redis.asyncio as redis
 
@@ -21,7 +21,7 @@ class AsyncCacheLayer:
 
     _instance: Optional["AsyncCacheLayer"] = None
 
-    def __init__(self, redis_url: str = None):
+    def __init__(self, redis_url: Optional[str] = None):
         self.redis_url = redis_url or settings.REDIS_URL
         self.client: Optional[redis.Redis] = None
 

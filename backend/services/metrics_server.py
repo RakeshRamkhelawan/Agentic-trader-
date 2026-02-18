@@ -3,7 +3,6 @@ from fastapi import FastAPI, Response
 from prometheus_client import generate_latest
 
 from backend.core.config.settings import settings
-from backend.core.telemetry.metrics import PrometheusMetrics
 from backend.core.telemetry.tracing import get_tracer, setup_tracing
 
 # Initialiseer FastAPI app

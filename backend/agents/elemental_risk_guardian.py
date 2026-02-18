@@ -114,7 +114,6 @@ class ElementalRiskGuardian(ElementalBase):
             }
 
         # 2. Exposure Check (mock)
-        score = 0.2
         if proposal.get("size", 0) > 100000:
             return {
                 "approved": False,

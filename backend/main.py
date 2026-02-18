@@ -3,6 +3,7 @@ import logging
 
 from backend.core.config.settings import settings
 from backend.core.telemetry.tracing import setup_tracing
+from backend.llm.usage_tracker import UsageTracker
 from backend.schemas.agent_messages import AgentMessage
 from backend.services.cognitive_orchestrator import CognitiveOrchestrator
 
@@ -13,6 +14,19 @@ async def start_services():
 
     logger = logging.getLogger("MainApp")
     logger.info("Starting Agentic Trader Platform...")
+
+    # Start Prometheus Metrics Server
+    import os
+
+    from prometheus_client import start_http_server
+
+    metrics_port = int(os.getenv("METRICS_SERVER_PORT", 8000))
+    try:
+        start_http_server(metrics_port)
+        logger.info(f"✓ Prometheus Metrics Server started on port {metrics_port}")
+    except Exception as e:
+        logger.error(f"Failed to start Prometheus Metrics Server: {e}")
+
     logger.info(f"Environment: {settings.ENV}, Debug: {settings.DEBUG}")
 
     logger.info(f"Environment: {settings.ENV}, Debug: {settings.DEBUG}")
@@ -50,12 +64,42 @@ async def start_services():
         usage_tracker=usage_tracker, audit_logger=audit_logger
     )
 
+    # Initialize Multi-Frequency Consciousness Architecture (Phase 1-3)
+    from backend.core.cognitive_mind_service import CognitiveMindService
+    from backend.core.eternal_soul_service import EternalSoulService
+    from backend.execution.reflex_executor import ReflexExecutor
+
+    # Layer 1: Eternal Soul (Cosmic constraints)
+    eternal_soul = EternalSoulService()
+    try:
+        await eternal_soul.start()
+        logger.info("✓ Layer 1: Eternal Soul Service started (frequency: ~1 minute)")
+    except Exception as e:
+        logger.warning(f"Eternal Soul Service startup warning: {e}")
+
+    # Layer 2: Cognitive Mind (Decision making)
+    cognitive_mind = CognitiveMindService(shm_name="trading_intents_v2")
+    try:
+        await cognitive_mind.start()
+        logger.info("✓ Layer 2: Cognitive Mind Service started (frequency: 50-200ms)")
+    except Exception as e:
+        logger.warning(f"Cognitive Mind Service startup warning: {e}")
+
+    # Layer 3: Reflex Body (Order execution)
+    reflex_body = ReflexExecutor(
+        shm_name="trading_intents_v2", market_shm_name="market_data_v2"
+    )
+    try:
+        await reflex_body.start()
+        logger.info("✓ Layer 3: Reflex Body Service started (frequency: <10ms)")
+    except Exception as e:
+        logger.warning(f"Reflex Body Service startup warning: {e}")
+
     # In a production setup, each agent would be its own service.
     # For now, orchestrator manages them internally.
 
     # Start any periodic tasks, e.g., Research Agent cycle
     if "research_v1" in orchestrator.agents:
-        research_agent = orchestrator.agents["research_v1"]
         # Trigger the research agent cycle to start the flow
         await orchestrator.handle_message(
             AgentMessage(

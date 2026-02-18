@@ -9,9 +9,10 @@ Features:
 
 import asyncio
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Dict, Optional, Set
+from dataclasses import dataclass
+from typing import Any, Dict
+
+from backend.core.zero_copy_bridge import ZeroCopyBridge
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,15 @@ class MarketDataStreamer:
         # Exchange clients (lazy loaded)
         self._exchanges: Dict[str, Any] = {}
         self._use_mock = True  # Set to False in production
+
+        # Zero-Copy Bridge (Writer)
+        try:
+            self.shm_bridge = ZeroCopyBridge(
+                create=True, shm_name="market_data_v2", dtype_name="market"
+            )
+        except Exception as e:
+            logger.error(f"Failed to initialize Shared Memory Bridge: {e}")
+            self.shm_bridge = None
 
     def set_ws_manager(self, ws_manager) -> None:
         """Set the WebSocket manager for broadcasting."""
@@ -112,6 +122,12 @@ class MarketDataStreamer:
             bids = []
             asks = []
 
+            # Mock BBO for SHM
+            best_bid = 0.0
+            best_ask = 0.0
+            best_bid_size = 0.0
+            best_ask_size = 0.0
+
             for i in range(config.orderbook_depth):
                 bid_price = last_price - (i + 1) * random.uniform(0.5, 2.0)
                 ask_price = last_price + (i + 1) * random.uniform(0.5, 2.0)
@@ -120,6 +136,12 @@ class MarketDataStreamer:
 
                 bids.append([round(bid_price, 2), round(bid_size, 6)])
                 asks.append([round(ask_price, 2), round(ask_size, 6)])
+
+                if i == 0:
+                    best_bid = bids[0][0]
+                    best_bid_size = bids[0][1]
+                    best_ask = asks[0][0]
+                    best_ask_size = asks[0][1]
 
             # Broadcast orderbook
             if self.ws_manager:
@@ -130,6 +152,17 @@ class MarketDataStreamer:
             # Generate mock ticker
             change = random.uniform(-0.5, 0.5)
             last_price = max(1, last_price + change * last_price * 0.001)
+
+            # Write to Shared Memory
+            if self.shm_bridge:
+                self.shm_bridge.write_market_data(
+                    symbol=config.symbol,
+                    bid=best_bid,
+                    ask=best_ask,
+                    last=last_price,
+                    bid_size=best_bid_size,
+                    ask_size=best_ask_size,
+                )
 
             ticker_data = {
                 "symbol": config.symbol,
@@ -154,13 +187,6 @@ class MarketDataStreamer:
 
     async def _stream_exchange_data(self, config: StreamConfig) -> None:
         """Stream real market data from exchange via CCXT Pro."""
-        try:
-            import ccxt.pro as ccxtpro
-        except ImportError:
-            logger.warning("ccxt.pro not available, falling back to mock data")
-            await self._stream_mock_data(config)
-            return
-
         exchange = await self._get_exchange(config.exchange_id)
 
         while True:
@@ -180,6 +206,18 @@ class MarketDataStreamer:
                     for ask in orderbook["asks"][: config.orderbook_depth]
                 ]
 
+                # Update SHM with real BBO
+                if self.shm_bridge and bids and asks:
+                    self.shm_bridge.write_market_data(
+                        symbol=config.symbol,
+                        bid=bids[0][0],
+                        ask=asks[0][0],
+                        last=(bids[0][0] + asks[0][0])
+                        / 2,  # Approx last if not available
+                        bid_size=bids[0][1],
+                        ask_size=asks[0][1],
+                    )
+
                 if self.ws_manager:
                     await self.ws_manager.broadcast_orderbook(
                         symbol=config.symbol, bids=bids, asks=asks, is_snapshot=False
@@ -193,7 +231,7 @@ class MarketDataStreamer:
         """Get or create exchange client."""
         if exchange_id not in self._exchanges:
             try:
-                import ccxt.pro as ccxtpro
+                import ccxt.pro as ccxtpro  # type: ignore[import-untyped]
 
                 exchange_class = getattr(ccxtpro, exchange_id)
                 self._exchanges[exchange_id] = exchange_class(
@@ -224,6 +262,10 @@ class MarketDataStreamer:
                 await exchange.close()
             except Exception:
                 pass
+
+        # Close SHM Bridge
+        if self.shm_bridge:
+            self.shm_bridge.close()
 
         self._exchanges.clear()
         logger.info("Market data streamer closed")

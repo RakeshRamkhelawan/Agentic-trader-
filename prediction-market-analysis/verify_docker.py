@@ -11,10 +11,11 @@ Tests:
 6. API responds to basic requests
 """
 import subprocess
-import time
-import requests
 import sys
+import time
 from pathlib import Path
+
+import requests
 
 
 class DockerVerification:
@@ -52,7 +53,7 @@ class DockerVerification:
             self.log(f"Dockerfile not found: {self.dockerfile_path}", "ERROR")
             return False
 
-        self.log(f"✓ Dockerfile found", "OK")
+        self.log("✓ Dockerfile found", "OK")
         return True
 
     def build_image(self) -> bool:
@@ -64,13 +65,13 @@ class DockerVerification:
             output = self.run_command(cmd)
 
             if "Successfully built" in output:
-                self.log(f"✓ Docker image built successfully", "OK")
+                self.log("✓ Docker image built successfully", "OK")
                 return True
             else:
                 self.log("Docker build did not complete successfully", "ERROR")
                 self.log(output, "ERROR")
                 return False
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             self.log("Docker build failed", "ERROR")
             return False
 
@@ -81,7 +82,7 @@ class DockerVerification:
         try:
             output = self.run_command(f"docker images {self.image_name}", check=False)
             if self.image_name in output:
-                self.log(f"✓ Image exists", "OK")
+                self.log("✓ Image exists", "OK")
                 return True
             else:
                 self.log("Image not found", "ERROR")
@@ -99,7 +100,7 @@ class DockerVerification:
             self.run_command(f"docker stop {self.container_name}", check=False)
             # Remove container
             self.run_command(f"docker rm {self.container_name}", check=False)
-            self.log(f"✓ Container stopped and removed", "OK")
+            self.log("✓ Container stopped and removed", "OK")
             return True
         except Exception as e:
             self.log(f"Error stopping container: {e}", "ERROR")
@@ -138,7 +139,7 @@ class DockerVerification:
             try:
                 response = requests.get(f"{self.base_url}/health", timeout=2)
                 if response.status_code == 200:
-                    self.log(f"✓ Service is ready", "OK")
+                    self.log("✓ Service is ready", "OK")
                     return True
             except requests.exceptions.ConnectionError:
                 pass

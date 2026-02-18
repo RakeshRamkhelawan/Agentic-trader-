@@ -5,11 +5,12 @@ Equivalent to Manas (mind's sensory processing function).
 """
 
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
 from backend.core.frequency_analysis import VibrationalAnalyzer
+from backend.core.navagraha.models import NavagrahaState
 
 
 class SensoryProcessor:
@@ -33,6 +34,7 @@ class SensoryProcessor:
         orderbook_imbalance: float,
         funding_rate: float,
         social_sentiment: float,
+        navagraha_state: Optional[NavagrahaState] = None,
     ) -> Dict[str, Any]:
         """
         Process 5 input streams into unified perception.
@@ -49,7 +51,9 @@ class SensoryProcessor:
             volume_stream: Historical volume array
             orderbook_imbalance: Current imbalance [-1, 1]
             funding_rate: Current funding [-0.1, 0.1]
+            funding_rate: Current funding [-0.1, 0.1]
             social_sentiment: Sentiment score [-1, 1]
+            navagraha_state: Optional Vedic astrology state
 
         Returns:
             Unified perception dictionary with decomposed features
@@ -70,11 +74,23 @@ class SensoryProcessor:
         # 4. Calculate phase alignment (coherence between price and volume)
         phase_alignment = self._calculate_phase_alignment(price_freq, volume_freq)
 
+        # Apply Navagraha Modulations
+        coherence = float(price_freq.coherence)
+        guna_context = {}
+
+        if navagraha_state:
+            # Rahu Kala Penalty: If active, reduce coherence (distortion)
+            if navagraha_state.rahu_kala_active:
+                coherence *= 0.8  # 20% penalty
+
+            # Inject Guna Context
+            guna_context = navagraha_state.guna_distribution.model_dump()
+
         # 5. Build unified perception
         perception = {
             "primary_frequency": float(price_freq.fundamental),
             "harmonic_profile": [float(h) for h in price_freq.harmonics[:3]],
-            "coherence": float(price_freq.coherence),
+            "coherence": coherence,
             "phase": float(price_freq.phase),
             # State vector [price, volume, ob, funding, sentiment]
             "state_vector": np.array(
@@ -87,6 +103,10 @@ class SensoryProcessor:
             "timestamp": int(time.time_ns()),
             "price_amplitude": float(price_freq.amplitude),
             "volume_amplitude": float(volume_freq.amplitude),
+            "guna_context": guna_context,
+            "rahu_kala_active": (
+                navagraha_state.rahu_kala_active if navagraha_state else False
+            ),
         }
 
         # 6. Buffer for temporal analysis

@@ -1,11 +1,11 @@
-import os
 import asyncio
-import httpx
-import ccxt
-from openai import OpenAI
-from dotenv import load_dotenv
-from pathlib import Path
+import os
 import sys
+from pathlib import Path
+
+import ccxt
+from dotenv import load_dotenv
+from openai import OpenAI
 
 # Load .env
 load_dotenv()

@@ -1,0 +1,3 @@
+type "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\docs\planning\01_PHASE_REVIEW_AND_ROADMAP.md" | findstr /n "Phase" | more
+type "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\docs\planning\02_ARCHITECTURE_AND_ALGORITHMS.md" | findstr /n "Navagraha" | more
+type "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\docs\planning\03_QA_AND_OBSERVABILITY.md" | findstr /n "Prometheus" | more

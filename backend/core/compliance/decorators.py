@@ -1,7 +1,5 @@
 import functools
-import inspect
 import logging
-from typing import Any, Optional
 
 from backend.core.auth.context import (get_current_tenant_optional,
                                        get_current_user_optional)

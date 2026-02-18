@@ -1,0 +1,2 @@
+cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621 && if exist Makefile (echo Makefile exists) else (echo No Makefile)
+cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621 && if exist scripts dir /b scripts else echo No scripts directory

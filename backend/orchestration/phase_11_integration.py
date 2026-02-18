@@ -285,7 +285,7 @@ class Phase11IntegrationCoordinator:
         self._call_count = 0
         self._decision_history = []
 
-        logger.info(f"Phase 11 Integration Coordinator initialized")
+        logger.info("Phase 11 Integration Coordinator initialized")
 
     def add_sentiment_agent(self, agent: MockSentimentAgent = None):
         """Add sentiment agent (or create mock)."""

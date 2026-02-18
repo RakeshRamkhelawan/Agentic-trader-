@@ -2,6 +2,7 @@
 Trader Agent - Decide Phase van OODA Loop.
 
 Genereert trade proposals uit orientation analysis.
+Strategy Integration: Accepteert strategy_registry voor Dasha-based strategie selectie.
 """
 
 import logging
@@ -33,6 +34,7 @@ class TraderAgent(BaseAgent):
         event_bus: Optional[Any] = None,
         default_risk_reward: float = 2.0,
         base_position_size: float = 0.1,
+        strategy_registry: Optional[Any] = None,  # UnifiedStrategyRegistry
     ):
         """
         Initialiseer Trader.
@@ -42,6 +44,7 @@ class TraderAgent(BaseAgent):
             event_bus: Event bus
             default_risk_reward: Risk/reward ratio (take_profit / stop_loss)
             base_position_size: Base position size als fractie van capital
+            strategy_registry: UnifiedStrategyRegistry voor Dasha-based strategy selectie
         """
         super().__init__(
             agent_name="Trader",
@@ -52,6 +55,7 @@ class TraderAgent(BaseAgent):
 
         self.default_risk_reward = default_risk_reward
         self.base_position_size = base_position_size
+        self.strategy_registry = strategy_registry
 
         self.proposals_generated = 0
 
@@ -75,8 +79,55 @@ class TraderAgent(BaseAgent):
         self.heartbeat()
 
         try:
-            # Determine trade direction van regime + indicators
-            side = self._determine_side(orientation)
+            # === STRATEGY REGISTRY INTEGRATION (Phase D) ===
+            if self.strategy_registry:
+                try:
+                    # Use Dasha-based strategy analysis
+                    market_data = {
+                        "price": current_price,
+                        "symbol": orientation.symbol,
+                        "regime": orientation.regime.value,
+                        "indicators": orientation.indicators,
+                    }
+                    soul_context = {
+                        "confidence": orientation.confidence,
+                        "core_sentiment": orientation.core_sentiment,
+                    }
+
+                    intent = await self.strategy_registry.analyze_with_dasha_strategy(
+                        market_data=market_data,
+                        soul_context=soul_context,
+                    )
+
+                    if intent and intent.action in ["buy", "sell"]:
+                        # Convert TradingIntent to TradeProposal
+                        side = intent.action
+                        size = (
+                            intent.size if intent.size > 0 else self.base_position_size
+                        )
+
+                        # Adjust confidence by strategy confidence
+                        final_confidence = orientation.confidence * intent.confidence
+
+                        logger.info(
+                            f"Strategy registry generated {side.upper()} signal "
+                            f"with confidence={final_confidence:.2f}"
+                        )
+                    else:
+                        side = None
+
+                except Exception as e:
+                    logger.warning(
+                        f"Strategy registry analysis failed: {e}, using fallback"
+                    )
+                    side = None
+            else:
+                # Fallback: use legacy determination
+                side = None
+
+            # Fallback: Determine trade direction van regime + indicators
+            if side is None:
+                side = self._determine_side(orientation)
 
             if side is None:
                 logger.info(
@@ -128,10 +179,6 @@ class TraderAgent(BaseAgent):
                 config = FastConfig.read()
                 exploration_rate = config.get("exploration_rate", 0.1)
 
-                # Apply exploration rate to confidence (simulated epsilon-greedy or noise)
-                # In this simplified implementation, we use it to dampen or boost confidence check
-                # or just log it for now as part of the decision context
-
                 # Dynamic adjustment: higher exploration -> lower confidence threshold
                 if exploration_rate > 0.5:
                     logger.info(
@@ -140,7 +187,6 @@ class TraderAgent(BaseAgent):
 
             except Exception as e:
                 logger.warning(f"FastConfig read failed: {e}")
-                exploration_rate = 0.0
 
             return proposal
 
@@ -294,8 +340,10 @@ class TraderAgent(BaseAgent):
     def get_statistics(self) -> Dict[str, Any]:
         """Krijg Trader statistieken."""
         health = self.health_check()
-        return {
+        stats = {
             **health,
             "proposals_generated": self.proposals_generated,
             "exploration_rate": FastConfig.read().get("exploration_rate", 0.0),
+            "strategy_registry_enabled": self.strategy_registry is not None,
         }
+        return stats

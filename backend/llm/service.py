@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
@@ -88,9 +88,6 @@ class LLMService:
         # Setup Fallback (Generic: If DeepSeek, fallback to Gemini or Mock)
         fallback_provider = None
         if isinstance(provider, DeepSeekProvider):
-            gemini_key = os.getenv(
-                "LLM_API_KEY"
-            )  # Asking for trouble? usually GEMINI_API_KEY
             # Simplified fallback strategy: Always Mock for now unless explicitly configured
             # In real prod, we'd check for secondary keys
             fallback_provider = MockProvider()

@@ -1,0 +1,27 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "agentic-platform.fullname" . }}-orchestrator
+  labels:
+    {{- include "agentic-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: orchestrator
+spec:
+  minAvailable: 1  # Always keep at least 1 pod running
+  selector:
+    matchLabels:
+      {{- include "agentic-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: orchestrator
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "agentic-platform.fullname" . }}-dashboard
+  labels:
+    {{- include "agentic-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+spec:
+  minAvailable: 1  # Always keep at least 1 pod running
+  selector:
+    matchLabels:
+      {{- include "agentic-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: dashboard

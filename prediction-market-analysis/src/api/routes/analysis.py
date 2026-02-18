@@ -3,19 +3,17 @@ Analysis Router
 Provides endpoints for running and managing analyses.
 """
 
-import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 
 from src.api.schemas.analysis import (
+    AnalysisListResponse,
     AnalysisRequest,
     AnalysisResult,
-    AnalysisListResponse,
-    AnalysisType,
     AnalysisStatus,
     MarketSummary,
 )

@@ -9,8 +9,7 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
-from backend.core.auth.context import (get_current_tenant,
-                                       get_current_tenant_optional)
+from backend.core.auth.context import get_current_tenant_optional
 from backend.storage.clickhouse_client import ClickHouseClient
 
 logger = logging.getLogger(__name__)

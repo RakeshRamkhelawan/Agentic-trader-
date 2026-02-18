@@ -1,0 +1,1 @@
+call venv\Scripts\activate.bat && pip install opentelemetry-instrumentation-asyncio==0.45b0

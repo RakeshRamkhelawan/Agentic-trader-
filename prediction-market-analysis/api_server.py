@@ -5,19 +5,20 @@ Main entry point for the API server.
 
 import logging
 from contextlib import asynccontextmanager
-from typing import Dict, Any
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_client import make_asgi_app
 
+from src.api.middleware import MetricsMiddleware
+from src.api.routes.analysis import initialize_services
+from src.api.routes.analysis import router as analysis_router
+
 # Import routers
 from src.api.routes.health import router as health_router
 from src.api.routes.signals import router as signals_router
-from src.api.routes.analysis import router as analysis_router
-from src.api.routes.analysis import initialize_services
-from src.api.middleware import MetricsMiddleware
 
 # Logging configuration
 logging.basicConfig(
@@ -90,7 +91,7 @@ app.mount("/metrics", metrics_app)
 
 # === ROOT ENDPOINT ===
 @app.get("/", include_in_schema=False)
-async def root() -> Dict[str, Any]:
+async def root() -> dict[str, Any]:
     """Root endpoint with service info."""
     return {
         "service": "prediction-market-intelligence",

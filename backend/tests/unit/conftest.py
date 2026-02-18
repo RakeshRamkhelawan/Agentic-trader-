@@ -43,7 +43,7 @@ def configure_prometheus():
                         for x in ["guna", "trading", "order", "orchestrator"]
                     ):
                         REGISTRY.unregister(collector)
-            except:
+            except Exception:
                 pass
-    except:
+    except Exception:
         pass

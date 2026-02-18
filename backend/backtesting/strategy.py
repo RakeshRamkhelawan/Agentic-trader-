@@ -1,8 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from abc import ABC
+from datetime import datetime
+from typing import Optional
 
 from backend.backtesting.exchange import SimulatedExchange
 from backend.backtesting.fill_models import FillModel, FullFillModel
+from backend.backtesting.models import OrderSide, Trade
 from backend.backtesting.position_sizing import (FixedQuantitySizer,
                                                  PositionSizer)
 from backend.backtesting.slippage_models import (FixedSlippageModel,
@@ -60,7 +62,7 @@ class Strategy(ABC):
         quantity: float,
         current_price: float,
         timestamp: datetime,
-        available_volume: float = float('inf'),
+        available_volume: float = float("inf"),
     ) -> Optional[Trade]:
         """
         Execute an order with slippage and fill model simulation.
@@ -78,8 +80,7 @@ class Strategy(ABC):
         """
         # Apply fill model to determine how much gets filled
         filled_quantity, unfilled_quantity = self.fill_model.compute_fill(
-            order_quantity=quantity,
-            available_volume=available_volume
+            order_quantity=quantity, available_volume=available_volume
         )
 
         # If nothing filled, return None
@@ -88,9 +89,7 @@ class Strategy(ABC):
 
         # Apply slippage model to get execution price
         execution_price, slippage_cost = self.slippage_model.apply(
-            price=current_price,
-            quantity=filled_quantity,
-            side=side
+            price=current_price, quantity=filled_quantity, side=side
         )
 
         # Execute the filled portion at the slipped price
@@ -99,7 +98,7 @@ class Strategy(ABC):
             side=side,
             quantity=filled_quantity,
             current_price=execution_price,
-            timestamp=timestamp
+            timestamp=timestamp,
         )
 
         return trade

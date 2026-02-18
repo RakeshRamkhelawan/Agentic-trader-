@@ -1,0 +1,2 @@
+cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621 && if exist backend\core\config dir /b backend\core\config else echo Config directory missing
+cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621 && if exist backend\api dir /b backend\api else echo API directory missing

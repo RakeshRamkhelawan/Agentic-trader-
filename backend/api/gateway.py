@@ -18,9 +18,8 @@ from typing import Dict, List, Optional
 
 import jwt
 import redis.asyncio as redis
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
-from fastapi.security import HTTPBearer
 from pydantic import BaseModel, Field
 
 from backend.core.config.settings import settings

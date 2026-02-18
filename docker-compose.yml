@@ -58,11 +58,15 @@ services:
     image: clickhouse/clickhouse-server:24.3
     container_name: clickhouse
     ports:
-      - "8123:8123" # HTTP
-      - "9000:9000" # Native
+      - "8124:8123" # HTTP (Changed to 8124 for isolation)
+      - "9001:9000" # Native (Changed to 9001 for isolation)
+    environment:
+      - CLICKHOUSE_USER=trader
+      - CLICKHOUSE_PASSWORD=trading_secure
+      - CLICKHOUSE_DB=trading_db
     volumes:
       - clickhouse_data:/var/lib/clickhouse
-      - ./backend/storage/migrations:/docker-entrypoint-initdb.d/migrations # Mount migrations
+      - ./backend/storage/migrations:/docker-entrypoint-initdb.d # Mount directly to initdb.d
     ulimits:
       nofile:
         soft: 262144
@@ -74,7 +78,7 @@ services:
     container_name: postgres
     restart: on-failure
     ports:
-      - "5455:5432"
+      - "5456:5432"
     environment:
       - POSTGRES_USER=trader
       - POSTGRES_PASSWORD=trading_secure
@@ -101,7 +105,7 @@ services:
     container_name: redis
     restart: on-failure
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
@@ -114,7 +118,7 @@ services:
           cpus: '0.5'
           memory: 512M
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -124,7 +128,7 @@ services:
     container_name: chromadb
     restart: on-failure
     ports:
-      - "8000:8000"
+      - "8005:8000" # Mapped to 8005 to avoid 8000 conflict
     volumes:
       - chromadb_data:/chroma/chroma
     environment:
@@ -139,7 +143,7 @@ services:
           cpus: '0.5'
           memory: 512M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat" ]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -149,7 +153,7 @@ services:
     image: prom/prometheus:v2.47.0
     container_name: prometheus
     ports:
-      - "9090:9090"
+      - "9091:9090"
     volumes:
       - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -168,10 +172,46 @@ services:
       - "3100:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ${PWD}/backend/observability/grafana_provisioning_datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yml
     depends_on:
       - prometheus
 
   # --- APPLICATION LAYER ---
+
+  # Multi-Frequency Consciousness Architecture
+  consciousness-architecture:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+    container_name: consciousness-architecture
+    restart: on-failure:5
+    depends_on:
+      redis:
+        condition: service_started
+    environment:
+      - PYTHONUNBUFFERED=1
+      - METRICS_SERVER_PORT=8000
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8006:8000"
+    volumes:
+      - ./backend:/app/backend
+      - /dev/shm:/dev/shm # Shared memory for zero-copy IPC
+    command: python backend/consciousness_main.py
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   # The Cognitive Orchestrator & Agents
   trading-engine:
@@ -181,15 +221,23 @@ services:
     container_name: trading-engine
     restart: on-failure:5
     depends_on:
-      - redpanda
-      - clickhouse
-      - redis
-      - chromadb
-      - postgres
+      redpanda:
+        condition: service_started
+      clickhouse:
+        condition: service_started
+      redis:
+        condition: service_started
+      chromadb:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
       - REDIS_URL=redis://redis:6379/0
       - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=trader
+      - CLICKHOUSE_PASSWORD=trading_secure
       - PYTHONUNBUFFERED=1
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
@@ -198,7 +246,10 @@ services:
       - ./backend:/app/backend # Hot reload for development
       - ./.env:/app/.env
       - ./backend/config/agent_profiles.yaml:/app/backend/config/agent_profiles.yaml # Mount agent profiles
-    command: python backend/services/cognitive_orchestrator.py # Start de Orchestrator
+    entrypoint: [ "/bin/bash", "/app/backend/scripts/start.sh" ]
+    command: python backend/services/cognitive_orchestrator.py
+    ports:
+      - "8004:8004"
     deploy:
       resources:
         limits:
@@ -216,17 +267,29 @@ services:
     container_name: api-server
     restart: on-failure:5
     depends_on:
-      - trading-engine # Zodat metrics van trading-engine kunnen worden opgehaald
+      trading-engine:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
       - METRICS_SERVER_PORT=8001
       - DATABASE_URL=postgresql+asyncpg://trader:trading_secure@postgres:5432/trading_db
+      - REDIS_URL=redis://redis:6379/0
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=trader
+      - CLICKHOUSE_PASSWORD=trading_secure
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
     ports:
       - "8003:8001"
     volumes:
       - ./backend:/app/backend
       - ./.env:/app/env
-    command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 --workers 2 # Start de Unified API
+    # command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 --workers 2 # Start de Unified API
+    entrypoint: [ "/bin/bash", "/app/backend/scripts/start.sh" ]
+    command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 --workers 2
     deploy:
       resources:
         limits:
@@ -236,7 +299,7 @@ services:
           cpus: '1'
           memory: 1.5G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/health" ]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -282,7 +345,7 @@ services:
           cpus: '1'
           memory: 1.5G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8002/health" ]
       interval: 30s
       timeout: 10s
       start_period: 10s

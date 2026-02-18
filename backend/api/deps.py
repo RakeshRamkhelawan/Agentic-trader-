@@ -4,9 +4,9 @@ Shares common logic like Tenant ID extraction and Database Session setup with RL
 """
 
 import os
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any, AsyncGenerator, Dict
 
-from fastapi import Depends, Header, HTTPException, Request
+from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Import raw session maker from database.py

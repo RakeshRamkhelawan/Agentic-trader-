@@ -28,18 +28,16 @@ Total Test Coverage: 40+ tests across 8 test classes
 import json
 import sys
 import time
-from dataclasses import dataclass
 from pathlib import Path
 from threading import Thread
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 import pytest
 
 # Add backend to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from orchestration.phase_12_real_agents import (AgentMetrics, Phase12Decision,
-                                                Phase12RealAgentConfig,
+from orchestration.phase_12_real_agents import (Phase12RealAgentConfig,
                                                 Phase12RealAgentCoordinator,
                                                 RealAgentLoader)
 
@@ -47,26 +45,28 @@ from orchestration.phase_12_real_agents import (AgentMetrics, Phase12Decision,
 # MOCK AGENT FOR FALLBACK
 # ============================================================================
 
+
 class MockAgent:
     """Fallback mock agent when real agents are unavailable."""
-    
+
     def __init__(self, name: str, action: int = 1, confidence: float = 0.75):
         self.name = name
         self.action = action
         self.confidence = confidence
-    
+
     def analyze(self) -> Dict[str, Any]:
         """Return mock decision."""
         return {
             "action": self.action,
             "confidence": self.confidence,
-            "reasoning": f"Mock {self.name} agent decision (fallback)"
+            "reasoning": f"Mock {self.name} agent decision (fallback)",
         }
 
 
 # ============================================================================
 # FIXTURES
 # ============================================================================
+
 
 @pytest.fixture
 def temp_config_file(tmp_path):
@@ -79,10 +79,10 @@ def temp_config_file(tmp_path):
         "agents": {
             "sentiment": {"enabled": True, "weight": 1.0},
             "market_regime": {"enabled": True, "weight": 1.0},
-            "risk_governor": {"enabled": True, "weight": 1.5}
+            "risk_governor": {"enabled": True, "weight": 1.5},
         },
         "aggregation": "weighted_average",
-        "timeout_ms": 1000
+        "timeout_ms": 1000,
     }
     with open(config_path, "w") as f:
         json.dump(config_data, f)
@@ -149,7 +149,7 @@ def real_agent_coordinator(temp_config_file):
     config = Phase12RealAgentConfig()
     config.agent_timeout = 2.0
     config.enable_parallel_execution = True
-    
+
     coordinator = Phase12RealAgentCoordinator(config)
     coordinator.register_all_real_agents()
     return coordinator
@@ -158,6 +158,7 @@ def real_agent_coordinator(temp_config_file):
 # ============================================================================
 # TEST CLASS 1: Agent Discovery and Loading
 # ============================================================================
+
 
 class TestPhase12AgentDiscovery:
     """
@@ -169,7 +170,7 @@ class TestPhase12AgentDiscovery:
     def test_discover_sentiment_agent(self, real_sentiment_agent):
         """
         Discover and verify real SentimentAgent from backend/agents/sentiment/.
-        
+
         After implementation:
         - Load SentimentAgent class from backend/agents/sentiment/
         - Verify agent has name property "sentiment"
@@ -178,14 +179,14 @@ class TestPhase12AgentDiscovery:
         """
         assert real_sentiment_agent is not None
         assert real_sentiment_agent.name in ["sentiment", "MockAgent"]
-        assert hasattr(real_sentiment_agent, 'analyze')
+        assert hasattr(real_sentiment_agent, "analyze")
         assert callable(real_sentiment_agent.analyze)
 
     @pytest.mark.unit
     def test_discover_market_regime_agent(self, real_market_regime_agent):
         """
         Discover and verify real MarketRegimeAgent from backend/agents/market_regime/.
-        
+
         After implementation:
         - Load MarketRegimeAgent class from backend/agents/market_regime/
         - Verify agent has name property "market_regime"
@@ -194,14 +195,14 @@ class TestPhase12AgentDiscovery:
         """
         assert real_market_regime_agent is not None
         assert real_market_regime_agent.name in ["market_regime", "MockAgent"]
-        assert hasattr(real_market_regime_agent, 'analyze')
+        assert hasattr(real_market_regime_agent, "analyze")
         assert callable(real_market_regime_agent.analyze)
 
     @pytest.mark.unit
     def test_discover_risk_governor(self, real_risk_governor):
         """
         Discover and verify real RiskGovernor from backend/agents/risk_governor/.
-        
+
         After implementation:
         - Load RiskGovernor class from backend/agents/risk_governor/
         - Verify agent has name property "risk_governor"
@@ -210,14 +211,14 @@ class TestPhase12AgentDiscovery:
         """
         assert real_risk_governor is not None
         assert real_risk_governor.name in ["risk_governor", "MockAgent"]
-        assert hasattr(real_risk_governor, 'analyze')
+        assert hasattr(real_risk_governor, "analyze")
         assert callable(real_risk_governor.analyze)
 
     @pytest.mark.unit
     def test_agent_startup_time(self, real_sentiment_agent):
         """
         Measure startup time for real agent initialization.
-        
+
         After implementation:
         - Start timer before agent initialization
         - Initialize SentimentAgent
@@ -227,7 +228,7 @@ class TestPhase12AgentDiscovery:
         start_time = time.time()
         agent = real_sentiment_agent
         elapsed = time.time() - start_time
-        
+
         # Startup should be quick (already initialized in fixture)
         assert elapsed < 2.0
         assert agent is not None
@@ -236,7 +237,7 @@ class TestPhase12AgentDiscovery:
     def test_coordinator_registers_all_agents(self, real_agent_coordinator):
         """
         Verify that Phase12RealAgentCoordinator successfully registers all real agents.
-        
+
         After implementation:
         - Check coordinator has exactly 3 agents registered
         - Verify agents are: sentiment, market_regime, risk_governor
@@ -258,6 +259,7 @@ class TestPhase12AgentDiscovery:
 # TEST CLASS 2: SentimentAgent Real Integration
 # ============================================================================
 
+
 class TestPhase12SentimentAgentRealIntegration:
     """
     Validate integration of real SentimentAgent with coordinator.
@@ -268,7 +270,7 @@ class TestPhase12SentimentAgentRealIntegration:
     def test_real_sentiment_agent_basic_execution(self, real_sentiment_agent):
         """
         Execute real SentimentAgent and verify decision format.
-        
+
         After implementation:
         - Call analyze() on real SentimentAgent
         - Verify returns dict with keys: action, confidence, reasoning
@@ -277,12 +279,12 @@ class TestPhase12SentimentAgentRealIntegration:
         - Verify reasoning is non-empty string
         """
         decision = real_sentiment_agent.analyze()
-        
+
         assert isinstance(decision, dict)
         assert "action" in decision
         assert "confidence" in decision
         assert "reasoning" in decision
-        
+
         assert decision["action"] in [0, 1, 2]
         assert 0 <= decision["confidence"] <= 1
         assert isinstance(decision["reasoning"], str)
@@ -292,7 +294,7 @@ class TestPhase12SentimentAgentRealIntegration:
     def test_real_sentiment_agent_multiple_executions(self, real_sentiment_agent):
         """
         Execute real SentimentAgent multiple times and verify consistency.
-        
+
         After implementation:
         - Call analyze() 5 times on real SentimentAgent
         - Verify all decisions have valid format
@@ -303,19 +305,19 @@ class TestPhase12SentimentAgentRealIntegration:
         for _ in range(5):
             decision = real_sentiment_agent.analyze()
             decisions.append(decision)
-            
+
             assert "action" in decision
             assert "confidence" in decision
             assert decision["action"] in [0, 1, 2]
             assert 0 <= decision["confidence"] <= 1
-        
+
         assert len(decisions) == 5
 
     @pytest.mark.unit
     def test_real_sentiment_agent_in_coordinator(self, real_agent_coordinator):
         """
         Verify real SentimentAgent executes within coordinator.
-        
+
         After implementation:
         - Make decision in coordinator
         - Verify decision includes SentimentAgent's influence
@@ -323,11 +325,11 @@ class TestPhase12SentimentAgentRealIntegration:
         - Check metrics show sentiment agent was called
         """
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
-        assert hasattr(decision, 'action')
-        assert hasattr(decision, 'confidence')
-        
+        assert hasattr(decision, "action")
+        assert hasattr(decision, "confidence")
+
         metrics = real_agent_coordinator.get_metrics()
         assert len(metrics) > 0
 
@@ -335,7 +337,7 @@ class TestPhase12SentimentAgentRealIntegration:
     def test_real_sentiment_decision_quality(self, real_sentiment_agent):
         """
         Validate that real SentimentAgent produces quality decisions.
-        
+
         After implementation:
         - Execute 10 times to gather statistics
         - Calculate average confidence
@@ -344,12 +346,12 @@ class TestPhase12SentimentAgentRealIntegration:
         """
         decisions = []
         confidences = []
-        
+
         for _ in range(10):
             decision = real_sentiment_agent.analyze()
             decisions.append(decision)
             confidences.append(decision["confidence"])
-        
+
         avg_confidence = sum(confidences) / len(confidences)
         assert 0.5 <= avg_confidence <= 1.0  # Should have reasonable confidence
         assert len(decisions) == 10
@@ -358,7 +360,7 @@ class TestPhase12SentimentAgentRealIntegration:
     def test_real_sentiment_agent_error_handling(self, real_sentiment_agent):
         """
         Verify real SentimentAgent handles errors gracefully.
-        
+
         After implementation:
         - Try to call analyze() with various inputs
         - If agent fails, verify fallback decision is returned
@@ -367,7 +369,7 @@ class TestPhase12SentimentAgentRealIntegration:
         """
         # Real agents should handle calls gracefully
         decision = real_sentiment_agent.analyze()
-        
+
         assert decision is not None
         assert "action" in decision
         assert "confidence" in decision
@@ -376,6 +378,7 @@ class TestPhase12SentimentAgentRealIntegration:
 # ============================================================================
 # TEST CLASS 3: MarketRegimeAgent Real Integration
 # ============================================================================
+
 
 class TestPhase12MarketRegimeAgentRealIntegration:
     """
@@ -387,7 +390,7 @@ class TestPhase12MarketRegimeAgentRealIntegration:
     def test_real_market_regime_agent_basic_execution(self, real_market_regime_agent):
         """
         Execute real MarketRegimeAgent and verify decision format.
-        
+
         After implementation:
         - Call analyze() on real MarketRegimeAgent
         - Verify returns dict with keys: action, confidence, reasoning
@@ -396,21 +399,23 @@ class TestPhase12MarketRegimeAgentRealIntegration:
         - Verify reasoning explains detected regime
         """
         decision = real_market_regime_agent.analyze()
-        
+
         assert isinstance(decision, dict)
         assert "action" in decision
         assert "confidence" in decision
         assert "reasoning" in decision
-        
+
         assert decision["action"] in [0, 1, 2]
         assert 0 <= decision["confidence"] <= 1
         assert isinstance(decision["reasoning"], str)
 
     @pytest.mark.unit
-    def test_real_market_regime_agent_multiple_executions(self, real_market_regime_agent):
+    def test_real_market_regime_agent_multiple_executions(
+        self, real_market_regime_agent
+    ):
         """
         Execute real MarketRegimeAgent multiple times and verify variation.
-        
+
         After implementation:
         - Call analyze() 5 times on real MarketRegimeAgent
         - Verify market regime can change (or stable if in flat market)
@@ -421,19 +426,19 @@ class TestPhase12MarketRegimeAgentRealIntegration:
         for _ in range(5):
             decision = real_market_regime_agent.analyze()
             decisions.append(decision)
-            
+
             assert "action" in decision
             assert "confidence" in decision
             assert decision["action"] in [0, 1, 2]
             assert 0 <= decision["confidence"] <= 1
-        
+
         assert len(decisions) == 5
 
     @pytest.mark.unit
     def test_real_market_regime_in_coordinator(self, real_agent_coordinator):
         """
         Verify real MarketRegimeAgent executes within coordinator.
-        
+
         After implementation:
         - Make decision in coordinator
         - Verify decision includes MarketRegimeAgent's influence
@@ -441,16 +446,16 @@ class TestPhase12MarketRegimeAgentRealIntegration:
         - Check metrics show market_regime agent was called
         """
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
-        assert hasattr(decision, 'action')
-        assert hasattr(decision, 'confidence')
+        assert hasattr(decision, "action")
+        assert hasattr(decision, "confidence")
 
     @pytest.mark.unit
     def test_real_market_regime_decision_quality(self, real_market_regime_agent):
         """
         Validate that real MarketRegimeAgent produces quality decisions.
-        
+
         After implementation:
         - Execute 10 times to gather statistics
         - Verify regime detection is consistent for same conditions
@@ -461,17 +466,19 @@ class TestPhase12MarketRegimeAgentRealIntegration:
         for _ in range(10):
             decision = real_market_regime_agent.analyze()
             decisions.append(decision)
-        
+
         assert len(decisions) == 10
         confidences = [d["confidence"] for d in decisions]
         avg_confidence = sum(confidences) / len(confidences)
         assert 0.5 <= avg_confidence <= 1.0
 
     @pytest.mark.unit
-    def test_real_market_regime_conflict_resolution(self, real_agent_coordinator, real_sentiment_agent, real_market_regime_agent):
+    def test_real_market_regime_conflict_resolution(
+        self, real_agent_coordinator, real_sentiment_agent, real_market_regime_agent
+    ):
         """
         Test how coordinator resolves conflicting signals from sentiment vs market regime.
-        
+
         After implementation:
         - Make decisions when agents disagree
         - Verify coordinator aggregates conflicting signals appropriately
@@ -479,11 +486,11 @@ class TestPhase12MarketRegimeAgentRealIntegration:
         - Verify final decision reflects both perspectives
         """
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
-        assert hasattr(decision, 'action')
-        assert hasattr(decision, 'confidence')
-        
+        assert hasattr(decision, "action")
+        assert hasattr(decision, "confidence")
+
         # Final confidence should be reasonable
         assert 0 <= decision.confidence <= 1
 
@@ -491,6 +498,7 @@ class TestPhase12MarketRegimeAgentRealIntegration:
 # ============================================================================
 # TEST CLASS 4: RiskGovernor Real Integration
 # ============================================================================
+
 
 class TestPhase12RiskGovernorRealIntegration:
     """
@@ -502,7 +510,7 @@ class TestPhase12RiskGovernorRealIntegration:
     def test_real_risk_governor_basic_execution(self, real_risk_governor):
         """
         Execute real RiskGovernor and verify decision format.
-        
+
         After implementation:
         - Call analyze() on real RiskGovernor
         - Verify returns dict with keys: action, confidence, reasoning
@@ -511,12 +519,12 @@ class TestPhase12RiskGovernorRealIntegration:
         - Verify reasoning explains risk constraints applied
         """
         decision = real_risk_governor.analyze()
-        
+
         assert isinstance(decision, dict)
         assert "action" in decision
         assert "confidence" in decision
         assert "reasoning" in decision
-        
+
         assert decision["action"] in [0, 1, 2]
         assert 0 <= decision["confidence"] <= 1
 
@@ -524,7 +532,7 @@ class TestPhase12RiskGovernorRealIntegration:
     def test_real_risk_governor_allows_trading(self, real_risk_governor):
         """
         Verify real RiskGovernor allows trading when conditions are safe.
-        
+
         After implementation:
         - Execute RiskGovernor multiple times
         - When market risk is low, verify action > 0 (allows trading)
@@ -532,7 +540,7 @@ class TestPhase12RiskGovernorRealIntegration:
         - Verify reasoning explains why trading is allowed
         """
         decision = real_risk_governor.analyze()
-        
+
         # RiskGovernor may allow trading
         assert decision["action"] in [0, 1, 2]
         assert "confidence" in decision
@@ -541,7 +549,7 @@ class TestPhase12RiskGovernorRealIntegration:
     def test_real_risk_governor_denies_trading(self, real_risk_governor):
         """
         Verify real RiskGovernor can deny trading when risk is too high.
-        
+
         After implementation:
         - Simulate high-risk conditions if possible
         - Verify RiskGovernor can return action=0 (deny trading)
@@ -553,7 +561,7 @@ class TestPhase12RiskGovernorRealIntegration:
         for _ in range(5):
             decision = real_risk_governor.analyze()
             results.append(decision["action"])
-        
+
         # Should have valid actions
         assert all(action in [0, 1, 2] for action in results)
 
@@ -561,7 +569,7 @@ class TestPhase12RiskGovernorRealIntegration:
     def test_real_risk_governor_in_coordinator(self, real_agent_coordinator):
         """
         Verify real RiskGovernor executes and can override other agents.
-        
+
         After implementation:
         - Make decision in coordinator
         - Verify RiskGovernor constraints are respected
@@ -569,10 +577,10 @@ class TestPhase12RiskGovernorRealIntegration:
         - Check metrics show risk_governor agent was called
         """
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
-        assert hasattr(decision, 'action')
-        
+        assert hasattr(decision, "action")
+
         metrics = real_agent_coordinator.get_metrics()
         assert len(metrics) > 0
 
@@ -580,7 +588,7 @@ class TestPhase12RiskGovernorRealIntegration:
     def test_real_risk_governor_state_management(self, real_risk_governor):
         """
         Verify real RiskGovernor maintains and updates internal state.
-        
+
         After implementation:
         - Execute RiskGovernor multiple times
         - Verify it tracks position state internally
@@ -592,7 +600,7 @@ class TestPhase12RiskGovernorRealIntegration:
         for _ in range(3):
             decision = real_risk_governor.analyze()
             decisions.append(decision)
-        
+
         assert len(decisions) == 3
         assert all("action" in d for d in decisions)
 
@@ -600,6 +608,7 @@ class TestPhase12RiskGovernorRealIntegration:
 # ============================================================================
 # TEST CLASS 5: Real Agent Orchestration
 # ============================================================================
+
 
 class TestPhase12RealAgentOrchestration:
     """
@@ -611,7 +620,7 @@ class TestPhase12RealAgentOrchestration:
     def test_coordinator_executes_all_real_agents(self, real_agent_coordinator):
         """
         Verify coordinator executes all three real agents in sequence.
-        
+
         After implementation:
         - Make decision in coordinator
         - Verify all 3 agents were executed (check call counts)
@@ -619,12 +628,12 @@ class TestPhase12RealAgentOrchestration:
         - Verify decision timestamp is recorded
         """
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
-        assert hasattr(decision, 'action')
-        assert hasattr(decision, 'confidence')
-        assert hasattr(decision, 'timestamp')
-        
+        assert hasattr(decision, "action")
+        assert hasattr(decision, "confidence")
+        assert hasattr(decision, "timestamp")
+
         # Verify all agents participated
         metrics = real_agent_coordinator.get_metrics()
         assert len(metrics) >= 3
@@ -633,7 +642,7 @@ class TestPhase12RealAgentOrchestration:
     def test_real_agents_parallel_execution(self, real_agent_coordinator):
         """
         Verify real agents can execute in parallel without blocking.
-        
+
         After implementation:
         - Make decision in coordinator
         - Time the execution
@@ -643,7 +652,7 @@ class TestPhase12RealAgentOrchestration:
         start_time = time.time()
         decision = real_agent_coordinator.make_decision()
         elapsed = time.time() - start_time
-        
+
         assert decision is not None
         # Should be reasonably quick with parallel execution
         assert elapsed < 5.0
@@ -652,7 +661,7 @@ class TestPhase12RealAgentOrchestration:
     def test_real_agent_decision_aggregation(self, real_agent_coordinator):
         """
         Verify coordinator properly aggregates real agent decisions.
-        
+
         After implementation:
         - Make decision with all three real agents
         - Verify aggregation uses weighted averaging
@@ -660,7 +669,7 @@ class TestPhase12RealAgentOrchestration:
         - Verify final decision action is reasonable consensus
         """
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
         assert 0 <= decision.confidence <= 1
         assert decision.action in [0, 1, 2]
@@ -669,7 +678,7 @@ class TestPhase12RealAgentOrchestration:
     def test_real_agent_metrics_tracking(self, real_agent_coordinator):
         """
         Verify coordinator tracks metrics for all real agents.
-        
+
         After implementation:
         - Make multiple decisions
         - Get coordinator metrics
@@ -680,9 +689,9 @@ class TestPhase12RealAgentOrchestration:
         # Make 3 decisions
         for _ in range(3):
             real_agent_coordinator.make_decision()
-        
+
         metrics = real_agent_coordinator.get_metrics()
-        
+
         assert isinstance(metrics, dict)
         assert "decisions_made" in metrics
         assert metrics["decisions_made"] >= 3
@@ -693,7 +702,7 @@ class TestPhase12RealAgentOrchestration:
     def test_real_agent_history_tracking(self, real_agent_coordinator):
         """
         Verify coordinator maintains history of real agent decisions.
-        
+
         After implementation:
         - Make 5 decisions
         - Get decision history
@@ -704,17 +713,18 @@ class TestPhase12RealAgentOrchestration:
         # Make 5 decisions
         for _ in range(5):
             real_agent_coordinator.make_decision()
-        
+
         history = real_agent_coordinator.get_decision_history()
-        
+
         assert len(history) >= 5
-        assert all(hasattr(d, 'action') for d in history)
-        assert all(hasattr(d, 'confidence') for d in history)
+        assert all(hasattr(d, "action") for d in history)
+        assert all(hasattr(d, "confidence") for d in history)
 
 
 # ============================================================================
 # TEST CLASS 6: Full E2E Pipeline with Real Agents
 # ============================================================================
+
 
 class TestPhase12FullE2EPipelineReal:
     """
@@ -726,7 +736,7 @@ class TestPhase12FullE2EPipelineReal:
     def test_complete_real_pipeline_execution(self, real_agent_coordinator):
         """
         Execute complete pipeline with all real agents.
-        
+
         After implementation:
         - Initialize coordinator with real agents
         - Call make_decision()
@@ -737,12 +747,12 @@ class TestPhase12FullE2EPipelineReal:
         start_time = time.time()
         decision = real_agent_coordinator.make_decision()
         elapsed = time.time() - start_time
-        
+
         assert decision is not None
-        assert hasattr(decision, 'action')
-        assert hasattr(decision, 'confidence')
-        assert hasattr(decision, 'reasoning')
-        
+        assert hasattr(decision, "action")
+        assert hasattr(decision, "confidence")
+        assert hasattr(decision, "reasoning")
+
         # Should complete reasonably quickly
         assert elapsed < 5.0
 
@@ -750,7 +760,7 @@ class TestPhase12FullE2EPipelineReal:
     def test_real_pipeline_decision_consistency(self, real_agent_coordinator):
         """
         Verify real pipeline produces consistent quality decisions.
-        
+
         After implementation:
         - Make 5 decisions with same market conditions
         - Verify decisions are similar (not all different)
@@ -761,10 +771,10 @@ class TestPhase12FullE2EPipelineReal:
         for _ in range(5):
             decision = real_agent_coordinator.make_decision()
             decisions.append(decision)
-        
+
         assert len(decisions) == 5
-        assert all(hasattr(d, 'confidence') for d in decisions)
-        
+        assert all(hasattr(d, "confidence") for d in decisions)
+
         # Confidence should be reasonably consistent
         confidences = [d.confidence for d in decisions]
         avg_confidence = sum(confidences) / len(confidences)
@@ -774,7 +784,7 @@ class TestPhase12FullE2EPipelineReal:
     def test_real_pipeline_with_state_changes(self, real_agent_coordinator):
         """
         Verify pipeline correctly responds to state changes in agents.
-        
+
         After implementation:
         - Make first decision
         - Change agent state (e.g., update risk position)
@@ -783,11 +793,11 @@ class TestPhase12FullE2EPipelineReal:
         - Verify consistency between state and decision
         """
         decision1 = real_agent_coordinator.make_decision()
-        
+
         # Make another decision after a brief pause
         time.sleep(0.1)
         decision2 = real_agent_coordinator.make_decision()
-        
+
         assert decision1 is not None
         assert decision2 is not None
 
@@ -795,7 +805,7 @@ class TestPhase12FullE2EPipelineReal:
     def test_real_pipeline_decision_logging(self, real_agent_coordinator):
         """
         Verify pipeline logs all decisions for auditability.
-        
+
         After implementation:
         - Make decision
         - Verify decision is logged with timestamp
@@ -804,17 +814,17 @@ class TestPhase12FullE2EPipelineReal:
         - Verify log can be retrieved later
         """
         real_agent_coordinator.make_decision()
-        
+
         history = real_agent_coordinator.get_decision_history()
-        
+
         assert len(history) > 0
-        assert all(hasattr(d, 'timestamp') for d in history)
+        assert all(hasattr(d, "timestamp") for d in history)
 
     @pytest.mark.unit
     def test_real_pipeline_vs_mock_comparison(self, real_agent_coordinator):
         """
         Compare real pipeline performance against mock pipeline baseline.
-        
+
         After implementation:
         - Make decisions with real agents
         - Record latency and confidence values
@@ -825,7 +835,7 @@ class TestPhase12FullE2EPipelineReal:
         start_time = time.time()
         decision = real_agent_coordinator.make_decision()
         elapsed = time.time() - start_time
-        
+
         assert decision is not None
         assert 0 <= decision.confidence <= 1
         # Real agents may be slower but should be reasonable
@@ -835,6 +845,7 @@ class TestPhase12FullE2EPipelineReal:
 # ============================================================================
 # TEST CLASS 7: Real Agent Decision Quality
 # ============================================================================
+
 
 class TestPhase12RealDecisionQuality:
     """
@@ -846,7 +857,7 @@ class TestPhase12RealDecisionQuality:
     def test_strong_bullish_consensus_real(self, real_agent_coordinator):
         """
         Test scenario where all real agents strongly recommend buying.
-        
+
         After implementation:
         - Configure market conditions for bullish signals
         - Verify sentiment agent recommends long
@@ -855,7 +866,7 @@ class TestPhase12RealDecisionQuality:
         - Verify final decision is strongly bullish (action=1, confidence>0.85)
         """
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
         assert decision.action in [0, 1, 2]
         assert 0 <= decision.confidence <= 1
@@ -864,7 +875,7 @@ class TestPhase12RealDecisionQuality:
     def test_mixed_signals_moderate_confidence_real(self, real_agent_coordinator):
         """
         Test scenario where real agents disagree on market direction.
-        
+
         After implementation:
         - Create conditions where agents give conflicting signals
         - Verify sentiment might be bullish but regime bearish
@@ -873,7 +884,7 @@ class TestPhase12RealDecisionQuality:
         - Verify reasoning explains conflicting signals
         """
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
         assert decision.action in [0, 1, 2]
         assert 0 <= decision.confidence <= 1
@@ -882,7 +893,7 @@ class TestPhase12RealDecisionQuality:
     def test_risk_override_scenario_real(self, real_agent_coordinator):
         """
         Test scenario where RiskGovernor must override bullish agents.
-        
+
         After implementation:
         - Configure sentiment and regime agents to recommend trading
         - Configure risk conditions to be dangerous
@@ -891,15 +902,17 @@ class TestPhase12RealDecisionQuality:
         - Verify reasoning explains why trade was rejected
         """
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
         assert decision.action in [0, 1, 2]
 
     @pytest.mark.unit
-    def test_real_agent_reasoning_quality(self, real_sentiment_agent, real_market_regime_agent, real_risk_governor):
+    def test_real_agent_reasoning_quality(
+        self, real_sentiment_agent, real_market_regime_agent, real_risk_governor
+    ):
         """
         Verify that real agents provide high-quality human-readable reasoning.
-        
+
         After implementation:
         - Execute each real agent
         - Verify reasoning field is non-empty
@@ -910,11 +923,11 @@ class TestPhase12RealDecisionQuality:
         sentiment_decision = real_sentiment_agent.analyze()
         market_decision = real_market_regime_agent.analyze()
         risk_decision = real_risk_governor.analyze()
-        
+
         assert isinstance(sentiment_decision["reasoning"], str)
         assert isinstance(market_decision["reasoning"], str)
         assert isinstance(risk_decision["reasoning"], str)
-        
+
         assert len(sentiment_decision["reasoning"]) > 0
         assert len(market_decision["reasoning"]) > 0
         assert len(risk_decision["reasoning"]) > 0
@@ -923,7 +936,7 @@ class TestPhase12RealDecisionQuality:
     def test_real_agent_decision_traceability(self, real_agent_coordinator):
         """
         Verify that real decisions are fully traceable to source agents.
-        
+
         After implementation:
         - Make decision with coordinator
         - Get decision with full reasoning
@@ -932,15 +945,16 @@ class TestPhase12RealDecisionQuality:
         - Verify can identify which agent provided dominant signal
         """
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
-        assert hasattr(decision, 'reasoning')
+        assert hasattr(decision, "reasoning")
         assert isinstance(decision.reasoning, str)
 
 
 # ============================================================================
 # TEST CLASS 8: Real Agent State Management
 # ============================================================================
+
 
 class TestPhase12RealAgentStateManagement:
     """
@@ -952,7 +966,7 @@ class TestPhase12RealAgentStateManagement:
     def test_real_agent_state_persistence(self, real_agent_coordinator):
         """
         Verify real agents maintain consistent state across decisions.
-        
+
         After implementation:
         - Make first decision
         - Make second decision immediately after
@@ -962,7 +976,7 @@ class TestPhase12RealAgentStateManagement:
         """
         decision1 = real_agent_coordinator.make_decision()
         decision2 = real_agent_coordinator.make_decision()
-        
+
         assert decision1 is not None
         assert decision2 is not None
 
@@ -970,7 +984,7 @@ class TestPhase12RealAgentStateManagement:
     def test_real_agent_state_updates(self, real_agent_coordinator):
         """
         Verify real agents update their internal state appropriately.
-        
+
         After implementation:
         - Make first decision
         - Simulate market event (if possible)
@@ -980,12 +994,12 @@ class TestPhase12RealAgentStateManagement:
         - Verify state update is reflected in new decision
         """
         decision1 = real_agent_coordinator.make_decision()
-        
+
         # Brief pause to simulate time passing
         time.sleep(0.1)
-        
+
         decision2 = real_agent_coordinator.make_decision()
-        
+
         assert decision1 is not None
         assert decision2 is not None
 
@@ -993,7 +1007,7 @@ class TestPhase12RealAgentStateManagement:
     def test_real_agent_state_reset(self, real_agent_coordinator):
         """
         Verify real agents can be reset to initial state.
-        
+
         After implementation:
         - Make decisions and modify state
         - Call reset on agents if available
@@ -1002,12 +1016,12 @@ class TestPhase12RealAgentStateManagement:
         - Verify decision quality is consistent with initial state
         """
         decision1 = real_agent_coordinator.make_decision()
-        
+
         # Try to reset metrics
         real_agent_coordinator.reset_metrics()
-        
+
         decision2 = real_agent_coordinator.make_decision()
-        
+
         assert decision1 is not None
         assert decision2 is not None
 
@@ -1015,7 +1029,7 @@ class TestPhase12RealAgentStateManagement:
     def test_concurrent_real_agent_access(self, real_agent_coordinator):
         """
         Verify real agents handle concurrent access safely.
-        
+
         After implementation:
         - Create 3 concurrent decision threads
         - Each thread makes multiple decisions
@@ -1024,21 +1038,21 @@ class TestPhase12RealAgentStateManagement:
         - Verify no race conditions or deadlocks
         """
         decisions = []
-        
+
         def make_decisions():
             for _ in range(3):
                 decision = real_agent_coordinator.make_decision()
                 decisions.append(decision)
-        
+
         threads = []
         for _ in range(2):  # 2 concurrent threads
             thread = Thread(target=make_decisions)
             threads.append(thread)
             thread.start()
-        
+
         for thread in threads:
             thread.join()
-        
+
         # All decisions should be valid
         assert len(decisions) >= 6
         assert all(d is not None for d in decisions)
@@ -1047,7 +1061,7 @@ class TestPhase12RealAgentStateManagement:
     def test_real_agent_state_recovery(self, real_agent_coordinator):
         """
         Verify real agents recover correctly from errors.
-        
+
         After implementation:
         - Simulate agent failure if possible
         - Verify coordinator continues operation
@@ -1056,10 +1070,10 @@ class TestPhase12RealAgentStateManagement:
         - Verify decision is valid and consistent
         """
         decision1 = real_agent_coordinator.make_decision()
-        
+
         # Make another decision (tests recovery)
         decision2 = real_agent_coordinator.make_decision()
-        
+
         assert decision1 is not None
         assert decision2 is not None
 
@@ -1067,6 +1081,7 @@ class TestPhase12RealAgentStateManagement:
 # ============================================================================
 # TEST CLASS 9: Performance with Real Agents
 # ============================================================================
+
 
 class TestPhase12RealAgentPerformance:
     """
@@ -1078,7 +1093,7 @@ class TestPhase12RealAgentPerformance:
     def test_single_real_agent_latency(self, real_sentiment_agent):
         """
         Measure latency of single real agent execution.
-        
+
         After implementation:
         - Time real SentimentAgent.analyze()
         - Measure 5 times and average
@@ -1086,13 +1101,13 @@ class TestPhase12RealAgentPerformance:
         - Verify no outliers > 500ms
         """
         latencies = []
-        
+
         for _ in range(5):
             start_time = time.time()
             real_sentiment_agent.analyze()
             elapsed = time.time() - start_time
             latencies.append(elapsed)
-        
+
         avg_latency = sum(latencies) / len(latencies)
         assert avg_latency < 10.0  # Relaxed threshold for real agents
         assert max(latencies) < 30.0
@@ -1101,7 +1116,7 @@ class TestPhase12RealAgentPerformance:
     def test_three_real_agents_latency(self, real_agent_coordinator):
         """
         Measure latency of all three real agents executing in coordinator.
-        
+
         After implementation:
         - Time coordinator.make_decision() with all agents
         - Measure 5 times and average
@@ -1109,13 +1124,13 @@ class TestPhase12RealAgentPerformance:
         - Verify parallel execution is being used
         """
         latencies = []
-        
+
         for _ in range(5):
             start_time = time.time()
             real_agent_coordinator.make_decision()
             elapsed = time.time() - start_time
             latencies.append(elapsed)
-        
+
         avg_latency = sum(latencies) / len(latencies)
         assert avg_latency < 30.0  # Relaxed threshold for real agents
 
@@ -1123,7 +1138,7 @@ class TestPhase12RealAgentPerformance:
     def test_real_agent_throughput(self, real_agent_coordinator):
         """
         Measure decision throughput with real agents.
-        
+
         After implementation:
         - Make 20 decisions as fast as possible
         - Measure total time
@@ -1132,20 +1147,20 @@ class TestPhase12RealAgentPerformance:
         - Verify system is not resource-limited
         """
         start_time = time.time()
-        
+
         for _ in range(20):
             real_agent_coordinator.make_decision()
-        
+
         elapsed = time.time() - start_time
         throughput = 20 / elapsed
-        
+
         assert throughput > 0.1  # At least 0.1 decisions per second
 
     @pytest.mark.unit
     def test_real_agent_sustained_throughput(self, real_agent_coordinator):
         """
         Measure sustained throughput over longer period.
-        
+
         After implementation:
         - Make decisions continuously for 10 seconds
         - Verify throughput stays > 0.5 decisions/second
@@ -1154,21 +1169,21 @@ class TestPhase12RealAgentPerformance:
         """
         start_time = time.time()
         decision_count = 0
-        
+
         while time.time() - start_time < 3.0:
             real_agent_coordinator.make_decision()
             decision_count += 1
-        
+
         elapsed = time.time() - start_time
         throughput = decision_count / elapsed
-        
+
         assert throughput > 0.1  # At least 0.1 decisions per second
 
     @pytest.mark.unit
     def test_real_agent_startup_overhead(self, real_agent_coordinator):
         """
         Measure performance overhead of real agent startup.
-        
+
         After implementation:
         - Time first decision after initialization
         - Time subsequent decisions
@@ -1177,17 +1192,17 @@ class TestPhase12RealAgentPerformance:
         - Assert initialization overhead < 500ms
         """
         latencies = []
-        
+
         for _ in range(5):
             start_time = time.time()
             real_agent_coordinator.make_decision()
             elapsed = time.time() - start_time
             latencies.append(elapsed)
-        
+
         # First decision may be slightly slower but should not cause failure
         first_latency = latencies[0]
         subsequent_avg = sum(latencies[1:]) / len(latencies[1:])
-        
+
         assert first_latency < 30.0
         assert subsequent_avg < 20.0
 
@@ -1195,6 +1210,7 @@ class TestPhase12RealAgentPerformance:
 # ============================================================================
 # TEST CLASS 10: Error Handling with Real Agents
 # ============================================================================
+
 
 class TestPhase12RealAgentErrorHandling:
     """
@@ -1206,7 +1222,7 @@ class TestPhase12RealAgentErrorHandling:
     def test_single_real_agent_failure(self, real_agent_coordinator):
         """
         Verify coordinator handles failure of one real agent.
-        
+
         After implementation:
         - Make decision
         - Simulate one agent failure if possible
@@ -1215,7 +1231,7 @@ class TestPhase12RealAgentErrorHandling:
         - Verify error is logged appropriately
         """
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
         assert decision.action in [0, 1, 2]
 
@@ -1223,7 +1239,7 @@ class TestPhase12RealAgentErrorHandling:
     def test_all_real_agents_fail(self, real_agent_coordinator):
         """
         Verify coordinator handles complete failure of all agents.
-        
+
         After implementation:
         - Simulate all agents failing
         - Verify coordinator returns fallback decision
@@ -1233,7 +1249,7 @@ class TestPhase12RealAgentErrorHandling:
         """
         # Real agents from backend should be available
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
         assert decision.action in [0, 1, 2]
 
@@ -1241,7 +1257,7 @@ class TestPhase12RealAgentErrorHandling:
     def test_real_agent_timeout_handling(self, real_agent_coordinator):
         """
         Verify coordinator handles agent timeout correctly.
-        
+
         After implementation:
         - Set short timeout for agent execution
         - If agent is slow, verify timeout is respected
@@ -1251,7 +1267,7 @@ class TestPhase12RealAgentErrorHandling:
         """
         # Make decisions with default timeout
         decision = real_agent_coordinator.make_decision()
-        
+
         assert decision is not None
         assert decision.action in [0, 1, 2]
 
@@ -1259,7 +1275,7 @@ class TestPhase12RealAgentErrorHandling:
     def test_real_agent_recovery_after_failure(self, real_agent_coordinator):
         """
         Verify real agents recover correctly after failure.
-        
+
         After implementation:
         - Simulate agent failure
         - Verify coordinator handles failure
@@ -1268,10 +1284,10 @@ class TestPhase12RealAgentErrorHandling:
         - Verify recovery is transparent to caller
         """
         decision1 = real_agent_coordinator.make_decision()
-        
+
         # Make another decision to test recovery
         decision2 = real_agent_coordinator.make_decision()
-        
+
         assert decision1 is not None
         assert decision2 is not None
 
@@ -1279,7 +1295,7 @@ class TestPhase12RealAgentErrorHandling:
     def test_real_agent_invalid_input_handling(self, real_sentiment_agent):
         """
         Verify real agent handles invalid inputs gracefully.
-        
+
         After implementation:
         - Try various invalid inputs if agent accepts parameters
         - Verify agent handles gracefully (no crashes)
@@ -1289,7 +1305,7 @@ class TestPhase12RealAgentErrorHandling:
         """
         # Call agent without parameters (should handle gracefully)
         decision = real_sentiment_agent.analyze()
-        
+
         assert decision is not None
         assert "action" in decision
         assert "confidence" in decision

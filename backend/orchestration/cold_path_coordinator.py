@@ -28,10 +28,10 @@ import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from threading import Lock, RLock
-from typing import Any, Callable, Dict, List, Optional
+from threading import RLock
+from typing import Any, Dict, List, Optional
 
-from backend.execution.fast_config import FALLBACK_CONFIG, FastConfigManager
+from backend.execution.fast_config import FastConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -209,9 +209,9 @@ class ColdPathCoordinator:
         """
         # Validate agent interface
         if not hasattr(agent, "analyze"):
-            raise ValueError(f"Agent must have analyze() method")
+            raise ValueError("Agent must have analyze() method")
         if not hasattr(agent, "name"):
-            raise ValueError(f"Agent must have name attribute")
+            raise ValueError("Agent must have name attribute")
 
         with self.agent_lock:
             self.agents.append(agent)

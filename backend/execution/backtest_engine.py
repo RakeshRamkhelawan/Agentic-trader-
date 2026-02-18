@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import AsyncGenerator, Optional
 
 from sqlalchemy import and_, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database import AsyncSessionLocal
 from backend.execution.simulated_clock import SimulatedClock

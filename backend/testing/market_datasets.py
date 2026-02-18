@@ -5,8 +5,7 @@ Defines OHLCV data, market scenarios, en evaluation datasets.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
-from enum import Enum
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from backend.core.schemas.ooda_types import MarketRegime

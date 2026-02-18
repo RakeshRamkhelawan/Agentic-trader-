@@ -1,0 +1,2 @@
+if not exist "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\infrastructure\k8s" mkdir "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\infrastructure\k8s"
+echo K8s directory created

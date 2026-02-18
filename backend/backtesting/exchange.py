@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from backend.backtesting.models import OrderSide, Position, Trade
 

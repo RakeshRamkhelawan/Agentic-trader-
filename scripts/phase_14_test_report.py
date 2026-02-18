@@ -76,12 +76,12 @@ def print_phase_14_summary():
 
     print("\n📈 PERFORMANCE METRICS")
     print("-" * 80)
-    print(f"Total Test Execution Time:     0.85 seconds")
-    print(f"Average Time Per Test:         ~7.2 milliseconds")
-    print(f"Peak Memory Usage:             <1 MB")
-    print(f"Flaky Tests:                   0")
-    print(f"Platform-Specific Issues:      0")
-    print(f"Pass Rate:                     100% (118/118)")
+    print("Total Test Execution Time:     0.85 seconds")
+    print("Average Time Per Test:         ~7.2 milliseconds")
+    print("Peak Memory Usage:             <1 MB")
+    print("Flaky Tests:                   0")
+    print("Platform-Specific Issues:      0")
+    print("Pass Rate:                     100% (118/118)")
     print("-" * 80)
 
     print("\n🎯 TEST COVERAGE BREAKDOWN")

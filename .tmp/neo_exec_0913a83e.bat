@@ -1,0 +1,1 @@
+start /B python -m uvicorn backend.api.main:app --port 8004 --host 127.0.0.1

@@ -1,45 +1,41 @@
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI, Request
+import structlog
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.api import (analytics_api, approval_api, backtest_api,
+from backend.api import analytics_api  # Added new APIs
+from backend.api import (agents_api, approval_api, backtest_api, kyc_api,
+                         monitoring_api, navagraha_api, ooda_api,
                          prediction_api, trading_api, user_settings_api)
 # Routers
 from backend.api.auth_api import router as auth_router
-from backend.api.deps import get_db
 from backend.api.websocket_endpoints import router as ws_router
 from backend.api.websocket_manager import ws_manager
 from backend.core.auth.jwt_validator import JWTValidator
 # Auth Middleware
 from backend.core.auth.middleware import AuthMiddleware
-from backend.core.auth.models import TokenPayload
 from backend.core.config.settings import settings
+from backend.core.navagraha.service import NavagrahaService
+from backend.core.system_identity import SystemIdentity
+from backend.core.telemetry.logging_config import configure_logging
 from backend.observability.metrics import (PrometheusMiddleware,
                                            metrics_endpoint)
+from backend.services.cognitive_orchestrator import CognitiveOrchestrator
+
 # Services
-from backend.services.trading_service import get_trading_service
 
-# JWT validation
-try:
-    from jose import JWTError, jwt
+# ... (JWT setup)
 
-    JOSE_AVAILABLE = True
-except ImportError:
-    JOSE_AVAILABLE = False
-    jwt = None
-    JWTError = Exception
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger("API")
-
-# SimpleTokenValidator removed - using Auth0 JWTValidator exclusively
+# Configure structured logging
+configure_logging()
+logger = structlog.get_logger("API")
 
 
+# ... (Market Data Publisher)
 # Background Task: Market Data Publisher
 # Bridges the gap between TradingService (Revolut) and WebSocketManager (Frontend)
 async def market_data_publisher():
@@ -48,7 +44,6 @@ async def market_data_publisher():
     and broadcasts it to connected WebSocket clients.
     """
     logger.info("Starting Market Data Publisher...")
-    trading_service = get_trading_service()
     from backend.core.cache_layer import get_cache
 
     cache = get_cache()
@@ -97,22 +92,95 @@ async def market_data_publisher():
         await asyncio.sleep(2)  # Broadcast cycle every 2s
 
 
+async def system_state_publisher(app: FastAPI):
+    """
+    Periodically fetches and broadcasts System State (Navagraha, OODA)
+    to connected WebSocket clients.
+    """
+    logger.info("Starting System State Publisher...")
+    while True:
+        try:
+            # 1. Navagraha Update
+            if hasattr(app.state, "navagraha_service") and app.state.navagraha_service:
+                # Use default location (Delhi) or configure system default
+                state = await app.state.navagraha_service.get_current_state(
+                    28.61, 77.20
+                )
+                await ws_manager.broadcast_navagraha_update(
+                    state.model_dump(mode="json")
+                )
+
+            # 2. OODA/System Identity Update
+            if hasattr(app.state, "system_identity") and app.state.system_identity:
+                stats = app.state.system_identity.get_system_statistics()
+                # Create a simplified OODA update payload
+                ooda_update = {
+                    "phase": "ORIENT",  # TODO: Get dynamic phase
+                    "cycle_id": f"cycle_{stats['system_state']['total_experiences']}",
+                    "coherence": stats["system_state"]["coherence"],
+                    "confidence": stats["system_state"]["confidence"],
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+                await ws_manager.broadcast_ooda_update(ooda_update)
+
+        except Exception as e:
+            logger.error(f"System State Publisher Error: {e}")
+
+        await asyncio.sleep(5)  # Update every 5 seconds
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("API Server Starting...")
 
+    # Initialize Backend Services
+    try:
+        # 1. Navagraha Service
+        app.state.navagraha_service = NavagrahaService()
+        logger.info("Navagraha Service Initialized")
+
+        # 2. System Identity (OODA)
+        app.state.system_identity = SystemIdentity()
+        await app.state.system_identity.initialize()
+        logger.info("System Identity Initialized")
+
+        # 3. Cognitive Orchestrator
+        # We initialize it here to be accessible via API
+        # Note: In a microservices setup, this might be a remote RPC client.
+        app.state.orchestrator = CognitiveOrchestrator(
+            agent_registry=None,  # Use default
+            usage_tracker=None,  # Optional
+            audit_logger=None,  # Optional
+        )
+        logger.info("Cognitive Orchestrator Initialized")
+
+        # Start Orchestrator Background Tasks (if any)
+        # e.g., consumer_task = asyncio.create_task(app.state.orchestrator.start_market_consumer())
+
+    except Exception as e:
+        logger.error(f"Failed to initialize backend services: {e}", exc_info=True)
+        # We define them as None to avoid AttributeErrors, but app might be unstable
+        app.state.navagraha_service = None
+        app.state.system_identity = None
+        app.state.orchestrator = None
+
     # Re-enabled: Background Publisher now uses SessionManager.system_admin_session()
-    task = asyncio.create_task(market_data_publisher())
-    logger.info("Market Data Publisher STARTED")
+    market_task = asyncio.create_task(market_data_publisher())
+    system_task = asyncio.create_task(
+        system_state_publisher(app)
+    )  # Start System Publisher
+    logger.info("Background Publishers STARTED")
 
     yield
 
     # Shutdown
     logger.info("API Server Shutting Down...")
-    task.cancel()
+    market_task.cancel()
+    system_task.cancel()
     try:
-        await task
+        await market_task
+        await system_task
     except asyncio.CancelledError:
         pass
 
@@ -144,15 +212,12 @@ async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Strict-Transport-Security"] = (
-        "max-age=31536000; includeSubDomains"
-    )
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; frame-ancestors 'none';"
-    )
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; frame-ancestors 'none';"
-    )
+    response.headers[
+        "Strict-Transport-Security"
+    ] = "max-age=31536000; includeSubDomains"
+    response.headers[
+        "Content-Security-Policy"
+    ] = "default-src 'self'; frame-ancestors 'none';"
     return response
 
 
@@ -192,8 +257,15 @@ AuthMiddleware.PUBLIC_PATHS = {
     "/api/v1/auth/callback",
     "/ws",
     "/metrics",
-    "/api/v1/health",  # Prediction service health endpoint
-    "/api/v1/prediction/*",  # Allow public access to all prediction endpoints for integration tests
+    "/api/v1/health",
+    "/api/v1/prediction/*",
+    # Dashboard Data (Allow Public for Demo/Dev Mode)
+    "/api/v1/navagraha/current-state",
+    "/api/v1/agents/status",
+    "/api/v1/ooda/current-cycle",
+    "/api/v1/monitoring/health",
+    "/api/v1/monitoring/soul-context",
+    "/api/v1/monitoring/karma-summary",
 }
 
 # Use JWTValidator with Auth0 config
@@ -210,6 +282,7 @@ app.add_middleware(AuthMiddleware, jwt_validator=token_validator)
 
 # Mount Routers
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(kyc_api.router, prefix="/api/v1/kyc", tags=["kyc"])
 app.include_router(trading_api.router)  # Prefix defined in router
 app.include_router(
     user_settings_api.router, prefix="/api/v1/settings", tags=["settings"]
@@ -219,6 +292,14 @@ app.include_router(analytics_api.router, prefix="/api/v1/analytics", tags=["anal
 app.include_router(backtest_api.router, prefix="/api/v1/backtest", tags=["backtesting"])
 app.include_router(prediction_api.router, prefix="/api/v1", tags=["prediction"])
 app.include_router(ws_router)  # /ws endpoint
+
+# New Dashboard APIs
+app.include_router(navagraha_api.router, prefix="/api/v1/navagraha", tags=["navagraha"])
+app.include_router(agents_api.router, prefix="/api/v1/agents", tags=["agents"])
+app.include_router(ooda_api.router, prefix="/api/v1/ooda", tags=["ooda"])
+app.include_router(
+    monitoring_api.router, prefix="/api/v1/monitoring", tags=["monitoring"]
+)
 
 # Metrics Endpoint
 app.add_route("/metrics", metrics_endpoint)

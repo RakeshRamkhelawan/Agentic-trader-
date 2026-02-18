@@ -11,21 +11,23 @@ Validates:
 import os
 import sys
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, PROJECT_ROOT)
+
 
 def test_chromadb_tenant_isolation():
     print("Starting ChromaDB Tenant Isolation Test (TDD)...")
-    
+
     # 1. Test module import
     print("\n--- Test 1: Module Import ---")
     try:
         from backend.storage.tenant_aware_chroma import TenantAwareChromaClient
+
         print("OK: TenantAwareChromaClient is importable")
     except ImportError as e:
         print(f"FAIL: Cannot import TenantAwareChromaClient: {e}")
         sys.exit(1)
-    
+
     # 2. Test class instantiation
     print("\n--- Test 2: Class Instantiation ---")
     try:
@@ -34,16 +36,16 @@ def test_chromadb_tenant_isolation():
     except Exception as e:
         print(f"FAIL: Cannot instantiate client: {e}")
         sys.exit(1)
-    
+
     # 3. Test required methods exist
     print("\n--- Test 3: Required Methods ---")
-    required_methods = ['get_collection', 'get_prefixed_name']
+    required_methods = ["get_collection", "get_prefixed_name"]
     for method in required_methods:
         if not hasattr(client, method):
             print(f"FAIL: Missing method: {method}")
             sys.exit(1)
         print(f"OK: Method '{method}' exists")
-    
+
     # 4. Test collection name prefixing
     print("\n--- Test 4: Collection Name Prefixing ---")
     try:
@@ -53,12 +55,13 @@ def test_chromadb_tenant_isolation():
         if prefixed != expected:
             print(f"FAIL: Expected '{expected}', got '{prefixed}'")
             sys.exit(1)
-        print(f"OK: Collection name prefixed correctly")
+        print("OK: Collection name prefixed correctly")
     except Exception as e:
         print(f"FAIL: get_prefixed_name error: {e}")
         sys.exit(1)
-    
+
     print("\n=== All ChromaDB Tenant Isolation tests passed! ===")
+
 
 if __name__ == "__main__":
     test_chromadb_tenant_isolation()

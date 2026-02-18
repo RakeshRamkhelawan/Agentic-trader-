@@ -5,7 +5,7 @@ Analyzes trading volume patterns and trends.
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Optional
 
 import pandas as pd
 from scipy import stats as scipy_stats
@@ -28,7 +28,7 @@ class VolumeMetrics:
     peak_volume_time: Optional[str]  # ISO formatted datetime
     volume_concentration: float  # % of volume in top 10% trades
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary."""
         return {
             "total_volume": self.total_volume,
@@ -252,7 +252,7 @@ class VolumeTrendsAnalyzer:
         return spikes.sort_values(time_col)
 
     def compare_markets(
-        self, markets_data: Dict[str, pd.DataFrame], volume_col: str = "volume"
+        self, markets_data: dict[str, pd.DataFrame], volume_col: str = "volume"
     ) -> pd.DataFrame:
         """
         Compare volume metrics across multiple markets.

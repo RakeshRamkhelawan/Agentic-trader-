@@ -26,7 +26,7 @@ try:
     def hash_password(password: str) -> str:
         return pwd_context.hash(password)
 
-except ImportError:
+except (ImportError, AttributeError, Exception):
     # Fallback for dev environment without passlib
     import hashlib
 
@@ -53,10 +53,6 @@ SEED_USERS = [
         "tenant_id": "tenant-demo-001",
     },
 ]
-
-
-async def seed_users():
-    logger.info("🌱 Starting user seeding...")
 
 
 async def seed_users():

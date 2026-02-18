@@ -57,6 +57,22 @@ const config: Config = {
         ask: "#FF4976",
         positive: "#00C087",
         negative: "#FF4976",
+        // Guna Colors
+        sattva: {
+          light: "#F5F3E8",
+          DEFAULT: "#E6E1D3",
+          dark: "#D4CFC0",
+        },
+        rajas: {
+          light: "#FF6B6B",
+          DEFAULT: "#E63946",
+          dark: "#C92A35",
+        },
+        tamas: {
+          light: "#6C757D",
+          DEFAULT: "#495057",
+          dark: "#343A40",
+        },
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
@@ -87,12 +103,22 @@ const config: Config = {
           "0%, 100%": { backgroundColor: "transparent" },
           "50%": { backgroundColor: "rgba(255, 73, 118, 0.2)" },
         },
+        "pulse-slow": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
+        "spin-slow": {
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.2s ease-out",
         "slide-up": "slide-up 0.3s ease-out",
         "price-up": "price-flash-green 0.5s ease-out",
         "price-down": "price-flash-red 0.5s ease-out",
+        "pulse-slow": "pulse-slow 3s ease-in-out infinite",
+        "spin-slow": "spin-slow 60s linear infinite",
       },
     },
   },

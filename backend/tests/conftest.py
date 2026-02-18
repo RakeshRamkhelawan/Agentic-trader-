@@ -5,9 +5,13 @@ Adds project root to Python path to allow 'backend' module imports.
 
 import os
 import sys
+from unittest.mock import AsyncMock, Mock
+from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 # Add project root (two levels up from this file) to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -17,6 +21,14 @@ if project_root not in sys.path:
 # Verify backend module is importable
 try:
     import backend
+    import backend.core.database
+    from backend.agents.fund_manager_agent import FundManagerAgent
+    from backend.agents.researcher_agents import BearResearcher, BullResearcher
+    from backend.core.database import SessionManager
+    from backend.core.schemas.ooda_types import (MarketRegime, Observation,
+                                                 Orientation, PortfolioState,
+                                                 RiskAssessment, RiskDecision,
+                                                 TradeProposal)
 
     print(f"[OK] Successfully imported backend module from {backend.__file__}")
 except ImportError as e:
@@ -35,16 +47,9 @@ async def async_client() -> AsyncClient:
         yield client
 
 
-from uuid import uuid4
-
 # ============================================================================
 # SHARED DATABASE FIXTURES
 # ============================================================================
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-
-import backend.core.database
-from backend.core.database import SessionManager
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -85,8 +90,6 @@ def unique_email():
 # ============================================================================
 # SHARED AGENT FIXTURES
 # ============================================================================
-from backend.core.schemas.ooda_types import (MarketRegime, Observation,
-                                             Orientation, TradeProposal)
 
 
 @pytest.fixture
@@ -145,13 +148,6 @@ def sample_proposal():
         strategy_id="momentum_v1",
         confidence=0.75,
     )
-
-
-from unittest.mock import AsyncMock, Mock
-
-from backend.agents.fund_manager_agent import FundManagerAgent
-from backend.core.schemas.ooda_types import (PortfolioState, RiskAssessment,
-                                             RiskDecision)
 
 
 @pytest.fixture
@@ -214,9 +210,6 @@ def sample_risk_assessment():
         risk_score=0.3,
         win_probability=0.6,
     )
-
-
-from backend.agents.researcher_agents import BearResearcher, BullResearcher
 
 
 @pytest.fixture
