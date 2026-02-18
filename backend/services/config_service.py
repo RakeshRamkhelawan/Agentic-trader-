@@ -1,10 +1,9 @@
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from backend.core.database import SessionManager
 from backend.data.repository import BaseRepository
 from backend.execution.fast_config import FastConfig
 from backend.models.config import RuntimeConfig

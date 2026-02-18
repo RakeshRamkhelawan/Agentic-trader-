@@ -4,7 +4,7 @@ Analysis schemas for Prediction Market Intelligence API.
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -35,7 +35,7 @@ class AnalysisRequest(BaseModel):
     category: Optional[str] = Field(None, description="Filter by category")
     start_date: Optional[datetime] = Field(None, description="Analysis start date")
     end_date: Optional[datetime] = Field(None, description="Analysis end date")
-    parameters: Dict[str, Any] = Field(
+    parameters: dict[str, Any] = Field(
         default_factory=dict, description="Analysis parameters"
     )
 
@@ -50,9 +50,9 @@ class AnalysisResult(BaseModel):
     completed_at: Optional[datetime] = Field(
         None, description="When analysis completed"
     )
-    result: Optional[Dict[str, Any]] = Field(None, description="Analysis results")
+    result: Optional[dict[str, Any]] = Field(None, description="Analysis results")
     error: Optional[str] = Field(None, description="Error message if failed")
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
 
@@ -60,7 +60,7 @@ class AnalysisResult(BaseModel):
 class AnalysisListResponse(BaseModel):
     """Response for listing analyses."""
 
-    analyses: List[AnalysisResult]
+    analyses: list[AnalysisResult]
     total: int
 
 
@@ -71,7 +71,7 @@ class MarketSummary(BaseModel):
     total_markets: int = Field(..., description="Total number of markets")
     active_markets: int = Field(..., description="Currently active markets")
     total_volume_24h: float = Field(..., description="24h trading volume")
-    categories: List[str] = Field(..., description="Available categories")
+    categories: list[str] = Field(..., description="Available categories")
     last_updated: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="Last data update",

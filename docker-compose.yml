@@ -172,10 +172,46 @@ services:
       - "3100:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ${PWD}/backend/observability/grafana_provisioning_datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yml
     depends_on:
       - prometheus
 
   # --- APPLICATION LAYER ---
+
+  # Multi-Frequency Consciousness Architecture
+  consciousness-architecture:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+    container_name: consciousness-architecture
+    restart: on-failure:5
+    depends_on:
+      redis:
+        condition: service_started
+    environment:
+      - PYTHONUNBUFFERED=1
+      - METRICS_SERVER_PORT=8000
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8006:8000"
+    volumes:
+      - ./backend:/app/backend
+      - /dev/shm:/dev/shm # Shared memory for zero-copy IPC
+    command: python backend/consciousness_main.py
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   # The Cognitive Orchestrator & Agents
   trading-engine:
@@ -212,6 +248,8 @@ services:
       - ./backend/config/agent_profiles.yaml:/app/backend/config/agent_profiles.yaml # Mount agent profiles
     entrypoint: [ "/bin/bash", "/app/backend/scripts/start.sh" ]
     command: python backend/services/cognitive_orchestrator.py
+    ports:
+      - "8004:8004"
     deploy:
       resources:
         limits:

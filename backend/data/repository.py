@@ -8,14 +8,13 @@ Provides a consistent interface for database interactions with:
 """
 
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
-from uuid import UUID
 
 from pydantic import BaseModel
-from sqlalchemy import asc, delete, desc, func, update
+from sqlalchemy import asc, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from backend.core.database import Base, SessionManager
+from backend.core.database import Base
 
 # Define generic type for SQLAlchemy models
 ModelType = TypeVar("ModelType", bound=Base)

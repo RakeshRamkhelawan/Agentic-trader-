@@ -4,7 +4,6 @@ Synthetic Data Generator - Genereer controleerbare market scenarios.
 Creates trending, ranging, volatile, en crash scenarios.
 """
 
-import math
 import random
 from datetime import UTC, datetime, timedelta
 from typing import List

@@ -4,7 +4,7 @@ Async Cache Layer - High-performance Redis-based caching.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import redis.asyncio as redis
 

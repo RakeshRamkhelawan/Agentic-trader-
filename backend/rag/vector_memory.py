@@ -10,8 +10,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import (Column, DateTime, Float, Index, Integer, String, Text,
-                        func, select)
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text, select
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 from sqlalchemy.orm import declarative_base

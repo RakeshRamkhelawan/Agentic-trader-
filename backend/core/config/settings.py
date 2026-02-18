@@ -71,19 +71,29 @@ class Settings(BaseSettings):
     MAX_ORDER_SIZE_EUR: float = 1000.0
     MAX_DAILY_LOSS_EUR: float = 50.0
 
+    # --- TRADING CONTROLS ---
+    TRADING_MODE: str = "paper"  # paper, live, backtest
+    KILL_SWITCH: bool = False
+    BYBIT_USE_EU: bool = False
+
     # --- LOCATION (for Vedic Calculations) ---
     LATITUDE: float = 28.6139  # New Delhi (Default)
     LONGITUDE: float = 77.2090
 
     # --- MARKET DATA (Phase 2) ---
-    EXCHANGE_ID: str = "kraken"
+    EXCHANGE_ID: str = "bitvavo"  # Options: bitvavo, kraken, binance, etc.
     EXCHANGE_API_KEY: Optional[str] = Field(
-        default=None, validation_alias="KRAKEN_API_KEY"
+        default=None, validation_alias="BITVAVO_API_KEY"
     )
     EXCHANGE_SECRET: Optional[str] = Field(
-        default=None, validation_alias="KRAKEN_SECRET"
+        default=None, validation_alias="BITVAVO_API_SECRET"
     )
     ENABLE_REALTIME_DATA: bool = False
+
+    # --- BITVAVO SPECIFIC ---
+    BITVAVO_API_KEY: Optional[str] = None
+    BITVAVO_API_SECRET: Optional[str] = None
+    BITVAVO_SANDBOX: bool = False
 
     # Pydantic Settings Config
     model_config = SettingsConfigDict(

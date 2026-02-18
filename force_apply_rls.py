@@ -1,6 +1,5 @@
-import sys
-import os
 from sqlalchemy import create_engine, text
+
 from backend.core.config.settings import settings
 
 

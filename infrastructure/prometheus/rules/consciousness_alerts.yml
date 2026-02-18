@@ -1,0 +1,44 @@
+groups:
+  - name: consciousness_architecture
+    rules:
+      - alert: SoulCycleStale
+        expr: time() - soul_cycle_last_timestamp > 120
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Eternal Soul cycle is stale"
+          description: "No soul cycle completed in over 2 minutes"
+
+      - alert: MindLatencyHigh
+        expr: histogram_quantile(0.99, rate(mind_cycle_latency_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cognitive Mind latency exceeds 500ms at p99"
+
+      - alert: BodySHMStale
+        expr: time() - body_shm_last_read_timestamp > 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Reflex Body SHM reads are stale"
+          description: "Body hasn't read SHM in over 5 seconds"
+
+      - alert: KillSwitchActive
+        expr: kill_switch_active == 1
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "KILL SWITCH is active - all trading halted"
+
+      - alert: HighGunaDeviation
+        expr: guna_deviation_score > 0.5
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Guna distribution highly imbalanced"

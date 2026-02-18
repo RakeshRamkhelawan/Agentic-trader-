@@ -1,4 +1,3 @@
-
 import os
 import sys
 
@@ -10,9 +9,10 @@ print(f"Path: {sys.path}")
 
 try:
     print("Attempting to import app from backend.api.main...")
-    from backend.api.main import app
+
     print("Success!")
 except Exception as e:
     print(f"Error: {e}")
     import traceback
+
     traceback.print_exc()

@@ -6,16 +6,14 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 
 import httpx
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ed25519
 from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
                       wait_exponential)
 
-logger = logging.getLogger(__name__)
-
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
 from backend.schemas.market_data import OrderBook, OrderUpdate, TickerUpdate
-from backend.schemas.orders import (OrderRequest, OrderSide, OrderStatus,
-                                    OrderType)
+from backend.schemas.orders import OrderRequest, OrderStatus
+
+logger = logging.getLogger(__name__)
 
 
 class RateLimitError(Exception):

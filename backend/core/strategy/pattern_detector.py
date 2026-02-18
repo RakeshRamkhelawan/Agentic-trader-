@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import List, Optional
 
-import numpy as np
 import pandas as pd
 from pydantic import BaseModel
 

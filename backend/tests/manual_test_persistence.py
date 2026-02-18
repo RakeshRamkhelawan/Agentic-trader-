@@ -4,8 +4,6 @@ import os
 import sys
 from datetime import datetime
 
-import numpy as np
-
 # Add project root to path
 sys.path.append(os.getcwd())
 

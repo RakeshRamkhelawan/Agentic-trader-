@@ -5,9 +5,8 @@ Uses Kelly Criterion for optimal position sizing with safety multipliers.
 Enforces portfolio-level risk constraints (max limits, exposure).
 """
 
-import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from backend.agents.base_agent import BaseAgent
 from backend.core.schemas.ooda_types import (CapitalAllocation, PortfolioState,

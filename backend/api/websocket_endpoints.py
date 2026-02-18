@@ -10,8 +10,7 @@ import logging
 import uuid
 from typing import Optional
 
-from fastapi import (APIRouter, HTTPException, Query, WebSocket,
-                     WebSocketDisconnect)
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
 from backend.api.websocket_manager import ws_manager
 

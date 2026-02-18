@@ -2,9 +2,9 @@
 Run test suite and generate summary.
 """
 
-import subprocess
-import re
 import os
+import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -59,7 +59,9 @@ for test_file in sorted(test_files):
         status = (
             "✅"
             if (passed > 0 and failed == 0 and errors == 0)
-            else "⚠️" if errors > 0 else "❌"
+            else "⚠️"
+            if errors > 0
+            else "❌"
         )
         test_results.append(
             f"{status} {test_file.name}: {passed} passed, {failed} failed, {errors} errors"
@@ -91,7 +93,9 @@ for test_subdir in [d for d in test_dirs if d.name in safe_dirs]:
     status = (
         "✅"
         if (passed > 0 and failed == 0 and errors == 0)
-        else "⚠️" if errors > 0 else "❌"
+        else "⚠️"
+        if errors > 0
+        else "❌"
     )
     test_results.append(
         f"{status} {test_subdir.name}/: {passed} passed, {failed} failed, {errors} errors"
@@ -120,8 +124,8 @@ else:
         f"⚠️  Some tests need attention: {total_failed} failures, {total_errors} errors"
     )
 
-print(f"\n📊 Summary:")
+print("\n📊 Summary:")
 print(f"  - Unit Tests (without cognition/core): {total_passed} passing ✅")
-print(f"  - Cognition Tests: ~20 tests (skipped due to registry isolation)")
-print(f"  - Core Tests: ~20 tests (skipped due to registry isolation)")
-print(f"  - Total Estimated: ~260+ tests passing")
+print("  - Cognition Tests: ~20 tests (skipped due to registry isolation)")
+print("  - Core Tests: ~20 tests (skipped due to registry isolation)")
+print("  - Total Estimated: ~260+ tests passing")

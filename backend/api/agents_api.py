@@ -1,6 +1,6 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from backend.services.cognitive_orchestrator import CognitiveOrchestrator
 

@@ -1,6 +1,6 @@
 import asyncio
+
 import asyncpg
-import sys
 
 # Connecting as the application user (trader)
 DB_URL = "postgresql://trader:trading_secure@localhost:5455/trading_db"

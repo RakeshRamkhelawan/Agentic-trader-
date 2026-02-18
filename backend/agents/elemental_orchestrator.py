@@ -73,7 +73,6 @@ class ElementalOrchestrator(ElementalBase):
 
         try:
             inputs = signal.get("inputs", {})
-            context = signal.get("context", {})
 
             # 2. Calculate System Harmony Score
             # Based on agreement/conflict between agent signals

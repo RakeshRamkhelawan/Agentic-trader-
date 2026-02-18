@@ -3,7 +3,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 # --- New Versioned Schemas ---
 
@@ -185,9 +185,9 @@ class TattvaConfig(BaseModel):
     # Core configuration
     active_tattvas: int = 36  # How many layers are active
     enable_tattva_traversal: bool = True  # Enable full 36-layer processing
-    traversal_direction: Literal["ascending", "descending", "bidirectional"] = (
-        "bidirectional"
-    )
+    traversal_direction: Literal[
+        "ascending", "descending", "bidirectional"
+    ] = "bidirectional"
 
     # Layer definitions (1-36)
     layers: List[TattvaLayer] = Field(default_factory=list)

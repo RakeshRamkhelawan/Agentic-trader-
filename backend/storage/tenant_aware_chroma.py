@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 # Try to import chromadb, but allow graceful fallback
 try:
     import chromadb
-    from chromadb.config import Settings as ChromaSettings
 
     CHROMADB_AVAILABLE = True
 except ImportError:

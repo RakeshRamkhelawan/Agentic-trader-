@@ -1,0 +1,1 @@
+curl -s http://127.0.0.1:8004/health || echo "Still not ready"

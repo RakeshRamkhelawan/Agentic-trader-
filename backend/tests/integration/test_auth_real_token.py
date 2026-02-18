@@ -1,4 +1,3 @@
-
 import os
 
 import pytest
@@ -8,6 +7,7 @@ from fastapi.testclient import TestClient
 from backend.api.main import app
 
 client = TestClient(app)
+
 
 def get_real_auth0_token():
     """
@@ -19,8 +19,10 @@ def get_real_auth0_token():
     domain = os.getenv("AUTH0_DOMAIN") or os.getenv("NEXT_PUBLIC_AUTH0_DOMAIN")
     client_id = os.getenv("AUTH0_CLIENT_ID") or os.getenv("NEXT_PUBLIC_AUTH0_CLIENT_ID")
     client_secret = os.getenv("AUTH0_CLIENT_SECRET")
-    audience = os.getenv("AUTH0_API_AUDIENCE") or os.getenv("NEXT_PUBLIC_AUTH0_AUDIENCE")
-    
+    audience = os.getenv("AUTH0_API_AUDIENCE") or os.getenv(
+        "NEXT_PUBLIC_AUTH0_AUDIENCE"
+    )
+
     username = os.getenv("TEST_USER_EMAIL")
     password = os.getenv("TEST_USER_PASSWORD")
 
@@ -29,14 +31,14 @@ def get_real_auth0_token():
         return None
 
     url = f"https://{domain}/oauth/token"
-    
+
     # Try Client Credentials Flow (Machine-to-Machine)
     if client_secret and not username:
         payload = {
             "client_id": client_id,
             "client_secret": client_secret,
             "audience": audience,
-            "grant_type": "client_credentials"
+            "grant_type": "client_credentials",
         }
         print(f"Attempting Client Credentials usage for {client_id}...")
         resp = requests.post(url, json=payload)
@@ -52,12 +54,12 @@ def get_real_auth0_token():
     if username and password:
         payload = {
             "client_id": client_id,
-            "client_secret": client_secret, # Might be needed for Confidential apps, optional for Public
+            "client_secret": client_secret,  # Might be needed for Confidential apps, optional for Public
             "audience": audience,
             "username": username,
             "password": password,
             "grant_type": "password",
-            "scope": "openid profile email"
+            "scope": "openid profile email",
         }
         print(f"Attempting Password Login for {username}...")
         resp = requests.post(url, json=payload)
@@ -65,8 +67,9 @@ def get_real_auth0_token():
             return resp.json().get("access_token")
         else:
             print(f"Password Login failed: {resp.text}")
-            
+
     return None
+
 
 def test_live_happy_path_with_real_token():
     """
@@ -78,17 +81,20 @@ def test_live_happy_path_with_real_token():
     # Load env vars safely if not already loaded
     try:
         from dotenv import load_dotenv
+
         load_dotenv()
         load_dotenv("frontend/.env.local")
     except ImportError:
         pass
 
     # Check if we have a manual token first
-    token = os.getenv("AUTH0_TEST_TOKEN") or \
-            os.getenv("BEARER_TOKEN") or \
-            os.getenv("ACCESS_TOKEN") or \
-            os.getenv("AUTH_TOKEN")
-            
+    token = (
+        os.getenv("AUTH0_TEST_TOKEN")
+        or os.getenv("BEARER_TOKEN")
+        or os.getenv("ACCESS_TOKEN")
+        or os.getenv("AUTH_TOKEN")
+    )
+
     if not token:
         # Try to generate one
         token = get_real_auth0_token()
@@ -110,14 +116,15 @@ def test_live_happy_path_with_real_token():
 
     # Act
     response = client.get(
-        "/api/v1/trading/orders/active",
-        headers={"Authorization": f"Bearer {token}"}
+        "/api/v1/trading/orders/active", headers={"Authorization": f"Bearer {token}"}
     )
 
     # Assert
     # 200 = Success (Authenticated & Authorized)
     # 403 = Authenticated but not Authorized (RLS or Scope issue) - Still passes AUTH verification
     if response.status_code not in [200, 403]:
-        pytest.fail(f"API Rejected Valid Token: {response.status_code} - {response.text}")
+        pytest.fail(
+            f"API Rejected Valid Token: {response.status_code} - {response.text}"
+        )
 
     assert response.status_code in [200, 403]

@@ -1,8 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from abc import ABC
+from datetime import datetime
+from typing import Optional
 
 from backend.backtesting.exchange import SimulatedExchange
 from backend.backtesting.fill_models import FillModel, FullFillModel
+from backend.backtesting.models import OrderSide, Trade
 from backend.backtesting.position_sizing import (FixedQuantitySizer,
                                                  PositionSizer)
 from backend.backtesting.slippage_models import (FixedSlippageModel,

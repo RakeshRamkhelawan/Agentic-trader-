@@ -11,8 +11,7 @@ from typing import Any, Dict, List, Optional
 from backend.agents.base_agent import BaseAgent
 from backend.core.schemas.ooda_types import Observation
 from backend.governance.agent_gatekeeper import AgentRole
-from backend.services.prediction_market_client import (PredictionSignal,
-                                                       get_prediction_client)
+from backend.services.prediction_market_client import get_prediction_client
 
 logger = logging.getLogger(__name__)
 

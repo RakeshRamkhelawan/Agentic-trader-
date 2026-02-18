@@ -1,0 +1,1 @@
+call venv\Scripts\activate.bat && python start_and_verify.py

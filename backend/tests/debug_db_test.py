@@ -1,4 +1,3 @@
-
 import os
 
 import pytest
@@ -7,7 +6,11 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://trader:trading_secure@localhost:5455/trading_db")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+asyncpg://trader:trading_secure@localhost:5455/trading_db",
+)
+
 
 @pytest_asyncio.fixture
 async def manual_session():
@@ -16,6 +19,7 @@ async def manual_session():
     async with async_session() as session:
         yield session
     await engine.dispose()
+
 
 @pytest.mark.asyncio
 async def test_manual_execute(manual_session):

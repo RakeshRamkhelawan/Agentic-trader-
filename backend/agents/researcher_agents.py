@@ -5,8 +5,11 @@ Contrarian perspective generators voor bias detection.
 """
 
 import logging
-from datetime import UTC, datetime
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
+
+if TYPE_CHECKING:
+    from backend.events.event_bus import EventBus
+    from backend.llm.provider_interface import LLMProvider
 
 from backend.agents.base_agent import BaseAgent
 from backend.core.schemas.ooda_types import (MarketRegime, Observation,

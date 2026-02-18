@@ -9,13 +9,12 @@ Features:
 """
 
 import asyncio
-import json
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, Optional, Set
 
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
 
@@ -237,7 +236,6 @@ class WebSocketManager:
 
                 # Send initial snapshot for orderbook channels
                 if success and channel.startswith("orderbook."):
-                    symbol = channel.split(".")[1]
                     # TODO: Fetch current orderbook from exchange
                     # For now, send empty snapshot
                     await self.send_message(

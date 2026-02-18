@@ -5,7 +5,7 @@ Automatische stopzetting van trading bij gevaarlijke condities.
 """
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Dict, Optional
 

@@ -7,9 +7,8 @@ via the CCXT library with WebSocket streaming support.
 
 import asyncio
 import logging
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Dict, Optional
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
 from backend.schemas.market_data import OrderBook

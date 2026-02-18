@@ -1,0 +1,1 @@
+call venv\Scripts\activate.bat && pip install setuptools setuptools-scm

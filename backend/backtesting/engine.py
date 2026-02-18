@@ -1,13 +1,9 @@
-import asyncio
 import logging
-from datetime import datetime
-from typing import List, Optional
 
 from backend.backtesting.data_feed import DataFeed
 from backend.backtesting.exchange import SimulatedExchange
 from backend.backtesting.metrics import MetricsCalculator
-from backend.backtesting.models import (BacktestConfig, BacktestMetrics,
-                                        BacktestResult)
+from backend.backtesting.models import BacktestConfig, BacktestResult
 from backend.backtesting.strategy import Strategy
 
 _logger = logging.getLogger(__name__)

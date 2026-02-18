@@ -1,12 +1,9 @@
-from typing import Any, Dict, List
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps import get_current_tenant_id, get_db
-from backend.services.performance_analytics import (PerformanceAnalytics,
-                                                    PerformanceMetrics)
+from backend.services.performance_analytics import PerformanceAnalytics
 from backend.services.trading_service import (TradingService,
                                               get_trading_service)
 
@@ -105,7 +102,6 @@ async def get_dashboard_metrics(
 
     # Mock Coherence Data (In real scenarios, this would come from the Orchestrator or HealthCheck service)
     # Different values to test visualization
-    import random
 
     return AnalyticsMetrics(
         mahabhutas_coherence=CoherenceMetrics(

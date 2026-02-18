@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Query
 
 from backend.core.navagraha.models import NavagrahaState

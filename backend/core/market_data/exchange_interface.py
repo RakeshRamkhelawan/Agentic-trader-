@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -15,12 +14,24 @@ class ExchangeInterface:
     """
     Unified interface for crypto exchanges using CCXT.
     Wraps API calls with Circuit Breaker protection.
+
+    Supported exchanges:
+    - bitvavo (Dutch exchange, ideal for EUR pairs)
+    - kraken (US/EU exchange)
+    - binance (Global, via CCXT)
     """
 
-    def __init__(self, exchange_override: Optional[Any] = None):
-        self.exchange_id = settings.EXCHANGE_ID
+    def __init__(
+        self, exchange_override: Optional[Any] = None, exchange_id: Optional[str] = None
+    ):
+        self.exchange_id = exchange_id or settings.EXCHANGE_ID
         self.api_key = settings.EXCHANGE_API_KEY
         self.secret = settings.EXCHANGE_SECRET
+
+        # Load exchange-specific credentials
+        if self.exchange_id == "bitvavo":
+            self.api_key = settings.BITVAVO_API_KEY or settings.EXCHANGE_API_KEY
+            self.secret = settings.BITVAVO_API_SECRET or settings.EXCHANGE_SECRET
 
         self.exchange = exchange_override
         self.circuit_breaker = CircuitBreaker(name=f"exchange_{self.exchange_id}")

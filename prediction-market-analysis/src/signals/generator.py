@@ -3,14 +3,11 @@ Signal Generator Engine
 Generates market signals from analysis results.
 """
 
-import json
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, List, Optional
-
-import pandas as pd
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +44,7 @@ class SignalIndicator:
     breached: bool
     interpretation: str
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary."""
         return asdict(self)
 
@@ -63,13 +60,13 @@ class MarketSignal:
     signal_type: SignalType
     confidence: float  # 0-100
     score: float  # Overall signal strength
-    indicators: List[SignalIndicator]
+    indicators: list[SignalIndicator]
     recommendation: str
     created_at: datetime
     expires_at: Optional[datetime]
-    metadata: Dict
+    metadata: dict
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary (JSON serializable)."""
         return {
             "signal_id": self.signal_id,
@@ -117,7 +114,7 @@ class SignalGenerator:
         self,
         market: str,
         symbol: str,
-        spread_metrics: Dict,
+        spread_metrics: dict,
         category: SignalCategory = SignalCategory.POLITICS,
         confidence_boost: float = 0.0,
     ) -> Optional[MarketSignal]:
@@ -200,7 +197,7 @@ class SignalGenerator:
         self,
         market: str,
         symbol: str,
-        volume_metrics: Dict,
+        volume_metrics: dict,
         category: SignalCategory = SignalCategory.POLITICS,
         confidence_boost: float = 0.0,
     ) -> Optional[MarketSignal]:
@@ -288,7 +285,7 @@ class SignalGenerator:
         self,
         market: str,
         symbol: str,
-        test_results: Dict,
+        test_results: dict,
         category: SignalCategory = SignalCategory.POLITICS,
         confidence_boost: float = 0.0,
     ) -> Optional[MarketSignal]:
@@ -378,9 +375,9 @@ class SignalGenerator:
         self,
         market: str,
         symbol: str,
-        analysis_results: Dict,
+        analysis_results: dict,
         category: SignalCategory = SignalCategory.POLITICS,
-    ) -> List[MarketSignal]:
+    ) -> list[MarketSignal]:
         """
         Generate multiple signals from combined analysis results.
 
@@ -422,7 +419,7 @@ class SignalGenerator:
         logger.info(f"Generated {len(signals)} signals for {market}")
         return signals
 
-    def rank_signals(self, signals: List[MarketSignal]) -> List[MarketSignal]:
+    def rank_signals(self, signals: list[MarketSignal]) -> list[MarketSignal]:
         """
         Rank signals by confidence and score.
 
@@ -436,10 +433,10 @@ class SignalGenerator:
 
     def filter_signals(
         self,
-        signals: List[MarketSignal],
+        signals: list[MarketSignal],
         min_confidence: float = 50.0,
-        signal_types: Optional[List[SignalType]] = None,
-    ) -> List[MarketSignal]:
+        signal_types: Optional[list[SignalType]] = None,
+    ) -> list[MarketSignal]:
         """
         Filter signals by confidence and type.
 

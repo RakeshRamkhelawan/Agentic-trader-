@@ -63,7 +63,6 @@ async def sync_kraken(cache):
 async def sync_revolut(cache):
     """Sync Revolut instruments and tickers."""
     try:
-
         # Using system credentials for background sync if available
         if not (settings.REVOLUT_API_KEY and settings.REVOLUT_PRIVATE_KEY):
             logger.warning("Revolut system credentials missing. Skipping Revolut sync.")

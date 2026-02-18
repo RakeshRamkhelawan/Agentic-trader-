@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Dict, List
+from typing import Callable, Dict, List
 
 import yaml
 from pydantic import BaseModel, ValidationError

@@ -21,9 +21,9 @@ def test_market_tick_negative_price():
             symbol="BTC/USD",
             price=-1000.0,
             volume=1.0,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
-    
+
     assert "price" in str(exc_info.value).lower()
 
 
@@ -35,7 +35,7 @@ def test_market_tick_zero_price():
             symbol="BTC/USD",
             price=0.0,
             volume=1.0,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
 
 
@@ -47,7 +47,7 @@ def test_market_tick_negative_volume():
             symbol="BTC/USD",
             price=50000.0,
             volume=-10.0,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
 
 
@@ -55,12 +55,8 @@ def test_market_tick_negative_volume():
 def test_market_tick_missing_symbol():
     """Unhappy: Missing required field should fail."""
     with pytest.raises(ValidationError) as exc_info:
-        MarketTick(
-            price=50000.0,
-            volume=1.0,
-            timestamp=datetime.now(timezone.utc)
-        )
-    
+        MarketTick(price=50000.0, volume=1.0, timestamp=datetime.now(timezone.utc))
+
     assert "symbol" in str(exc_info.value).lower()
 
 
@@ -69,10 +65,7 @@ def test_market_tick_empty_symbol():
     """Unhappy: Empty symbol should still validate (no min length)."""
     # This should actually pass if we don't enforce min length
     tick = MarketTick(
-        symbol="",
-        price=50000.0,
-        volume=1.0,
-        timestamp=datetime.now(timezone.utc)
+        symbol="", price=50000.0, volume=1.0, timestamp=datetime.now(timezone.utc)
     )
     assert tick.symbol == ""
 
@@ -86,9 +79,9 @@ def test_agent_thought_confidence_too_high():
             reasoning="Test",
             confidence=1.5,
             data={},
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
-    
+
     assert "confidence" in str(exc_info.value).lower()
 
 
@@ -101,7 +94,7 @@ def test_agent_thought_confidence_negative():
             reasoning="Test",
             confidence=-0.1,
             data={},
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
 
 
@@ -113,9 +106,9 @@ def test_agent_thought_missing_reasoning():
             agent_name="TestAgent",
             confidence=0.8,
             data={},
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
-    
+
     assert "reasoning" in str(exc_info.value).lower()
 
 
@@ -127,7 +120,7 @@ def test_agent_thought_empty_agent_name():
         reasoning="Test reasoning",
         confidence=0.8,
         data={},
-        timestamp=datetime.now(timezone.utc)
+        timestamp=datetime.now(timezone.utc),
     )
     assert thought.agent_name == ""
 
@@ -144,9 +137,9 @@ def test_trade_proposal_invalid_action():
             target_price=50000.0,
             rationale="Test",
             confidence=0.8,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
-    
+
     assert "action" in str(exc_info.value).lower()
 
 
@@ -162,7 +155,7 @@ def test_trade_proposal_zero_quantity():
             target_price=50000.0,
             rationale="Test",
             confidence=0.8,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
 
 
@@ -178,7 +171,7 @@ def test_trade_proposal_negative_quantity():
             target_price=50000.0,
             rationale="Test",
             confidence=0.8,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
 
 
@@ -193,9 +186,9 @@ def test_trade_proposal_missing_rationale():
             quantity=1.0,
             target_price=50000.0,
             confidence=0.8,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
-    
+
     assert "rationale" in str(exc_info.value).lower()
 
 
@@ -211,7 +204,7 @@ def test_trade_proposal_confidence_out_of_range():
             target_price=50000.0,
             rationale="Test",
             confidence=2.0,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
 
 
@@ -228,7 +221,7 @@ def test_trade_proposal_case_sensitive_action():
             target_price=50000.0,
             rationale="Test",
             confidence=0.8,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
 
 
@@ -237,10 +230,7 @@ def test_market_tick_invalid_timestamp_type():
     """Unhappy: Invalid timestamp type should fail."""
     with pytest.raises(ValidationError):
         MarketTick(
-            symbol="BTC/USD",
-            price=50000.0,
-            volume=1.0,
-            timestamp="not a datetime"
+            symbol="BTC/USD", price=50000.0, volume=1.0, timestamp="not a datetime"
         )
 
 
@@ -251,7 +241,7 @@ def test_agent_thought_data_with_none():
         agent_name="TestAgent",
         reasoning="Test",
         confidence=0.8,
-        timestamp=datetime.now(timezone.utc)
+        timestamp=datetime.now(timezone.utc),
     )
     assert thought.data == {}
 
@@ -268,7 +258,7 @@ def test_trade_proposal_negative_stop_loss():
         stop_loss=-100.0,  # Unusual but technically valid
         rationale="Test",
         confidence=0.8,
-        timestamp=datetime.now(timezone.utc)
+        timestamp=datetime.now(timezone.utc),
     )
     assert proposal.stop_loss == -100.0
 
@@ -276,9 +266,10 @@ def test_trade_proposal_negative_stop_loss():
 @pytest.mark.unit
 def test_event_base_timestamp_auto_generated():
     """Edge: EventBase should auto-generate timestamp if not provided."""
+
     class TestEvent(EventBase):
         test_field: str
-    
+
     event = TestEvent(test_field="test")
     assert event.timestamp is not None
     assert isinstance(event.timestamp, datetime)
@@ -291,7 +282,7 @@ def test_market_tick_extreme_price():
         symbol="BTC/USD",
         price=999999999999.99,
         volume=1.0,
-        timestamp=datetime.now(timezone.utc)
+        timestamp=datetime.now(timezone.utc),
     )
     assert tick.price == 999999999999.99
 
@@ -305,6 +296,6 @@ def test_agent_thought_very_long_reasoning():
         reasoning=long_reasoning,
         confidence=0.8,
         data={},
-        timestamp=datetime.now(timezone.utc)
+        timestamp=datetime.now(timezone.utc),
     )
     assert len(thought.reasoning) == 10000
