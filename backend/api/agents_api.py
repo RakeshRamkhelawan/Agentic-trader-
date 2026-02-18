@@ -98,15 +98,38 @@ async def chat_with_agent(body: ChatRequest) -> ChatResponse:
     Conversational AI endpoint for the trading terminal.
     Routes the user message (with optional history context) through the
     configured LLM provider (Ollama / OpenAI / Gemini / DeepSeek).
+    Includes live market data context for accurate analysis.
     """
     llm = _get_llm_service()
+    
+    # Fetch live market data for context
+    from backend.core.cache_layer import get_cache
+    cache = get_cache()
+    market_data = await cache.get("markets:all") or []
+    
+    # Build market context summary
+    market_context = ""
+    if market_data:
+        # Sort by change to get gainers/losers
+        sorted_markets = sorted(market_data, key=lambda x: x.get("change_24h", 0), reverse=True)
+        top_gainers = sorted_markets[:3]
+        top_losers = sorted_markets[-3:]
+        
+        market_context = "\n\nLIVE MARKET DATA:\n"
+        market_context += "Top Gainers:\n"
+        for m in top_gainers:
+            market_context += f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:+.2f}%)\n"
+        market_context += "\nTop Losers:\n"
+        for m in top_losers:
+            market_context += f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:+.2f}%)\n"
+        market_context += f"\nTotal assets tracked: {len(market_data)}\n"
 
     system_prompt = (
         "You are an expert AI trading assistant for the Agentic Trader platform. "
         "You help users analyze markets, manage portfolios, and make informed trading decisions. "
         "Keep responses concise and actionable. Use bullet points where appropriate. "
-        "When asked about live prices or portfolio values, advise the user to check "
-        "the live dashboard, as you do not have real-time data access."
+        "Base your analysis on the live market data provided in the context. "
+        "Be specific about price movements and percentages when answering."
     )
 
     # Build conversational context from the last 10 history entries
@@ -115,7 +138,7 @@ async def chat_with_agent(body: ChatRequest) -> ChatResponse:
         role = "User" if entry.type == "user" else "Assistant"
         history_text += f"{role}: {entry.content}\n"
 
-    full_prompt = f"{history_text}User: {body.message}"
+    full_prompt = f"{history_text}User: {body.message}{market_context}"
 
     try:
         response_text = await llm.circuit_breaker.call(
