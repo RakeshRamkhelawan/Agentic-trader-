@@ -4,7 +4,7 @@ Prometheus metrics for Prediction Market Intelligence service.
 Defines all metrics exposed via the /metrics endpoint.
 """
 
-from prometheus_client import Counter, Histogram, Gauge, Info
+from prometheus_client import Counter, Gauge, Histogram, Info
 
 # Service information
 SERVICE_INFO = Info(

@@ -9,12 +9,11 @@ Responsibility:
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import httpx
 from bs4 import BeautifulSoup
 
-from backend.core.config.settings import settings
 from backend.core.memory_agent import MemoryAgent  # GEWIJZIGD
 from backend.schemas.agent_messages import AgentMessage  # GEWIJZIGD
 
@@ -102,12 +101,13 @@ class ResearchAgent:
                 event = tick_data
             else:
                 # Basic validation/defaulting
+                from datetime import UTC, datetime
+
                 event = UnifiedMarketEvent(
                     event_type=EventType.TICKER,
-                    venue=tick_data.get("venue", "unknown"),
+                    exchange=tick_data.get("venue", "unknown"),
                     symbol=tick_data.get("symbol", "UNKNOWN"),
-                    ts_exchange=tick_data.get("ts_exchange", 0.0),
-                    ts_received=tick_data.get("ts_received", 0.0),
+                    timestamp=datetime.now(UTC),
                     price=float(tick_data.get("price") or tick_data.get("bid") or 0.0),
                 )
         except Exception as e:

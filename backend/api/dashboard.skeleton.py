@@ -21,15 +21,9 @@ Features:
 - CSV export
 """
 
-import asyncio
-import json
 import logging
-import statistics
-import threading
 from abc import ABC, abstractmethod
-from collections import deque
-from datetime import datetime, timedelta
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

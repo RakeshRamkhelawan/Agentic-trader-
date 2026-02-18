@@ -50,7 +50,6 @@ class AuditLogger:
         ip_address: str = "",
         user_agent: str = "",
     ):
-
         entry = {
             "tenant_id": tenant_id,
             "audit_id": str(uuid.uuid4()),

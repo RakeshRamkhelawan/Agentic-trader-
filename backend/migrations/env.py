@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 # Add project root to path to import backend modules
 sys.path.append(os.getcwd())
 
+from backend.core.config.settings import settings
 # Import models
 # Import consolidated models
 from backend.data.models import Base
@@ -24,7 +25,6 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Overwrite sqlalchemy.url with environment variable from Settings
-from backend.core.config.settings import settings
 
 if settings.DATABASE_URL:
     config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

@@ -2,13 +2,17 @@
 Database Verification - Async SQLAlchemy Setup.
 """
 
-import os
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+from sqlalchemy import event, text
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from backend.core.auth.context import get_current_tenant_optional
 from backend.core.config.settings import settings
+from backend.core.context import set_tenant_context
 
 DATABASE_URL = settings.DATABASE_URL
 
@@ -24,9 +28,6 @@ Base = declarative_base()
 # ============================================================================
 # SESSION FACTORY (Pillar II: Context-Agnostic DAL)
 # ============================================================================
-from contextlib import asynccontextmanager
-
-from backend.core.context import set_tenant_context
 
 
 class SessionManager:
@@ -66,10 +67,6 @@ tenant_session = SessionManager.tenant_session
 # ============================================================================
 # RLS EVENT LISTENER
 # ============================================================================
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
-
-from backend.core.auth.context import get_current_tenant_optional
 
 
 @event.listens_for(Engine, "before_cursor_execute")
@@ -100,6 +97,3 @@ def receive_before_cursor_execute(
         # ensure no leakage or strict default.
         # Ideally, background jobs should set a context too.
         pass
-
-
-from sqlalchemy import text

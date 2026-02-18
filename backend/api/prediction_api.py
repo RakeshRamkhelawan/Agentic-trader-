@@ -11,8 +11,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from backend.services.prediction_market_client import (PredictionSignal,
-                                                       get_prediction_client)
+from backend.services.prediction_market_client import get_prediction_client
 
 logger = logging.getLogger(__name__)
 

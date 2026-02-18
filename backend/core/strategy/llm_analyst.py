@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from pydantic import BaseModel
 
@@ -26,18 +26,8 @@ class LLMAnalyst:
         technical_signals: List[Dict[str, Any]],
         navagraha_context: Dict[str, Any],
     ) -> LLMAnalysis:
-
         # Mock Response for now
         # In future, construct prompt -> call LLM -> parse JSON
-
-        prompt = f"""
-        Analyze the following market data:
-        Summary: {market_data_summary}
-        Technical Signals: {technical_signals}
-        Astrological Context: {navagraha_context}
-        
-        Provide sentiment (bullish/bearish/neutral), rationale, and confidence (0.0-1.0).
-        """
 
         # Simulating a thoughtful response
         return LLMAnalysis(

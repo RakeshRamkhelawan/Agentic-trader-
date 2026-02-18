@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 from backend.core.navagraha.models import PlanetName
 
 

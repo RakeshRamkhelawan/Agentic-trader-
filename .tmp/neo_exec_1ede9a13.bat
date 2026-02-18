@@ -1,0 +1,1 @@
+call venv\Scripts\activate.bat && pip install uvicorn[standard] structlog alembic redis chromadb ccxt backtrader pyswisseph

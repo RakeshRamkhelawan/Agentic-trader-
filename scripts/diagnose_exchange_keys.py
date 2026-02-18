@@ -4,6 +4,7 @@ Diagnose script voor exchange API key problemen
 """
 
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -63,11 +64,11 @@ def main():
         from pathlib import Path
 
         if Path(pem_path).exists():
-            print(f"✅ REVOLUT_PRIVATE_KEY_PATH: Bestand bestaat")
+            print("✅ REVOLUT_PRIVATE_KEY_PATH: Bestand bestaat")
         else:
             print(f"❌ REVOLUT_PRIVATE_KEY_PATH: Bestand niet gevonden: {pem_path}")
     else:
-        print(f"❌ REVOLUT_PRIVATE_KEY_PATH: NIET INGESTELD")
+        print("❌ REVOLUT_PRIVATE_KEY_PATH: NIET INGESTELD")
 
     print("\n" + "=" * 50)
     print("\n💡 AANBEVELINGEN:\n")

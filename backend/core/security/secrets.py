@@ -1,16 +1,17 @@
 import logging
 import os
-from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Any, Dict, Optional, Protocol
+from typing import Dict, Optional, Protocol
 
 logger = logging.getLogger(__name__)
 
 
 class SecretBackend(Protocol):
-    def get_secret(self, path: str, key: str) -> str: ...
+    def get_secret(self, path: str, key: str) -> str:
+        ...
 
-    def is_connected(self) -> bool: ...
+    def is_connected(self) -> bool:
+        ...
 
 
 class VaultBackend:

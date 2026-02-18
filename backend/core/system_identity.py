@@ -13,10 +13,9 @@ This module implements the 36-Tattva consciousness architecture:
 - Layers 32-36: Mahabhutas (physical elements)
 """
 
-import asyncio
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -294,7 +293,8 @@ class SystemIdentity:
 
         # Get layer definition
         layer = next(
-            (l for l in self.tattva_config.layers if l.layer_number == layer_num), None
+            (lyr for lyr in self.tattva_config.layers if lyr.layer_number == layer_num),
+            None,
         )
 
         if not layer or not layer.active:

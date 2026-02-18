@@ -2,7 +2,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, computed_field, field_validator
+from pydantic import (BaseModel, ConfigDict, Field, computed_field,
+                      field_validator)
 
 
 class PlanetName(str, Enum):
@@ -114,8 +115,7 @@ class PlanetState(BaseModel):
         nakshatra_index = int((self.longitude % 360) / 13.333333333333334)
         return nakshatras[min(nakshatra_index, 26)]
 
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class GunaDistribution(BaseModel):
@@ -164,8 +164,7 @@ class GunaDistribution(BaseModel):
         )
         return 1.0 - (deviation / 2.0)
 
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class AspectType(str, Enum):
@@ -193,8 +192,7 @@ class PlanetaryAspect(BaseModel):
         ..., ge=0.0, le=1.0, description="Aspect strength [0, 1] based on orb"
     )
 
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class NavagrahaState(BaseModel):
@@ -280,5 +278,4 @@ class NavagrahaState(BaseModel):
         else:
             return "Material Density"
 
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)

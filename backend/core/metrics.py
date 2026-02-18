@@ -1,6 +1,5 @@
 import functools
 import time
-from typing import Any, Dict
 
 from prometheus_client import Counter, Enum, Gauge, Histogram
 

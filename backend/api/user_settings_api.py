@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps import get_current_tenant_id, get_db
 from backend.schemas.user_settings import (AppearanceSettings, BrokerAPIKey,
-                                           BrokerAPIKeyCreate, ExchangeType,
+                                           BrokerAPIKeyCreate,
                                            NotificationSettings,
                                            SecuritySettings, UserPreferences,
                                            UserProfile)

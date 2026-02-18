@@ -9,7 +9,6 @@ from backend.core.navagraha.models import (AspectType, GunaDistribution,
 
 
 class EphemerisCalculator:
-
     PLANET_MAPPING = {
         PlanetName.SUN: swe.SUN,
         PlanetName.MOON: swe.MOON,

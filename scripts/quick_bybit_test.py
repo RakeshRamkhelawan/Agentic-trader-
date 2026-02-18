@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Quick Bybit key test"""
+import hashlib
+import hmac
 import os
 import time
-import hmac
-import hashlib
+
 import requests
 from dotenv import load_dotenv
 
@@ -30,7 +31,7 @@ except Exception as e:
     print(f"❌ Error: {e}")
 
 # Test 2: Auth endpoint
-print(f"\n🔐 Testing authentication...")
+print("\n🔐 Testing authentication...")
 timestamp = str(int(time.time() * 1000))
 recv_window = "5000"
 query_string = "accountType=UNIFIED"
@@ -53,7 +54,7 @@ try:
     data = resp.json()
 
     if data.get("retCode") == 0:
-        print(f"✅ BYBIT WERKT! Balance gevonden!")
+        print("✅ BYBIT WERKT! Balance gevonden!")
         print(f"   Result: {data.get('result')}")
     else:
         print(f"❌ Error: {data.get('retCode')} - {data.get('retMsg')}")

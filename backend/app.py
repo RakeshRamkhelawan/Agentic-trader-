@@ -4,7 +4,6 @@ Application startup with WebSocket support.
 Run with: uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
 """
 
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 

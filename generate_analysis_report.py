@@ -1,20 +1,13 @@
 import os
-import sys
-import json
 from datetime import datetime
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer,
-    Table,
-    TableStyle,
-    PageBreak,
-)
+
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import (PageBreak, Paragraph, SimpleDocTemplate,
+                                Spacer, Table, TableStyle)
 
 
 def create_report():
@@ -67,7 +60,7 @@ def create_report():
     )
 
     story.append(Paragraph("Code Review & Build Analysis Report", title_style))
-    story.append(Paragraph(f"Agentic Trader Platform", styles["Heading2"]))
+    story.append(Paragraph("Agentic Trader Platform", styles["Heading2"]))
     story.append(
         Paragraph(
             f"Analysis Date: {datetime.now().strftime('%B %d, %Y')}", styles["Normal"]

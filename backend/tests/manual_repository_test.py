@@ -15,11 +15,11 @@ sys.path.append(os.getcwd())
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
 from backend.core.database import SessionManager
 from backend.data.models import DecisionAuditLog
 from backend.data.repository import BaseRepository
+
+load_dotenv()
 
 
 # Define Pydantic schemas for the test
@@ -84,7 +84,7 @@ async def test_repository():
         if fetched and fetched.trace_id == trace_id:
             print(f"[SUCCESS] Fetched record: {fetched.trace_id}")
         else:
-            print(f"[FAILED] Fetch failed or mismatch")
+            print("[FAILED] Fetch failed or mismatch")
 
     # 5. Test Update
     async with SessionManager.tenant_session(tenant_id) as session:
@@ -102,7 +102,7 @@ async def test_repository():
         if updated and updated.execution_status == "FILLED":
             print(f"[SUCCESS] Updated status: {updated.execution_status}")
         else:
-            print(f"[FAILED] Update failed")
+            print("[FAILED] Update failed")
 
     # 6. Test Delete
     async with SessionManager.tenant_session(tenant_id) as session:

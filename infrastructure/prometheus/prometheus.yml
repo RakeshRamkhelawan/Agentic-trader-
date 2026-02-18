@@ -6,16 +6,32 @@ global:
     environment: 'production'
 
 scrape_configs:
+  - job_name: 'consciousness-architecture'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['consciousness-architecture:8000']
+        labels:
+          service: 'consciousness-architecture'
+          component: 'multi-frequency-consciousness'
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: '(eternal_soul_.*|cognitive_mind_.*|reflex_executor_.*|global_guna_.*|guna_deviation_.*)'
+        action: keep
+
   - job_name: 'samkhya-backend'
     metrics_path: '/metrics'
     static_configs:
-      - targets: ['backend:8000']
+      - targets: ['api-server:8001']
         labels:
-          service: 'backend'
+          service: 'api-server'
+          component: 'api'
+      - targets: ['trading-engine:8004']
+        labels:
+          service: 'trading-engine'
           component: 'core'
     metric_relabel_configs:
       - source_labels: [__name__]
-        regex: 'samkhya_.*'
+        regex: '(samkhya_.*|eternal_soul_.*|cognitive_mind_.*|reflex_executor_.*|global_guna_.*|guna_deviation_.*)'
         action: keep
 
   - job_name: 'redis'

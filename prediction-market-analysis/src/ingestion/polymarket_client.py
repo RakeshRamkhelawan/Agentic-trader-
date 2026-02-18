@@ -6,7 +6,7 @@ Fetches prediction market data from Polymarket.
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Optional
 
 import pandas as pd
 
@@ -21,11 +21,11 @@ class PolymarketMarket:
     slug: str
     title: str
     category: str
-    outcomes: List[str]  # Possible outcomes (e.g., ["Yes", "No"])
-    prices: List[float]  # Current prices for each outcome
+    outcomes: list[str]  # Possible outcomes (e.g., ["Yes", "No"])
+    prices: list[float]  # Current prices for each outcome
     volume: float
     volume_24h: float
-    creators: List[str]
+    creators: list[str]
 
 
 @dataclass
@@ -92,7 +92,7 @@ class PolymarketClient:
 
     def get_markets(
         self, category: Optional[str] = None, limit: int = 100, offset: int = 0
-    ) -> List[PolymarketMarket]:
+    ) -> list[PolymarketMarket]:
         """
         Get list of Polymarket markets.
 
@@ -161,7 +161,7 @@ class PolymarketClient:
         limit: int = 100,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
-    ) -> List[PolymarketTrade]:
+    ) -> list[PolymarketTrade]:
         """
         Get trade history for a market.
 
@@ -278,7 +278,7 @@ class PolymarketClient:
             if trades:
                 yield trades[0]
 
-    def get_markets_by_category(self, category: str) -> List[PolymarketMarket]:
+    def get_markets_by_category(self, category: str) -> list[PolymarketMarket]:
         """
         Get all markets in a category.
 
@@ -290,7 +290,7 @@ class PolymarketClient:
         """
         return self.get_markets(category=category, limit=1000)
 
-    def search_markets(self, query: str) -> List[PolymarketMarket]:
+    def search_markets(self, query: str) -> list[PolymarketMarket]:
         """
         Search markets by title keyword.
 

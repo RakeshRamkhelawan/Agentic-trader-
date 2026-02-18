@@ -7,8 +7,6 @@ Analyseert marktdata en genereert technische en sentiment indicatoren.
 import logging
 from typing import Any, Dict, List, Optional
 
-import numpy as np
-
 from backend.agents.base_agent import BaseAgent
 from backend.core.schemas.ooda_types import (MarketRegime, Observation,
                                              Orientation)

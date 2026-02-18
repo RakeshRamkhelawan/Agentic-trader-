@@ -6,15 +6,11 @@ Orchestrates analysis engines and data persistence.
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Optional
 
 import pandas as pd
 
-from src.analysis import (
-    MakerTakerAnalyzer,
-    VolumeTrendsAnalyzer,
-    StatisticalTestsFramework,
-)
+from src.analysis import MakerTakerAnalyzer, StatisticalTestsFramework, VolumeTrendsAnalyzer
 from src.db.duckdb_manager import DuckDBManager
 from src.signals import SignalGenerator
 
@@ -58,7 +54,7 @@ class AnalysisService:
         symbol: str,
         trades_df: pd.DataFrame,
         category: str = "politics",
-    ) -> Dict:
+    ) -> dict:
         """
         Perform comprehensive market analysis.
 
@@ -173,7 +169,7 @@ class AnalysisService:
 
         return results
 
-    def _persist_results(self, results: Dict) -> None:
+    def _persist_results(self, results: dict) -> None:
         """
         Persist analysis results to database.
 
@@ -241,7 +237,7 @@ class AnalysisService:
         # Combined score (60% efficiency, 40% activity)
         return efficiency * 0.6 + activity * 0.4
 
-    def compare_markets(self, markets_data: Dict[str, pd.DataFrame]) -> Dict[str, Dict]:
+    def compare_markets(self, markets_data: dict[str, pd.DataFrame]) -> dict[str, dict]:
         """
         Compare metrics across multiple markets.
 

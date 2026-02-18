@@ -58,10 +58,6 @@ SEED_USERS = [
 async def seed_users():
     logger.info("🌱 Starting user seeding...")
 
-
-async def seed_users():
-    logger.info("🌱 Starting user seeding...")
-
     async with AsyncSessionLocal() as db:
         try:
             # Set RLS context using SET syntax

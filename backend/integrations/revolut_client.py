@@ -10,7 +10,7 @@ import os
 import time
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -223,7 +223,7 @@ class RevolutXClient:
                 base_url=self.base_url, timeout=self.timeout, headers=headers
             )
 
-            logger.info(f"🔍 Using JWT-signed authentication")
+            logger.info("🔍 Using JWT-signed authentication")
             logger.info(f"🌐 Base URL: {self.base_url}")
 
             # Try multiple endpoints to discover working API structure
@@ -260,23 +260,23 @@ class RevolutXClient:
                             logger.info(
                                 f"   Response preview: {json.dumps(data, indent=2)[:300]}"
                             )
-                        except:
+                        except (ValueError, json.JSONDecodeError):
                             logger.info(
                                 f"✅ Connected via {endpoint}! (no JSON response)"
                             )
                         return True
 
                     elif response.status_code == 401:
-                        logger.warning(f"   ❌ Unauthorized (401) - JWT token invalid")
+                        logger.warning("   ❌ Unauthorized (401) - JWT token invalid")
                         try:
                             error_data = response.json()
                             logger.debug(f"   Error: {error_data}")
-                        except:
+                        except (ValueError, json.JSONDecodeError):
                             logger.debug(f"   Error: {response.text[:200]}")
                         continue
 
                     elif response.status_code == 404:
-                        logger.debug(f"   Endpoint not found (404), trying next...")
+                        logger.debug("   Endpoint not found (404), trying next...")
                         continue
 
                     else:
@@ -285,7 +285,7 @@ class RevolutXClient:
                         )
                         try:
                             logger.debug(f"   Response: {response.text[:200]}")
-                        except:
+                        except Exception:
                             pass
                         continue
 

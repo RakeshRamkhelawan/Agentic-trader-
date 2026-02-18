@@ -1,0 +1,1 @@
+call venv\Scripts\activate.bat && set PYTHONPATH=. && uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 > startup.log 2>&1

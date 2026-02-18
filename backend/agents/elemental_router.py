@@ -10,7 +10,7 @@ Function:
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from backend.agents.elemental_base import ElementalBase
 

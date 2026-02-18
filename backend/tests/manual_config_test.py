@@ -1,7 +1,6 @@
 import asyncio
 import os
 import sys
-from datetime import datetime, timezone
 
 # Setup async loop for windows
 if sys.platform == "win32":
@@ -12,11 +11,10 @@ sys.path.append(os.getcwd())
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
 from backend.core.database import SessionManager
-from backend.models.config import RuntimeConfig
 from backend.services.config_service import config_service
+
+load_dotenv()
 
 
 async def test_config_service():
@@ -57,7 +55,7 @@ async def test_config_service():
         if check_val == new_value:
             print(f"[SUCCESS] Verified update: {check_val}")
         else:
-            print(f"[FAILED] Update verification failed")
+            print("[FAILED] Update verification failed")
 
     print("[DONE] ConfigService Test Complete")
 

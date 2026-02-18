@@ -83,6 +83,34 @@ class PrometheusMetrics:
             registry=self._registry,
         )
 
+        # --- Phase 5: Observability Metrics ---
+        self.market_regime_state = Gauge(
+            f"{service_name}_market_regime_state",
+            "Current Market Regime (0=Sideways, 1=Bull, 2=Bear, 3=Volatile).",
+            registry=self._registry,
+        )
+
+        self.strategy_signal_total = Counter(
+            f"{service_name}_strategy_signal_total",
+            "Total strategy signals generated.",
+            ["strategy", "action"],
+            registry=self._registry,
+        )
+
+        self.order_execution_latency_seconds = Histogram(
+            f"{service_name}_order_execution_latency_seconds",
+            "Latency from Intent generation to Reflex execution.",
+            buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0),
+            registry=self._registry,
+        )
+
+        self.generated_shm_updates_total = Counter(
+            f"{service_name}_generated_shm_updates_total",
+            "Total updates written to Shared Memory.",
+            ["shm_name"],
+            registry=self._registry,
+        )
+
         # --- Guna Metrics (Globaal, dus zonder service_name prefix) ---
         # Only register if not already registered
         try:

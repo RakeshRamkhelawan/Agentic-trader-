@@ -1,31 +1,34 @@
-import os
-import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-BASE_DIR = Path(r"c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621")
+BASE_DIR = Path(
+    r"c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621"
+)
 DOCS_DIR = BASE_DIR / "docs"
 DOCS_DIR.mkdir(exist_ok=True)
 
+
 def read_file_safe(filepath):
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             return f.read()
     except:
         return ""
+
 
 def analyze_existing_docs():
     master_content = read_file_safe(BASE_DIR / "master_full.txt")
     fase01_content = read_file_safe(BASE_DIR / "fase01_full.txt")
     handover_content = read_file_safe(BASE_DIR / "handover_full.txt")
     epic01_content = read_file_safe(BASE_DIR / "epic01_full.txt")
-    
+
     return {
         "master": master_content,
         "fase01": fase01_content,
         "handover": handover_content,
-        "epic01": epic01_content
+        "epic01": epic01_content,
     }
+
 
 def generate_phase_review_document(docs):
     content = f"""# Phase-by-Phase Review Document
@@ -722,35 +725,37 @@ The Samkhya Yoga Agentic Trader has a solid foundation but requires targeted arc
 
 *End of Phase-by-Phase Review Document*
 """
-    
+
     output_path = DOCS_DIR / "PHASE_BY_PHASE_REVIEW.md"
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(content)
-    
+
     print(f"✅ Generated: {output_path}")
     return str(output_path)
+
 
 def main():
     print("=" * 80)
     print("COMPREHENSIVE ANALYSIS GENERATION")
     print("=" * 80)
-    
+
     print("\n[1] Reading existing documentation...")
     docs = analyze_existing_docs()
     print(f"    - Master Kanban: {len(docs['master'])} chars")
     print(f"    - FASE 01: {len(docs['fase01'])} chars")
     print(f"    - Handover: {len(docs['handover'])} chars")
     print(f"    - EPIC 01: {len(docs['epic01'])} chars")
-    
+
     print("\n[2] Generating Phase-by-Phase Review Document...")
     phase_review_path = generate_phase_review_document(docs)
-    
+
     print("\n" + "=" * 80)
     print("GENERATION COMPLETE")
     print("=" * 80)
-    print(f"\nDeliverables created:")
+    print("\nDeliverables created:")
     print(f"  1. {phase_review_path}")
-    print(f"\nNext: Generate remaining deliverables...")
+    print("\nNext: Generate remaining deliverables...")
+
 
 if __name__ == "__main__":
     main()

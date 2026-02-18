@@ -5,18 +5,11 @@ Provides endpoints for retrieving market intelligence signals.
 
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Query, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
-from src.api.schemas.signal import (
-    MarketSignal,
-    SignalFilter,
-    SignalsResponse,
-    MarketSource,
-    SignalCategory,
-    SignalType,
-)
+from src.api.schemas.signal import MarketSignal, MarketSource, SignalCategory, SignalsResponse, SignalType
 
 router = APIRouter()
 
@@ -119,7 +112,7 @@ def _generate_mock_signals(
     symbol: Optional[str],
     limit: int,
     offset: int,
-) -> List[MarketSignal]:
+) -> list[MarketSignal]:
     """Generate mock signals for API development."""
 
     mock_signals = [

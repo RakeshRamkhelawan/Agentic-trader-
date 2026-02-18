@@ -2,9 +2,9 @@
 Trading API - Endpoints for market data, portfolio, and history.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps import get_current_tenant_id, get_current_user, get_db

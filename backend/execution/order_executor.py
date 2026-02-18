@@ -22,7 +22,7 @@ from typing import Dict, Optional, Protocol
 
 from backend.core.schemas.ooda_types import (ExecutionOutcome, ExecutionPlan,
                                              Order)
-from backend.core.security.audit_logger import AuditEventType, AuditLogger
+from backend.core.security.audit_logger import AuditLogger
 from backend.governance.agent_gatekeeper import AgentGatekeeper, ToolPermission
 
 

@@ -4,18 +4,10 @@ Handles interaction with Kraken (and other exchanges) via CCXT.
 """
 
 import asyncio
-import json
 import logging
-import os
 from typing import Any, Dict, Optional
 
-try:
-    import ccxt.pro as ccxt
-except ImportError:
-    import ccxt.async_support as ccxt
-
 from backend.execution.exchange_adapter import ExchangeAdapter
-from backend.schemas.orders import OrderRequest, OrderSide, OrderType
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +65,8 @@ class ExecutionGateway:
             except Exception as e:
                 logger.error(f"Failed to init Revolut: {e}")
 
-        # 2. Initialize CCXT Exchanges (Kraken, Bybit)
-        for ex_id in ["kraken", "bybit"]:
+        # 2. Initialize CCXT Exchanges (Kraken, Bybit, Bitvavo)
+        for ex_id in ["kraken", "bybit", "bitvavo"]:
             await self._init_ccxt_exchange(ex_id)
 
     async def _init_ccxt_exchange(self, exchange_id: str):
@@ -84,8 +76,13 @@ class ExecutionGateway:
         import ccxt.async_support as ccxt
 
         try:
-            api_key = os.getenv(f"{exchange_id.upper()}_API_KEY")
-            secret = os.getenv(f"{exchange_id.upper()}_SECRET_KEY")
+            # Handle different naming conventions for API keys
+            if exchange_id == "bitvavo":
+                api_key = os.getenv("BITVAVO_API_KEY")
+                secret = os.getenv("BITVAVO_API_SECRET")  # Note: different naming
+            else:
+                api_key = os.getenv(f"{exchange_id.upper()}_API_KEY")
+                secret = os.getenv(f"{exchange_id.upper()}_SECRET_KEY")
 
             # Skip if no keys and we are in LIVE mode (unless we want to fail hard? No, allow partial init)
             if not self.dry_run and (not api_key or not secret):
@@ -105,11 +102,18 @@ class ExecutionGateway:
                 logger.info("Configuring Bybit for EU Endpoint (api.bybit.eu)")
                 exchange_options["hostname"] = "bybit.eu"
 
+            if exchange_id == "bitvavo":
+                # Check for sandbox mode
+                sandbox = os.getenv("BITVAVO_SANDBOX", "false").lower() == "true"
+                if sandbox:
+                    logger.info("Bitvavo configured in SANDBOX mode")
+                    exchange_options["sandbox"] = True
+
             exchange = exchange_class(exchange_options)
 
             if not self.dry_run:
                 await exchange.load_markets()
-                balance = await exchange.fetch_balance()
+                await exchange.fetch_balance()
                 # logger.info(f"Connected to {exchange_id} (LIVE). Free USD: {balance.get('USD', {}).get('free', 'N/A')}")
                 logger.info(f"Connected to {exchange_id} (LIVE).")
                 self.exchanges[exchange_id] = exchange

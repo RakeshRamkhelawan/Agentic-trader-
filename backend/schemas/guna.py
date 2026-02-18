@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
 
 class GunaVector(BaseModel):

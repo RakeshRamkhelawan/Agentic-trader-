@@ -1,25 +1,23 @@
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 import structlog
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.api import (agents_api, analytics_api,  # Added new APIs
-                         approval_api, backtest_api, navagraha_api, ooda_api,
+from backend.api import analytics_api  # Added new APIs
+from backend.api import (agents_api, approval_api, backtest_api, kyc_api,
+                         monitoring_api, navagraha_api, ooda_api,
                          prediction_api, trading_api, user_settings_api)
 # Routers
 from backend.api.auth_api import router as auth_router
-from backend.api.deps import get_db
 from backend.api.websocket_endpoints import router as ws_router
 from backend.api.websocket_manager import ws_manager
 from backend.core.auth.jwt_validator import JWTValidator
 # Auth Middleware
 from backend.core.auth.middleware import AuthMiddleware
-from backend.core.auth.models import TokenPayload
 from backend.core.config.settings import settings
 from backend.core.navagraha.service import NavagrahaService
 from backend.core.system_identity import SystemIdentity
@@ -27,8 +25,8 @@ from backend.core.telemetry.logging_config import configure_logging
 from backend.observability.metrics import (PrometheusMiddleware,
                                            metrics_endpoint)
 from backend.services.cognitive_orchestrator import CognitiveOrchestrator
+
 # Services
-from backend.services.trading_service import get_trading_service
 
 # ... (JWT setup)
 
@@ -46,7 +44,6 @@ async def market_data_publisher():
     and broadcasts it to connected WebSocket clients.
     """
     logger.info("Starting Market Data Publisher...")
-    trading_service = get_trading_service()
     from backend.core.cache_layer import get_cache
 
     cache = get_cache()
@@ -215,12 +212,12 @@ async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Strict-Transport-Security"] = (
-        "max-age=31536000; includeSubDomains"
-    )
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; frame-ancestors 'none';"
-    )
+    response.headers[
+        "Strict-Transport-Security"
+    ] = "max-age=31536000; includeSubDomains"
+    response.headers[
+        "Content-Security-Policy"
+    ] = "default-src 'self'; frame-ancestors 'none';"
     return response
 
 
@@ -266,6 +263,9 @@ AuthMiddleware.PUBLIC_PATHS = {
     "/api/v1/navagraha/current-state",
     "/api/v1/agents/status",
     "/api/v1/ooda/current-cycle",
+    "/api/v1/monitoring/health",
+    "/api/v1/monitoring/soul-context",
+    "/api/v1/monitoring/karma-summary",
 }
 
 # Use JWTValidator with Auth0 config
@@ -282,6 +282,7 @@ app.add_middleware(AuthMiddleware, jwt_validator=token_validator)
 
 # Mount Routers
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(kyc_api.router, prefix="/api/v1/kyc", tags=["kyc"])
 app.include_router(trading_api.router)  # Prefix defined in router
 app.include_router(
     user_settings_api.router, prefix="/api/v1/settings", tags=["settings"]
@@ -296,6 +297,9 @@ app.include_router(ws_router)  # /ws endpoint
 app.include_router(navagraha_api.router, prefix="/api/v1/navagraha", tags=["navagraha"])
 app.include_router(agents_api.router, prefix="/api/v1/agents", tags=["agents"])
 app.include_router(ooda_api.router, prefix="/api/v1/ooda", tags=["ooda"])
+app.include_router(
+    monitoring_api.router, prefix="/api/v1/monitoring", tags=["monitoring"]
+)
 
 # Metrics Endpoint
 app.add_route("/metrics", metrics_endpoint)

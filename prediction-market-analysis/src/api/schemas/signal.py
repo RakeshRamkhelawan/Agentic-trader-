@@ -2,11 +2,11 @@
 Signal schemas for Prediction Market Intelligence API.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Any, Optional
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MarketSource(str, Enum):
@@ -73,13 +73,13 @@ class MarketSignal(BaseModel):
     signal_type: SignalType = Field(..., description="Signal direction")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score 0-1")
     symbol: Optional[str] = Field(None, description="Related trading symbol")
-    indicators: Dict[str, float] = Field(
+    indicators: dict[str, float] = Field(
         default_factory=dict, description="Signal indicators"
     )
     timestamp: datetime = Field(
         default_factory=datetime.utcnow, description="Signal timestamp"
     )
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
 
@@ -99,7 +99,7 @@ class SignalFilter(BaseModel):
 class SignalsResponse(BaseModel):
     """Response for signals endpoint."""
 
-    signals: List[MarketSignal] = Field(..., description="List of signals")
+    signals: list[MarketSignal] = Field(..., description="List of signals")
     total: int = Field(..., description="Total matching signals")
     limit: int = Field(..., description="Results limit")
     offset: int = Field(..., description="Results offset")

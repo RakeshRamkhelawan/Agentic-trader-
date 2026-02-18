@@ -1,9 +1,9 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 
-from backend.backtesting.models import BacktestMetrics, OrderSide, Trade
+from backend.backtesting.models import BacktestMetrics, Trade
 
 
 class MetricsCalculator:
@@ -98,6 +98,8 @@ class MetricsCalculator:
             total_return=round(total_return, 4),
             cagr=round(cagr, 4),
             sharpe_ratio=round(sharpe, 4),
+            sortino_ratio=round(sortino, 4),
+            calmar_ratio=round(calmar, 4),
             max_drawdown=round(max_drawdown, 4),
             win_rate=round(win_rate, 4),
             total_trades=total_trades,

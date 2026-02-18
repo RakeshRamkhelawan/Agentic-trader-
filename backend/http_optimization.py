@@ -11,7 +11,7 @@ This module provides optimized HTTP client configurations with:
 
 import hashlib
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
@@ -334,7 +334,7 @@ class CircuitBreaker:
             result = func(*args, **kwargs)
             self._on_success()
             return result
-        except self.expected_exception as e:
+        except self.expected_exception:
             self._on_failure()
             raise
 

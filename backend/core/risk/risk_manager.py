@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 from backend.core.risk.guna_sizing import GunaSizer, GunaType

@@ -5,7 +5,7 @@ Analyzes bid-ask spreads for prediction markets.
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import pandas as pd
 
@@ -24,7 +24,7 @@ class SpreadMetrics:
     spread_percentage_mean: float
     liquidity_score: float  # 0-100, higher is better
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> dict[str, float]:
         """Convert to dictionary."""
         return {
             "mean_spread": self.mean_spread,
@@ -168,7 +168,7 @@ class MakerTakerAnalyzer:
 
     def compare_markets(
         self,
-        markets_data: Dict[str, pd.DataFrame],
+        markets_data: dict[str, pd.DataFrame],
         yes_price_col: str = "yes_price",
         no_price_col: str = "no_price",
     ) -> pd.DataFrame:

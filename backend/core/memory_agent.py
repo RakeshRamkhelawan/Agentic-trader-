@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional
 
 try:
     import chromadb
-    from chromadb.utils import embedding_functions
 except ImportError:
     chromadb = None
 
