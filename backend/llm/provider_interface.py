@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Type, TypeVar
+from typing import Any, Optional, Type, TypeVar
 
 from pydantic import BaseModel
 
@@ -11,14 +11,18 @@ class LLMProvider(ABC):
 
     @abstractmethod
     async def generate_text(
-        self, prompt: str, system_prompt: Optional[str] = None
+        self, prompt: str, system_prompt: Optional[str] = None, **kwargs: Any
     ) -> str:
         """Generates raw text from a prompt."""
         pass
 
     @abstractmethod
     async def generate_structured(
-        self, prompt: str, schema: Type[T], system_prompt: Optional[str] = None
+        self,
+        prompt: str,
+        schema: Type[T],
+        system_prompt: Optional[str] = None,
+        **kwargs: Any,
     ) -> T:
         """Generates a Pydantic object based on the schema."""
         pass

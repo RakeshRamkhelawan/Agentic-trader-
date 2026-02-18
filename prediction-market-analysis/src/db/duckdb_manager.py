@@ -254,7 +254,7 @@ class DuckDBManager:
         self.conn.register("_temp_df", df)
 
         # Get available columns from dataframe
-        columns = [col for col in df.columns]
+        columns = list(df.columns)
         columns_str = ", ".join(columns)
 
         # Insert only the columns that exist in the dataframe

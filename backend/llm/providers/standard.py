@@ -22,12 +22,12 @@ logger = logging.getLogger(__name__)
 
 class MockProvider(LLMProvider):
     async def generate_text(
-        self, prompt: str, system_instruction: Optional[str] = None, **kwargs
+        self, prompt: str, system_prompt: Optional[str] = None, **kwargs: Any
     ) -> str:
         return f"Mock response to: {prompt[:20]}..."
 
     async def generate_json(
-        self, prompt: str, schema: Optional[Dict] = None, **kwargs
+        self, prompt: str, schema: Optional[Dict] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         return {"mock": "data", "prompt_preview": prompt[:20]}
 
@@ -42,12 +42,12 @@ class GeminiProvider(LLMProvider):
         self.model = model_name
 
     async def generate_text(
-        self, prompt: str, system_instruction: Optional[str] = None, **kwargs
+        self, prompt: str, system_prompt: Optional[str] = None, **kwargs: Any
     ) -> str:
         try:
             config = {}
-            if system_instruction:
-                config["system_instruction"] = system_instruction
+            if system_prompt:
+                config["system_instruction"] = system_prompt
 
             # The new SDK uses a synchronous call by default, we wrap it
             # Note: For production high-load, one would use the async client if available
@@ -86,24 +86,24 @@ class OpenAIProvider(LLMProvider):
         self.model = model_name
 
     async def generate_text(
-        self, prompt: str, system_instruction: Optional[str] = None, **kwargs
+        self, prompt: str, system_prompt: Optional[str] = None, **kwargs: Any
     ) -> str:
         messages = []
-        if system_instruction:
-            messages.append({"role": "system", "content": system_instruction})
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
         try:
             response = await self.client.chat.completions.create(
                 model=self.model, messages=messages, **kwargs
             )
-            return response.choices[0].message.content
+            return response.choices[0].message.content or ""
         except Exception as e:
             logger.error(f"OpenAI generation failed: {e}")
             return f"Error: {e}"
 
     async def generate_json(
-        self, prompt: str, schema: Optional[Dict] = None, **kwargs
+        self, prompt: str, schema: Optional[Dict] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         # Force JSON mode
         kwargs["response_format"] = {"type": "json_object"}
@@ -122,13 +122,13 @@ class OllamaProvider(LLMProvider):
         self.model = model_name
 
     async def generate_text(
-        self, prompt: str, system_instruction: Optional[str] = None, **kwargs
+        self, prompt: str, system_prompt: Optional[str] = None, **kwargs: Any
     ) -> str:
         url = f"{self.base_url}/api/generate"
 
         full_prompt = prompt
-        if system_instruction:
-            full_prompt = f"System: {system_instruction}\nUser: {prompt}"
+        if system_prompt:
+            full_prompt = f"System: {system_prompt}\nUser: {prompt}"
 
         payload = {"model": self.model, "prompt": full_prompt, "stream": False}
 
@@ -146,7 +146,7 @@ class OllamaProvider(LLMProvider):
             return f"Error: {e}"
 
     async def generate_json(
-        self, prompt: str, schema: Optional[Dict] = None, **kwargs
+        self, prompt: str, schema: Optional[Dict] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         url = f"{self.base_url}/api/generate"
         payload = {

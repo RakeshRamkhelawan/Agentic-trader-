@@ -231,7 +231,8 @@ class CognitiveMindService:
                     "OK" if risk_decision.decision == "accept" else risk_decision.reason
                 )
 
-            self.bridge.write_intent("BTC/USD", intent)
+            if self.bridge:
+                self.bridge.write_intent("BTC/USD", intent)
 
             # --- Metrics ---
             self.metrics.generated_shm_updates_total.labels(shm_name="intent_shm").inc()
@@ -248,7 +249,8 @@ class CognitiveMindService:
         else:
             # Rahu is active: CLEAR INTENTS or Defensive Mode
             intent = self._hold_intent()
-            self.bridge.write_intent("BTC/USD", intent)
+            if self.bridge:
+                self.bridge.write_intent("BTC/USD", intent)
             logger.info(
                 f"Mind: Written Intent to SHM (Action={intent.action}, Conf={intent.confidence}) [RAHU KALA]"
             )
