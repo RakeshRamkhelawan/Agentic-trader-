@@ -131,7 +131,7 @@ class SignalGenerator:
         Returns:
             MarketSignal if threshold breached, else None
         """
-        mean_spread = spread_metrics.get("mean_spread", 0)
+        spread_metrics.get("mean_spread", 0)
         spread_pct = spread_metrics.get("spread_percentage_mean", 0)
         liquidity_score = spread_metrics.get("liquidity_score", 0)
 

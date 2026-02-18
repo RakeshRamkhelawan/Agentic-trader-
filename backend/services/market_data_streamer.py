@@ -231,7 +231,7 @@ class MarketDataStreamer:
         """Get or create exchange client."""
         if exchange_id not in self._exchanges:
             try:
-                import ccxt.pro as ccxtpro
+                import ccxt.pro as ccxtpro  # type: ignore[import-untyped]
 
                 exchange_class = getattr(ccxtpro, exchange_id)
                 self._exchanges[exchange_id] = exchange_class(

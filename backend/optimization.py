@@ -11,7 +11,7 @@ from functools import wraps
 from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, Request
-from fastapi.middleware.gzip import GZIPMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from starlette.responses import JSONResponse
 
 logger = logging.getLogger(__name__)

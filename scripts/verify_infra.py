@@ -64,7 +64,7 @@ class InfrastructureVerifier:
 
             test_key = "health_check_test"
             await client.set(test_key, "ok", ex=10)
-            value = await client.get(test_key)
+            await client.get(test_key)
             await client.delete(test_key)
 
             info = await client.info()
@@ -102,7 +102,7 @@ class InfrastructureVerifier:
 
             async with conn.cursor() as cur:
                 await cur.execute("SELECT version();")
-                version = await cur.fetchone()
+                await cur.fetchone()
 
                 await cur.execute("SELECT COUNT(*) FROM pg_stat_activity;")
                 connections = await cur.fetchone()

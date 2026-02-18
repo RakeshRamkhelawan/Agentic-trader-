@@ -146,7 +146,6 @@ def on_test_stop(environment, **kwargs):
     # Aggregate stats
     total_requests = 0
     total_failures = 0
-    total_time = 0
 
     for name, request in stats.entries.items():
         total_requests += request.num_requests
