@@ -44,6 +44,16 @@ interface AppState {
   isLoadingAssets: boolean;
   fetchAssets: () => Promise<void>;
   updateAssetPrice: (symbol: string, price: number, change24h: number) => void;
+  
+  // Top Movers (calculated from assets)
+  topGainer: Asset | null;
+  topLoser: Asset | null;
+  getTopMovers: () => { gainers: Asset[]; losers: Asset[] };
+  
+  // Chart auto-selection
+  chartSymbol: string;
+  setChartSymbol: (symbol: string) => void;
+  autoSelectTopGainer: () => void;
 
   // Holdings
   holdings: Holding[];
@@ -121,19 +131,63 @@ export const useAppStore = create<AppState>()(
       setSelectedSymbol: (symbol) => set({ selectedSymbol: symbol }),
       timeframe: '1h',
       setTimeframe: (timeframe) => set({ timeframe }),
+      
+      // Chart symbol (for TradingChart - auto-selected from top gainer)
+      chartSymbol: 'BTC/EUR',
+      setChartSymbol: (symbol) => set({ chartSymbol: symbol }),
+      autoSelectTopGainer: () => {
+        const { assets, chartSymbol } = get();
+        if (assets.length === 0) return;
+        
+        // Sort by change24h descending
+        const sorted = [...assets].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
+        const topGainer = sorted[0];
+        
+        // Only update if different and we haven't manually selected
+        if (topGainer && topGainer.symbol !== chartSymbol) {
+          set({ chartSymbol: topGainer.symbol });
+        }
+      },
 
       // Assets
       assets: [],
       isLoadingAssets: false,
+      topGainer: null,
+      topLoser: null,
       fetchAssets: async () => {
         set({ isLoadingAssets: true });
         try {
           const assets = await marketsApi.getAssets();
-          set({ assets, isLoadingAssets: false });
+          
+          // Calculate top gainers/losers
+          const sorted = [...assets].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
+          const topGainer = sorted.length > 0 ? sorted[0] : null;
+          const topLoser = sorted.length > 0 ? sorted[sorted.length - 1] : null;
+          
+          set({ 
+            assets, 
+            topGainer,
+            topLoser,
+            isLoadingAssets: false 
+          });
+          
+          // Auto-select top gainer for chart if not manually set
+          const state = get();
+          if (state.chartSymbol === 'BTC/EUR' && topGainer) {
+            set({ chartSymbol: topGainer.symbol });
+          }
         } catch (error) {
           console.error('Failed to fetch assets:', error);
           set({ isLoadingAssets: false });
         }
+      },
+      getTopMovers: () => {
+        const { assets } = get();
+        const sorted = [...assets].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
+        return {
+          gainers: sorted.slice(0, 5),
+          losers: sorted.slice(-5).reverse(),
+        };
       },
       updateAssetPrice: (symbol, price, change24h) =>
         set((state) => ({

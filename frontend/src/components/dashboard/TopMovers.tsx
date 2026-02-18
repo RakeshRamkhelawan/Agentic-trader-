@@ -15,7 +15,7 @@ interface MoverRowProps {
   onSelect: (symbol: string) => void;
 }
 
-function MoverRow({ rank, symbol, name, price, change24h, onSelect }: MoverRowProps) {
+function MoverRow({ rank, symbol, name, price, change24h, exchange, onSelect }: MoverRowProps & { exchange?: string }) {
   const isPositive = change24h >= 0;
   return (
     <button
@@ -30,7 +30,10 @@ function MoverRow({ rank, symbol, name, price, change24h, onSelect }: MoverRowPr
         <span className="text-xs text-muted-foreground w-4 shrink-0">{rank}</span>
         <div className="min-w-0">
           <p className="text-sm font-medium text-white truncate">{symbol}</p>
-          <p className="text-xs text-muted-foreground truncate">{name}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {name}
+            {exchange && <span className="ml-1 text-[10px] opacity-60">({exchange})</span>}
+          </p>
         </div>
       </div>
       <div className="flex flex-col items-end shrink-0 ml-2">
@@ -90,6 +93,7 @@ export function TopMovers() {
               name={asset.name}
               price={asset.price}
               change24h={asset.change24h}
+              exchange={(asset as any).exchange}
               onSelect={handleSelect}
             />
           ))}
@@ -113,6 +117,7 @@ export function TopMovers() {
               name={asset.name}
               price={asset.price}
               change24h={asset.change24h}
+              exchange={(asset as any).exchange}
               onSelect={handleSelect}
             />
           ))}

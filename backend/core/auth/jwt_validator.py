@@ -9,10 +9,10 @@ Provides:
 
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 try:
-    from jose import JWTError, jwt
+    from jose import JWTError, jwt  # type: ignore[import-untyped]
 
     JOSE_AVAILABLE = True
 except ImportError:
@@ -69,7 +69,11 @@ class JWTValidator:
     JWKS_CACHE_TTL = 3600
 
     def __init__(
-        self, jwks_url: str, issuer: str, audience: str, algorithms: list = None
+        self,
+        jwks_url: str,
+        issuer: str,
+        audience: str,
+        algorithms: Optional[List[str]] = None,
     ):
         """
         Initialize JWTValidator.

@@ -737,4 +737,4 @@ def create_default_36_tattvas() -> TattvaConfig:
 
 
 # Add back the classmethod to TattvaConfig
-TattvaConfig.default_36_tattvas = classmethod(lambda cls: create_default_36_tattvas())
+TattvaConfig.default_36_tattvas = classmethod(lambda cls: create_default_36_tattvas())  # type: ignore[attr-defined]

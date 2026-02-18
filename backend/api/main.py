@@ -165,6 +165,13 @@ async def lifespan(app: FastAPI):
         app.state.system_identity = None
         app.state.orchestrator = None
 
+    # 4. Start Market Data Sync Service (for real-time prices)
+    from backend.services.market_data_sync import (start_market_sync,
+                                                   stop_market_sync)
+
+    await start_market_sync()
+    logger.info("Market Data Sync Service STARTED")
+
     # Re-enabled: Background Publisher now uses SessionManager.system_admin_session()
     market_task = asyncio.create_task(market_data_publisher())
     system_task = asyncio.create_task(
@@ -176,6 +183,7 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("API Server Shutting Down...")
+    await stop_market_sync()
     market_task.cancel()
     system_task.cancel()
     try:

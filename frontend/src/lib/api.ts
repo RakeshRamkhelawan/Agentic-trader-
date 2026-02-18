@@ -489,6 +489,12 @@ export const agentsApi = {
     const response = await api.get<AgentsStatusResponse>('/agents/status');
     return response.data;
   },
+  
+  /** POST /api/v1/agents/chat - Get advice from AI advisor */
+  chat: async (message: string, history: ChatHistoryEntry[] = []): Promise<{ response: string }> => {
+    const response = await api.post<{ response: string }>('/agents/chat', { message, history });
+    return response.data;
+  },
 };
 
 // ============================================================================

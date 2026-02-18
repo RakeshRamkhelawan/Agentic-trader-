@@ -12,9 +12,9 @@ from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-import psutil
+import psutil  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
@@ -514,7 +514,7 @@ class MetricsMonitor:
 class Phase15MetricsIntegration:
     """High-level integration helper for SystemIdentity."""
 
-    def __init__(self, collector: HardwareMetricsCollector = None):
+    def __init__(self, collector: Optional[HardwareMetricsCollector] = None):
         self.collector = collector or RealHardwareMetricsCollector()
         self.aggregator = MetricsAggregator()
         self.coherence_calc = AdaptiveCoherenceCalculator()
