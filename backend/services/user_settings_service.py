@@ -69,6 +69,9 @@ class UserSettingsService:
         )
         db_profile = result.scalars().first()
 
+        if not db_profile:
+            return UserProfile(first_name="", last_name="", email=str(user.email))
+
         return UserProfile(
             first_name=(
                 db_profile.full_name.split(" ")[0] if db_profile.full_name else ""
@@ -78,7 +81,7 @@ class UserSettingsService:
                 if db_profile.full_name and " " in db_profile.full_name
                 else ""
             ),
-            email=user.email,
+            email=str(user.email),
         )
 
     async def update_profile(
@@ -90,7 +93,8 @@ class UserSettingsService:
         )
         db_profile = result.scalars().first()
 
-        db_profile.full_name = f"{profile.first_name} {profile.last_name}".strip()
+        if db_profile:
+            db_profile.full_name = f"{profile.first_name} {profile.last_name}".strip()
         user.email = profile.email
 
         await db.commit()

@@ -261,7 +261,7 @@ class CognitiveOrchestrator:
                 return
 
         event_guna = self._quantify_message_guna(message)
-        message.payload["guna_vibration"] = event_guna.to_dict()
+        message.payload["guna_vibration"] = event_guna.model_dump()
 
         self.global_guna_history.append(event_guna)
         if len(self.global_guna_history) > 10:
@@ -535,35 +535,37 @@ class CognitiveOrchestrator:
             # 1. DESERIALIZE & VALIDATE
             raw_event_type = event.get("event_type", "ticker")
             try:
-                event_type_enum = EventType(raw_event_type)
-            except ValueError:
+                event_type_enum = EventType(raw_event_type.upper())
+            except (ValueError, AttributeError):
                 event_type_enum = EventType.TICKER
+
+            # Convert timestamp to datetime as required by UnifiedMarketEvent schema
+            ts_val = event.get("timestamp") or _time.time()
+            try:
+                ts_dt = datetime.fromtimestamp(float(ts_val))
+            except (ValueError, TypeError):
+                ts_dt = datetime.now()
 
             unified = UnifiedMarketEvent(
                 event_type=event_type_enum,
-                venue=event.get("venue", "unknown"),
-                symbol=event.get("symbol", "UNKNOWN"),
-                ts_exchange=float(event.get("ts_exchange", _time.time())),
-                ts_received=_time.time(),
-                price=event.get("price") or event.get("last"),
-                bid=event.get("bid"),
-                ask=event.get("ask"),
-                size=event.get("size") or event.get("volume"),
+                exchange=str(event.get("exchange", "unknown")),
+                symbol=str(event.get("symbol", "UNKNOWN")),
+                timestamp=ts_dt,
+                price=float(event.get("price") or event.get("last") or 0.0),
             )
-            unified.validate()  # Raises ValueError if invalid (negative price etc.)
 
             self.logger.info(f"Validated tick: {unified.symbol} @ {unified.price}")
 
             # 1b. PERSIST to ClickHouse (Async)
             if self.market_writer:
-                await self.market_writer.enqueue(unified.to_dict())
+                await self.market_writer.enqueue(unified.model_dump())
 
             # 2. DISPATCH via AgentMessage pipeline
             msg = AgentMessage(
                 source="market_data_consumer",
                 target="all",
                 type="TICK_DATA",
-                payload=unified.to_dict(),
+                payload=unified.model_dump(),
             )
             await self.handle_message(msg)
 

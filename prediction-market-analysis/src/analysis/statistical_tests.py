@@ -189,7 +189,7 @@ class StatisticalTestsFramework:
         detrended = data - (slope * x + intercept)
 
         # ADF-like test: measure mean reversion strength
-        returns = detrended.diff().dropna()
+        detrended.diff().dropna()
 
         # Test if deviations from mean are typically small
         half_life = self._calculate_half_life(detrended)
