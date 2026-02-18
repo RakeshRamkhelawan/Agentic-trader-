@@ -148,9 +148,12 @@ export function TradingChart() {
       }
     };
 
-    wsClient.connect(handleMessage);
+    // connect() is idempotent — only opens a socket if not already open
+    wsClient.connect();
+    const removeListener = wsClient.addListener(handleMessage);
     wsClient.subscribe(channel);
     return () => {
+      removeListener();
       wsClient.unsubscribe(channel);
     };
   }, [selectedSymbol]);

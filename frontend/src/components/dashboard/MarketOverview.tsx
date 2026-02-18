@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -105,16 +107,25 @@ function MarketCard({
 }
 
 export function MarketOverview() {
-  const { assets } = useAppStore();
+  const { assets, fetchAssets } = useAppStore();
+  const navigate = useNavigate();
+
+  // Refresh prices every 30 seconds
+  useEffect(() => {
+    const id = setInterval(() => fetchAssets(), 30_000);
+    return () => clearInterval(id);
+  }, [fetchAssets]);
 
   return (
     <Card className="bg-[#111111] border-[#262626]">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-lg font-semibold text-white">Market Overview</CardTitle>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
           className="text-trade-blue hover:text-trade-blue/80 hover:bg-trade-blue/10"
+          onClick={() => navigate('/markets')}
         >
           View All
           <ArrowRight className="w-4 h-4 ml-1" />
