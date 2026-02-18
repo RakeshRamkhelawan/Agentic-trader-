@@ -85,55 +85,104 @@ class MarketDataSync:
 
     async def _fetch_and_cache_all(self):
         """Fetch data from all configured exchanges and cache."""
-        # Try multiple exchanges in order of preference
-        exchanges = []
-
-        # Check which exchanges are configured
-        if settings.REVOLUT_API_KEY:
-            exchanges.append(("revolut", self._fetch_revolut))
-
-        if settings.BITVAVO_API_KEY:
-            exchanges.append(("bitvavo", self._fetch_bitvavo))
-
-        # Always fallback to Kraken public API
-        exchanges.append(("kraken", self._fetch_kraken_public))
-
-        all_markets = []
+        # Fetch from ALL exchanges to get complete data including changes
+        all_exchange_data = {}
+        
+        exchanges = [
+            ("bitvavo", self._fetch_bitvavo),
+            ("kraken", self._fetch_kraken_public),
+            ("revolut", self._fetch_revolut),
+        ]
 
         for exchange_id, fetch_func in exchanges:
             try:
                 markets = await fetch_func()
                 if markets:
                     logger.debug(f"Fetched {len(markets)} markets from {exchange_id}")
-                    all_markets.extend(markets)
-
+                    all_exchange_data[exchange_id] = markets
+                    
                     # Cache per exchange
                     await self.cache.set(f"markets:{exchange_id}", markets, ttl=60)
-
-                    # If we got good data, we can stop
-                    if len(markets) >= 4:
-                        break
-
             except Exception as e:
                 logger.warning(f"Failed to fetch from {exchange_id}: {e}")
                 continue
+        
+        # Merge data: prefer prices from Revolut, changes from Bitvavo/Kraken
+        merged_markets = self._merge_exchange_data(all_exchange_data)
 
-        if all_markets:
-            # Deduplicate by symbol
-            seen = set()
-            unique_markets = []
-            for m in all_markets:
-                if m["symbol"] not in seen:
-                    seen.add(m["symbol"])
-                    unique_markets.append(m)
-
+        if merged_markets:
             # Update aggregate cache
-            await self.cache.set("markets:all", unique_markets, ttl=60)
+            await self.cache.set("markets:all", merged_markets, ttl=60)
             await self.cache.set(
                 "markets:last_update", datetime.utcnow().isoformat(), ttl=60
             )
-
-            logger.info(f"Cached {len(unique_markets)} unique markets")
+            logger.info(f"Cached {len(merged_markets)} merged markets")
+    
+    def _merge_exchange_data(self, exchange_data: Dict[str, List[Dict]]) -> List[Dict[str, Any]]:
+        """Merge data from multiple exchanges.
+        
+        Strategy:
+        - Use Revolut for prices (most reliable)
+        - Use Bitvavo for change_24h (only one that provides it)
+        - Fallback to Kraken for both
+        """
+        # Collect all symbols
+        all_symbols = set()
+        for markets in exchange_data.values():
+            for m in markets:
+                all_symbols.add(m["symbol"])
+        
+        merged = []
+        for symbol in all_symbols:
+            # Find best data sources
+            price_data = None
+            change_data = None
+            
+            # Prefer Revolut for price
+            if "revolut" in exchange_data:
+                for m in exchange_data["revolut"]:
+                    if m["symbol"] == symbol and m.get("price", 0) > 0:
+                        price_data = m
+                        break
+            
+            # Fallback to Bitvavo for price
+            if not price_data and "bitvavo" in exchange_data:
+                for m in exchange_data["bitvavo"]:
+                    if m["symbol"] == symbol and m.get("price", 0) > 0:
+                        price_data = m
+                        break
+            
+            # Use Bitvavo for change (they provide real change_24h)
+            if "bitvavo" in exchange_data:
+                for m in exchange_data["bitvavo"]:
+                    if m["symbol"] == symbol:
+                        change_data = m
+                        break
+            
+            # Fallback to Kraken for change
+            if not change_data and "kraken" in exchange_data:
+                for m in exchange_data["kraken"]:
+                    if m["symbol"] == symbol:
+                        change_data = m
+                        break
+            
+            # Build merged market
+            if price_data:
+                merged_market = {
+                    "symbol": symbol,
+                    "name": price_data.get("name", symbol.split("-")[0]),
+                    "price": price_data.get("price", 0),
+                    "change": change_data.get("change_24h", 0) if change_data else 0,
+                    "change_24h": change_data.get("change_24h", 0) if change_data else 0,
+                    "volume": price_data.get("volume", "0"),
+                    "volume_24h": price_data.get("volume_24h", 0),
+                    "favorite": False,
+                    "exchange": price_data.get("exchange", "unknown"),
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+                merged.append(merged_market)
+        
+        return merged
 
     async def _fetch_kraken_public(self) -> List[Dict[str, Any]]:
         """Fetch public tickers from Kraken."""
