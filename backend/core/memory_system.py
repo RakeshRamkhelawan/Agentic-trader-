@@ -55,7 +55,7 @@ class MemorySystem:
         Initialize memory system.
         """
         self.capacity = capacity
-        self.memory_buffer = deque(maxlen=capacity)
+        self.memory_buffer: deque[MemoryTrace] = deque(maxlen=capacity)
         self.clusters: List[MemoryCluster] = []
         self.cluster_threshold = 0.7
         from backend.core.database import AsyncSessionLocal
@@ -227,7 +227,7 @@ class MemorySystem:
     def _find_closest_cluster(self, pattern: np.ndarray) -> Optional[MemoryCluster]:
         if not self.clusters:
             return None
-        max_sim = -1
+        max_sim: float = -1.0
         closest = None
         for cluster in self.clusters:
             sim = self._calculate_similarity(pattern, cluster.centroid)

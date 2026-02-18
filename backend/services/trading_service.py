@@ -91,7 +91,7 @@ class TradingService:
                 )
             else:
                 # Check if this is Revolut to pass specific options (legacy check removed)
-                options = {}
+                options: Dict[str, Any] = {}
 
                 adapter = CCXTAdapter(
                     exchange_id=exchange_id,
@@ -112,10 +112,42 @@ class TradingService:
     async def get_markets(
         self, db: AsyncSession, tenant_id: str
     ) -> List[Dict[str, Any]]:
-        """Get available markets data, aggregating from all active exchanges."""
+        """Get available markets data from cache (populated by MarketDataSync)."""
+        cache = get_cache()
+
+        # 1. Try to get from aggregate cache first
+        cached_markets = await cache.get("markets:all")
+        if cached_markets:
+            logger.debug(f"Returning {len(cached_markets)} markets from cache")
+            return cached_markets
+
+        # 2. Fallback: try individual exchange caches
+        all_markets = []
+        seen_symbols = set()
+
+        for exchange_id in ["revolut", "bitvavo", "kraken"]:
+            cached = await cache.get(f"markets:{exchange_id}")
+            if cached:
+                for m in cached:
+                    if m["symbol"] not in seen_symbols:
+                        all_markets.append(m)
+                        seen_symbols.add(m["symbol"])
+
+        if all_markets:
+            logger.debug(f"Returning {len(all_markets)} markets from exchange caches")
+            return all_markets
+
+        # 3. Last resort: fetch directly (legacy behavior)
+        logger.warning("Cache empty, falling back to direct fetch")
+        return await self._fetch_markets_direct(db, tenant_id)
+
+    async def _fetch_markets_direct(
+        self, db: AsyncSession, tenant_id: str
+    ) -> List[Dict[str, Any]]:
+        """Direct market fetch fallback (legacy method)."""
         import ccxt.async_support as ccxt
 
-        # 1. Get all valid API keys for the user
+        # Get all valid API keys for the user
         keys_list = await self.settings_service.get_api_keys(db, tenant_id)
 
         # Identify which exchanges we should fetch from
@@ -125,14 +157,14 @@ class TradingService:
                 if k.is_valid and k.exchange not in active_exchanges:
                     active_exchanges.append(k.exchange)
 
-        # Always attempt Revolut if system credentials exist (for demo)
+        # Always attempt Revolut if system credentials exist
         if "revolut" not in active_exchanges:
             from backend.core.config.settings import settings
 
             if settings.REVOLUT_API_KEY and settings.REVOLUT_PRIVATE_KEY:
                 active_exchanges.append("revolut")
 
-        # Always include Kraken as a base fallback if not already present
+        # Always include Kraken as a base fallback
         if "kraken" not in active_exchanges:
             active_exchanges.append("kraken")
 
@@ -568,7 +600,7 @@ class TradingService:
         db: AsyncSession,
         tenant_id: str,
         order_request: Dict[str, Any],
-        user_prefs: Dict[str, Any] = None,
+        user_prefs: Optional[Dict[str, Any]] = None,
         bypass_risk: bool = False,
     ) -> Dict[str, Any]:
         """
@@ -589,7 +621,7 @@ class TradingService:
         db: AsyncSession,
         tenant_id: str,
         order_request: Dict[str, Any],
-        user_prefs: Dict[str, Any] = None,
+        user_prefs: Optional[Dict[str, Any]] = None,
         bypass_risk: bool = False,
     ) -> Dict[str, Any]:
         """

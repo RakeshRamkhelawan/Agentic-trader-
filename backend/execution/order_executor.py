@@ -334,10 +334,10 @@ class OrderExecutor:
         return ExecutionOutcome(
             trace_id=execution_plan.trace_id,
             success=True,
+            order_id=filled_order.order_id,
             filled_qty=filled_order.filled_quantity,
-            avg_price=filled_order.avg_fill_price,
-            slippage=slippage_bps,
-            fees=0.0,  # TODO: Calculate from exchange response
+            avg_price=filled_order.avg_fill_price or 0.0,
+            fee=0.0,  # TODO: Calculate from exchange response
         )
 
     async def _pre_execution_checks(self, execution_plan: ExecutionPlan) -> bool:

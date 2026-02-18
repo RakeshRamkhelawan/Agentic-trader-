@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Dict, Optional, Tuple
 
-import swisseph as swe
+import swisseph as swe  # type: ignore[import-not-found]
 
 from backend.core.navagraha.models import (AspectType, GunaDistribution,
                                            NavagrahaState, PlanetaryAspect,

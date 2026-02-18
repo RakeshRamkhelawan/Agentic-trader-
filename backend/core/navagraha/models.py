@@ -61,7 +61,7 @@ class PlanetState(BaseModel):
         return v
 
     @computed_field
-    @property
+    @property  # type: ignore[misc]
     def zodiac_sign(self) -> str:
         signs = [
             "Aries",
@@ -81,7 +81,7 @@ class PlanetState(BaseModel):
         return signs[sign_index]
 
     @computed_field
-    @property
+    @property  # type: ignore[misc]
     def nakshatra(self) -> str:
         nakshatras = [
             "Ashwini",
@@ -146,7 +146,7 @@ class GunaDistribution(BaseModel):
         return v
 
     @computed_field
-    @property
+    @property  # type: ignore[misc]
     def dominant_guna(self) -> GunaType:
         if self.sattva >= self.rajas and self.sattva >= self.tamas:
             return GunaType.SATTVA
@@ -156,7 +156,7 @@ class GunaDistribution(BaseModel):
             return GunaType.TAMAS
 
     @computed_field
-    @property
+    @property  # type: ignore[misc]
     def balance_score(self) -> float:
         ideal = 1.0 / 3.0
         deviation = (
@@ -255,7 +255,7 @@ class NavagrahaState(BaseModel):
         return v
 
     @computed_field
-    @property
+    @property  # type: ignore[misc]
     def trading_gate_open(self) -> bool:
         if self.rahu_kala_active:
             return False
@@ -266,7 +266,7 @@ class NavagrahaState(BaseModel):
         return True
 
     @computed_field
-    @property
+    @property  # type: ignore[misc]
     def consciousness_level(self) -> str:
         sattva = self.guna_distribution.sattva
         if sattva >= 0.6:

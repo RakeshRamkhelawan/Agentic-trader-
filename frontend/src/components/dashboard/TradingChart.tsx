@@ -100,7 +100,8 @@ function drawChart(canvas: HTMLCanvasElement, candleData: Candle[]) {
 }
 
 export function TradingChart() {
-  const { selectedSymbol, timeframe, setTimeframe } = useAppStore();
+  const { chartSymbol, timeframe, setTimeframe } = useAppStore();
+  const selectedSymbol = chartSymbol; // Use auto-selected top gainer
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [candleData, setCandleData] = useState<Candle[]>([]);
   const [isLoading, setIsLoading] = useState(false);

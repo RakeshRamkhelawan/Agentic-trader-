@@ -243,10 +243,14 @@ services:
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
       - DATABASE_URL=postgresql+asyncpg://trader:trading_secure@postgres:5432/trading_db
+      - REVOLUT_PRIVATE_KEY_PATH=/app/revolut_private.pem
+    env_file:
+      - .env
     volumes:
       - ./backend:/app/backend # Hot reload for development
-      - ./.env:/app/.env
-      - ./backend/config/agent_profiles.yaml:/app/backend/config/agent_profiles.yaml # Mount agent profiles
+      - ./.env:/app/.env:ro
+      - ./revolut_private.pem:/app/revolut_private.pem:ro
+      - ./backend/config/agent_profiles.yaml:/app/backend/config/agent_profiles.yaml:ro
     entrypoint: [ "/bin/bash", "/app/backend/scripts/start.sh" ]
     command: python backend/services/cognitive_orchestrator.py
     ports:
@@ -284,11 +288,15 @@ services:
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
       - ALLOWED_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000","http://frontend:3000"]
+      - REVOLUT_PRIVATE_KEY_PATH=/app/revolut_private.pem
     ports:
       - "8003:8001"
+    env_file:
+      - .env
     volumes:
       - ./backend:/app/backend
-      - ./.env:/app/env
+      - ./.env:/app/.env:ro
+      - ./revolut_private.pem:/app/revolut_private.pem:ro
     user: "root"
     entrypoint: ["/bin/sh", "-c"]
     command: ["pip install python-multipart && uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 --workers 2"]

@@ -9,6 +9,7 @@ import { TradingChart } from '@/components/dashboard/TradingChart';
 import { OrderPanel } from '@/components/dashboard/OrderPanel';
 import { ActiveOrders } from '@/components/dashboard/ActiveOrders';
 import { AIAgentStatus } from '@/components/dashboard/AIAgentStatus';
+import { AIAdvisor } from '@/components/dashboard/AIAdvisor';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { TopMovers } from '@/components/dashboard/TopMovers';
 
@@ -94,6 +95,14 @@ export function Dashboard() {
     const id = setInterval(() => fetchAssets(), 30_000);
     return () => clearInterval(id);
   }, [fetchAssets]);
+  
+  // Top Movers refresh every 60 seconds (1 minute)
+  useEffect(() => {
+    const id = setInterval(() => {
+      fetchAssets(); // This updates topGainer/topLoser
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [fetchAssets]);
 
   const activeOrderCount = orders.filter((o) => o.status === 'open' || o.status === 'partial').length;
   const runningAgents = agentsStatus.filter((a) => a.status === 'running').length;
@@ -177,6 +186,7 @@ export function Dashboard() {
         </div>
         <div className='space-y-6'>
           <OrderPanel />
+          <AIAdvisor />
           <AIAgentStatus />
           <RecentActivity />
         </div>

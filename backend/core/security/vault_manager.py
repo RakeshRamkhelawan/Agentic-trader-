@@ -13,7 +13,7 @@ from functools import lru_cache
 from typing import List, Optional
 
 try:
-    import hvac
+    import hvac  # type: ignore[import-untyped]
 
     HVAC_AVAILABLE = True
 except ImportError:

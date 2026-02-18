@@ -14,24 +14,85 @@ from typing import Any, Dict, Optional
 import httpx
 from bs4 import BeautifulSoup
 
-from backend.core.memory_agent import MemoryAgent  # GEWIJZIGD
-from backend.schemas.agent_messages import AgentMessage  # GEWIJZIGD
+from backend.core.memory_agent import MemoryAgent
+from backend.schemas.agent_messages import AgentMessage
 
 
-# Mock LLM analysis for now (replace with real OpenAI/Gemini call later)
 async def analyze_text_with_llm(text: str) -> Dict[str, Any]:
-    # TODO: Connect to backend.core.llm_service
-    # Simulatie: We zoeken naar sleutelwoorden
+    """
+    Analyze text using DeepSeek LLM via LLMService.
+    Returns sentiment analysis, impact score, and summary.
+    """
+    from backend.llm.service import LLMService
+
+    try:
+        # Initialize LLM service (uses DEEPSEEK_API_KEY from env)
+        llm_service = LLMService.create_from_env()
+
+        system_prompt = """You are a financial news analyst. Analyze the given text and return a JSON object with:
+- sentiment: float between -1.0 (very bearish) and 1.0 (very bullish)
+- impact: integer 1-10 indicating news importance (10 = market moving)
+- summary: concise 1-sentence summary
+- keywords: array of 3-5 relevant keywords
+
+Respond ONLY with valid JSON."""
+
+        prompt = f"Analyze this financial news:\n\n{text[:2000]}"  # Limit input size
+
+        response = await llm_service.provider.generate_text(
+            prompt=prompt, system_prompt=system_prompt
+        )
+
+        # Parse JSON response
+        import json
+
+        try:
+            result = json.loads(response.strip())
+            return {
+                "sentiment": float(result.get("sentiment", 0)),
+                "impact": int(result.get("impact", 5)),
+                "summary": result.get("summary", text[:100] + "..."),
+                "keywords": result.get("keywords", ["crypto", "market"]),
+            }
+        except json.JSONDecodeError:
+            # Fallback: extract info from text response
+            logging.warning(f"LLM returned non-JSON: {response[:200]}")
+            return _fallback_analysis(text)
+
+    except Exception as e:
+        logging.error(f"LLM analysis failed: {e}")
+        return _fallback_analysis(text)
+
+
+def _fallback_analysis(text: str) -> Dict[str, Any]:
+    """Fallback keyword-based analysis if LLM fails."""
     text_lower = text.lower()
     sentiment = 0.0
-    impact = 1
+    impact = 5
 
-    if "bull" in text_lower or "approve" in text_lower:
-        sentiment = 0.8
-        impact = 8
-    elif "bear" in text_lower or "crash" in text_lower or "ban" in text_lower:
-        sentiment = -0.8
-        impact = 9
+    # Positive indicators
+    positive_words = [
+        "bull",
+        "approve",
+        "surge",
+        "rally",
+        "gain",
+        "up",
+        "rise",
+        "growth",
+    ]
+    # Negative indicators
+    negative_words = ["bear", "crash", "ban", "drop", "fall", "down", "decline", "fear"]
+
+    pos_count = sum(1 for w in positive_words if w in text_lower)
+    neg_count = sum(1 for w in negative_words if w in text_lower)
+
+    if pos_count > neg_count:
+        sentiment = 0.5 + min(0.3, pos_count * 0.1)
+        impact = min(10, 5 + pos_count)
+    elif neg_count > pos_count:
+        sentiment = -0.5 - min(0.3, neg_count * 0.1)
+        impact = min(10, 5 + neg_count)
 
     return {
         "summary": text[:100] + "...",

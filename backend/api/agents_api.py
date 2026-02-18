@@ -1,3 +1,4 @@
+import logging
 from functools import lru_cache
 from typing import Any, Dict, List
 
@@ -7,6 +8,7 @@ from pydantic import BaseModel
 from backend.services.cognitive_orchestrator import CognitiveOrchestrator
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -118,15 +120,16 @@ async def chat_with_agent(body: ChatRequest) -> ChatResponse:
     try:
         response_text = await llm.circuit_breaker.call(
             llm.provider.generate_text,
-            full_prompt,
-            system_instruction=system_prompt,
+            prompt=full_prompt,
+            system_prompt=system_prompt,
         )
-    except Exception:
+    except Exception as e:
+        logger.error(f"LLM call failed: {e}")
         if llm.fallback_provider:
             try:
                 response_text = await llm.fallback_provider.generate_text(
                     full_prompt,
-                    system_instruction=system_prompt,
+                    system_prompt=system_prompt,
                 )
             except Exception:
                 response_text = (

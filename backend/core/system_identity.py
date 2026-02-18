@@ -55,7 +55,7 @@ class SystemIdentity:
         self.tattva_config = tattva_config or TattvaConfig.default_36_tattvas()
 
         # System state monitoring
-        self.system_state = {
+        self.system_state: Dict[str, Any] = {
             "coherence": 1.0,  # Overall system coherence [0, 1]
             "confidence": 0.5,  # System confidence [0, 1]
             "learning_rate": 0.1,  # Adaptation speed
@@ -117,7 +117,10 @@ class SystemIdentity:
             Decision result with perception, action, confidence, Tattva metrics
         """
         cycle_start = int(time.time_ns())
-        tattva_traversal = {"layers_traversed": [], "coherence_per_layer": {}}
+        tattva_traversal: Dict[str, Any] = {
+            "layers_traversed": [],
+            "coherence_per_layer": {},
+        }
 
         try:
             # ========== ASCEND: Layers 1-5 (Shuddha Tattvas) ==========
