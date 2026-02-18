@@ -5,7 +5,7 @@ Statistical hypothesis testing for prediction market analysis.
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import pandas as pd
 from scipy import stats as scipy_stats
@@ -24,7 +24,7 @@ class TestResult:
     effect_size: Optional[float]
     interpretation: str
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary."""
         return {
             "test_name": self.test_name,
@@ -189,7 +189,7 @@ class StatisticalTestsFramework:
         detrended = data - (slope * x + intercept)
 
         # ADF-like test: measure mean reversion strength
-        returns = detrended.diff().dropna()
+        detrended.diff().dropna()
 
         # Test if deviations from mean are typically small
         half_life = self._calculate_half_life(detrended)
@@ -244,7 +244,7 @@ class StatisticalTestsFramework:
 
     def test_change_point(
         self, data: pd.Series, method: str = "mean_variance"
-    ) -> Optional[Tuple[int, float]]:
+    ) -> Optional[tuple[int, float]]:
         """
         Detect change points in time series.
 
@@ -322,7 +322,7 @@ class StatisticalTestsFramework:
             interpretation=interpretation,
         )
 
-    def run_battery(self, data: Dict[str, pd.Series]) -> Dict[str, TestResult]:
+    def run_battery(self, data: dict[str, pd.Series]) -> dict[str, TestResult]:
         """
         Run a battery of statistical tests on data.
 

@@ -1,6 +1,7 @@
 import asyncio
-import asyncpg
 import sys
+
+import asyncpg
 
 
 async def enable_timescale():

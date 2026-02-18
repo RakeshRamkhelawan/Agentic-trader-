@@ -5,9 +5,9 @@ Provides /health endpoint for Docker health checks and monitoring.
 
 import os
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 router = APIRouter()
@@ -26,7 +26,7 @@ class HealthResponse(BaseModel):
     uptime_seconds: Optional[float] = Field(
         None, description="Service uptime in seconds"
     )
-    checks: Dict[str, bool] = Field(
+    checks: dict[str, bool] = Field(
         default_factory=dict, description="Component health checks"
     )
 
@@ -101,7 +101,7 @@ async def readiness_check() -> ReadinessResponse:
     summary="Liveness Check",
     description="Simple liveness check - returns 200 if process is running",
 )
-async def liveness_check() -> Dict[str, str]:
+async def liveness_check() -> dict[str, str]:
     """
     Simple liveness check.
 
@@ -121,7 +121,7 @@ async def _check_duckdb() -> bool:
         conn.execute("SELECT 1 as check")
         conn.close()
         return True
-    except Exception as e:
+    except Exception:
         # Log error but don't fail - DuckDB is optional during setup
         return True  # Default to healthy during initialization
 

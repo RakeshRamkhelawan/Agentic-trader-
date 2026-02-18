@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from backend.core.memory_system import MemorySystem
+from backend.core.navagraha.models import NavagrahaState
 
 
 class DecisionDiscriminator:
@@ -36,7 +37,10 @@ class DecisionDiscriminator:
         self.total_decisions = 0
 
     def discriminate(
-        self, perception: Dict[str, Any], available_actions: List[int]
+        self,
+        perception: Dict[str, Any],
+        available_actions: List[int],
+        navagraha_state: Optional[NavagrahaState] = None,
     ) -> Tuple[int, float, str]:
         """
         Discriminate (choose) best action.
@@ -50,6 +54,7 @@ class DecisionDiscriminator:
         Args:
             perception: Current perception from sensory processor
             available_actions: List of action IDs [0, 1, 2]
+            navagraha_state: Optional Vedic astrology state
 
         Returns:
             (action_id, confidence, rationale)
@@ -68,7 +73,7 @@ class DecisionDiscriminator:
 
         # 4. Apply discrimination logic
         best_action, confidence, rationale = self._apply_discrimination(
-            action_scores, habit_action, perception
+            action_scores, habit_action, perception, navagraha_state
         )
 
         self.total_decisions += 1
@@ -125,6 +130,7 @@ class DecisionDiscriminator:
         action_scores: Dict[int, float],
         habit_action: Optional[int],
         perception: Dict[str, Any],
+        navagraha_state: Optional[NavagrahaState] = None,
     ) -> Tuple[int, float, str]:
         """
         Apply discrimination logic to choose final action.
@@ -142,6 +148,28 @@ class DecisionDiscriminator:
         Returns:
             (action, confidence, rationale)
         """
+        current_threshold = self.decision_threshold
+        current_exploration = self.exploration_rate
+        guna_rationale = ""
+
+        if navagraha_state:
+            gunas = navagraha_state.guna_distribution
+
+            # Sattva: Clarity -> Easier to act (lower threshold)
+            if gunas.sattva > 0.5:
+                current_threshold = 0.5
+                guna_rationale = " (Sattva boosted)"
+
+            # Tamas: Inertia -> Harder to act (higher threshold)
+            if gunas.tamas > 0.4:
+                current_threshold = 0.7
+                guna_rationale = " (Tamas inhibited)"
+
+            # Rajas: Activity -> More exploration
+            if gunas.rajas > 0.4:
+                current_exploration = min(0.3, self.exploration_rate * 2.0)
+                guna_rationale += " (Rajas active)"
+
         if not action_scores:
             return 0, 0.5, "No actions available, default to hold"
 
@@ -167,7 +195,7 @@ class DecisionDiscriminator:
             rationale = "Novel situation, evaluate all options"
 
         # Exploration: occasionally try suboptimal actions
-        if np.random.random() < self.exploration_rate and len(sorted_actions) > 1:
+        if np.random.random() < current_exploration and len(sorted_actions) > 1:
             best_action, best_score = sorted_actions[1]
             rationale = "Exploration mode - try alternative"
 
@@ -175,7 +203,7 @@ class DecisionDiscriminator:
         confidence = self._calculate_confidence(best_score, perception)
 
         # Check confidence threshold
-        if confidence < self.decision_threshold:
+        if confidence < current_threshold:
             best_action = 0  # Default to hold
             confidence = 0.5
             rationale = "Insufficient confidence, default to neutral action"

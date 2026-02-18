@@ -3,7 +3,7 @@ import logging
 import uuid
 from collections import deque
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 import tiktoken
 
@@ -119,7 +119,6 @@ class UsageTracker:
         agent_name: str = "unknown",
         request_id: Optional[str] = None,
     ):
-
         if not request_id:
             request_id = str(uuid.uuid4())
 

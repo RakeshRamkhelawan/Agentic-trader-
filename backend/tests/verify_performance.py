@@ -8,7 +8,6 @@ sys.path.append(
 )
 
 from backend.core.cache_layer import get_cache
-from backend.execution.exchange_adapter import ExchangeAdapter
 
 
 async def test_performance_layer():

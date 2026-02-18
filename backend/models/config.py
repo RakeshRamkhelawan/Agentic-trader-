@@ -1,8 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import (JSON, Boolean, Column, DateTime, String,
-                        UniqueConstraint)
+from sqlalchemy import JSON, Boolean, Column, DateTime, String
 
 from backend.core.database import Base
 

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"c:/Users/rsram/Downloads/agentic_trader_platform_1734_20260109_210621/VERIFICATION_CHECKLIST.md\":*)",
+      "Bash(cat:*)",
+      "Bash(redis-cli ping:*)",
+      "Bash(curl:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker-compose exec:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker restart:*)"
+    ]
+  }
+}

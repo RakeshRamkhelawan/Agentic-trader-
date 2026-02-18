@@ -4,7 +4,6 @@ Wraps RevolutXClient for integration with OrderExecutor
 """
 
 import logging
-from datetime import datetime
 from typing import Optional
 
 from backend.core.schemas.ooda_types import Order
@@ -165,7 +164,7 @@ class RevolutXAdapter:
         )
 
         if not revolut_order:
-            raise RuntimeError(f"Failed to place order on Revolut X")
+            raise RuntimeError("Failed to place order on Revolut X")
 
         # Convert to OODA Order
         ooda_order = self._revolut_to_ooda_order(revolut_order)

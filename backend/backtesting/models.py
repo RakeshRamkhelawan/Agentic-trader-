@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class OrderSide(str, Enum):
@@ -55,6 +55,8 @@ class BacktestMetrics(BaseModel):
     total_return: float
     cagr: float
     sharpe_ratio: float
+    sortino_ratio: float = 0.0
+    calmar_ratio: float = 0.0
     max_drawdown: float
     win_rate: float
     total_trades: int

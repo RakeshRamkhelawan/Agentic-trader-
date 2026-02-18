@@ -1,0 +1,2 @@
+cd /d c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621
+if exist pytest.ini (type pytest.ini) else (if exist backend\pytest.ini (type backend\pytest.ini) else (echo No pytest.ini found))

@@ -11,14 +11,10 @@ import asyncio
 import json
 import logging
 import time
-import uuid
-from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
-from backend.core.agent_registry import (AgentProfile, AgentRegistry,
-                                         ToolRegistry)
+from backend.core.agent_registry import AgentProfile, AgentRegistry
 from backend.core.auth.context import (get_current_tenant_optional,
                                        tenant_context)
 from backend.core.exceptions import QuotaExceededError
@@ -28,7 +24,6 @@ from backend.core.regime_detector import RegimeDetector
 from backend.core.telemetry.metrics import PrometheusMetrics  # NIEUW
 from backend.core.telemetry.tracing import get_tracer, setup_tracing
 from backend.llm.usage_tracker import UsageTracker
-from backend.risk.validators import RiskValidator
 from backend.schemas.agent_messages import AgentMessage
 from backend.schemas.guna import GunaVector
 from backend.services.execution_gateway import ExecutionGateway
@@ -47,7 +42,6 @@ __all__ = [
     "CognitiveOrchestrator",
     "AgentMessage",
     "RegimeDetector",
-    "MarketRegime",
 ]  # NIEUW
 
 
@@ -207,7 +201,6 @@ class CognitiveOrchestrator:
 
             try:
                 if effective_tenant:
-                    token = None
                     # We can't use 'with tenant_context' easily if we want to conditionally apply it
                     # without indenting the whole block.
                     # But for cleaner code, let's use the context manager and indent.
@@ -268,7 +261,7 @@ class CognitiveOrchestrator:
                 return
 
         event_guna = self._quantify_message_guna(message)
-        message.payload["guna_vibration"] = event_guna.to_dict()
+        message.payload["guna_vibration"] = event_guna.model_dump()
 
         self.global_guna_history.append(event_guna)
         if len(self.global_guna_history) > 10:
@@ -535,41 +528,44 @@ class CognitiveOrchestrator:
         """Process incoming market tick with full validation and dispatch."""
         import time as _time
 
-        from backend.market_data.models import EventType, UnifiedMarketEvent
+        from backend.core.market_data.models import (EventType,
+                                                     UnifiedMarketEvent)
 
         try:
             # 1. DESERIALIZE & VALIDATE
             raw_event_type = event.get("event_type", "ticker")
             try:
-                event_type_enum = EventType(raw_event_type)
-            except ValueError:
+                event_type_enum = EventType(raw_event_type.upper())
+            except (ValueError, AttributeError):
                 event_type_enum = EventType.TICKER
+
+            # Convert timestamp to datetime as required by UnifiedMarketEvent schema
+            ts_val = event.get("timestamp") or _time.time()
+            try:
+                ts_dt = datetime.fromtimestamp(float(ts_val))
+            except (ValueError, TypeError):
+                ts_dt = datetime.now()
 
             unified = UnifiedMarketEvent(
                 event_type=event_type_enum,
-                venue=event.get("venue", "unknown"),
-                symbol=event.get("symbol", "UNKNOWN"),
-                ts_exchange=float(event.get("ts_exchange", _time.time())),
-                ts_received=_time.time(),
-                price=event.get("price") or event.get("last"),
-                bid=event.get("bid"),
-                ask=event.get("ask"),
-                size=event.get("size") or event.get("volume"),
+                exchange=str(event.get("exchange", "unknown")),
+                symbol=str(event.get("symbol", "UNKNOWN")),
+                timestamp=ts_dt,
+                price=float(event.get("price") or event.get("last") or 0.0),
             )
-            unified.validate()  # Raises ValueError if invalid (negative price etc.)
 
             self.logger.info(f"Validated tick: {unified.symbol} @ {unified.price}")
 
             # 1b. PERSIST to ClickHouse (Async)
             if self.market_writer:
-                await self.market_writer.enqueue(unified.to_dict())
+                await self.market_writer.enqueue(unified.model_dump())
 
             # 2. DISPATCH via AgentMessage pipeline
             msg = AgentMessage(
                 source="market_data_consumer",
                 target="all",
                 type="TICK_DATA",
-                payload=unified.to_dict(),
+                payload=unified.model_dump(),
             )
             await self.handle_message(msg)
 
@@ -584,11 +580,28 @@ async def main():
     setup_tracing("cognitive-orchestrator-service")
     logging.info("Starting Cognitive Orchestrator Service...")
 
+    # Start Prometheus Metrics for Trading Engine
+    from prometheus_client import start_http_server
+
+    try:
+        start_http_server(8004)
+        logging.info("✓ Trading Engine Metrics Server started on port 8004")
+    except Exception as e:
+        logging.error(f"Failed to start Metrics Server: {e}")
+
     # Initialize ClickHouse Client
+    from backend.core.config.settings import settings
     from backend.market_data.sinks.clickhouse_writer import ClickHouseWriter
     from backend.storage.clickhouse_client import ClickHouseClient
 
-    clickhouse_client = ClickHouseClient()
+    clickhouse_client = ClickHouseClient(
+        host=settings.CLICKHOUSE_HOST,
+        port=settings.CLICKHOUSE_PORT,
+        username=settings.CLICKHOUSE_USER,
+        password=settings.CLICKHOUSE_PASSWORD,
+        database=settings.CLICKHOUSE_DB,
+    )
+
     # Connect needs to happen in loop
     await clickhouse_client.connect()
 
@@ -613,14 +626,18 @@ async def main():
     # We are in Orchestrator process, so we use Redis Publisher, not WS Manager
     signal_bridge.set_redis_publisher(redis_publisher)
 
-    # Inject dependencies
-    orchestrator = CognitiveOrchestrator(
-        clickhouse_client=clickhouse_client,
-        market_writer=market_writer,
-        message_writer=message_writer,
-        signal_bridge=signal_bridge,
-        execution_gateway=ExecutionGateway(),  # Initialize Default Gateway
-    )
+    try:
+        # Inject dependencies
+        orchestrator = CognitiveOrchestrator(
+            clickhouse_client=clickhouse_client,
+            market_writer=market_writer,
+            message_writer=message_writer,
+            signal_bridge=signal_bridge,
+            execution_gateway=ExecutionGateway(),  # Initialize Default Gateway
+        )
+    except Exception:
+        logging.exception("CRITICAL: Failed to initialize CognitiveOrchestrator")
+        raise
 
     # Start Execution Gateway
     if orchestrator.execution_gateway:
@@ -631,10 +648,9 @@ async def main():
     message_writer_task = asyncio.create_task(message_writer.run())
 
     # Start Market Consumer Task
-    consumer_task = asyncio.create_task(orchestrator.start_market_consumer())
+    asyncio.create_task(orchestrator.start_market_consumer())
 
     if "research_v1" in orchestrator.agents:
-        research_agent = orchestrator.agents["research_v1"]
         await orchestrator.handle_message(
             AgentMessage(
                 source="orchestrator",

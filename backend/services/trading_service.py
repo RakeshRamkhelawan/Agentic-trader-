@@ -8,9 +8,7 @@ Supports:
 - CCXT integration with smart mock fallback
 """
 
-import asyncio
 import logging
-import random
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
@@ -242,7 +240,7 @@ class TradingService:
                                 tickers[symbol] = await exchange_instance.fetch_ticker(
                                     symbol
                                 )
-                            except:
+                            except Exception:
                                 continue
                 elif adapter and hasattr(adapter, "get_tickers"):
                     # Use custom individual/bulk fetcher for Revolut
@@ -458,7 +456,7 @@ class TradingService:
                     ticker = await public_exchange.fetch_ticker(symbol_pair)
                     price = ticker["last"]
                     change = ticker["percentage"]
-                except:
+                except Exception:
                     # Fallback or distinct naming (e.g. USDT)
                     pass
 
@@ -873,10 +871,9 @@ class TradingService:
         Get the closing price for symbols from roughly 24 hours ago.
         Used to calculate change% when API doesn't provide it.
         """
-        from sqlalchemy import select, text
+        from sqlalchemy import text
 
         from backend.core.database import AsyncSessionLocal
-        from backend.models.market_data import MarketTick
 
         target_time = datetime.utcnow() - timedelta(hours=24)
         # Look for ticks in a window around 24h ago (e.g. 24h to 25h ago)

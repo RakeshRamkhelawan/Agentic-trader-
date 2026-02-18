@@ -1,0 +1,2 @@
+type "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\security\__init__.py"
+type "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\tests\unit\core\test_auth.py"

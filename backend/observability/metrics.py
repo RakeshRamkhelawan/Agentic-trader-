@@ -1,79 +1,63 @@
 import time
 
-from prometheus_client import (CONTENT_TYPE_LATEST, Counter, Gauge, Histogram,
-                               generate_latest)
-from starlette.middleware.base import BaseHTTPMiddleware
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 
-# --- Metrics Definitions ---
+from backend.core.telemetry.metrics import PrometheusMetrics
 
-# Request Latency
-HTTP_REQUEST_DURATION_SECONDS = Histogram(
-    "http_request_duration_seconds",
-    "HTTP request duration in seconds",
-    ["method", "endpoint", "status_code"],
-)
-
-# Request Count
-HTTP_REQUESTS_TOTAL = Counter(
-    "http_requests_total",
-    "Total number of HTTP requests",
-    ["method", "endpoint", "status_code"],
-)
-
-# LLM Token Usage (P2-13 Prep)
-LLM_TOKEN_USAGE_TOTAL = Counter(
-    "llm_token_usage_total",
-    "Total LLM tokens used",
-    ["model", "type"],  # type=prompt/completion
-)
-
-# LLM Errors
-LLM_ERRORS_TOTAL = Counter(
-    "llm_errors_total", "Total LLM API errors", ["provider", "error_type"]
-)
-
-# Active Agents
-ACTIVE_AGENTS_GAUGE = Gauge(
-    "active_agents_gauge", "Number of currently active agent workflows"
-)
-
-# System Health
-SYSTEM_HEALTH = Gauge("system_health", "System health status (1=healthy, 0=unhealthy)")
-
-# --- Middleware ---
+# Constants
+SERVICE_NAME = "api_server"
+metrics = PrometheusMetrics(SERVICE_NAME)
 
 
-class PrometheusMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+async def metrics_endpoint(request: Request):
+    """
+    Expose Prometheus metrics.
+    """
+    # Use the shared registry from PrometheusMetrics
+    data = generate_latest(PrometheusMetrics._registry)
+    return Response(data, media_type=CONTENT_TYPE_LATEST)
+
+
+class PrometheusMiddleware:
+    """
+    Middleware to capture request latency and counts.
+    """
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
         start_time = time.time()
-        method = request.method
-        # Simplify path to avoid high cardinality (e.g. /api/v1/users/123 -> /api/v1/users/{id})
-        # For now use path template if available, else path
-        path = request.url.path
+        path = scope.get("path", "UNKNOWN")
+
+        # Don't track metrics endpoint itself to avoid noise
+        if path == "/metrics" or path == "/health":
+            await self.app(scope, receive, send)
+            return
+
+        metrics.requests_in_progress.inc()
+        status_code = 500  # Default to 500 if exception occurs
+
+        async def send_wrapper(message):
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+            await send(message)
 
         try:
-            response = await call_next(request)
-            status_code = response.status_code
-        except Exception as e:
-            status_code = 500
-            raise e
+            await self.app(scope, receive, send_wrapper)
+            metrics.requests_total.inc()
+        except Exception:
+            metrics.errors_total.inc()
+            raise
         finally:
-            process_time = time.time() - start_time
-
-            # Record metrics
-            HTTP_REQUEST_DURATION_SECONDS.labels(
-                method=method, endpoint=path, status_code=status_code
-            ).observe(process_time)
-
-            HTTP_REQUESTS_TOTAL.labels(
-                method=method, endpoint=path, status_code=status_code
-            ).inc()
-
-        return response
-
-
-def metrics_endpoint(request: Request):
-    """Expose Prometheus metrics."""
-    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+            metrics.requests_in_progress.dec()
+            latency = time.time() - start_time
+            metrics.request_latency_seconds.observe(latency)

@@ -4,7 +4,7 @@ Fetches market data from various sources.
 """
 
 import logging
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import pandas as pd
 
@@ -41,7 +41,7 @@ class IngestionService:
         symbol: str,
         category: Optional[str] = None,
         limit: int = 1000,
-    ) -> Tuple[pd.DataFrame, Dict]:
+    ) -> tuple[pd.DataFrame, dict]:
         """
         Fetch market trades for symbol.
 
@@ -66,7 +66,7 @@ class IngestionService:
 
     async def _fetch_kalshi(
         self, symbol: str, category: Optional[str], limit: int
-    ) -> Tuple[pd.DataFrame, Dict]:
+    ) -> tuple[pd.DataFrame, dict]:
         """Fetch Kalshi market data."""
         try:
             # List markets
@@ -127,7 +127,7 @@ class IngestionService:
 
     async def _fetch_polymarket(
         self, symbol: str, limit: int
-    ) -> Tuple[pd.DataFrame, Dict]:
+    ) -> tuple[pd.DataFrame, dict]:
         """Fetch Polymarket data."""
         try:
             # List markets
@@ -190,7 +190,7 @@ class IngestionService:
 
     async def search_symbols(
         self, market: str, query: str, category: Optional[str] = None, limit: int = 50
-    ) -> Dict:
+    ) -> dict:
         """
         Search for symbols across market.
 

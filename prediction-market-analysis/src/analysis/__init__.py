@@ -9,7 +9,7 @@ Provides analytical tools for:
 
 from src.analysis.maker_taker import MakerTakerAnalyzer, SpreadMetrics
 from src.analysis.statistical_tests import StatisticalTestsFramework, TestResult
-from src.analysis.volume_trends import VolumeTrendsAnalyzer, VolumeMetrics
+from src.analysis.volume_trends import VolumeMetrics, VolumeTrendsAnalyzer
 
 __all__ = [
     "MakerTakerAnalyzer",

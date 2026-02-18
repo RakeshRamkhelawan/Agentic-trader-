@@ -2,8 +2,6 @@ import asyncio
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import delete, select
-
 from backend.core.database import AsyncSessionLocal
 from backend.execution.backtest_engine import BacktestEngine
 from backend.execution.paper_exchange import (OrderRequest, OrderStatus,

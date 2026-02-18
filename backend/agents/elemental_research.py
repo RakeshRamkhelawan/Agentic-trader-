@@ -15,7 +15,7 @@ Function:
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from backend.agents.elemental_base import ElementalBase
 from backend.governance.agent_gatekeeper import AgentRole

@@ -221,30 +221,30 @@ class RevolutXClient:
             if response.status_code == 200:
                 self._authenticated = True
                 data = response.json()
-                logger.info(f"✅ Connected to Revolut X!")
+                logger.info("✅ Connected to Revolut X!")
                 logger.info(f"   Active orders: {len(data.get('data', []))}")
                 return True
             elif response.status_code == 401:
-                logger.error(f"❌ Authentication failed (401)")
+                logger.error("❌ Authentication failed (401)")
                 try:
                     error_data = response.json()
                     logger.error(f"   Error: {error_data}")
-                except:
+                except Exception:
                     logger.error(f"   Response: {response.text[:200]}")
                 return False
             elif response.status_code == 409:
-                logger.warning(f"⚠️ Conflict (409) - API key may not be activated")
+                logger.warning("⚠️ Conflict (409) - API key may not be activated")
                 try:
                     error_data = response.json()
                     logger.warning(f"   Error details: {error_data}")
-                except:
+                except Exception:
                     logger.warning(f"   Response: {response.text}")
                 return False
             else:
                 logger.warning(f"⚠️ Unexpected response: {response.status_code}")
                 try:
                     logger.warning(f"   Response: {response.json()}")
-                except:
+                except Exception:
                     logger.warning(f"   Response: {response.text[:200]}")
                 return False
 

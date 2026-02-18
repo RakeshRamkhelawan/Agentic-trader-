@@ -7,11 +7,7 @@ Provides clients for fetching data from multiple prediction markets:
 """
 
 from src.ingestion.kalshi_client import KalshiClient, KalshiMarket, KalshiTrade
-from src.ingestion.polymarket_client import (
-    PolymarketClient,
-    PolymarketMarket,
-    PolymarketTrade,
-)
+from src.ingestion.polymarket_client import PolymarketClient, PolymarketMarket, PolymarketTrade
 
 __all__ = [
     "KalshiClient",

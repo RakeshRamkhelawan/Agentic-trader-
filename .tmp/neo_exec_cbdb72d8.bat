@@ -1,0 +1,1 @@
+powershell -Command "Get-ChildItem 'c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\docs\planning\*.md' | Select-Object Name, @{Name='Size_KB';Expression={[math]::Round($_.Length/1KB,2)}}, LastWriteTime | Format-Table -AutoSize"

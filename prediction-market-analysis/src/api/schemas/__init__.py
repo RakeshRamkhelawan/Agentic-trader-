@@ -1,18 +1,7 @@
 """API Schemas."""
 
-from src.api.schemas.signal import (
-    MarketSignal,
-    SignalFilter,
-    SignalsResponse,
-    MarketSource,
-    SignalCategory,
-    SignalType,
-)
-from src.api.schemas.analysis import (
-    AnalysisRequest,
-    AnalysisResult,
-    AnalysisStatus,
-)
+from src.api.schemas.analysis import AnalysisRequest, AnalysisStatus
+from src.api.schemas.signal import MarketSignal, MarketSource, SignalCategory, SignalFilter, SignalsResponse, SignalType
 
 __all__ = [
     "MarketSignal",

@@ -3,7 +3,7 @@ Execution Adapters.
 """
 
 import logging
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from backend.core.schemas.ooda_types import Order
 from backend.execution.order_executor import ExchangeAdapter

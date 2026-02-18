@@ -9,13 +9,12 @@ Features:
 """
 
 import asyncio
-import json
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, Optional, Set
 
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
 
@@ -237,7 +236,6 @@ class WebSocketManager:
 
                 # Send initial snapshot for orderbook channels
                 if success and channel.startswith("orderbook."):
-                    symbol = channel.split(".")[1]
                     # TODO: Fetch current orderbook from exchange
                     # For now, send empty snapshot
                     await self.send_message(
@@ -283,6 +281,22 @@ class WebSocketManager:
         for conn_id in stale_connections:
             logger.info(f"Disconnecting stale connection: {conn_id}")
             await self.disconnect(conn_id)
+
+    async def broadcast_navagraha_update(self, state: Dict[str, Any]) -> int:
+        """Broadcast Navagraha state update."""
+        return await self.broadcast_to_channel(
+            "navagraha.updates",
+            state,
+            message_type="update",
+        )
+
+    async def broadcast_ooda_update(self, cycle_state: Dict[str, Any]) -> int:
+        """Broadcast OODA Cycle state update."""
+        return await self.broadcast_to_channel(
+            "ooda.updates",
+            cycle_state,
+            message_type="update",
+        )
 
     def get_stats(self) -> Dict[str, Any]:
         """Get WebSocket manager statistics."""

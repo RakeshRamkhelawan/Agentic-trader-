@@ -1,4 +1,3 @@
-
 import asyncio
 import os
 import sys
@@ -8,16 +7,17 @@ from sqlalchemy import text
 # Add current directory to path
 sys.path.append(os.getcwd())
 
+
 async def main():
     print("Starting SessionManager check...")
     try:
-        from backend.core.database import AsyncSessionLocal, SessionManager
-        
+        from backend.core.database import SessionManager
+
         print("Creating session with system_admin_session()...")
         async with SessionManager.system_admin_session() as session:
             print(f"Session object type: {type(session)}")
             print(f"Session dir: {dir(session)}")
-            
+
             # Try basic execute
             print("Executing SELECT 1...")
             # We need a running DB for this, but let's try.
@@ -29,11 +29,13 @@ async def main():
                 print(f"DB Error (Expected if DB down): {db_err}")
                 if "async_generator" in str(db_err):
                     print("!!! FOUND THE BUG: session is a generator !!!")
-                    
+
     except Exception as e:
         print(f"Caught TOP LEVEL error: {e}")
         import traceback
+
         traceback.print_exc()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -8,7 +8,6 @@ Provides:
 """
 
 import logging
-from functools import wraps
 from typing import Callable, Optional
 
 from starlette.middleware.base import BaseHTTPMiddleware

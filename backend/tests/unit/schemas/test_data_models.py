@@ -10,6 +10,7 @@ from backend.schemas.orders import OrderRequest, OrderSide, OrderType
 
 # --- MARKET DATA TESTS ---
 
+
 def test_market_tick_valid():
     """Happy Path: Valid market tick."""
     tick = MarketTick(
@@ -17,32 +18,30 @@ def test_market_tick_valid():
         price=50000.50,
         volume=1.5,
         timestamp=datetime.now(),
-        source="revolut"
+        source="revolut",
     )
     assert tick.symbol == "BTC-EUR"
     assert tick.price == 50000.50
+
 
 def test_market_tick_negative_price():
     """Unhappy Path: Price cannot be negative."""
     with pytest.raises(ValidationError):
         MarketTick(
-            symbol="BTC-EUR",
-            price=-100.0, # FOUT
-            volume=1.0,
-            timestamp=datetime.now()
+            symbol="BTC-EUR", price=-100.0, volume=1.0, timestamp=datetime.now()  # FOUT
         )
+
 
 def test_market_tick_invalid_timestamp():
     """Unhappy Path: Invalid timestamp string."""
     with pytest.raises(ValidationError):
         MarketTick(
-            symbol="BTC-EUR",
-            price=100.0,
-            volume=1.0,
-            timestamp="niet-een-tijd" # FOUT
+            symbol="BTC-EUR", price=100.0, volume=1.0, timestamp="niet-een-tijd"  # FOUT
         )
 
+
 # --- ORDER REQUEST TESTS ---
+
 
 def test_order_request_valid():
     """Happy Path: Valid order request."""
@@ -51,20 +50,22 @@ def test_order_request_valid():
         qty=10.0,
         side=OrderSide.BUY,
         order_type=OrderType.MARKET,
-        strategy_id="momentum_v1"
+        strategy_id="momentum_v1",
     )
     assert order.qty == 10.0
-    assert isinstance(order.client_order_id, uuid.UUID) # Moet auto-generated zijn
+    assert isinstance(order.client_order_id, uuid.UUID)  # Moet auto-generated zijn
+
 
 def test_order_request_zero_qty():
     """Unhappy Path: Quantity must be positive."""
     with pytest.raises(ValidationError):
         OrderRequest(
             symbol="AAPL",
-            qty=0.0, # FOUT
+            qty=0.0,  # FOUT
             side=OrderSide.BUY,
-            order_type=OrderType.MARKET
+            order_type=OrderType.MARKET,
         )
+
 
 def test_order_request_limit_without_price():
     """Unhappy Path: Limit order requires limit_price."""
@@ -75,5 +76,5 @@ def test_order_request_limit_without_price():
             qty=1.0,
             side=OrderSide.BUY,
             order_type=OrderType.LIMIT,
-            limit_price=None # FOUT
+            limit_price=None,  # FOUT
         )

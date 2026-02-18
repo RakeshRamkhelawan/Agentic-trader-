@@ -83,16 +83,17 @@ class SignalBridge:
     def __init__(self):
         # Reference to WebSocket manager (set externally)
         self.ws_manager = None
+        self.redis_publisher = None
         # Signal history for late-joining clients
         self.signal_history: List[TradingSignal] = []
         self.max_history_size = 50
         # Lock for thread-safe signal processing
         self._lock = asyncio.Lock()
 
-    def set_ws_manager(self, ws_manager) -> None:
-        """Set the WebSocket manager for broadcasting."""
-        self.ws_manager = ws_manager
-        logger.info("SignalBridge connected to WebSocket manager")
+    def set_redis_publisher(self, redis_publisher) -> None:
+        """Set the Redis publisher for backend-to-frontend broadcasting."""
+        self.redis_publisher = redis_publisher
+        logger.info("SignalBridge connected to Redis publisher")
 
     async def emit_signal(self, signal: TradingSignal) -> int:
         """
@@ -106,30 +107,43 @@ class SignalBridge:
             if len(self.signal_history) > self.max_history_size:
                 self.signal_history.pop(0)
 
-        if not self.ws_manager:
-            logger.warning("SignalBridge: No WebSocket manager connected")
-            return 0
+        # 1. Publish to Redis (for Frontend Broadcast)
+        if hasattr(self, "redis_publisher") and self.redis_publisher:
+            try:
+                # We publish to the configured stream (e.g. market_events or signal_events)
+                # Ideally, we should wrap this in a structure that the consumer expects.
+                # But typically RedisPublisher.publish handles wrapping.
+                # However, if stream key is "market_events", consumer expects "event_type".
+                # TradingSignal has "signal_type".
+                # To prevent confusion, maybe we should NOT publish to market_events if format differs.
+                # But assuming the architecture intends this:
+                await self.redis_publisher.publish(signal.to_dict())
+            except Exception as e:
+                logger.error(f"SignalBridge: Failed to publish to Redis: {e}")
 
-        signal_data = signal.to_dict()
+        # 2. Publish to WebSocket Manager (if in same process)
+        if hasattr(self, "ws_manager") and self.ws_manager:
+            signal_data = signal.to_dict()
 
-        # Broadcast to general signals channel
-        sent_count = await self.ws_manager.broadcast_to_channel(
-            channel="signals", message=signal_data, message_type="signal"
-        )
+            # Broadcast to general signals channel
+            sent_count = await self.ws_manager.broadcast_to_channel(
+                channel="signals", message=signal_data, message_type="signal"
+            )
 
-        # Also broadcast to agent-specific channel
-        await self.ws_manager.broadcast_to_channel(
-            channel=f"signals.{signal.agent_id}",
-            message=signal_data,
-            message_type="signal",
-        )
+            # Also broadcast to agent-specific channel
+            await self.ws_manager.broadcast_to_channel(
+                channel=f"signals.{signal.agent_id}",
+                message=signal_data,
+                message_type="signal",
+            )
 
-        logger.info(
-            f"Signal emitted: {signal.signal_type.value} {signal.symbol} "
-            f"from {signal.agent_name} (sent to {sent_count} clients)"
-        )
+            logger.info(
+                f"Signal emitted: {signal.signal_type.value} {signal.symbol} "
+                f"from {signal.agent_name} (sent to {sent_count} clients)"
+            )
+            return sent_count
 
-        return sent_count
+        return 0
 
     async def emit_from_agent_message(
         self, agent_id: str, agent_name: str, message_type: str, payload: Dict[str, Any]

@@ -6,7 +6,7 @@ Manages DuckDB connections, schema creation, and query execution.
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import duckdb
 import pandas as pd
@@ -178,7 +178,7 @@ class DuckDBManager:
             parquet_path = str(kalshi_dir / "*.parquet")
             self.conn.execute(
                 f"""
-                CREATE OR REPLACE VIEW kalshi_parquet AS 
+                CREATE OR REPLACE VIEW kalshi_parquet AS
                 SELECT * FROM read_parquet('{parquet_path}')
             """
             )
@@ -188,15 +188,15 @@ class DuckDBManager:
             parquet_path = str(poly_dir / "*.parquet")
             self.conn.execute(
                 f"""
-                CREATE OR REPLACE VIEW polymarket_parquet AS 
+                CREATE OR REPLACE VIEW polymarket_parquet AS
                 SELECT * FROM read_parquet('{parquet_path}')
             """
             )
             logger.info(f"Registered Polymarket Parquet view: {parquet_path}")
 
     def query(
-        self, sql: str, params: Optional[List[Any]] = None, as_dataframe: bool = True
-    ) -> Union[pd.DataFrame, List[tuple]]:
+        self, sql: str, params: Optional[list[Any]] = None, as_dataframe: bool = True
+    ) -> Union[pd.DataFrame, list[tuple]]:
         """
         Execute a query and return results.
 
@@ -221,7 +221,7 @@ class DuckDBManager:
             return result.fetchdf()
         return result.fetchall()
 
-    def execute(self, sql: str, params: Optional[List[Any]] = None) -> None:
+    def execute(self, sql: str, params: Optional[list[Any]] = None) -> None:
         """
         Execute a statement (INSERT, UPDATE, DELETE, DDL).
 
@@ -254,7 +254,7 @@ class DuckDBManager:
         self.conn.register("_temp_df", df)
 
         # Get available columns from dataframe
-        columns = [col for col in df.columns]
+        columns = list(df.columns)
         columns_str = ", ".join(columns)
 
         # Insert only the columns that exist in the dataframe

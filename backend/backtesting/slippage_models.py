@@ -5,6 +5,7 @@ Provides realistic market impact and slippage simulation for order execution.
 """
 
 from abc import ABC, abstractmethod
+
 from backend.backtesting.models import OrderSide
 
 
@@ -60,7 +61,12 @@ class VolumeSlippageModel(SlippageModel):
     Simulates realistic market impact where large orders move prices.
     """
 
-    def __init__(self, impact_factor: float = 0.1, base_slippage_bps: float = 2.0, avg_bar_volume: float = 1000.0):
+    def __init__(
+        self,
+        impact_factor: float = 0.1,
+        base_slippage_bps: float = 2.0,
+        avg_bar_volume: float = 1000.0,
+    ):
         """Initialize volume slippage model.
 
         Args:

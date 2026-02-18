@@ -1,0 +1,1 @@
+type "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\docs\planning\03_QA_AND_OBSERVABILITY.md"

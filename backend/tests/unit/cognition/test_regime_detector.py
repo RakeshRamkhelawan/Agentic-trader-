@@ -1,7 +1,5 @@
-import pytest
-
-from backend.services.cognitive_orchestrator import (MarketRegime,
-                                                     RegimeDetector)
+from backend.core.regime_detector import RegimeDetector
+from backend.core.schemas.ooda_types import MarketRegime
 
 
 def test_detect_bull_market():
@@ -11,11 +9,13 @@ def test_detect_bull_market():
     regime = detector.detect(price=110.0, sma_50=100.0, volatility=0.01)
     assert regime == MarketRegime.BULL
 
+
 def test_detect_bear_market():
     """Happy Path: Price < SMA = Bear."""
     detector = RegimeDetector()
     regime = detector.detect(price=90.0, sma_50=100.0, volatility=0.01)
     assert regime == MarketRegime.BEAR
+
 
 def test_detect_high_volatility():
     """Happy Path: High Volatility = CRASH/VOLATILE."""

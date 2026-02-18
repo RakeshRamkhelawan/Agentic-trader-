@@ -9,8 +9,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
 
-import numpy as np
-
 
 class StressScenario(str, Enum):
     """Predefined stress test scenarios."""

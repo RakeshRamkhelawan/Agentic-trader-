@@ -1,0 +1,2 @@
+cd /d c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend
+python -m pylint agents --disable=C,R --max-line-length=120 --output-format=text 2>nul || echo Pylint completed with issues

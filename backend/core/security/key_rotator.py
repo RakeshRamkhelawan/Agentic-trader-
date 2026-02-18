@@ -8,11 +8,9 @@ Provides:
 """
 
 import logging
-import os
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
 
-from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
@@ -124,9 +122,10 @@ class KeyRotator:
         """
         if self._current_public_key is None:
             # Generate initial key pair if none exists
-            self._current_private_key, self._current_public_key = (
-                self.generate_key_pair()
-            )
+            (
+                self._current_private_key,
+                self._current_public_key,
+            ) = self.generate_key_pair()
             self._last_rotation = datetime.utcnow()
 
         return self._current_public_key
@@ -139,9 +138,10 @@ class KeyRotator:
             Private key as PEM-encoded bytes
         """
         if self._current_private_key is None:
-            self._current_private_key, self._current_public_key = (
-                self.generate_key_pair()
-            )
+            (
+                self._current_private_key,
+                self._current_public_key,
+            ) = self.generate_key_pair()
             self._last_rotation = datetime.utcnow()
 
         return self._current_private_key

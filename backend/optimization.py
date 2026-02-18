@@ -7,11 +7,10 @@ FastAPI performance, security, and reliability.
 
 import logging
 import time
-from functools import lru_cache, wraps
+from functools import wraps
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, Request, Response
-from fastapi.middleware.gzip import GZIPMiddleware
+from fastapi import FastAPI, Request
 from starlette.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
@@ -169,9 +168,9 @@ def add_security_headers(app: FastAPI):
 
         # Disable browser caching for sensitive endpoints
         if "/api/" in request.url.path:
-            response.headers["Cache-Control"] = (
-                "no-store, no-cache, must-revalidate, proxy-revalidate"
-            )
+            response.headers[
+                "Cache-Control"
+            ] = "no-store, no-cache, must-revalidate, proxy-revalidate"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
 

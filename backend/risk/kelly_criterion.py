@@ -13,7 +13,6 @@ Where:
 
 import logging
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 
 @dataclass

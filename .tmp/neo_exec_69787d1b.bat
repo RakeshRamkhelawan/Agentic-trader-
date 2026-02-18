@@ -1,0 +1,2 @@
+cd /d c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621
+dir /s /b *.txt *.json *.yaml *.yml Dockerfile .dockerignore 2>nul | findstr /i "requirements package tsconfig docker ci cd .github .gitlab"

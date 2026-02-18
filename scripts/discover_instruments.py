@@ -1,9 +1,8 @@
 import asyncio
 import logging
-import json
-from backend.services.trading_service import get_trading_service
+
 from backend.core.database import AsyncSessionLocal
-from backend.core.config.settings import settings
+from backend.services.trading_service import get_trading_service
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,7 +15,7 @@ async def check_instruments():
         # Using a dummy tenant_id for discovery
         tenant_id = "system_discovery"
 
-        logger.info(f"Checking instruments for exchange: revolut")
+        logger.info("Checking instruments for exchange: revolut")
         adapter = await service._get_exchange_adapter(db, tenant_id, "revolut")
 
         if adapter:

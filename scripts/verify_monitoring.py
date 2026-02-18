@@ -16,11 +16,10 @@ Exit codes:
     2 = Critical checks failed
 """
 
-import sys
 import argparse
-import json
-from typing import Dict, List, Tuple
+import sys
 from datetime import datetime
+from typing import List, Tuple
 
 try:
     import httpx
@@ -211,7 +210,7 @@ class MonitoringVerifier:
     def run_verification(self) -> int:
         """Run all checks and return exit code."""
         print(f"\n{'='*60}")
-        print(f"Monitoring Setup Verification")
+        print("Monitoring Setup Verification")
         print(f"{'='*60}")
         print(f"Metrics URL: {self.metrics_url}")
         print(f"Prometheus URL: {self.prometheus_url}")

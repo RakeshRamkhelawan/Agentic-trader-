@@ -6,7 +6,7 @@ Fetches prediction market data from Kalshi.
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Optional
 
 import pandas as pd
 
@@ -92,7 +92,7 @@ class KalshiClient:
 
     def get_markets(
         self, category: Optional[str] = None, limit: int = 100, offset: int = 0
-    ) -> List[KalshiMarket]:
+    ) -> list[KalshiMarket]:
         """
         Get list of Kalshi markets.
 
@@ -165,7 +165,7 @@ class KalshiClient:
         limit: int = 100,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
-    ) -> List[KalshiTrade]:
+    ) -> list[KalshiTrade]:
         """
         Get trade history for a market.
 
@@ -254,7 +254,7 @@ class KalshiClient:
             if trades:
                 yield trades[0]
 
-    def get_markets_by_category(self, category: str) -> List[KalshiMarket]:
+    def get_markets_by_category(self, category: str) -> list[KalshiMarket]:
         """
         Get all markets in a category.
 
@@ -266,7 +266,7 @@ class KalshiClient:
         """
         return self.get_markets(category=category, limit=1000)
 
-    def search_markets(self, query: str) -> List[KalshiMarket]:
+    def search_markets(self, query: str) -> list[KalshiMarket]:
         """
         Search markets by title keyword.
 

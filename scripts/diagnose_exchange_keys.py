@@ -4,6 +4,7 @@ Diagnose script voor exchange API key problemen
 """
 
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -57,17 +58,17 @@ def main():
 
     # Revolut
     print("\n💳 REVOLUT:")
-    revolut_key_ok = check_env_var("REVOLUT_API_KEY")
+    check_env_var("REVOLUT_API_KEY")
     pem_path = os.getenv("REVOLUT_PRIVATE_KEY_PATH", "").strip('"').strip("'")
     if pem_path:
         from pathlib import Path
 
         if Path(pem_path).exists():
-            print(f"✅ REVOLUT_PRIVATE_KEY_PATH: Bestand bestaat")
+            print("✅ REVOLUT_PRIVATE_KEY_PATH: Bestand bestaat")
         else:
             print(f"❌ REVOLUT_PRIVATE_KEY_PATH: Bestand niet gevonden: {pem_path}")
     else:
-        print(f"❌ REVOLUT_PRIVATE_KEY_PATH: NIET INGESTELD")
+        print("❌ REVOLUT_PRIVATE_KEY_PATH: NIET INGESTELD")
 
     print("\n" + "=" * 50)
     print("\n💡 AANBEVELINGEN:\n")

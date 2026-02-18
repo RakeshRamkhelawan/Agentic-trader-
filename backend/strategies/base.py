@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-from backend.market_data.models import UnifiedMarketEvent
+from backend.core.market_data.models import UnifiedMarketEvent
 
 
 class BaseStrategy(ABC):

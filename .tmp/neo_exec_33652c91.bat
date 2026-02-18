@@ -1,0 +1,1 @@
+python -c "import sys; sys.stdout.reconfigure(encoding='utf-8'); exec(open(r'c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\deep_doc_analysis.py', encoding='utf-8').read())" 2>&1 | more

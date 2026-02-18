@@ -1,0 +1,1 @@
+type "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\navagraha\ephemeris.py" | findstr /N /C:"planet_name == PlanetName.KETU" /C:"if planet_name"

@@ -5,7 +5,7 @@ Utilities for reading and writing Parquet files.
 
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import pandas as pd
 
@@ -110,7 +110,7 @@ class ParquetHandler:
         df.to_parquet(file_path, engine="pyarrow", compression="snappy")
         return file_path
 
-    def list_parquet_files(self, source: str) -> List[Path]:
+    def list_parquet_files(self, source: str) -> list[Path]:
         """
         List all Parquet files in a source directory.
 

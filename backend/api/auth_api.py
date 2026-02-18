@@ -8,10 +8,9 @@ Endpoints:
 - GET /me - Get current user info
 """
 
-import re
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 # JWT
@@ -322,7 +321,7 @@ async def get_me(request: Request, db: AsyncSession = Depends(get_admin_db)):
             role=user.role,
             full_name=user.profile.full_name if user.profile else None,
         )
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
