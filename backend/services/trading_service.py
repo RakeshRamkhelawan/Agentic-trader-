@@ -689,6 +689,54 @@ class TradingService:
             for o in orders
         ]
 
+    async def cancel_order(
+        self, db: AsyncSession, tenant_id: str, order_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Cancel a specific order by ID.
+        Returns None when the order is not found (caller raises 404).
+        """
+        from sqlalchemy import select
+
+        from backend.models.orders import Order, OrderStatus
+
+        query = select(Order).where(
+            Order.id == order_id,
+            Order.tenant_id == tenant_id,
+        )
+        result = await db.execute(query)
+        order = result.scalar_one_or_none()
+
+        if not order:
+            return None
+
+        cancellable = (
+            OrderStatus.SUBMITTED,
+            OrderStatus.PENDING_APPROVAL,
+            OrderStatus.APPROVED,
+        )
+        current_status = order.status
+        if current_status not in cancellable:
+            status_str = (
+                current_status.value
+                if hasattr(current_status, "value")
+                else str(current_status)
+            )
+            return {
+                "status": "error",
+                "order_id": order_id,
+                "message": f"Order cannot be cancelled (current status: {status_str})",
+            }
+
+        order.status = OrderStatus.CANCELLED
+        await db.commit()
+
+        return {
+            "status": "success",
+            "order_id": order_id,
+            "message": "Order successfully cancelled",
+        }
+
     async def cancel_all_orders(
         self, db: AsyncSession, tenant_id: str
     ) -> Dict[str, Any]:

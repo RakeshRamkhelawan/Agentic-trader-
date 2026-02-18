@@ -328,19 +328,9 @@ export const ordersApi = {
     return normalizeOrder(response.data?.order ?? response.data);
   },
 
-  /**
-   * Cancel an individual order.
-   * Backend currently only has DELETE /trading/orders (cancel all).
-   * This will be updated when a per-order cancel endpoint is added.
-   * For now this call is sent and optimistic UI handles the rest.
-   */
+  /** DELETE /api/v1/trading/orders/{orderId} – cancel a single order */
   cancelOrder: async (orderId: string): Promise<void> => {
-    // Attempt per-order cancel; backend returns 404 until implemented
-    try {
-      await api.delete(`/trading/orders/${orderId}`);
-    } catch {
-      // Silently ignore – the UI already applies optimistic update
-    }
+    await api.delete(`/trading/orders/${orderId}`);
   },
 
   /** GET /api/v1/trading/orders/history */
@@ -573,14 +563,41 @@ export class WebSocketClient {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private pendingChannels: Set<string> = new Set();
+  private listeners: Set<(data: any) => void> = new Set();
+  private onConnectCb?: () => void;
+  private onDisconnectCb?: () => void;
 
   constructor(private url: string) {}
 
-  connect(
-    onMessage: (data: any) => void,
-    onConnect?: () => void,
-    onDisconnect?: () => void
-  ) {
+  /**
+   * Add a message listener. Returns a cleanup function to remove it.
+   * Multiple components can each call addListener without stepping on each other.
+   */
+  addListener(fn: (data: any) => void): () => void {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+
+  /**
+   * Connect (idempotent).
+   * If a socket is already OPEN or CONNECTING this is a no-op.
+   */
+  connect(onConnect?: () => void, onDisconnect?: () => void) {
+    if (onConnect) this.onConnectCb = onConnect;
+    if (onDisconnect) this.onDisconnectCb = onDisconnect;
+
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN ||
+        this.ws.readyState === WebSocket.CONNECTING)
+    ) {
+      return;
+    }
+
+    this._openSocket();
+  }
+
+  private _openSocket() {
     const token = localStorage.getItem('access_token');
     const wsUrl = token ? `${this.url}?token=${token}` : this.url;
 
@@ -589,15 +606,15 @@ export class WebSocketClient {
     this.ws.onopen = () => {
       console.log('WebSocket connected');
       this.reconnectAttempts = 0;
-      onConnect?.();
-      // Re-subscribe to any channels that were pending before reconnect
+      this.onConnectCb?.();
+      // Re-subscribe to all tracked channels after (re)connect
       this.pendingChannels.forEach((ch) => this._send({ type: 'subscribe', channel: ch }));
     };
 
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        onMessage(data);
+        this.listeners.forEach((fn) => fn(data));
       } catch (error) {
         console.error('WebSocket message parse error:', error);
       }
@@ -605,8 +622,8 @@ export class WebSocketClient {
 
     this.ws.onclose = () => {
       console.log('WebSocket disconnected');
-      onDisconnect?.();
-      this.attemptReconnect(onMessage, onConnect, onDisconnect);
+      this.onDisconnectCb?.();
+      this._attemptReconnect();
     };
 
     this.ws.onerror = (error) => {
@@ -614,17 +631,11 @@ export class WebSocketClient {
     };
   }
 
-  private attemptReconnect(
-    onMessage: (data: any) => void,
-    onConnect?: () => void,
-    onDisconnect?: () => void
-  ) {
+  private _attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`);
-      setTimeout(() => {
-        this.connect(onMessage, onConnect, onDisconnect);
-      }, this.reconnectDelay * this.reconnectAttempts);
+      setTimeout(() => this._openSocket(), this.reconnectDelay * this.reconnectAttempts);
     }
   }
 

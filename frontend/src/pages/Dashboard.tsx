@@ -10,6 +10,7 @@ import { OrderPanel } from '@/components/dashboard/OrderPanel';
 import { ActiveOrders } from '@/components/dashboard/ActiveOrders';
 import { AIAgentStatus } from '@/components/dashboard/AIAgentStatus';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { TopMovers } from '@/components/dashboard/TopMovers';
 
 function StatCard({
   title,
@@ -88,6 +89,12 @@ export function Dashboard() {
     fetchAgentsStatus();
   }, [fetchPortfolio, fetchOrders, fetchAssets, fetchAgentsStatus]);
 
+  // Auto-refresh market prices every 30 seconds
+  useEffect(() => {
+    const id = setInterval(() => fetchAssets(), 30_000);
+    return () => clearInterval(id);
+  }, [fetchAssets]);
+
   const activeOrderCount = orders.filter((o) => o.status === 'open' || o.status === 'partial').length;
   const runningAgents = agentsStatus.filter((a) => a.status === 'running').length;
 
@@ -165,6 +172,7 @@ export function Dashboard() {
         <div className='lg:col-span-2 space-y-6'>
           <TradingChart />
           <ActiveOrders />
+          <TopMovers />
           <MarketOverview />
         </div>
         <div className='space-y-6'>
