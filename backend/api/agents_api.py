@@ -13,9 +13,11 @@ router = APIRouter()
 # LLM service singleton (created lazily on first chat request)
 # ---------------------------------------------------------------------------
 
+
 @lru_cache(maxsize=1)
 def _get_llm_service():
     from backend.llm.service import LLMService
+
     return LLMService.create_from_env()
 
 
@@ -23,8 +25,9 @@ def _get_llm_service():
 # Chat schemas
 # ---------------------------------------------------------------------------
 
+
 class ChatHistoryEntry(BaseModel):
-    type: str   # "user" | "ai" | "system"
+    type: str  # "user" | "ai" | "system"
     content: str
 
 
