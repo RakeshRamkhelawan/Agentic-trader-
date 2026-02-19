@@ -120,6 +120,16 @@ class CognitiveOrchestrator:
                     self.agents[agent_id] = RiskGuardianAgent(
                         message_bus=self.handle_message
                     )
+                elif agent_id == "asset_discovery_v1":
+                    from backend.agents.asset_discovery_agent import \
+                        AssetDiscoveryAgent
+
+                    self.agents[agent_id] = AssetDiscoveryAgent(
+                        llm_provider=None,  # Geen LLM nodig voor discovery
+                        event_bus=None,  # TODO: Connect event bus als beschikbaar
+                        discovery_interval=86400,  # 1x per dag
+                        metadata_sync_interval=3600,  # elk uur
+                    )
                 else:
                     self.logger.warning(
                         f"Unknown agent ID in registry: {agent_id}. Skipping instantiation."
@@ -678,6 +688,15 @@ async def main():
     # Start Market Consumer Task
     asyncio.create_task(orchestrator.start_market_consumer())
 
+    # Start Asset Discovery Agent (autonome achtergrond taak)
+    if "asset_discovery_v1" in orchestrator.agents:
+        logging.info("✓ Starting AssetDiscoveryAgent...")
+        try:
+            await orchestrator.agents["asset_discovery_v1"].start()
+            logging.info("✓ AssetDiscoveryAgent started successfully")
+        except Exception as e:
+            logging.error(f"✗ Failed to start AssetDiscoveryAgent: {e}")
+
     if "research_v1" in orchestrator.agents:
         await orchestrator.handle_message(
             AgentMessage(
@@ -693,6 +712,16 @@ async def main():
             await asyncio.sleep(10)
     finally:
         logging.info("Shutting down...")
+
+        # Stop Asset Discovery Agent
+        if "asset_discovery_v1" in orchestrator.agents:
+            logging.info("Stopping AssetDiscoveryAgent...")
+            try:
+                await orchestrator.agents["asset_discovery_v1"].stop()
+                logging.info("✓ AssetDiscoveryAgent stopped")
+            except Exception as e:
+                logging.error(f"✗ Error stopping AssetDiscoveryAgent: {e}")
+
         market_writer.stop()
         message_writer.stop()
         await market_writer_task

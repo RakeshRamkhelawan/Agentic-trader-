@@ -1,147 +1,163 @@
+# =============================================================================
+# PRODUCTION DOCKER COMPOSE
+# Optimized for production deployment
+# =============================================================================
+
 version: '3.8'
 
 services:
-  backend:
-    build:
-      context: .
-      dockerfile: infrastructure/docker/Dockerfile
-    image: agentic-trader-backend:latest
-    container_name: agentic-trader-backend
-    restart: always
-    # Production command: No reload, multiple workers
-    command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --workers 4
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env.prod
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      clickhouse:
-        condition: service_started
-      redpanda:
-        condition: service_started
-    networks:
-      - trader_net
-    # No code volume mounts in production
-    volumes:
-      - app_data:/app/data
-
+  # ---------------------------------------------------------------------------
+  # Infrastructure (Production Optimized)
+  # ---------------------------------------------------------------------------
+  
   postgres:
-    image: postgres:15-alpine
-    container_name: trader-postgres
+    image: timescale/timescaledb:latest-pg15
+    container_name: postgres-prod
     restart: always
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-trader}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trading_secure}
-      POSTGRES_DB: ${POSTGRES_DB:-trading_db}
-    ports:
-      - "127.0.0.1:5432:5432" # Bind to localhost only for security
+      - POSTGRES_USER=${DB_USER:-trader}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME:-trading_db}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U trader -d trading_db" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - postgres_prod_data:/var/lib/postgresql/data
     networks:
-      - trader_net
+      - prod-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
 
   redis:
     image: redis:7.2-alpine
-    container_name: trader-redis
+    container_name: redis-prod
     restart: always
-    command: redis-server --appendonly yes
-    ports:
-      - "127.0.0.1:6379:6379" # Bind to localhost only
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
     volumes:
-      - redis_data:/data
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - redis_prod_data:/data
     networks:
-      - trader_net
+      - prod-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
 
   clickhouse:
     image: clickhouse/clickhouse-server:24.3
-    container_name: trader-clickhouse
+    container_name: clickhouse-prod
+    restart: always
+    environment:
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-trader}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB:-trading_db}
+    volumes:
+      - clickhouse_prod_data:/var/lib/clickhouse
+    networks:
+      - prod-network
+
+  # ---------------------------------------------------------------------------
+  # Backend (Production)
+  # ---------------------------------------------------------------------------
+  
+  api-server:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.backend
+      target: production
+    container_name: api-server-prod
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-trader}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-trading_db}
+      - REDIS_URL=redis://redis:6379/0
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-trader}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      - ALLOWED_ORIGINS=["https://yourdomain.com"]
+      - CORS_ORIGINS=["https://yourdomain.com"]
+      - WORKERS=4
+    env_file:
+      - .env.prod
+    ports:
+      - "8000:8000"
+    networks:
+      - prod-network
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # Frontend (Production with Nginx)
+  # ---------------------------------------------------------------------------
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../infrastructure/docker/Dockerfile.frontend.prod
+    container_name: frontend-prod
     restart: always
     ports:
-      - "127.0.0.1:8123:8123"
-      - "127.0.0.1:9000:9000"
-    volumes:
-      - clickhouse_data:/var/lib/clickhouse
-    ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
+      - "80:80"
+      - "443:443"
     networks:
-      - trader_net
+      - prod-network
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
 
-  redpanda:
-    image: docker.redpanda.com/redpandadata/redpanda:v23.3.10
-    container_name: trader-redpanda
-    restart: always
-    command:
-      - redpanda start
-      - --smp 1
-      - --memory 1G
-      - --reserve-memory 0M
-      - --overprovisioned
-      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
-      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
-      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
-      - --advertise-pandaproxy-addr internal://redpanda:8082,external://localhost:18082
-      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
-      - --rpc-addr 0.0.0.0:33145
-      - --advertise-rpc-addr redpanda:33145
-    ports:
-      - "127.0.0.1:18081:18081"
-      - "127.0.0.1:18082:18082"
-      - "127.0.0.1:19092:19092"
-      - "127.0.0.1:9644:9644"
-    volumes:
-      - redpanda_data:/var/lib/redpanda/data
-    networks:
-      - trader_net
-
+  # ---------------------------------------------------------------------------
+  # Monitoring
+  # ---------------------------------------------------------------------------
+  
   prometheus:
-    image: prom/prometheus:v2.45.0
-    container_name: trader-prometheus
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus-prod
     restart: always
     volumes:
-      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    ports:
-      - "127.0.0.1:9090:9090"
+      - ./infrastructure/prometheus/prometheus.prod.yml:/etc/prometheus/prometheus.yml
+      - prometheus_prod_data:/prometheus
     networks:
-      - trader_net
+      - prod-network
 
   grafana:
-    image: grafana/grafana:10.2.0
-    container_name: trader-grafana
+    image: grafana/grafana:10.2.2
+    container_name: grafana-prod
     restart: always
-    ports:
-      - "127.0.0.1:3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     volumes:
-      - grafana_data:/var/lib/grafana
+      - grafana_prod_data:/var/lib/grafana
     networks:
-      - trader_net
+      - prod-network
+    ports:
+      - "3000:3000"
 
+# ---------------------------------------------------------------------------
+# Volumes
+# ---------------------------------------------------------------------------
 volumes:
-  postgres_data:
-  redis_data:
-  clickhouse_data:
-  redpanda_data:
-  prometheus_data:
-  grafana_data:
-  app_data:
+  postgres_prod_data:
+  redis_prod_data:
+  clickhouse_prod_data:
+  prometheus_prod_data:
+  grafana_prod_data:
 
-
+# ---------------------------------------------------------------------------
+# Networks
+# ---------------------------------------------------------------------------
 networks:
-  trader_net:
+  prod-network:
     driver: bridge

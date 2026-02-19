@@ -19,7 +19,7 @@ CHART_PATH = os.path.join(
 def run_command(command, cwd=None):
     process = subprocess.run(
         command,
-        shell=True,
+        shell=True,  # nosec B602 - Test script with controlled input
         capture_output=True,
         text=True,
         cwd=cwd,

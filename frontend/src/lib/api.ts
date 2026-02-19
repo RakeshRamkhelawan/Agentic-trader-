@@ -568,6 +568,125 @@ export const oodaApi = {
 };
 
 // ============================================================================
+// FEDERATED TRIAD API  →  /api/v1/federated/...
+// ============================================================================
+
+export interface CouncilView {
+  name: string;
+  type: 'guna' | 'elemental' | 'graha' | 'mind' | 'body';
+  perspective: string;
+  confidence: number;
+  insights: string[];
+  contradictions?: string[];
+}
+
+export interface ChittaNode {
+  id: string;
+  content: string;
+  source: string;
+  timestamp: string;
+  council: string;
+  verified: boolean;
+}
+
+export interface BuddhiDecision {
+  action: 'buy' | 'sell' | 'hold';
+  confidence: number;
+  rationale: string;
+  supporting: string[];
+  opposing: string[];
+  contradictions: number;
+  timestamp: string;
+}
+
+export interface FederatedState {
+  coherence: {
+    total: number;
+    harmony: number;
+    performance: number;
+    chitta_health: number;
+    deliberation_quality: number;
+    buddhi_clarity: number;
+  };
+  councils: CouncilView[];
+  chitta: {
+    nodes: ChittaNode[];
+    total_nodes: number;
+    verified_nodes: number;
+  };
+  latest_decision: BuddhiDecision | null;
+  deliberation_steps: {
+    iteration: number;
+    council: string;
+    perspective: string;
+    confidence: number;
+  }[];
+}
+
+export const federatedApi = {
+  /** GET /api/v1/federated/state - Get complete Federated Triad state */
+  getState: async (): Promise<FederatedState> => {
+    try {
+      const response = await api.get<FederatedState>('/federated/state');
+      return response.data;
+    } catch (error) {
+      // Return mock data if endpoint doesn't exist yet
+      console.warn('Federated API not available, using mock data');
+      return {
+        coherence: {
+          total: 75,
+          harmony: 80,
+          performance: 100,
+          chitta_health: 85,
+          deliberation_quality: 70,
+          buddhi_clarity: 75
+        },
+        councils: [],
+        chitta: { nodes: [], total_nodes: 0, verified_nodes: 0 },
+        latest_decision: null,
+        deliberation_steps: []
+      };
+    }
+  },
+  
+  /** POST /api/v1/federated/cycle - Trigger a full Federated Triad cycle */
+  runCycle: async (): Promise<{ 
+    decision: BuddhiDecision; 
+    coherence: FederatedState['coherence'];
+    insights: string;
+  }> => {
+    try {
+      const response = await api.post('/federated/cycle', {});
+      return response.data;
+    } catch (error) {
+      console.warn('Federated cycle API not available, falling back to agents API');
+      // Fallback to regular agents API
+      const result = await agentsApi.runCycle();
+      return {
+        decision: {
+          action: 'hold',
+          confidence: 0.5,
+          rationale: result.insights,
+          supporting: [],
+          opposing: [],
+          contradictions: 0,
+          timestamp: new Date().toISOString()
+        },
+        coherence: {
+          total: 75,
+          harmony: 80,
+          performance: 100,
+          chitta_health: 85,
+          deliberation_quality: 70,
+          buddhi_clarity: 75
+        },
+        insights: result.insights
+      };
+    }
+  },
+};
+
+// ============================================================================
 // WEBSOCKET CLIENT
 // Backend protocol:
 //   subscribe:   { type: "subscribe",   channel: "ticker.BTC-EUR" }

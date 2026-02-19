@@ -186,9 +186,11 @@ export function TradingChart() {
   }, [candleData]);
 
   const currentPrice = candleData.length > 0 ? candleData[candleData.length - 1].close : 0;
-  const previousPrice = candleData.length > 1 ? candleData[candleData.length - 2].close : currentPrice;
-  const priceChange = currentPrice - previousPrice;
-  const priceChangePercent = previousPrice > 0 ? (priceChange / previousPrice) * 100 : 0;
+  
+  // Get selected asset for consistent 24h change data
+  const selectedAsset = assets.find(a => a.symbol === selectedSymbol);
+  const priceChange = selectedAsset?.change24hValue ?? 0;
+  const priceChangePercent = selectedAsset?.change24h ?? 0;
 
   return (
     <Card
