@@ -97,6 +97,7 @@ class ExchangeAdapter:
             quantity=quantity,
             price=price,
             status="pending",
+            avg_fill_price=None,
         )
 
         logging.info(
@@ -126,6 +127,7 @@ class ExchangeAdapter:
             side="buy",
             order_type="market",
             quantity=0.01,
+            price=None,
             status="filled",
             filled_quantity=0.01,
             avg_fill_price=50000.0,
@@ -238,6 +240,8 @@ class OrderExecutor:
                 trace_id=execution_plan.trace_id,
                 success=False,
                 error=f"Permission denied: {str(e)}",
+                order_id=None,
+                execution_latency_ms=None,
             )
 
         # Audit Log: Authorization Granted
@@ -261,6 +265,8 @@ class OrderExecutor:
                 trace_id=execution_plan.trace_id,
                 success=False,
                 error="Pre-execution checks failed",
+                order_id=None,
+                execution_latency_ms=None,
             )
 
         # 2. Place order
@@ -289,6 +295,8 @@ class OrderExecutor:
                 trace_id=execution_plan.trace_id,
                 success=False,
                 error=f"Order placement failed: {str(e)}",
+                order_id=None,
+                execution_latency_ms=None,
             )
 
         # 3. Monitor fill
@@ -302,7 +310,11 @@ class OrderExecutor:
                 details={"order_id": order.order_id, "error": str(e)},
             )
             return ExecutionOutcome(
-                trace_id=execution_plan.trace_id, success=False, error=str(e)
+                trace_id=execution_plan.trace_id,
+                success=False,
+                error=str(e),
+                order_id=None,
+                execution_latency_ms=None,
             )
 
         # 4. Calculate execution quality
@@ -338,6 +350,8 @@ class OrderExecutor:
             filled_qty=filled_order.filled_quantity,
             avg_price=filled_order.avg_fill_price or 0.0,
             fee=0.0,  # TODO: Calculate from exchange response
+            error=None,
+            execution_latency_ms=None,
         )
 
     async def _pre_execution_checks(self, execution_plan: ExecutionPlan) -> bool:

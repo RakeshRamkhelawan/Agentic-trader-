@@ -164,7 +164,7 @@ class CCXTAdapter(ExecutionInterface):
             logger.error(f"Order submission failed: {e}")
             return OrderResult(
                 order_id="",
-                client_order_id=order.client_order_id or "",
+                client_order_id=str(order.client_order_id) if order.client_order_id else "",
                 status=OrderStatus.REJECTED,
                 error_message=str(e),
             )

@@ -1,49 +1,23 @@
-"""
-Pytest configuration for proper test isolation.
-"""
-
-import sys
-
 import pytest
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from backend.core.database import Base
+import asyncio
 
+# Use in-memory SQLite for testing
+DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-@pytest.fixture(scope="function", autouse=True)
-def reset_modules():
-    """Reset problematic modules before each test."""
-    # Remove modules that register Prometheus metrics
-    modules_to_remove = [
-        m for m in sys.modules if "cognitive_orchestrator" in m or "telemetry" in m
-    ]
-    for mod in modules_to_remove:
-        del sys.modules[mod]
-
-    yield
-
-    # Clean up after test
-    modules_to_remove = [
-        m for m in sys.modules if "cognitive_orchestrator" in m or "telemetry" in m
-    ]
-    for mod in modules_to_remove:
-        del sys.modules[mod]
-
-
-@pytest.fixture(scope="session", autouse=True)
-def configure_prometheus():
-    """Configure Prometheus before any tests run."""
-    try:
-        from prometheus_client import REGISTRY
-
-        # Clear the default registry
-        collectors = list(REGISTRY._collector_to_names.keys())
-        for collector in collectors:
-            try:
-                if hasattr(collector, "_name"):
-                    if any(
-                        x in collector._name
-                        for x in ["guna", "trading", "order", "orchestrator"]
-                    ):
-                        REGISTRY.unregister(collector)
-            except Exception:
-                pass
-    except Exception:
-        pass
+@pytest_asyncio.fixture(scope="function")
+async def db_session():
+    """Create a new database session for a test."""
+    engine = create_async_engine(DATABASE_URL)
+    
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        
+    async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+    
+    async with async_session() as session:
+        yield session
+        
+    await engine.dispose()

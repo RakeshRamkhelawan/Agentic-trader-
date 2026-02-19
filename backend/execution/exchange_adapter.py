@@ -382,7 +382,7 @@ class ExchangeAdapter(ExecutionInterface):
             await asyncio.sleep(10.0)
             yield OrderUpdate(
                 order_id="keepalive",
-                status=MarketOrderStatus.pending,
+                status=MarketOrderStatus.PENDING,
                 filled_qty=0,
                 avg_price=0,
                 timestamp=datetime.utcnow(),

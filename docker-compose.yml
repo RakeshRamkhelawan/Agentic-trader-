@@ -208,7 +208,7 @@ services:
           cpus: '1'
           memory: 1G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/metrics"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/metrics" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -297,9 +297,8 @@ services:
       - ./backend:/app/backend
       - ./.env:/app/.env:ro
       - ./revolut_private.pem:/app/revolut_private.pem:ro
-    user: "root"
-    entrypoint: ["/bin/sh", "-c"]
-    command: ["pip install python-multipart && uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 --workers 2"]
+      - /dev/shm:/dev/shm # Shared memory for zero-copy IPC
+    command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8001 --workers 2
     deploy:
       resources:
         limits:
