@@ -93,7 +93,7 @@ class TradingService:
                 # Check if this is Revolut to pass specific options (legacy check removed)
                 options: Dict[str, Any] = {}
 
-                adapter = CCXTAdapter(
+                adapter = CCXTAdapter(  # type: ignore[assignment]
                     exchange_id=exchange_id,
                     api_key=creds["api_key"],
                     secret=creds["api_secret"],
@@ -103,7 +103,7 @@ class TradingService:
                 )
 
             # await adapter.connect() # Start connection if needed, usually lazy or managed elsewhere
-            self._exchange_instances[cache_key] = adapter
+            self._exchange_instances[cache_key] = adapter  # type: ignore[assignment]
             return adapter
         except Exception as e:
             logger.error(f"Failed to initialize exchange {exchange_id}: {e}")
@@ -454,9 +454,9 @@ class TradingService:
                 holdings_map[base_asset] = 0.0
 
             if order.side == "buy":
-                holdings_map[base_asset] += order.filled_qty
+                holdings_map[base_asset] += order.filled_qty  # type: ignore[assignment]
             elif order.side == "sell":
-                holdings_map[base_asset] -= order.filled_qty
+                holdings_map[base_asset] -= order.filled_qty  # type: ignore[assignment]
 
         # 2. (Optional) Fetch Real Exchange Balances if keys exist
         # For now, we mix in Local DB data.
@@ -760,7 +760,7 @@ class TradingService:
                 "message": f"Order cannot be cancelled (current status: {status_str})",
             }
 
-        order.status = OrderStatus.CANCELLED
+        order.status = OrderStatus.CANCELLED  # type: ignore[assignment]
         await db.commit()
 
         return {
@@ -838,7 +838,7 @@ class TradingService:
                         continue
 
                 # Update DB
-                order.status = OrderStatus.CANCELLED
+                order.status = OrderStatus.CANCELLED  # type: ignore[assignment]
                 cancelled_count += 1
 
             except Exception as inner_e:

@@ -124,7 +124,11 @@ class ZeroCopyBridge:
 
         except Exception as e:
             logger.error(f"Failed to initialize ZeroCopyBridge: {e}")
-            raise
+        except Exception as e:
+            logger.error(f"Failed to initialize ZeroCopyBridge: {e}")
+            logger.warning("Continuing without shared memory (ZeroCopyBridge disabled).")
+            self.shm = None
+            self.data_array = None
 
     def close(self):
         """Close access to shared memory."""

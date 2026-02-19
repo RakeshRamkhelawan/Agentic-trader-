@@ -325,7 +325,7 @@ class MetricsAggregator:
     def detect_trend(self, metric_type: str, lookback_samples: int = 10) -> str:
         """Detect trend in metrics."""
         with self._lock:
-            history = getattr(self, f"{metric_type}_history", deque())
+            history: deque = getattr(self, f"{metric_type}_history", deque())
 
             if len(history) < 2:
                 return "stable"
@@ -465,7 +465,7 @@ class MetricsMonitor:
 
     def check_for_anomalies(self, metrics: AggregatedMetrics) -> List[str]:
         """Check for anomalies."""
-        alerts = []
+        alerts: List[str] = []
 
         if not self.baseline:
             return alerts

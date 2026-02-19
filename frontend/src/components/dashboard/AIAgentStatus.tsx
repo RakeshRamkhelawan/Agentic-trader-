@@ -1,20 +1,42 @@
 import { useState, useEffect } from 'react';
-import { Bot, Activity, TrendingUp, Brain, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Bot, Activity, TrendingUp, Brain, ChevronDown, ChevronUp, Loader2, Play, Sparkles, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { agentsApi } from '@/lib/api';
 
 export function AIAgentStatus() {
   const [expanded, setExpanded] = useState(false);
-  const { agentsStatus, agentsCoherence, isLoadingAgents, fetchAgentsStatus, tradeHistory } = useAppStore();
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [lastAnalysis, setLastAnalysis] = useState<string | null>(null);
+  const { agentsStatus, agentsCoherence, isLoadingAgents, fetchAgentsStatus, agentTrades, fetchAgentTrades } = useAppStore();
 
   useEffect(() => {
     fetchAgentsStatus();
-    const interval = setInterval(fetchAgentsStatus, 30000);
+    fetchAgentTrades();
+    const interval = setInterval(() => {
+      fetchAgentsStatus();
+      fetchAgentTrades();
+    }, 30000);
     return () => clearInterval(interval);
-  }, [fetchAgentsStatus]);
+  }, [fetchAgentsStatus, fetchAgentTrades]);
+
+  const runAnalysis = async () => {
+    setIsAnalyzing(true);
+    try {
+      const result = await agentsApi.runCycle();
+      setLastAnalysis(result.insights);
+      // Refresh agent trades after analysis
+      await fetchAgentTrades();
+    } catch (error) {
+      console.error('Failed to run analysis:', error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const activeCount = agentsStatus.filter((s) => s.status === 'running').length;
   const avgPerformance =
@@ -23,12 +45,12 @@ export function AIAgentStatus() {
       : 0;
   const totalTrades = agentsStatus.reduce((acc, s) => acc + s.trades, 0);
 
-  // Use real trade history for activity log (last 5 entries)
-  const recentLogs = tradeHistory.slice(0, 5).map((t) => ({
+  // Use agent trades for activity log (last 5 entries)
+  const recentLogs = agentTrades.slice(0, 5).map((t) => ({
     id: t.id,
     timestamp: new Date(t.timestamp),
     type: t.side === 'buy' ? 'success' : 'info',
-    message: `${t.side === 'buy' ? 'Buy' : 'Sell'} order filled: ${t.amount} ${t.symbol} @ $${t.price.toLocaleString()}`,
+    message: `${t.side === 'buy' ? 'Buy' : 'Sell'} order: ${t.amount} ${t.symbol} @ €${t.price.toLocaleString()}`,
   }));
 
   const logColors: Record<string, string> = {
@@ -85,22 +107,77 @@ export function AIAgentStatus() {
       </CardHeader>
 
       <CardContent className='space-y-4'>
-        <div className='grid grid-cols-2 gap-3'>
-          <div className='bg-[#0A0A0A] rounded-xl p-3'>
-            <div className='flex items-center gap-2 text-muted-foreground mb-1'>
+        {/* Coherence Metrics */}
+        <div className='bg-[#0A0A0A] rounded-xl p-3'>
+          <div className='flex items-center justify-between mb-2'>
+            <div className='flex items-center gap-2 text-muted-foreground'>
               <TrendingUp className='w-4 h-4' />
-              <span className='text-xs'>Coherence</span>
+              <span className='text-xs'>System Coherence</span>
             </div>
-            <p className='text-xl font-bold font-mono text-trade-blue'>
-              {(agentsCoherence * 100).toFixed(1)}%
-            </p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className='w-3 h-3 text-muted-foreground opacity-50 hover:opacity-100' />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] bg-[#1A1A1A] border-[#333333]">
+                  <p className="text-sm font-medium text-white mb-1">Multi-Agent Effectiveness</p>
+                  <p className="text-xs text-[#888888]">Weighted score: 40% internal harmony + 60% market performance</p>
+                  <div className="mt-2 text-xs text-[#666666]">
+                    <p>• Harmony: Agent collaboration quality</p>
+                    <p>• Performance: Results vs market benchmark</p>
+                    <p>• Can exceed 100% when outperforming</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
+          
+          {/* Total Coherence - Main Metric */}
+          <div className='flex items-baseline gap-1 mb-2'>
+            <span className={cn(
+              'text-3xl font-bold font-mono',
+              agentsCoherence.total_coherence >= 100 ? 'text-trade-green' : 
+              agentsCoherence.total_coherence >= 80 ? 'text-trade-blue' : 
+              agentsCoherence.total_coherence >= 50 ? 'text-trade-orange' : 'text-trade-red'
+            )}>
+              {agentsCoherence.total_coherence.toFixed(1)}%
+            </span>
+            <span className='text-xs text-muted-foreground'>total</span>
+          </div>
+          
+          {/* Sub-metrics */}
+          <div className='grid grid-cols-2 gap-2 text-xs'>
+            <div className='flex items-center justify-between'>
+              <span className='text-muted-foreground'>Harmony</span>
+              <span className='text-white font-mono'>{agentsCoherence.harmony.toFixed(1)}%</span>
+            </div>
+            <div className='flex items-center justify-between'>
+              <span className='text-muted-foreground'>Performance</span>
+              <span className={cn(
+                'font-mono',
+                agentsCoherence.performance >= 100 ? 'text-trade-green' : 'text-white'
+              )}>
+                {agentsCoherence.performance >= 100 ? '+' : ''}
+                {(agentsCoherence.performance - 100).toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className='grid grid-cols-2 gap-3'>
           <div className='bg-[#0A0A0A] rounded-xl p-3'>
             <div className='flex items-center gap-2 text-muted-foreground mb-1'>
               <Activity className='w-4 h-4' />
               <span className='text-xs'>Total Trades</span>
             </div>
             <p className='text-xl font-bold text-white font-mono'>{totalTrades}</p>
+          </div>
+          <div className='bg-[#0A0A0A] rounded-xl p-3'>
+            <div className='flex items-center gap-2 text-muted-foreground mb-1'>
+              <Bot className='w-4 h-4' />
+              <span className='text-xs'>Active Agents</span>
+            </div>
+            <p className='text-xl font-bold text-white font-mono'>{activeCount}</p>
           </div>
         </div>
 
@@ -143,6 +220,36 @@ export function AIAgentStatus() {
 
         {agentsStatus.length === 0 && !isLoadingAgents && (
           <p className='text-sm text-muted-foreground text-center py-4'>No agents registered</p>
+        )}
+
+        {/* Run Analysis Button */}
+        <Button
+          onClick={runAnalysis}
+          disabled={isAnalyzing}
+          className='w-full bg-gradient-to-r from-trade-purple to-trade-blue hover:opacity-90 text-white'
+        >
+          {isAnalyzing ? (
+            <>
+              <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+              Analyzing Markets...
+            </>
+          ) : (
+            <>
+              <Sparkles className='w-4 h-4 mr-2' />
+              Run AI Analysis
+            </>
+          )}
+        </Button>
+
+        {/* Last Analysis Result */}
+        {lastAnalysis && (
+          <div className='bg-[#0A0A0A] rounded-lg p-3 border border-trade-purple/20'>
+            <p className='text-xs text-trade-purple mb-1 flex items-center gap-1'>
+              <Sparkles className='w-3 h-3' />
+              Latest Analysis
+            </p>
+            <p className='text-sm text-white whitespace-pre-line'>{lastAnalysis}</p>
+          </div>
         )}
 
         {agentsStatus.length > 3 && (

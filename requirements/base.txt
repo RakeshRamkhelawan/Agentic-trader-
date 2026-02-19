@@ -8,6 +8,8 @@ email-validator==2.1.0
 pydantic-settings==2.12.0
 python-dotenv==1.2.1
 anyio==4.11.0
+backoff==2.2.1
+aiolimiter==1.1.0
 # --- LOGGING ---
 structlog==24.1.0
 
@@ -38,7 +40,7 @@ uvicorn[standard]==0.40.0
 httpx==0.28.1
 requests==2.32.4
 beautifulsoup4==4.14.3
-python-multipart>=0.0.22
+python-multipart==0.0.9
 
 # --- SECURITY & CRYPTO ---
 cryptography==45.0.7

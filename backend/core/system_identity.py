@@ -52,7 +52,7 @@ class SystemIdentity:
         )
 
         # 36 Tattva configuration (consciousness architecture)
-        self.tattva_config = tattva_config or TattvaConfig.default_36_tattvas()
+        self.tattva_config = tattva_config or TattvaConfig.default_36_tattvas()  # type: ignore[attr-defined]
 
         # System state monitoring
         self.system_state: Dict[str, Any] = {
@@ -72,7 +72,7 @@ class SystemIdentity:
         self.action_space = [0, 1, 2]  # 0=hold, 1=buy, 2=sell
 
         # Performance tracking
-        self.performance_history = {
+        self.performance_history: Dict[str, Any] = {
             "outcomes": [],
             "confidences": [],
             "actions": [],

@@ -495,6 +495,18 @@ export const agentsApi = {
     const response = await api.post<{ response: string }>('/agents/chat', { message, history });
     return response.data;
   },
+  
+  /** POST /api/v1/agents/run-cycle - Trigger agent analysis */
+  runCycle: async (): Promise<{ insights: string; market_data: { gainers: any[]; losers: any[] }; agents_triggered: number; trades_generated?: number }> => {
+    const response = await api.post('/agents/run-cycle', {});
+    return response.data;
+  },
+  
+  /** GET /api/v1/agents/trades - Get agent trade history */
+  getTrades: async (): Promise<{ trades: any[]; count: number }> => {
+    const response = await api.get('/agents/trades');
+    return response.data;
+  },
 };
 
 // ============================================================================

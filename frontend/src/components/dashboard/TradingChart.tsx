@@ -1,10 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Maximize2, Minimize2, Settings, Download, Loader2 } from 'lucide-react';
+import { Maximize2, Minimize2, Settings, Download, Loader2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
 import { marketsApi, wsClient } from '@/lib/api';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const timeframes = ['1m', '5m', '15m', '1h', '4h', '1d', '1w'];
 
@@ -100,12 +109,22 @@ function drawChart(canvas: HTMLCanvasElement, candleData: Candle[]) {
 }
 
 export function TradingChart() {
-  const { chartSymbol, timeframe, setTimeframe } = useAppStore();
-  const selectedSymbol = chartSymbol; // Use auto-selected top gainer
+  const { chartSymbol, setChartSymbol, timeframe, setTimeframe, assets } = useAppStore();
+  const selectedSymbol = chartSymbol;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [candleData, setCandleData] = useState<Candle[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // Group assets by provider
+  const assetsByProvider = assets.reduce((acc, asset) => {
+    const provider = (asset as any).exchange || 'Unknown';
+    if (!acc[provider]) acc[provider] = [];
+    acc[provider].push(asset);
+    return acc;
+  }, {} as Record<string, typeof assets>);
+  
+  const providers = Object.keys(assetsByProvider).sort();
 
   const loadCandles = useCallback(async () => {
     setIsLoading(true);
@@ -183,7 +202,44 @@ export function TradingChart() {
           <div className='flex items-center gap-4'>
             <div>
               <div className='flex items-center gap-2'>
-                <h3 className='text-lg font-semibold text-white'>{selectedSymbol}</h3>
+                {/* Symbol Selector Dropdown */}
+                <Select value={selectedSymbol} onValueChange={setChartSymbol}>
+                  <SelectTrigger className="w-[180px] bg-[#0A0A0A] border-[#262626] text-white hover:bg-[#1A1A1A] focus:ring-0 focus:ring-offset-0">
+                    <SelectValue placeholder="Select symbol" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#111111] border-[#262626] max-h-[400px]">
+                    {providers.map((provider) => (
+                      <SelectGroup key={provider}>
+                        <SelectLabel className="text-muted-foreground text-xs uppercase tracking-wider px-2 py-1">
+                          {provider}
+                        </SelectLabel>
+                        {assetsByProvider[provider]
+                          .sort((a, b) => a.symbol.localeCompare(b.symbol))
+                          .map((asset) => (
+                            <SelectItem
+                              key={asset.symbol}
+                              value={asset.symbol}
+                              className="text-white hover:bg-[#1A1A1A] focus:bg-[#1A1A1A] focus:text-white cursor-pointer"
+                            >
+                              <div className="flex items-center justify-between w-full gap-4">
+                                <span>{asset.symbol}</span>
+                                <span
+                                  className={cn(
+                                    'text-xs',
+                                    asset.change24h >= 0 ? 'text-trade-green' : 'text-trade-red'
+                                  )}
+                                >
+                                  {asset.change24h >= 0 ? '+' : ''}
+                                  {asset.change24h.toFixed(2)}%
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
                 <span
                   className={cn(
                     'text-xs px-2 py-0.5 rounded-full border',
@@ -199,10 +255,15 @@ export function TradingChart() {
                 {currentPrice > 0 ? (
                   <>
                     <span className='text-2xl font-bold text-white font-mono'>
-                      {`$${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      {selectedSymbol.includes('EUR') 
+                        ? `€${currentPrice.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : `$${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      }
                     </span>
                     <span className={cn('text-sm font-medium', priceChange >= 0 ? 'text-trade-green' : 'text-trade-red')}>
-                      {priceChange >= 0 ? '+' : ''}$${priceChange.toFixed(2)}
+                      {priceChange >= 0 ? '+' : ''}
+                      {selectedSymbol.includes('EUR') ? '€' : '$'}
+                      {priceChange.toFixed(2)}
                     </span>
                   </>
                 ) : (

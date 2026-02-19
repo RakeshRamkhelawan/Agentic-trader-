@@ -73,6 +73,12 @@ interface AppState {
   fetchTradeHistory: () => Promise<void>;
   addTrade: (trade: TradeHistory) => void;
 
+  // Agent Trades (AI-generated trades from run-cycle)
+  agentTrades: TradeHistory[];
+  isLoadingAgentTrades: boolean;
+  fetchAgentTrades: () => Promise<void>;
+  addAgentTrade: (trade: TradeHistory) => void;
+
   // Portfolio Performance
   portfolioValue: number;
   portfolioPnl: number;
@@ -84,7 +90,16 @@ interface AppState {
 
   // Agents Status
   agentsStatus: AgentStrategy[];
-  agentsCoherence: number;
+  agentsCoherence: {
+    harmony: number;
+    performance: number;
+    total_coherence: number;
+    factors?: {
+      active_agents: string;
+      avg_prana: number;
+      total_trades: number;
+    };
+  };
   isLoadingAgents: boolean;
   fetchAgentsStatus: () => Promise<void>;
 
@@ -161,8 +176,16 @@ export const useAppStore = create<AppState>()(
           
           // Calculate top gainers/losers
           const sorted = [...assets].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
-          const topGainer = sorted.length > 0 ? sorted[0] : null;
-          const topLoser = sorted.length > 0 ? sorted[sorted.length - 1] : null;
+          
+          // Only show as "gainer" if actually positive
+          const actualGainers = sorted.filter(a => (a.change24h || 0) > 0);
+          const actualLosers = sorted.filter(a => (a.change24h || 0) < 0);
+          
+          const topGainer = actualGainers.length > 0 ? actualGainers[0] : null;
+          const topLoser = actualLosers.length > 0 ? actualLosers[actualLosers.length - 1] : null;
+          
+          // For chart selection: use best performer even if negative
+          const bestPerformer = sorted.length > 0 ? sorted[0] : null;
           
           set({ 
             assets, 
@@ -171,10 +194,10 @@ export const useAppStore = create<AppState>()(
             isLoadingAssets: false 
           });
           
-          // Auto-select top gainer for chart if not manually set
+          // Auto-select best performer for chart if not manually set
           const state = get();
-          if (state.chartSymbol === 'BTC/EUR' && topGainer) {
-            set({ chartSymbol: topGainer.symbol });
+          if (state.chartSymbol === 'BTC/EUR' && bestPerformer) {
+            set({ chartSymbol: bestPerformer.symbol });
           }
         } catch (error) {
           console.error('Failed to fetch assets:', error);
@@ -255,6 +278,33 @@ export const useAppStore = create<AppState>()(
       },
       addTrade: (trade) => set((state) => ({ tradeHistory: [trade, ...state.tradeHistory] })),
 
+      // Agent Trades
+      agentTrades: [],
+      isLoadingAgentTrades: false,
+      fetchAgentTrades: async () => {
+        set({ isLoadingAgentTrades: true });
+        try {
+          const data = await agentsApi.getTrades();
+          // Transform to TradeHistory format
+          const trades: TradeHistory[] = (data.trades || []).map((t: any) => ({
+            id: t.id,
+            symbol: t.symbol,
+            side: t.side,
+            amount: t.amount,
+            price: t.price,
+            timestamp: t.timestamp,
+            status: 'filled',
+            venue: t.agent || 'AI Agent',
+            pnl: 0,
+          }));
+          set({ agentTrades: trades, isLoadingAgentTrades: false });
+        } catch (error) {
+          console.error('Failed to fetch agent trades:', error);
+          set({ isLoadingAgentTrades: false });
+        }
+      },
+      addAgentTrade: (trade) => set((state) => ({ agentTrades: [trade, ...state.agentTrades] })),
+
       // Portfolio Performance
       portfolioValue: 0,
       portfolioPnl: 0,
@@ -282,7 +332,11 @@ export const useAppStore = create<AppState>()(
 
       // Agents Status
       agentsStatus: [],
-      agentsCoherence: 0,
+      agentsCoherence: {
+        harmony: 0,
+        performance: 0,
+        total_coherence: 0,
+      },
       isLoadingAgents: false,
       fetchAgentsStatus: async () => {
         set({ isLoadingAgents: true });
@@ -300,8 +354,18 @@ export const useAppStore = create<AppState>()(
               prana: Number(a.prana ?? 0),
             })
           );
-          const coherence =
-            data.orchestrator_state?.global_coherence ?? 0;
+          // Get coherence metrics from new structure
+          const coherenceData = data.orchestrator_state?.coherence;
+          const coherence = coherenceData ? {
+            harmony: coherenceData.harmony ?? 0,
+            performance: coherenceData.performance ?? 0,
+            total_coherence: coherenceData.total_coherence ?? 0,
+            factors: coherenceData.factors,
+          } : {
+            harmony: data.orchestrator_state?.global_coherence ?? 0,
+            performance: 0,
+            total_coherence: data.orchestrator_state?.global_coherence ?? 0,
+          };
           set({ agentsStatus: agentsList, agentsCoherence: coherence, isLoadingAgents: false });
         } catch (error) {
           console.error('Failed to fetch agents status:', error);

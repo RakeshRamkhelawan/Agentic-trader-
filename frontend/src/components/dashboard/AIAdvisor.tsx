@@ -20,6 +20,16 @@ export function AIAdvisor() {
   const [isLoading, setIsLoading] = useState(false);
   const [advice, setAdvice] = useState<Advice | null>(null);
   const { assets, topGainer, topLoser } = useAppStore();
+  
+  // Extra safety: only show topGainer if it's actually positive
+  // This handles stale data in the store
+  const validTopGainer = topGainer && topGainer.change24h > 0 ? topGainer : null;
+  const validTopLoser = topLoser && topLoser.change24h < 0 ? topLoser : null;
+  
+  // Calculate best/worst performers for display when no valid gainers/losers
+  const sortedAssets = [...assets].sort((a, b) => b.change24h - a.change24h);
+  const bestPerformer = sortedAssets.length > 0 ? sortedAssets[0] : null;
+  const worstPerformer = sortedAssets.length > 0 ? sortedAssets[sortedAssets.length - 1] : null;
 
   const askAdvisor = async (customQuestion?: string) => {
     const q = customQuestion || question;
@@ -152,20 +162,32 @@ export function AIAdvisor() {
           <div className="pt-2 border-t border-[#262626]">
             <p className="text-xs text-muted-foreground mb-2">Current Market Context</p>
             <div className="flex gap-2">
-              {topGainer && (
+              {validTopGainer ? (
                 <div className="flex-1 bg-trade-green/5 border border-trade-green/10 rounded-lg p-2">
                   <p className="text-[10px] text-trade-green">Top Gainer</p>
-                  <p className="text-sm font-mono text-white">{topGainer.symbol}</p>
-                  <p className="text-xs text-trade-green">+{topGainer.change24h.toFixed(2)}%</p>
+                  <p className="text-sm font-mono text-white">{validTopGainer.symbol}</p>
+                  <p className="text-xs text-trade-green">+{validTopGainer.change24h.toFixed(2)}%</p>
                 </div>
-              )}
-              {topLoser && (
+              ) : bestPerformer ? (
+                <div className="flex-1 bg-trade-orange/5 border border-trade-orange/10 rounded-lg p-2">
+                  <p className="text-[10px] text-trade-orange">Best Performer</p>
+                  <p className="text-sm font-mono text-white">{bestPerformer.symbol}</p>
+                  <p className="text-xs text-trade-orange">{bestPerformer.change24h.toFixed(2)}%</p>
+                </div>
+              ) : null}
+              {validTopLoser ? (
                 <div className="flex-1 bg-trade-red/5 border border-trade-red/10 rounded-lg p-2">
                   <p className="text-[10px] text-trade-red">Top Loser</p>
-                  <p className="text-sm font-mono text-white">{topLoser.symbol}</p>
-                  <p className="text-xs text-trade-red">{topLoser.change24h.toFixed(2)}%</p>
+                  <p className="text-sm font-mono text-white">{validTopLoser.symbol}</p>
+                  <p className="text-xs text-trade-red">{validTopLoser.change24h.toFixed(2)}%</p>
                 </div>
-              )}
+              ) : worstPerformer ? (
+                <div className="flex-1 bg-trade-red/5 border border-trade-red/10 rounded-lg p-2">
+                  <p className="text-[10px] text-trade-red">Worst Performer</p>
+                  <p className="text-sm font-mono text-white">{worstPerformer.symbol}</p>
+                  <p className="text-xs text-trade-red">{worstPerformer.change24h.toFixed(2)}%</p>
+                </div>
+              ) : null}
             </div>
           </div>
         )}
