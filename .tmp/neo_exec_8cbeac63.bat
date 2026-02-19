@@ -1,2 +1,0 @@
-cd /d c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621
-if exist backend\bandit_results.json (python -c "import json; data=json.load(open('backend/bandit_results.json')); print(f'Total Issues: {len(data.get(\"results\", []))}'); [print(f'{r[\"issue_severity\"]}: {r[\"issue_text\"]} at {r[\"filename\"]}:{r[\"line_number\"]}') for r in data.get('results', [])[:20]]") else (echo No bandit results file)

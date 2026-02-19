@@ -1,1 +1,0 @@
-call venv\Scripts\activate.bat && pip install opentelemetry-api==1.24.0 opentelemetry-sdk==1.24.0 opentelemetry-instrumentation==0.45b0 opentelemetry-instrumentation-fastapi==0.45b0 opentelemetry-instrumentation-asyncio==0.45b0 opentelemetry-semantic-conventions==0.45b0 opentelemetry-instrumentation-asgi==0.45b0

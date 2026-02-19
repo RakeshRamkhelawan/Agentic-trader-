@@ -1,1 +1,0 @@
-call venv\Scripts\activate.bat && pip install psycopg2-binary pgvector email-validator pydantic-settings passlib[bcrypt] clickhouse-connect aiokafka beautifulsoup4 python-jose[cryptography] opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation opentelemetry-instrumentation-fastapi prometheus-client openai tiktoken sqlparse

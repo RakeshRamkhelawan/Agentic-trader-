@@ -22,4 +22,4 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [types-requests, types-PyYAML]
-        args: [ --ignore-missing-imports ]
+        args: [ --ignore-missing-imports, --no-incremental ]

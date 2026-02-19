@@ -1,1 +1,0 @@
-cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\frontend && npx vitest run src/tests/integration/auth-kyc.integration.test.ts

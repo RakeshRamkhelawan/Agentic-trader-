@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import datetime
 
 from backend.core.config.settings import settings
 from backend.core.telemetry.tracing import setup_tracing
@@ -98,21 +99,77 @@ async def start_services():
     # In a production setup, each agent would be its own service.
     # For now, orchestrator manages them internally.
 
-    # Start any periodic tasks, e.g., Research Agent cycle
-    if "research_v1" in orchestrator.agents:
-        # Trigger the research agent cycle to start the flow
-        await orchestrator.handle_message(
-            AgentMessage(
-                source="orchestrator",
-                target="research_v1",
-                type="TIMER_TICK_1MIN",
-                payload={},
-            )
-        )
+    # Start periodic timer tick for all agents
+    async def timer_loop():
+        """Send TIMER_TICK_1MIN to all agents every minute."""
+        while True:
+            await asyncio.sleep(60)  # Every minute
+            
+            # Get current market data for context
+            from backend.core.cache_layer import get_cache
+            cache = get_cache()
+            market_data = await cache.get("markets:all") or []
+            
+            # Calculate top movers for payload
+            if market_data:
+                sorted_markets = sorted(market_data, key=lambda x: x.get("change_24h", 0), reverse=True)
+                top_gainers = sorted_markets[:3]
+                top_losers = sorted_markets[-3:]
+                
+                payload = {
+                    "top_gainers": [{"symbol": m["symbol"], "change": m["change_24h"]} for m in top_gainers],
+                    "top_losers": [{"symbol": m["symbol"], "change": m["change_24h"]} for m in top_losers],
+                    "market_count": len(market_data),
+                    "timestamp": datetime.now().isoformat(),
+                }
+            else:
+                payload = {}
+            
+            # Send tick to all agents
+            for agent_id in orchestrator.agents.keys():
+                if agent_id != "orchestrator_v1":  # Don't send to self
+                    try:
+                        await orchestrator.handle_message(
+                            AgentMessage(
+                                source="orchestrator",
+                                target=agent_id,
+                                type="TIMER_TICK_1MIN",
+                                payload=payload,
+                            )
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to send timer tick to {agent_id}: {e}")
+            
+            logger.debug(f"TIMER_TICK_1MIN sent to {len(orchestrator.agents) - 1} agents")
+
+    # Start timer loop as background task
+    timer_task = asyncio.create_task(timer_loop())
+    
+    # Send initial tick immediately
+    for agent_id in orchestrator.agents.keys():
+        if agent_id != "orchestrator_v1":
+            try:
+                await orchestrator.handle_message(
+                    AgentMessage(
+                        source="orchestrator",
+                        target=agent_id,
+                        type="TIMER_TICK_1MIN",
+                        payload={},
+                    )
+                )
+            except Exception as e:
+                logger.warning(f"Failed to send initial tick to {agent_id}: {e}")
 
     logger.info("Platform initialized. Keeping services alive...")
-    while True:
-        await asyncio.sleep(60)  # Keep main loop running
+    try:
+        while True:
+            await asyncio.sleep(60)  # Keep main loop running
+    finally:
+        timer_task.cancel()
+        try:
+            await timer_task
+        except asyncio.CancelledError:
+            pass
 
 
 if __name__ == "__main__":

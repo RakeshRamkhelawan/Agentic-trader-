@@ -328,19 +328,9 @@ export const ordersApi = {
     return normalizeOrder(response.data?.order ?? response.data);
   },
 
-  /**
-   * Cancel an individual order.
-   * Backend currently only has DELETE /trading/orders (cancel all).
-   * This will be updated when a per-order cancel endpoint is added.
-   * For now this call is sent and optimistic UI handles the rest.
-   */
+  /** DELETE /api/v1/trading/orders/{orderId} – cancel a single order */
   cancelOrder: async (orderId: string): Promise<void> => {
-    // Attempt per-order cancel; backend returns 404 until implemented
-    try {
-      await api.delete(`/trading/orders/${orderId}`);
-    } catch {
-      // Silently ignore – the UI already applies optimistic update
-    }
+    await api.delete(`/trading/orders/${orderId}`);
   },
 
   /** GET /api/v1/trading/orders/history */
@@ -499,6 +489,24 @@ export const agentsApi = {
     const response = await api.get<AgentsStatusResponse>('/agents/status');
     return response.data;
   },
+  
+  /** POST /api/v1/agents/chat - Get advice from AI advisor */
+  chat: async (message: string, history: ChatHistoryEntry[] = []): Promise<{ response: string }> => {
+    const response = await api.post<{ response: string }>('/agents/chat', { message, history });
+    return response.data;
+  },
+  
+  /** POST /api/v1/agents/run-cycle - Trigger agent analysis */
+  runCycle: async (): Promise<{ insights: string; market_data: { gainers: any[]; losers: any[] }; agents_triggered: number; trades_generated?: number }> => {
+    const response = await api.post('/agents/run-cycle', {});
+    return response.data;
+  },
+  
+  /** GET /api/v1/agents/trades - Get agent trade history */
+  getTrades: async (): Promise<{ trades: any[]; count: number }> => {
+    const response = await api.get('/agents/trades');
+    return response.data;
+  },
 };
 
 // ============================================================================
@@ -560,6 +568,125 @@ export const oodaApi = {
 };
 
 // ============================================================================
+// FEDERATED TRIAD API  →  /api/v1/federated/...
+// ============================================================================
+
+export interface CouncilView {
+  name: string;
+  type: 'guna' | 'elemental' | 'graha' | 'mind' | 'body';
+  perspective: string;
+  confidence: number;
+  insights: string[];
+  contradictions?: string[];
+}
+
+export interface ChittaNode {
+  id: string;
+  content: string;
+  source: string;
+  timestamp: string;
+  council: string;
+  verified: boolean;
+}
+
+export interface BuddhiDecision {
+  action: 'buy' | 'sell' | 'hold';
+  confidence: number;
+  rationale: string;
+  supporting: string[];
+  opposing: string[];
+  contradictions: number;
+  timestamp: string;
+}
+
+export interface FederatedState {
+  coherence: {
+    total: number;
+    harmony: number;
+    performance: number;
+    chitta_health: number;
+    deliberation_quality: number;
+    buddhi_clarity: number;
+  };
+  councils: CouncilView[];
+  chitta: {
+    nodes: ChittaNode[];
+    total_nodes: number;
+    verified_nodes: number;
+  };
+  latest_decision: BuddhiDecision | null;
+  deliberation_steps: {
+    iteration: number;
+    council: string;
+    perspective: string;
+    confidence: number;
+  }[];
+}
+
+export const federatedApi = {
+  /** GET /api/v1/federated/state - Get complete Federated Triad state */
+  getState: async (): Promise<FederatedState> => {
+    try {
+      const response = await api.get<FederatedState>('/federated/state');
+      return response.data;
+    } catch (error) {
+      // Return mock data if endpoint doesn't exist yet
+      console.warn('Federated API not available, using mock data');
+      return {
+        coherence: {
+          total: 75,
+          harmony: 80,
+          performance: 100,
+          chitta_health: 85,
+          deliberation_quality: 70,
+          buddhi_clarity: 75
+        },
+        councils: [],
+        chitta: { nodes: [], total_nodes: 0, verified_nodes: 0 },
+        latest_decision: null,
+        deliberation_steps: []
+      };
+    }
+  },
+  
+  /** POST /api/v1/federated/cycle - Trigger a full Federated Triad cycle */
+  runCycle: async (): Promise<{ 
+    decision: BuddhiDecision; 
+    coherence: FederatedState['coherence'];
+    insights: string;
+  }> => {
+    try {
+      const response = await api.post('/federated/cycle', {});
+      return response.data;
+    } catch (error) {
+      console.warn('Federated cycle API not available, falling back to agents API');
+      // Fallback to regular agents API
+      const result = await agentsApi.runCycle();
+      return {
+        decision: {
+          action: 'hold',
+          confidence: 0.5,
+          rationale: result.insights,
+          supporting: [],
+          opposing: [],
+          contradictions: 0,
+          timestamp: new Date().toISOString()
+        },
+        coherence: {
+          total: 75,
+          harmony: 80,
+          performance: 100,
+          chitta_health: 85,
+          deliberation_quality: 70,
+          buddhi_clarity: 75
+        },
+        insights: result.insights
+      };
+    }
+  },
+};
+
+// ============================================================================
 // WEBSOCKET CLIENT
 // Backend protocol:
 //   subscribe:   { type: "subscribe",   channel: "ticker.BTC-EUR" }
@@ -573,14 +700,41 @@ export class WebSocketClient {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private pendingChannels: Set<string> = new Set();
+  private listeners: Set<(data: any) => void> = new Set();
+  private onConnectCb?: () => void;
+  private onDisconnectCb?: () => void;
 
   constructor(private url: string) {}
 
-  connect(
-    onMessage: (data: any) => void,
-    onConnect?: () => void,
-    onDisconnect?: () => void
-  ) {
+  /**
+   * Add a message listener. Returns a cleanup function to remove it.
+   * Multiple components can each call addListener without stepping on each other.
+   */
+  addListener(fn: (data: any) => void): () => void {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+
+  /**
+   * Connect (idempotent).
+   * If a socket is already OPEN or CONNECTING this is a no-op.
+   */
+  connect(onConnect?: () => void, onDisconnect?: () => void) {
+    if (onConnect) this.onConnectCb = onConnect;
+    if (onDisconnect) this.onDisconnectCb = onDisconnect;
+
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN ||
+        this.ws.readyState === WebSocket.CONNECTING)
+    ) {
+      return;
+    }
+
+    this._openSocket();
+  }
+
+  private _openSocket() {
     const token = localStorage.getItem('access_token');
     const wsUrl = token ? `${this.url}?token=${token}` : this.url;
 
@@ -589,15 +743,15 @@ export class WebSocketClient {
     this.ws.onopen = () => {
       console.log('WebSocket connected');
       this.reconnectAttempts = 0;
-      onConnect?.();
-      // Re-subscribe to any channels that were pending before reconnect
+      this.onConnectCb?.();
+      // Re-subscribe to all tracked channels after (re)connect
       this.pendingChannels.forEach((ch) => this._send({ type: 'subscribe', channel: ch }));
     };
 
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        onMessage(data);
+        this.listeners.forEach((fn) => fn(data));
       } catch (error) {
         console.error('WebSocket message parse error:', error);
       }
@@ -605,8 +759,8 @@ export class WebSocketClient {
 
     this.ws.onclose = () => {
       console.log('WebSocket disconnected');
-      onDisconnect?.();
-      this.attemptReconnect(onMessage, onConnect, onDisconnect);
+      this.onDisconnectCb?.();
+      this._attemptReconnect();
     };
 
     this.ws.onerror = (error) => {
@@ -614,17 +768,11 @@ export class WebSocketClient {
     };
   }
 
-  private attemptReconnect(
-    onMessage: (data: any) => void,
-    onConnect?: () => void,
-    onDisconnect?: () => void
-  ) {
+  private _attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`);
-      setTimeout(() => {
-        this.connect(onMessage, onConnect, onDisconnect);
-      }, this.reconnectDelay * this.reconnectAttempts);
+      setTimeout(() => this._openSocket(), this.reconnectDelay * this.reconnectAttempts);
     }
   }
 

@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 import aiohttp
 
@@ -30,6 +30,17 @@ class MockProvider(LLMProvider):
         self, prompt: str, schema: Optional[Dict] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         return {"mock": "data", "prompt_preview": prompt[:20]}
+
+    async def generate_structured(
+        self,
+        prompt: str,
+        schema: Type[Any],
+        system_prompt: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Generate a Pydantic object based on the schema (mock implementation)."""
+        # Return a mock instance of the schema with default values
+        return schema()
 
 
 class GeminiProvider(LLMProvider):

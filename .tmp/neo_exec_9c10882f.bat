@@ -1,1 +1,0 @@
-cd frontend && npx vitest run src/tests/integration/auth-kyc.integration.test.ts

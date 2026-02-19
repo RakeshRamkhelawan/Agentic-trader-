@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 # Try to import ccxt
 try:
-    import ccxt
-    import ccxt.pro as ccxtpro
+    import ccxt  # type: ignore[import-untyped]
+    import ccxt.pro as ccxtpro  # type: ignore[import-untyped]
 
     CCXT_AVAILABLE = True
 except ImportError:
@@ -134,7 +134,9 @@ class CCXTAdapter(ExecutionInterface):
         if not self._exchange:
             return OrderResult(
                 order_id="mock-order-001",
-                client_order_id=order.client_order_id or "mock-001",
+                client_order_id=str(order.client_order_id)
+                if order.client_order_id
+                else "mock-001",
                 status=OrderStatus.PENDING,
                 error_message="CCXT not available",
             )
@@ -145,8 +147,8 @@ class CCXTAdapter(ExecutionInterface):
                 order.symbol,
                 order.order_type.value.lower(),
                 order.side.value.lower(),
-                order.quantity,
-                order.price if order.price else None,
+                order.qty,
+                order.limit_price if order.limit_price else None,
             )
 
             return OrderResult(
@@ -154,7 +156,7 @@ class CCXTAdapter(ExecutionInterface):
                 client_order_id=result.get("clientOrderId", ""),
                 status=self.STATUS_MAP.get(result["status"], OrderStatus.PENDING),
                 filled_qty=result.get("filled", 0.0),
-                remaining_qty=result.get("remaining", order.quantity),
+                remaining_qty=result.get("remaining", order.qty),
                 avg_price=result.get("average"),
                 raw_response=result,
             )
@@ -162,7 +164,7 @@ class CCXTAdapter(ExecutionInterface):
             logger.error(f"Order submission failed: {e}")
             return OrderResult(
                 order_id="",
-                client_order_id=order.client_order_id or "",
+                client_order_id=str(order.client_order_id) if order.client_order_id else "",
                 status=OrderStatus.REJECTED,
                 error_message=str(e),
             )

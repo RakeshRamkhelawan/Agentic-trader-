@@ -1,1 +1,0 @@
-type c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\frontend\.env.local && type c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\frontend\src\lib\api-client.ts && type c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\frontend\src\lib\api\auth-api.ts

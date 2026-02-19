@@ -97,7 +97,7 @@ class RequestCache:
         if params:
             key_data += f":{sorted(params.items())}"
 
-        return hashlib.md5(key_data.encode()).hexdigest()
+        return hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()
 
     def get(
         self, method: str, url: str, params: Optional[Dict] = None

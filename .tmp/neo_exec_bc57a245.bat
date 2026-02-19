@@ -1,1 +1,0 @@
-dir "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621" /b /s | findstr /i "SAMKHYA_MASTER_KANBAN_TDD.md FASE_01_CONSCIOUSNESS_OODA_NAVAGRAHA_BRIDGE.md HANDOVER_CONTEXT.md EPIC_01_CODE_REVIEW.md"

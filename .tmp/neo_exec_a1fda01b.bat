@@ -1,1 +1,0 @@
-cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621 && if exist pyproject.toml (type pyproject.toml) else if exist requirements.txt (type requirements.txt) else echo No dependency file found

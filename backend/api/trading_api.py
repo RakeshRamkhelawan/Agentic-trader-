@@ -4,7 +4,7 @@ Trading API - Endpoints for market data, portfolio, and history.
 
 from typing import Any, Dict
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps import get_current_tenant_id, get_current_user, get_db
@@ -115,6 +115,22 @@ async def get_active_orders(
     Get all active orders (OPEN, PENDING, PARTIALLY_FILLED).
     """
     return await service.get_active_orders(db, tenant_id)
+
+
+@router.delete("/orders/{order_id}")
+async def cancel_order(
+    order_id: str,
+    tenant_id: str = Depends(get_current_tenant_id),
+    service: TradingService = Depends(get_service),
+    db: AsyncSession = Depends(get_db),
+):
+    """Cancel a specific open order by ID."""
+    result = await service.cancel_order(db, tenant_id, order_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"Order {order_id} not found")
+    if result.get("status") == "error":
+        raise HTTPException(status_code=409, detail=result["message"])
+    return result
 
 
 @router.delete("/orders")

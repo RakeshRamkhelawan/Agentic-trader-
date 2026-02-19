@@ -12,9 +12,9 @@ from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-import psutil
+import psutil  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
@@ -325,7 +325,7 @@ class MetricsAggregator:
     def detect_trend(self, metric_type: str, lookback_samples: int = 10) -> str:
         """Detect trend in metrics."""
         with self._lock:
-            history = getattr(self, f"{metric_type}_history", deque())
+            history: deque = getattr(self, f"{metric_type}_history", deque())
 
             if len(history) < 2:
                 return "stable"
@@ -465,7 +465,7 @@ class MetricsMonitor:
 
     def check_for_anomalies(self, metrics: AggregatedMetrics) -> List[str]:
         """Check for anomalies."""
-        alerts = []
+        alerts: List[str] = []
 
         if not self.baseline:
             return alerts
@@ -514,7 +514,7 @@ class MetricsMonitor:
 class Phase15MetricsIntegration:
     """High-level integration helper for SystemIdentity."""
 
-    def __init__(self, collector: HardwareMetricsCollector = None):
+    def __init__(self, collector: Optional[HardwareMetricsCollector] = None):
         self.collector = collector or RealHardwareMetricsCollector()
         self.aggregator = MetricsAggregator()
         self.coherence_calc = AdaptiveCoherenceCalculator()

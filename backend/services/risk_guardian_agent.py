@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # Basic Pydantic models for validation
 from pydantic import ValidationError
@@ -16,7 +16,10 @@ class RiskGuardianAgent:
     """
 
     def __init__(
-        self, settings_service=None, memory_agent: MemoryAgent = None, message_bus=None
+        self,
+        settings_service=None,
+        memory_agent: Optional[MemoryAgent] = None,
+        message_bus=None,
     ):
         self.logger = logging.getLogger("RiskGuardian")
         self.settings_service = settings_service
@@ -131,9 +134,9 @@ class RiskGuardianAgent:
         """Handle validation requests from Orchestrator."""
         if message.type == "VALIDATE_ORDER":
             # Extract context
-            tenant_id = message.payload.get("tenant_id")
-            order = message.payload.get("order")
-            prefs = message.payload.get("preferences")
+            tenant_id = message.payload.get("tenant_id") or ""
+            order = message.payload.get("order") or {}
+            prefs = message.payload.get("preferences") or {}
 
             result = await self.validate_order(tenant_id, order, prefs)
 

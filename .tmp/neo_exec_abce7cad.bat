@@ -1,2 +1,0 @@
-if not exist "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\cache" mkdir "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\cache"
-echo Cache directory structure created

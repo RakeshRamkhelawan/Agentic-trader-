@@ -1,0 +1,23 @@
+{
+  "name": "BTC-EUR_federated",
+  "timestamp": "20260219_145017",
+  "config": {
+    "start_date": "2025-12-21",
+    "end_date": "None",
+    "symbols": [
+      "BTC-EUR"
+    ],
+    "initial_capital": 10000.0
+  },
+  "metrics": {
+    "total_return": 55.94965467515067,
+    "total_return_pct": 0.5594965467515067,
+    "sharpe_ratio": 0.3702629641321903,
+    "max_drawdown": 58.311944203847816,
+    "max_drawdown_pct": 0.5769394189998556,
+    "num_trades": 1,
+    "win_rate": 1.0,
+    "profit_factor": Infinity,
+    "avg_trade": 55.94965467514987
+  }
+}

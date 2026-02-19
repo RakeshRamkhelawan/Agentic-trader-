@@ -1,1 +1,0 @@
-powershell -Command "Test-NetConnection -ComputerName localhost -Port 8003"

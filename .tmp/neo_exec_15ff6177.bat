@@ -1,1 +1,0 @@
-cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621 && python -m pytest backend\tests\unit\core\navagraha\test_ephemeris.py::TestEphemerisCalculator::test_rahu_ketu_180_degree_opposition -v

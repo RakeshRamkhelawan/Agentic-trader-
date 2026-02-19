@@ -1,2 +1,0 @@
-if not exist "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\infrastructure\grafana\dashboards" mkdir "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\infrastructure\grafana\dashboards"
-echo Grafana dashboards directory created

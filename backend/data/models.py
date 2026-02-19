@@ -6,6 +6,8 @@ for Alembic migrations and Repository access.
 """
 
 from backend.core.database import Base
+# Assets
+from backend.assets.models import Asset
 # Governance
 from backend.governance.decision_audit import DecisionAuditLog
 # Learning & Knowledge
@@ -34,4 +36,5 @@ __all__ = [
     "TradingKnowledge",
     "DecisionAuditLog",
     "RuntimeConfig",
+    "Asset",
 ]

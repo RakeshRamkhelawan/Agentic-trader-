@@ -1,0 +1,2 @@
+entry_time,exit_time,symbol,entry_price,exit_price,size,action,pnl,pnl_pct,exit_reason
+2025-12-23 02:00:00,2026-01-19 20:00:00,BTC-EUR,88206.8,93141.94,0.011336994426733539,buy,55.94965467514987,0.05594965467514988,end_of_backtest

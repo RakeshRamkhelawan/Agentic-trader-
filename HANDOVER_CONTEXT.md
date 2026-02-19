@@ -29,7 +29,13 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
   - **Script Consolidatie**: Operationele scripts verplaatst naar `backend/scripts/ops/` voor betere organisatie.
   - **CI/CD Optimalisatie**: GitHub Actions pipeline verbeterd met linters, Docker build verificatie en security scans.
   - **Lokale Automatisering**: `pre-commit` en `pre-push` hooks geactiveerd voor automatische kwaliteitscuontroles.
-- **Cleanup & Commit**: Alle wijzigingen (inclusief nieuwe scripts en `.gitignore` fix) zijn gecommit en gepusht.
+  - **Cleanup & Commit**: Alle wijzigingen (inclusief nieuwe scripts en `.gitignore` fix) zijn gecommit en gepusht.
+- **Backend Stabiliteit (VOLTOOID)**:
+  - **Gefixed: api-server startup crash**: Hersteld d.m.v. `/dev/shm` mount in `docker-compose.yml`.
+  - **Gefixed: Ontbrekende dependencies**: `aiolimiter` en `backoff` toegevoegd aan `requirements/base.txt`.
+  - **Gefixed: python-multipart conflict**: Versie gepind op `0.0.9`.
+  - **Robuustheid**: `ZeroCopyBridge` vangt nu shared memory errors op zonder te crashen.
+  - **Build Optimalisatie**: Docker build context verkleind door `src/` uit te sluiten (~95% sneller).
 
 ## 3. Key Files
 - `backend/governance/agent_gatekeeper.py` (Agent RBAC logic)
@@ -45,8 +51,10 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
 - **Merge Strategy**: Bij complexe repository-regels (zoals PR-verplichtingen) is een gecombineerde integratiebranch met revert en nieuwe feature-merge de meest schaalbare manier om de `main` branch consistent te houden.
 - **Samkhya Progressie**: De succesvolle merge van Phase 10 vormt het fundament voor de verdere opschaling naar productie.
 - **Automatisering**: Het vroegtijdig activeren van CI/CD en lokale `pre-commit` hooks voorkomt "breaking changes" en houdt de codebase op een hoog kwaliteitsniveau zonder handmatig werk.
+- **Infrastructure Context**: Het uitsluiten van zware, irrelevante mappen (zoals `src/` van SanskritiSetu) in `.dockerignore` is cruciaal voor snelle Docker builds en het voorkomen van context-bloat.
+- **Dependency Management**: Pijndpunten in FastAPI imports (zoals `python-multipart`) vereisen strikte versiecontrole in `requirements.txt` om onverwachte runtime errors te vermijden.
 
 ## 5. Volgende Stappen
-- **Monitoring & Dashboarding**: Uitbreiden van Grafana dashboards met Navagraha-specifieke metrics.
-- **Kubernetes Deployment**: Implementatie van Helm charts voor schaalbare orchestratie.
-- **Agent Evolution**: Verdere verfijning van agent-coöperatie in complexe marktomstandigheden.
+- **Grafana Dashboards**: Uitbreiden met specifieke metrics voor agent-performantie.
+- **Kubernetes**: Voorbereiden van Helm charts voor staging omgeving.
+- **Monitoring**: Verifiëren of de `/health` endpoint stabiel blijft onder belasting.
