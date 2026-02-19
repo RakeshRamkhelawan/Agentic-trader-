@@ -62,12 +62,12 @@ async def get_agents_status(
 ) -> Dict[str, Any]:
     """
     Get the status of all agents managed by the Cognitive Orchestrator.
-    
+
     COHERENCE is a composite metric measuring multi-agent system effectiveness:
     - Harmony: How well agents collaborate (internal alignment)
     - Performance: System results vs market benchmark (external validation)
     - Total: Weighted combination showing overall effectiveness
-    
+
     High coherence (>80%): Agents synchronized and outperforming
     Medium coherence (50-80%): Some friction but functional
     Low coherence (<50%): Conflicts or poor performance
@@ -80,10 +80,14 @@ async def get_agents_status(
     for agent_id, agent in orchestrator.agents.items():
         # Basic Info
         is_orchestrator = agent_id == "orchestrator_v1"
-        
+
         status = {
             "id": agent_id,
-            "name": "Orchestrator" if is_orchestrator else agent.__class__.__name__.replace("Agent", ""),
+            "name": (
+                "Orchestrator"
+                if is_orchestrator
+                else agent.__class__.__name__.replace("Agent", "")
+            ),
             "type": agent.__class__.__name__,
             "status": "running" if getattr(agent, "is_active", True) else "paused",
             "is_active": True,
@@ -95,19 +99,24 @@ async def get_agents_status(
             total_prana += agent.prana
         else:
             import hashlib
-            prana = 50.0 + (hashlib.md5(agent_id.encode()).digest()[0] % 50)
+
+            prana = 50.0 + (
+                hashlib.md5(agent_id.encode(), usedforsecurity=False).digest()[0] % 50
+            )
             status["prana"] = round(prana, 1)
             total_prana += prana
 
         # Try to get trades count
         trades = 0
         if hasattr(agent, "trades"):
-            trades = len(agent.trades) if isinstance(agent.trades, list) else agent.trades
+            trades = (
+                len(agent.trades) if isinstance(agent.trades, list) else agent.trades
+            )
         elif hasattr(agent, "trade_count"):
             trades = agent.trade_count
         status["trades"] = trades
         total_trades += trades
-        
+
         # Performance metric
         if hasattr(agent, "performance"):
             status["performance"] = agent.performance
@@ -125,13 +134,13 @@ async def get_agents_status(
     total_worker_agents = len(worker_agents)
     active_worker_agents = len([a for a in worker_agents if a["status"] == "running"])
     worker_prana = sum(a.get("prana", 0) for a in worker_agents)
-    
+
     if total_worker_agents == 0:
         coherence_metrics = {
             "harmony": 0.0,
             "performance": 0.0,
             "total_coherence": 0.0,
-            "explanation": "No worker agents available"
+            "explanation": "No worker agents available",
         }
     else:
         # 1. HARMONY: Internal agent alignment (0-100%)
@@ -139,19 +148,19 @@ async def get_agents_status(
         activity_ratio = active_worker_agents / total_worker_agents
         avg_prana = worker_prana / total_worker_agents
         energy_ratio = avg_prana / 100.0
-        
+
         harmony = (activity_ratio * 0.6 + energy_ratio * 0.4) * 100
-        
+
         # 2. PERFORMANCE: System results vs market (can exceed 100%)
         # TODO: Replace with actual portfolio returns vs benchmark
         if total_trades > 0:
             performance = 100.0 + (avg_prana - 50) * 0.5
         else:
             performance = 100.0
-            
+
         # 3. TOTAL COHERENCE: Weighted combination
         total_coherence = (harmony * 0.4) + (performance * 0.6)
-        
+
         coherence_metrics = {
             "harmony": round(harmony, 1),
             "performance": round(performance, 1),
@@ -159,10 +168,10 @@ async def get_agents_status(
             "factors": {
                 "active_agents": f"{active_worker_agents}/{total_worker_agents}",
                 "avg_prana": round(avg_prana, 1),
-                "total_trades": total_trades
-            }
+                "total_trades": total_trades,
+            },
         }
-    
+
     return {
         "agents": agents_status,
         "count": len(agents_status),
@@ -171,7 +180,7 @@ async def get_agents_status(
         "orchestrator_state": {
             "guna_balance": orchestrator.current_guna_balance.to_dict(),
             "coherence": coherence_metrics,
-            "note": "Coherence = 40% internal harmony + 60% performance vs market"
+            "note": "Coherence = 40% internal harmony + 60% performance vs market",
         },
     }
 
@@ -187,29 +196,35 @@ async def run_agent_cycle(
     """
     from backend.core.cache_layer import get_cache
     from backend.schemas.agent_messages import AgentMessage
-    
+
     cache = get_cache()
     market_data = await cache.get("markets:all") or []
-    
+
     if not market_data:
         raise HTTPException(status_code=503, detail="No market data available")
-    
+
     # Sort by change for analysis
-    sorted_markets = sorted(market_data, key=lambda x: x.get("change_24h", 0), reverse=True)
+    sorted_markets = sorted(
+        market_data, key=lambda x: x.get("change_24h", 0), reverse=True
+    )
     top_gainers = sorted_markets[:3]
     top_losers = sorted_markets[-3:]
-    
+
     # Generate insights using LLM
     llm = _get_llm_service()
-    
+
     market_summary = "Top Gainers:\n"
     for m in top_gainers:
-        market_summary += f"- {m['symbol']}: ${m['price']:.2f} (+{m['change_24h']:.2f}%)\n"
-    
+        market_summary += (
+            f"- {m['symbol']}: ${m['price']:.2f} (+{m['change_24h']:.2f}%)\n"
+        )
+
     market_summary += "\nTop Losers:\n"
     for m in top_losers:
-        market_summary += f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:.2f}%)\n"
-    
+        market_summary += (
+            f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:.2f}%)\n"
+        )
+
     prompt = f"""Analyze this market data and provide trading insights:
 
 {market_summary}
@@ -225,9 +240,9 @@ Keep it concise and specific."""
     try:
         response = await llm.provider.generate_text(
             prompt=prompt,
-            system_prompt="You are an expert crypto trading analyst. Provide concise, actionable insights."
+            system_prompt="You are an expert crypto trading analyst. Provide concise, actionable insights.",
         )
-        
+
         # Trigger agents in background (fire and forget)
         agents_triggered = 0
         for agent_id in orchestrator.agents.keys():
@@ -240,15 +255,21 @@ Keep it concise and specific."""
                         target=agent_id,
                         type="TIMER_TICK_1MIN",
                         payload={
-                            "top_gainers": [{"symbol": m["symbol"], "change": m["change_24h"]} for m in top_gainers],
-                            "top_losers": [{"symbol": m["symbol"], "change": m["change_24h"]} for m in top_losers],
+                            "top_gainers": [
+                                {"symbol": m["symbol"], "change": m["change_24h"]}
+                                for m in top_gainers
+                            ],
+                            "top_losers": [
+                                {"symbol": m["symbol"], "change": m["change_24h"]}
+                                for m in top_losers
+                            ],
                         },
                     )
                 )
                 agents_triggered += 1
             except Exception as e:
                 logger.warning(f"Failed to trigger agent {agent_id}: {e}")
-        
+
         # Generate a simulated trade based on top gainer
         simulated_trades = []
         if top_gainers:
@@ -265,17 +286,33 @@ Keep it concise and specific."""
                 "reason": f"Momentum play on top gainer (+{best_gainer['change_24h']:.2f}%)",
             }
             simulated_trades.append(trade)
-            
+
             # Store in cache for activity log
             existing_trades = await cache.get("agent:trades") or []
             existing_trades.insert(0, trade)
-            await cache.set("agent:trades", existing_trades[:50], ttl=3600)  # Keep last 50
-        
+            await cache.set(
+                "agent:trades", existing_trades[:50], ttl=3600
+            )  # Keep last 50
+
         return {
             "insights": response,
             "market_data": {
-                "gainers": [{"symbol": m["symbol"], "price": m["price"], "change": m["change_24h"]} for m in top_gainers],
-                "losers": [{"symbol": m["symbol"], "price": m["price"], "change": m["change_24h"]} for m in top_losers],
+                "gainers": [
+                    {
+                        "symbol": m["symbol"],
+                        "price": m["price"],
+                        "change": m["change_24h"],
+                    }
+                    for m in top_gainers
+                ],
+                "losers": [
+                    {
+                        "symbol": m["symbol"],
+                        "price": m["price"],
+                        "change": m["change_24h"],
+                    }
+                    for m in top_losers
+                ],
             },
             "agents_triggered": agents_triggered,
             "trades_generated": len(simulated_trades),
@@ -291,6 +328,7 @@ async def get_agent_trades(limit: int = 10) -> Dict[str, Any]:
     Get recent agent trades from cache.
     """
     from backend.core.cache_layer import get_cache
+
     cache = get_cache()
     trades = await cache.get("agent:trades") or []
     return {
@@ -308,27 +346,34 @@ async def chat_with_agent(body: ChatRequest) -> ChatResponse:
     Includes live market data context for accurate analysis.
     """
     llm = _get_llm_service()
-    
+
     # Fetch live market data for context
     from backend.core.cache_layer import get_cache
+
     cache = get_cache()
     market_data = await cache.get("markets:all") or []
-    
+
     # Build market context summary
     market_context = ""
     if market_data:
         # Sort by change to get gainers/losers
-        sorted_markets = sorted(market_data, key=lambda x: x.get("change_24h", 0), reverse=True)
+        sorted_markets = sorted(
+            market_data, key=lambda x: x.get("change_24h", 0), reverse=True
+        )
         top_gainers = sorted_markets[:3]
         top_losers = sorted_markets[-3:]
-        
+
         market_context = "\n\nLIVE MARKET DATA:\n"
         market_context += "Top Gainers:\n"
         for m in top_gainers:
-            market_context += f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:+.2f}%)\n"
+            market_context += (
+                f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:+.2f}%)\n"
+            )
         market_context += "\nTop Losers:\n"
         for m in top_losers:
-            market_context += f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:+.2f}%)\n"
+            market_context += (
+                f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:+.2f}%)\n"
+            )
         market_context += f"\nTotal assets tracked: {len(market_data)}\n"
 
     system_prompt = (
