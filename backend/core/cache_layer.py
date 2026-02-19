@@ -6,7 +6,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
-import redis.asyncio as redis
+import redis.asyncio as redis  # type: ignore[import-untyped]
 
 from backend.core.config.settings import settings
 

@@ -1,1 +1,0 @@
-type "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\orchestration\navagraha_engine.py" 2>nul | findstr /N "class\|def" | more

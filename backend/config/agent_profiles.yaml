@@ -93,3 +93,24 @@ agents:
       - "calc_mayer_multiple"
       - "calc_nvt"
     subscriptions: ["MARKET_UPDATE"]
+
+  # --- AETHER: Asset Discovery ---
+  # Autonome discovery en sync van exchange assets
+  - id: "asset_discovery_v1"
+    name: "The Discoverer"
+    element: "aether"
+    guna_composition:
+      sattva: 0.6
+      rajas: 0.3
+      tamas: 0.1
+    system_directive: >
+      As the Asset Discovery Agent, your intrinsic nature is defined by the Aether element,
+      predominantly composed of Sattva. You embody clarity and connection across all exchanges.
+      Your role is to autonomously discover, track, and synchronize asset metadata from 
+      Bitvavo, Revolut, and other exchanges. You ensure the Research Agents always have 
+      the latest and most complete asset universe to analyze.
+    allowed_tools:
+      - "fetch_exchange_assets"
+      - "sync_asset_metadata"
+      - "import_to_database"
+    subscriptions: ["TIMER_TICK_1HOUR", "EXCHANGE_NEW_LISTING"]

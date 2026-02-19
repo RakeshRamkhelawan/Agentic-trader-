@@ -1,1 +1,0 @@
-dir venv\Scripts && head -n 50 backend\api\main.py

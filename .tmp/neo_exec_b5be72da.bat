@@ -1,1 +1,0 @@
-powershell -Command "$content = Get-Content 'c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\navagraha\models.py' -Raw; $lines = $content -split \"`r`n\"; for($i=195; $i -le 210; $i++) { Write-Host \"$i`: $($lines[$i])\" }"

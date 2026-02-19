@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpRight, ArrowDownRight, Wallet, Loader2 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, Loader2, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
 import { ordersApi } from '@/lib/api';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
 const orderTypes = ['Market', 'Limit', 'Stop'];
@@ -181,27 +182,38 @@ export function OrderPanel() {
         </div>
 
         {/* Submit Button */}
-        <Button
-          onClick={handleSubmit}
-          disabled={!amount || parseFloat(amount) <= 0 || isSubmitting}
-          className={cn(
-            'w-full py-6 font-semibold transition-all duration-200',
-            side === 'buy'
-              ? 'bg-trade-green hover:bg-trade-green/90 text-white shadow-glow-green'
-              : 'bg-trade-red hover:bg-trade-red/90 text-white shadow-glow-red'
-          )}
-        >
-          {isSubmitting ? (
-            <span className='flex items-center gap-2'>
-              <Loader2 className='w-4 h-4 animate-spin' />
-              Processing...
-            </span>
-          ) : (
-            <>
-              {side === 'buy' ? 'Buy' : 'Sell'} {selectedSymbol.split('/')[0]}
-            </>
-          )}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleSubmit}
+                disabled={!amount || parseFloat(amount) <= 0 || isSubmitting}
+                className={cn(
+                  'w-full py-6 font-semibold transition-all duration-200',
+                  side === 'buy'
+                    ? 'bg-trade-green hover:bg-trade-green/90 text-white shadow-glow-green disabled:opacity-50'
+                    : 'bg-trade-red hover:bg-trade-red/90 text-white shadow-glow-red disabled:opacity-50'
+                )}
+              >
+                {isSubmitting ? (
+                  <span className='flex items-center gap-2'>
+                    <Loader2 className='w-4 h-4 animate-spin' />
+                    Processing...
+                  </span>
+                ) : (
+                  <>
+                    {side === 'buy' ? 'Buy' : 'Sell'} {selectedSymbol.split('/')[0]}
+                  </>
+                )}
+              </Button>
+            </TooltipTrigger>
+            {(!amount || parseFloat(amount) <= 0) && (
+              <TooltipContent side="bottom" className="bg-[#1A1A1A] border-[#333333] text-white">
+                <p>Enter an amount to place an order</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
 
         {/* Available Balance */}
         <div className='flex items-center justify-center gap-2 text-sm text-muted-foreground'>

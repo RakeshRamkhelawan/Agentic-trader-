@@ -37,10 +37,10 @@ This document provides essential information for AI coding agents working on the
 | Observability | OpenTelemetry 1.24+ | Distributed tracing |
 | Metrics | Prometheus Client | Performance monitoring |
 
-### Frontend (Next.js 15)
+### Frontend (Vite + React 19)
 | Component | Technology |
 |-----------|------------|
-| Framework | Next.js 15.1.6 + React 19 |
+| Framework | Vite 6.0 + React 19 |
 | Styling | Tailwind CSS 4.0 |
 | State Management | Zustand + TanStack Query |
 | UI Components | Radix UI |

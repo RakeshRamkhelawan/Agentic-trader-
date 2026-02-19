@@ -1,1 +1,0 @@
-powershell -Command "(Get-Content 'c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\navagraha\ephemeris.py') -replace 'speed = -speed', '' | Set-Content 'c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\navagraha\ephemeris.py'"

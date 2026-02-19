@@ -44,6 +44,8 @@ class ReflexExecutor:
             self.bridge = ZeroCopyBridge(
                 create=False, shm_name=self.shm_name, dtype_name="intent"
             )
+            if self.bridge.shm is None:
+                self.bridge = None
             logger.info(f"Intent SHM connected: {self.shm_name}")
         except Exception as e:
             logger.error(f"Failed to connect to Intent SHM: {e}")

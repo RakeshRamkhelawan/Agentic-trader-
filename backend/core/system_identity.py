@@ -52,10 +52,10 @@ class SystemIdentity:
         )
 
         # 36 Tattva configuration (consciousness architecture)
-        self.tattva_config = tattva_config or TattvaConfig.default_36_tattvas()
+        self.tattva_config = tattva_config or TattvaConfig.default_36_tattvas()  # type: ignore[attr-defined]
 
         # System state monitoring
-        self.system_state = {
+        self.system_state: Dict[str, Any] = {
             "coherence": 1.0,  # Overall system coherence [0, 1]
             "confidence": 0.5,  # System confidence [0, 1]
             "learning_rate": 0.1,  # Adaptation speed
@@ -72,7 +72,7 @@ class SystemIdentity:
         self.action_space = [0, 1, 2]  # 0=hold, 1=buy, 2=sell
 
         # Performance tracking
-        self.performance_history = {
+        self.performance_history: Dict[str, Any] = {
             "outcomes": [],
             "confidences": [],
             "actions": [],
@@ -117,7 +117,10 @@ class SystemIdentity:
             Decision result with perception, action, confidence, Tattva metrics
         """
         cycle_start = int(time.time_ns())
-        tattva_traversal = {"layers_traversed": [], "coherence_per_layer": {}}
+        tattva_traversal: Dict[str, Any] = {
+            "layers_traversed": [],
+            "coherence_per_layer": {},
+        }
 
         try:
             # ========== ASCEND: Layers 1-5 (Shuddha Tattvas) ==========

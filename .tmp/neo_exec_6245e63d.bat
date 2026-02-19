@@ -1,1 +1,0 @@
-head -n 2000 c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\frontend\src\lib\api\auth-api.ts

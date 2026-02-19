@@ -86,7 +86,7 @@ class VibrationalAnalyzer:
 
         # Find dominant frequency (skip DC at index 0)
         if len(magnitudes) > 1:
-            dominant_idx = np.argmax(magnitudes[1:]) + 1
+            dominant_idx = int(np.argmax(magnitudes[1:])) + 1
         else:
             dominant_idx = 0
 
@@ -100,7 +100,7 @@ class VibrationalAnalyzer:
             if fundamental_freq > 0:
                 harmonic_freq = fundamental_freq * n
                 # Find closest frequency bin
-                idx = np.argmin(np.abs(frequencies - harmonic_freq))
+                idx = int(np.argmin(np.abs(frequencies - harmonic_freq)))
             else:
                 idx = min(n, len(magnitudes) - 1)
 

@@ -1,1 +1,0 @@
-curl -s http://127.0.0.1:8004/health || echo "Backend 8004 not yet ready"

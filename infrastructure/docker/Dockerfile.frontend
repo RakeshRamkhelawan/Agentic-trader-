@@ -1,0 +1,43 @@
+# =============================================================================
+# AGENTIC TRADER - FRONTEND DEVELOPMENT DOCKERFILE
+# Vite + React 19 + Hot Reload
+# =============================================================================
+
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies for native modules
+RUN apk add --no-cache \
+    libc6-compat \
+    curl
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies (use npm ci for deterministic installs)
+RUN npm ci --include=dev
+
+# Copy tsconfig
+COPY tsconfig*.json ./
+COPY vite.config.ts ./
+COPY tailwind.config.js ./
+COPY postcss.config.js ./
+COPY index.html ./
+
+# Create necessary directories
+RUN mkdir -p src public
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV VITE_API_URL=http://api-server:8000
+ENV VITE_WS_URL=ws://api-server:8000/ws
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+
+# Expose port
+EXPOSE 5173
+
+# Start development server
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

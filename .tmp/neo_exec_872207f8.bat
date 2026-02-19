@@ -1,1 +1,0 @@
-call venv\Scripts\activate.bat && set PYTHONPATH=. && set PYTHONIOENCODING=utf-8 && uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 > startup.log 2>&1

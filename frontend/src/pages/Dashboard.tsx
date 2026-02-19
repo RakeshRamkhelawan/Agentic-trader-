@@ -9,7 +9,9 @@ import { TradingChart } from '@/components/dashboard/TradingChart';
 import { OrderPanel } from '@/components/dashboard/OrderPanel';
 import { ActiveOrders } from '@/components/dashboard/ActiveOrders';
 import { AIAgentStatus } from '@/components/dashboard/AIAgentStatus';
+import { AIAdvisor } from '@/components/dashboard/AIAdvisor';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { TopMovers } from '@/components/dashboard/TopMovers';
 
 function StatCard({
   title,
@@ -18,6 +20,8 @@ function StatCard({
   changeType,
   icon: Icon,
   delay,
+  isEmpty = false,
+  emptyHint,
 }:  {
   title: string;
   value: string;
@@ -25,24 +29,32 @@ function StatCard({
   changeType: 'positive' | 'negative' | 'neutral';
   icon: React.ElementType;
   delay: number;
+  isEmpty?: boolean;
+  emptyHint?: string;
 }) {
   return (
     <Card
       className={cn(
         'bg-[#111111] border-[#262626] hover:border-[#333333] transition-all duration-300',
         'hover:shadow-elevated group',
-        'animate-fade-in opacity-0'
+        'animate-fade-in opacity-0',
+        isEmpty && 'border-dashed border-[#333333]'
       )}
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
     >
       <CardHeader className='flex flex-row items-center justify-between pb-2'>
-        <CardTitle className='text-sm font-medium text-muted-foreground'>{title}</CardTitle>
-        <div className='w-8 h-8 rounded-lg bg-[#1A1A1A] flex items-center justify-center group-hover:bg-[#262626] transition-colors'>
-          <Icon className='w-4 h-4 text-muted-foreground' />
+        <CardTitle className='text-sm font-medium text-[#888888]'>{title}</CardTitle>
+        <div className={cn(
+          'w-8 h-8 rounded-lg flex items-center justify-center transition-colors',
+          isEmpty ? 'bg-[#0A0A0A]' : 'bg-[#1A1A1A] group-hover:bg-[#262626]'
+        )}>
+          <Icon className={cn('w-4 h-4', isEmpty ? 'text-[#444444]' : 'text-[#888888]')} />
         </div>
       </CardHeader>
       <CardContent>
-        <div className='text-2xl font-bold text-white font-mono'>{value}</div>
+        <div className={cn('text-2xl font-bold font-mono', isEmpty ? 'text-[#444444]' : 'text-white')}>
+          {value}
+        </div>
         <div className='flex items-center gap-1 mt-1'>
           {changeType === 'positive' ? (
             <TrendingUp className='w-3 h-3 text-trade-green' />
@@ -54,12 +66,15 @@ function StatCard({
               'text-xs font-medium',
               changeType === 'positive' && 'text-trade-green',
               changeType === 'negative' && 'text-trade-red',
-              changeType === 'neutral' && 'text-muted-foreground'
+              changeType === 'neutral' && (isEmpty ? 'text-[#555555]' : 'text-[#888888]')
             )}
           >
             {change}
           </span>
         </div>
+        {isEmpty && emptyHint && (
+          <p className='text-[10px] text-[#555555] mt-2 italic'>{emptyHint}</p>
+        )}
       </CardContent>
     </Card>
   );
@@ -87,6 +102,20 @@ export function Dashboard() {
     fetchAssets();
     fetchAgentsStatus();
   }, [fetchPortfolio, fetchOrders, fetchAssets, fetchAgentsStatus]);
+
+  // Auto-refresh market prices every 30 seconds
+  useEffect(() => {
+    const id = setInterval(() => fetchAssets(), 30_000);
+    return () => clearInterval(id);
+  }, [fetchAssets]);
+  
+  // Top Movers refresh every 60 seconds (1 minute)
+  useEffect(() => {
+    const id = setInterval(() => {
+      fetchAssets(); // This updates topGainer/topLoser
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [fetchAssets]);
 
   const activeOrderCount = orders.filter((o) => o.status === 'open' || o.status === 'partial').length;
   const runningAgents = agentsStatus.filter((a) => a.status === 'running').length;
@@ -125,23 +154,27 @@ export function Dashboard() {
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
         <StatCard
           title='Portfolio Value'
-          value={`$${portfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={portfolioValue > 0 ? `$${portfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'}
           change={
             portfolioPnl !== 0
               ? `${portfolioPnl >= 0 ? '+' : ''}$${Math.abs(portfolioPnl).toLocaleString('en-US', { minimumFractionDigits: 2 })} (${portfolioPnlPercent.toFixed(2)}%)`
-              : '—'
+              : 'No trades yet'
           }
           changeType={portfolioPnl >= 0 ? 'positive' : 'negative'}
           icon={DollarSign}
           delay={100}
+          isEmpty={portfolioValue === 0}
+          emptyHint="Fund your account to start trading"
         />
         <StatCard
           title='24h Profit / Loss'
-          value={dailyPnlChange}
-          change={dailyPnl !== 0 ? `${dailyPnlType === 'positive' ? '+' : ''}${(dailyPnl / Math.max(portfolioValue - dailyPnl, 1) * 100).toFixed(2)}%` : '—'}
+          value={dailyPnl !== 0 ? dailyPnlChange : '$0.00'}
+          change={dailyPnl !== 0 ? `${dailyPnlType === 'positive' ? '+' : ''}${(dailyPnl / Math.max(portfolioValue - dailyPnl, 1) * 100).toFixed(2)}%` : 'No trades today'}
           changeType={dailyPnlType}
           icon={TrendingUp}
           delay={150}
+          isEmpty={dailyPnl === 0}
+          emptyHint="Place your first trade to see P&L"
         />
         <StatCard
           title='Active Orders'
@@ -150,11 +183,13 @@ export function Dashboard() {
           changeType='neutral'
           icon={Activity}
           delay={200}
+          isEmpty={activeOrderCount === 0}
+          emptyHint="Use the order panel to place trades"
         />
         <StatCard
           title='AI Agent Status'
           value={runningAgents > 0 ? 'Active' : agentsStatus.length > 0 ? 'Paused' : '—'}
-          change={`${runningAgents} agent${runningAgents !== 1 ? 's' : ''} running${agentsCoherence > 0 ? ` · ${(agentsCoherence * 100).toFixed(0)}% coherence` : ''}`}
+          change={`${runningAgents} agent${runningAgents !== 1 ? 's' : ''} running${agentsCoherence > 0 ? ` · ${(Math.min(agentsCoherence, 1) * 100).toFixed(0)}% coherence` : ''}`}
           changeType={runningAgents > 0 ? 'positive' : 'neutral'}
           icon={Bot}
           delay={250}
@@ -165,10 +200,12 @@ export function Dashboard() {
         <div className='lg:col-span-2 space-y-6'>
           <TradingChart />
           <ActiveOrders />
+          <TopMovers />
           <MarketOverview />
         </div>
         <div className='space-y-6'>
           <OrderPanel />
+          <AIAdvisor />
           <AIAgentStatus />
           <RecentActivity />
         </div>

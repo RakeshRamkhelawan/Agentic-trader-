@@ -1,1 +1,0 @@
-cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621 && python -m pytest backend\tests\unit\core\security\test_auth.py -v --tb=short

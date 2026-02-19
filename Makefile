@@ -1,181 +1,118 @@
-.PHONY: help install up down logs test lint format clean build health status restart shell db-shell redis-cli
+# =============================================================================
+# AGENTIC TRADER - MAKEFILE
+# Convenient shortcuts for Docker operations
+# =============================================================================
 
-COMPOSE_FILE := docker-compose.yml
-COMPOSE_CMD := docker compose -f $(COMPOSE_FILE)
-PYTHON := python
-BACKEND_SERVICE := backend
-BACKEND_DIR := backend
+.PHONY: help start stop restart build logs clean reset test migrate dev prod
 
-help:
-	@echo "Samkhya Yoga Agentic Trader - DevEx Commands"
+# Default target
+.DEFAULT_GOAL := help
+
+# Colors
+BLUE := \033[36m
+GREEN := \033[32m
+YELLOW := \033[33m
+NC := \033[0m
+
+help: ## Show this help message
+	@echo "$(BLUE)Agentic Trader Platform - Docker Commands$(NC)"
+	@echo "=========================================="
 	@echo ""
-	@echo "Environment Management:"
-	@echo "  make install          Install Python dependencies locally"
-	@echo "  make up              Start all services in detached mode"
-	@echo "  make down            Stop and remove all containers"
-	@echo "  make restart         Restart all services"
-	@echo "  make build           Rebuild Docker images"
+	@echo "$(GREEN)Development Commands:$(NC)"
+	@echo "  make start     - Start all services"
+	@echo "  make stop      - Stop all services"
+	@echo "  make restart   - Restart services"
+	@echo "  make build     - Build Docker images"
+	@echo "  make logs      - View service logs"
+	@echo "  make shell     - Open shell in backend"
+	@echo "  make test      - Run tests"
+	@echo "  make migrate   - Run database migrations"
 	@echo ""
-	@echo "Development:"
-	@echo "  make logs            Tail logs from all services"
-	@echo "  make logs-backend    Tail logs from backend only"
-	@echo "  make logs-redis      Tail logs from Redis"
-	@echo "  make shell           Open shell in backend container"
-	@echo "  make db-shell        Open PostgreSQL shell"
-	@echo "  make redis-cli       Open Redis CLI"
+	@echo "$(GREEN)Service-Specific Commands:$(NC)"
+	@echo "  make frontend  - Start only frontend"
+	@echo "  make backend   - Start only backend + infra"
+	@echo "  make ai        - Start AI/Federated services"
 	@echo ""
-	@echo "Testing & Quality:"
-	@echo "  make test            Run all tests"
-	@echo "  make test-unit       Run unit tests only"
-	@echo "  make test-integration Run integration tests only"
-	@echo "  make test-e2e        Run end-to-end tests"
-	@echo "  make lint            Run linters (black, isort, ruff, mypy)"
-	@echo "  make format          Auto-format code with black and isort"
-	@echo "  make coverage        Generate test coverage report"
+	@echo "$(GREEN)Maintenance Commands:$(NC)"
+	@echo "  make clean     - Clean up Docker resources"
+	@echo "  make reset     - Reset all data (DESTRUCTIVE)"
+	@echo "  make status    - Show service status"
 	@echo ""
-	@echo "Health & Monitoring:"
-	@echo "  make health          Run deep health check"
-	@echo "  make status          Show service status"
-	@echo "  make verify-infra    Verify infrastructure connectivity"
+	@echo "$(YELLOW)Production Commands:$(NC)"
+	@echo "  make prod      - Deploy to production"
+	@echo "  make prod-stop - Stop production"
+	@echo "  make backup    - Backup databases"
 	@echo ""
-	@echo "Cleanup:"
-	@echo "  make clean           Remove Python cache and test artifacts"
-	@echo "  make clean-docker    Remove all containers, volumes, and images"
-	@echo "  make clean-all       Clean everything (Python + Docker)"
 
-install:
-	@echo "Installing Python dependencies..."
-	$(PYTHON) -m pip install --upgrade pip
-	@if exist requirements\base.txt pip install -r requirements\base.txt
-	@if exist requirements\dev.txt pip install -r requirements\dev.txt
-	@if exist requirements\test.txt pip install -r requirements\test.txt
-	@echo "Dependencies installed successfully"
+# Development Commands
+start: ## Start all services
+	@./scripts/docker-dev.sh start
 
-up:
-	@echo "Starting all services..."
-	$(COMPOSE_CMD) up -d
-	@echo "Waiting for services to be healthy..."
-	@timeout /t 15 /nobreak >nul
-	@$(MAKE) status
+stop: ## Stop all services
+	@./scripts/docker-dev.sh stop
 
-down:
-	@echo "Stopping all services..."
-	$(COMPOSE_CMD) down
+restart: ## Restart services
+	@./scripts/docker-dev.sh restart
 
-restart:
-	@echo "Restarting all services..."
-	$(COMPOSE_CMD) restart
-	@timeout /t 10 /nobreak >nul
-	@$(MAKE) status
+build: ## Build Docker images
+	@./scripts/docker-dev.sh build
 
-build:
-	@echo "Building Docker images..."
-	$(COMPOSE_CMD) build --parallel
-	@echo "Build completed successfully"
+logs: ## View service logs
+	@./scripts/docker-dev.sh logs
 
-logs:
-	@echo "Tailing logs from all services (Ctrl+C to stop)..."
-	$(COMPOSE_CMD) logs -f --tail=100
+shell: ## Open shell in backend container
+	@./scripts/docker-dev.sh shell api-server
 
-logs-backend:
-	@echo "Tailing backend logs..."
-	$(COMPOSE_CMD) logs -f --tail=100 $(BACKEND_SERVICE)
+frontend: ## Start only frontend
+	@./scripts/docker-dev.sh frontend
 
-logs-redis:
-	@echo "Tailing Redis logs..."
-	$(COMPOSE_CMD) logs -f --tail=100 redis
+backend: ## Start only backend services
+	@./scripts/docker-dev.sh backend
 
-logs-postgres:
-	@echo "Tailing PostgreSQL logs..."
-	$(COMPOSE_CMD) logs -f --tail=100 postgres
+ai: ## Start AI/Federated Triad services
+	@docker-compose up -d federated-triad
 
-shell:
-	@echo "Opening shell in backend container..."
-	$(COMPOSE_CMD) exec $(BACKEND_SERVICE) /bin/bash
+test: ## Run tests
+	@./scripts/docker-dev.sh test
 
-db-shell:
-	@echo "Opening PostgreSQL shell..."
-	$(COMPOSE_CMD) exec postgres psql -U trader -d trading_db
+migrate: ## Run database migrations
+	@./scripts/docker-dev.sh migrate
 
-redis-cli:
-	@echo "Opening Redis CLI..."
-	$(COMPOSE_CMD) exec redis redis-cli
+# Maintenance
+clean: ## Clean up Docker resources
+	@./scripts/docker-dev.sh clean
 
-test:
-	@echo "Running all tests..."
-	$(PYTHON) -m pytest $(BACKEND_DIR)/tests/ -v --maxfail=5
+reset: ## Reset all data (DESTRUCTIVE)
+	@./scripts/docker-dev.sh reset
 
-test-unit:
-	@echo "Running unit tests..."
-	$(PYTHON) -m pytest $(BACKEND_DIR)/tests/unit/ -v --cov=$(BACKEND_DIR) --cov-report=term-missing
+status: ## Show service status
+	@./scripts/docker-dev.sh status
 
-test-integration:
-	@echo "Running integration tests..."
-	$(PYTHON) -m pytest $(BACKEND_DIR)/tests/integration/ -v --timeout=300
+# Production
+prod: ## Deploy to production
+	@./scripts/docker-prod.sh deploy
 
-test-e2e:
-	@echo "Running end-to-end tests..."
-	$(COMPOSE_CMD) exec -T $(BACKEND_SERVICE) python -m pytest backend/tests/e2e/ -v
+prod-stop: ## Stop production
+	@./scripts/docker-prod.sh stop
 
-coverage:
-	@echo "Generating coverage report..."
-	$(PYTHON) -m pytest $(BACKEND_DIR)/tests/ --cov=$(BACKEND_DIR) --cov-report=html --cov-report=term
-	@echo "Coverage report generated in htmlcov/index.html"
+prod-update: ## Rolling update production
+	@./scripts/docker-prod.sh update
 
-lint:
-	@echo "Running linters..."
-	@echo "→ Black (formatting check)..."
-	black --check $(BACKEND_DIR)/
-	@echo "→ Isort (import check)..."
-	isort --check-only $(BACKEND_DIR)/
-	@echo "→ Ruff (linting)..."
-	ruff check $(BACKEND_DIR)/
-	@echo "→ MyPy (type checking)..."
-	mypy $(BACKEND_DIR)/ --ignore-missing-imports
-	@echo "→ Bandit (security check)..."
-	bandit -r $(BACKEND_DIR)/ --exclude $(BACKEND_DIR)/tests -f json -o bandit-report.json || true
-	@echo "All linters passed!"
+backup: ## Backup databases
+	@./scripts/docker-prod.sh backup
 
-format:
-	@echo "Auto-formatting code..."
-	black $(BACKEND_DIR)/
-	isort $(BACKEND_DIR)/
-	@echo "Code formatted successfully"
+# Utility
+ps: ## Show running containers
+	@docker-compose ps
 
-health:
-	@echo "Running deep health check..."
-	$(PYTHON) -m backend.scripts.ops.health_check
+images: ## Show Docker images
+	@docker images | grep agentic || docker images
 
-status:
-	@echo "Service Status:"
-	@$(COMPOSE_CMD) ps
+prune: ## Prune Docker system
+	@docker system prune -f
 
-verify-infra:
-	@echo "Verifying infrastructure connectivity..."
-	$(PYTHON) -m backend.scripts.ops.health_check --verbose
+volume-ls: ## List volumes
+	@docker volume ls | grep agentic || docker volume ls
 
-clean:
-	@echo "Cleaning Python cache and test artifacts..."
-	@if exist $(BACKEND_DIR)\__pycache__ rd /s /q $(BACKEND_DIR)\__pycache__
-	@if exist .pytest_cache rd /s /q .pytest_cache
-	@if exist .coverage del .coverage
-	@if exist htmlcov rd /s /q htmlcov
-	@if exist .mypy_cache rd /s /q .mypy_cache
-	@if exist .ruff_cache rd /s /q .ruff_cache
-	@for /r %i in (*.pyc) do @del "%i"
-	@for /r %i in (*.pyo) do @del "%i"
-	@echo "Cleanup completed"
-
-clean-docker:
-	@echo "Removing Docker containers and volumes..."
-	$(COMPOSE_CMD) down -v --remove-orphans
-	@echo "Docker cleanup completed"
-
-clean-all: clean clean-docker
-	@echo "Full cleanup completed"
-
-ps:
-	@$(COMPOSE_CMD) ps -a
-
-top:
-	@$(COMPOSE_CMD) top
+network-ls: ## List networks
+	@docker network ls | grep agentic || docker network ls

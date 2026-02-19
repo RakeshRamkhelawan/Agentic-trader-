@@ -44,6 +44,16 @@ interface AppState {
   isLoadingAssets: boolean;
   fetchAssets: () => Promise<void>;
   updateAssetPrice: (symbol: string, price: number, change24h: number) => void;
+  
+  // Top Movers (calculated from assets)
+  topGainer: Asset | null;
+  topLoser: Asset | null;
+  getTopMovers: () => { gainers: Asset[]; losers: Asset[] };
+  
+  // Chart auto-selection
+  chartSymbol: string;
+  setChartSymbol: (symbol: string) => void;
+  autoSelectTopGainer: () => void;
 
   // Holdings
   holdings: Holding[];
@@ -63,6 +73,12 @@ interface AppState {
   fetchTradeHistory: () => Promise<void>;
   addTrade: (trade: TradeHistory) => void;
 
+  // Agent Trades (AI-generated trades from run-cycle)
+  agentTrades: TradeHistory[];
+  isLoadingAgentTrades: boolean;
+  fetchAgentTrades: () => Promise<void>;
+  addAgentTrade: (trade: TradeHistory) => void;
+
   // Portfolio Performance
   portfolioValue: number;
   portfolioPnl: number;
@@ -74,7 +90,16 @@ interface AppState {
 
   // Agents Status
   agentsStatus: AgentStrategy[];
-  agentsCoherence: number;
+  agentsCoherence: {
+    harmony: number;
+    performance: number;
+    total_coherence: number;
+    factors?: {
+      active_agents: string;
+      avg_prana: number;
+      total_trades: number;
+    };
+  };
   isLoadingAgents: boolean;
   fetchAgentsStatus: () => Promise<void>;
 
@@ -121,19 +146,71 @@ export const useAppStore = create<AppState>()(
       setSelectedSymbol: (symbol) => set({ selectedSymbol: symbol }),
       timeframe: '1h',
       setTimeframe: (timeframe) => set({ timeframe }),
+      
+      // Chart symbol (for TradingChart - auto-selected from top gainer)
+      chartSymbol: 'BTC/EUR',
+      setChartSymbol: (symbol) => set({ chartSymbol: symbol }),
+      autoSelectTopGainer: () => {
+        const { assets, chartSymbol } = get();
+        if (assets.length === 0) return;
+        
+        // Sort by change24h descending
+        const sorted = [...assets].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
+        const topGainer = sorted[0];
+        
+        // Only update if different and we haven't manually selected
+        if (topGainer && topGainer.symbol !== chartSymbol) {
+          set({ chartSymbol: topGainer.symbol });
+        }
+      },
 
       // Assets
       assets: [],
       isLoadingAssets: false,
+      topGainer: null,
+      topLoser: null,
       fetchAssets: async () => {
         set({ isLoadingAssets: true });
         try {
           const assets = await marketsApi.getAssets();
-          set({ assets, isLoadingAssets: false });
+          
+          // Calculate top gainers/losers
+          const sorted = [...assets].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
+          
+          // Only show as "gainer" if actually positive
+          const actualGainers = sorted.filter(a => (a.change24h || 0) > 0);
+          const actualLosers = sorted.filter(a => (a.change24h || 0) < 0);
+          
+          const topGainer = actualGainers.length > 0 ? actualGainers[0] : null;
+          const topLoser = actualLosers.length > 0 ? actualLosers[actualLosers.length - 1] : null;
+          
+          // For chart selection: use best performer even if negative
+          const bestPerformer = sorted.length > 0 ? sorted[0] : null;
+          
+          set({ 
+            assets, 
+            topGainer,
+            topLoser,
+            isLoadingAssets: false 
+          });
+          
+          // Auto-select best performer for chart if not manually set
+          const state = get();
+          if (state.chartSymbol === 'BTC/EUR' && bestPerformer) {
+            set({ chartSymbol: bestPerformer.symbol });
+          }
         } catch (error) {
           console.error('Failed to fetch assets:', error);
           set({ isLoadingAssets: false });
         }
+      },
+      getTopMovers: () => {
+        const { assets } = get();
+        const sorted = [...assets].sort((a, b) => (b.change24h || 0) - (a.change24h || 0));
+        return {
+          gainers: sorted.slice(0, 5),
+          losers: sorted.slice(-5).reverse(),
+        };
       },
       updateAssetPrice: (symbol, price, change24h) =>
         set((state) => ({
@@ -201,6 +278,33 @@ export const useAppStore = create<AppState>()(
       },
       addTrade: (trade) => set((state) => ({ tradeHistory: [trade, ...state.tradeHistory] })),
 
+      // Agent Trades
+      agentTrades: [],
+      isLoadingAgentTrades: false,
+      fetchAgentTrades: async () => {
+        set({ isLoadingAgentTrades: true });
+        try {
+          const data = await agentsApi.getTrades();
+          // Transform to TradeHistory format
+          const trades: TradeHistory[] = (data.trades || []).map((t: any) => ({
+            id: t.id,
+            symbol: t.symbol,
+            side: t.side,
+            amount: t.amount,
+            price: t.price,
+            timestamp: t.timestamp,
+            status: 'filled',
+            venue: t.agent || 'AI Agent',
+            pnl: 0,
+          }));
+          set({ agentTrades: trades, isLoadingAgentTrades: false });
+        } catch (error) {
+          console.error('Failed to fetch agent trades:', error);
+          set({ isLoadingAgentTrades: false });
+        }
+      },
+      addAgentTrade: (trade) => set((state) => ({ agentTrades: [trade, ...state.agentTrades] })),
+
       // Portfolio Performance
       portfolioValue: 0,
       portfolioPnl: 0,
@@ -228,7 +332,11 @@ export const useAppStore = create<AppState>()(
 
       // Agents Status
       agentsStatus: [],
-      agentsCoherence: 0,
+      agentsCoherence: {
+        harmony: 0,
+        performance: 0,
+        total_coherence: 0,
+      },
       isLoadingAgents: false,
       fetchAgentsStatus: async () => {
         set({ isLoadingAgents: true });
@@ -246,8 +354,18 @@ export const useAppStore = create<AppState>()(
               prana: Number(a.prana ?? 0),
             })
           );
-          const coherence =
-            data.orchestrator_state?.global_coherence ?? 0;
+          // Get coherence metrics from new structure
+          const coherenceData = data.orchestrator_state?.coherence;
+          const coherence = coherenceData ? {
+            harmony: coherenceData.harmony ?? 0,
+            performance: coherenceData.performance ?? 0,
+            total_coherence: coherenceData.total_coherence ?? 0,
+            factors: coherenceData.factors,
+          } : {
+            harmony: data.orchestrator_state?.global_coherence ?? 0,
+            performance: 0,
+            total_coherence: data.orchestrator_state?.global_coherence ?? 0,
+          };
           set({ agentsStatus: agentsList, agentsCoherence: coherence, isLoadingAgents: false });
         } catch (error) {
           console.error('Failed to fetch agents status:', error);

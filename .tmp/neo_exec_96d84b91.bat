@@ -1,1 +1,0 @@
-type backend\api\main.py && type requirements\base.txt

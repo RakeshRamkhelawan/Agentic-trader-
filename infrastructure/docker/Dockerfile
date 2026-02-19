@@ -15,8 +15,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 COPY requirements/base.txt .
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-  pip install --no-cache-dir -r base.txt && \
-  pip install --no-cache-dir python-multipart>=0.0.22
+  pip install --no-cache-dir -r base.txt
 
 # Final stage
 FROM python:3.12-slim

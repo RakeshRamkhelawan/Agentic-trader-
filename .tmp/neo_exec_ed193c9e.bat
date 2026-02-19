@@ -1,1 +1,0 @@
-type startup.log
