@@ -1,2 +1,0 @@
-dir "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core" 2>nul || echo "core directory check"
-dir "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\tests" 2>nul || echo "tests directory check"

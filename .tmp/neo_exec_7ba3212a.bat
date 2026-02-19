@@ -1,4 +1,0 @@
-if not exist "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\navagraha" mkdir "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\navagraha"
-if not exist "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\tests\unit\core\navagraha" mkdir "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\tests\unit\core\navagraha"
-echo. > "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\navagraha\__init__.py"
-echo. > "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\tests\unit\core\navagraha\__init__.py"

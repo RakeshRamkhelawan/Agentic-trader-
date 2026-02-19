@@ -1,1 +1,0 @@
-type "c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\core\config\settings.py" 2>nul | findstr /C:"REDIS" /C:"CACHE" || echo No cache config found
