@@ -1,1 +1,0 @@
-cd c:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621 && set PYTHONPATH=%CD%\backend && call venv\Scripts\activate.bat && python -m pytest backend\tests\integration\test_security_flow.py -v --tb=short
