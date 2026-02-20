@@ -352,7 +352,9 @@ class TradingService:
         limit: int = 100,
     ) -> List[Dict[str, Any]]:
         """Get OHLCV candles data."""
-        import ccxt.async_support as ccxt
+        import asyncio
+
+        import ccxt.async_support as ccxt_async
 
         # 1. Get Exchange Adapter
         keys_list = await self.settings_service.get_api_keys(db, tenant_id)
@@ -365,32 +367,28 @@ class TradingService:
                     db, tenant_id, valid_key.exchange
                 )
 
-        # 2. Fallback to public
-        exchange_instance = None
-        should_close = False
-
-        if adapter and adapter.exchange:
-            exchange_instance = adapter.exchange
-        else:
-            # Fallback to public Kraken
+        # 2. Use adapter if available and has get_candles method
+        if adapter and hasattr(adapter, "get_candles"):
             try:
-                exchange_instance = ccxt.kraken()
-                should_close = True
+                # Normalize symbol (BTC-EUR -> BTC/EUR)
+                exchange_symbol = symbol.replace("-", "/")
+                return await adapter.get_candles(exchange_symbol, timeframe, limit)
             except Exception as e:
-                logger.error(f"Failed to init public exchange: {e}")
-                return []
+                logger.error(f"Adapter get_candles failed for {symbol}: {e}")
+                # Fall through to public exchange
 
-        if not exchange_instance:
-            return []
-
+        # 3. Fallback to public Kraken using async ccxt
+        exchange_instance = None
         candles = []
+
         try:
+            exchange_instance = ccxt_async.kraken()
+
             # Check market loading
             if not exchange_instance.markets:
                 await exchange_instance.load_markets()
 
             # Normalize symbol (BTC-EUR -> BTC/EUR)
-            # Check if symbol format needs adjustment
             exchange_symbol = symbol.replace("-", "/")
 
             # Fetch OHLCV
@@ -416,8 +414,12 @@ class TradingService:
             logger.error(f"Error fetching candles for {symbol}: {e}")
             return []
         finally:
-            if should_close:
-                await exchange_instance.close()
+            # Always close the fallback exchange instance
+            if exchange_instance:
+                try:
+                    await exchange_instance.close()
+                except Exception as close_err:
+                    logger.debug(f"Error closing exchange instance: {close_err}")
 
         return candles
 

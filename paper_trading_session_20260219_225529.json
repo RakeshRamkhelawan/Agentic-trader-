@@ -1,0 +1,59 @@
+{
+  "session_time": "2026-02-19T22:55:29.670562+00:00",
+  "trades": [
+    {
+      "timestamp": "2026-02-19T22:55:27.147137+00:00",
+      "symbol": "BTC-EUR",
+      "side": "BUY",
+      "qty": 0.001,
+      "status": "FILLED",
+      "order_id": "a68a23a9-c335-413d-aa46-aad901679b17",
+      "filled_qty": 0.001,
+      "avg_price": 85022.1321569537
+    },
+    {
+      "timestamp": "2026-02-19T22:55:27.651031+00:00",
+      "symbol": "BTC-EUR",
+      "side": "SELL",
+      "qty": 0.001,
+      "status": "FILLED",
+      "order_id": "4fc6c984-33ed-4a75-bb7d-a463450864e6",
+      "filled_qty": 0.001,
+      "avg_price": 89781.32863491442
+    },
+    {
+      "timestamp": "2026-02-19T22:55:28.155729+00:00",
+      "symbol": "BTC-EUR",
+      "side": "BUY",
+      "qty": 0.001,
+      "status": "FILLED",
+      "order_id": "f921df51-fe50-463f-be40-18fc4caf9e1e",
+      "filled_qty": 0.001,
+      "avg_price": 91453.00684473952
+    },
+    {
+      "timestamp": "2026-02-19T22:55:28.666784+00:00",
+      "symbol": "BTC-EUR",
+      "side": "SELL",
+      "qty": 0.001,
+      "status": "FILLED",
+      "order_id": "326a947e-a288-4073-b403-dd30fe1c4ed1",
+      "filled_qty": 0.001,
+      "avg_price": 91619.45448357388
+    },
+    {
+      "timestamp": "2026-02-19T22:55:29.169088+00:00",
+      "symbol": "BTC-EUR",
+      "side": "BUY",
+      "qty": 0.001,
+      "status": "FILLED",
+      "order_id": "059a8691-68b0-4d39-a994-42b6a8846940",
+      "filled_qty": 0.001,
+      "avg_price": 88065.40951866478
+    }
+  ],
+  "final_balance": {
+    "EUR": 9916.860234598129,
+    "BTC-EUR": 0.001
+  }
+}

@@ -107,9 +107,18 @@ class AuthMiddleware(BaseHTTPMiddleware):
             clear_context()
 
     def _is_public_path(self, path: str) -> bool:
-        """Check if path is public (no auth required)."""
-        # Exact match
+        """Check if path is public (no auth required).
+        
+        Handles exact matches, prefix matches (with *), and normalizes
+        paths with/without trailing slashes.
+        """
+        # Normalize path: remove trailing slash (except for root "/")
+        normalized_path = path if path == "/" else path.rstrip("/")
+        
+        # Check exact match (with original and normalized path)
         if path in self.PUBLIC_PATHS:
+            return True
+        if normalized_path in self.PUBLIC_PATHS:
             return True
 
         # Prefix match (paths ending with *)
@@ -118,9 +127,15 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 prefix = public_path[:-1]  # Remove the *
                 if path.startswith(prefix):
                     return True
+                # Also check normalized path
+                if normalized_path.startswith(prefix.rstrip("/")):
+                    return True
+                    
         # Prefix match for API docs
         if path.startswith("/docs") or path.startswith("/redoc"):
             return True
+            
+
         return False
 
     def _extract_token(self, request: Request) -> Optional[str]:

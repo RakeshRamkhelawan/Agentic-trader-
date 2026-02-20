@@ -1,162 +1,398 @@
 """
-Sentiment Agent using LLM for market sentiment analysis.
-
-Uses LLM's generate_structured to analyze market sentiment from context.
+Sentiment Agent - LLM-powered sentiment analysis using Ollama/DeepSeek
+Local, free, and privacy-preserving sentiment scoring.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, Optional
+import json
+import logging
+import re
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+import aiohttp
 
-from backend.agents.base_agent import BaseAgent
+from backend.core.memory_agent import MemoryAgent
+from backend.schemas.agent_messages import AgentMessage
 
-if TYPE_CHECKING:
-    from backend.events.event_bus import EventBus
-    from backend.llm.provider_interface import LLMProvider
-
-
-class SentimentAnalysis(BaseModel):
-    """Structured sentiment analysis result."""
-
-    sentiment: str = Field(
-        ..., description="Market sentiment: bullish, bearish, or neutral"
-    )
-    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score 0-1")
-    reasoning: str = Field(..., description="Explanation of sentiment analysis")
-    key_factors: list[str] = Field(
-        default_factory=list, description="Key factors influencing sentiment"
-    )
+logger = logging.getLogger(__name__)
 
 
-class SentimentAgent(BaseAgent):
+@dataclass
+class SentimentAnalysis:
+    """Result of sentiment analysis."""
+    score: float  # 0.0 to 1.0
+    trend: str  # bullish, bearish, neutral
+    confidence: float  # 0.0 to 1.0
+    rationale: str
+    key_factors: List[str] = field(default_factory=list)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "score": self.score,
+            "trend": self.trend,
+            "confidence": self.confidence,
+            "rationale": self.rationale,
+            "key_factors": self.key_factors,
+            "timestamp": self.timestamp.isoformat(),
+        }
+
+
+class SentimentAgent:
     """
-    Market sentiment analyzer using LLM.
-    Analyzes news, social signals, and market context to determine sentiment.
+    Sentiment Agent uses local LLM (DeepSeek via Ollama) for sentiment analysis.
+    
+    Features:
+    - Free (no API costs)
+    - Private (local processing)
+    - Fast (no network latency to external APIs)
+    - Customizable prompt engineering
     """
-
-    SYSTEM_PROMPT = """You are an expert market sentiment analyst for cryptocurrency trading.
-Analyze the provided market data and context to determine the overall market sentiment.
-
-Consider:
-- News headlines and events
-- Social media sentiment
-- Market indicators (price, volume)
-- Historical patterns
-
-Provide sentiment as: bullish, bearish, or neutral
-Give confidence between 0.0 and 1.0
-Explain your reasoning clearly
-List key factors that influenced your analysis"""
-
+    
     def __init__(
         self,
-        agent_name: str = "SentimentAgent",
-        llm_provider: Optional["LLMProvider"] = None,
-        event_bus: Optional["EventBus"] = None,
+        memory_agent: Optional[MemoryAgent] = None,
+        message_bus=None,
+        ollama_url: str = "http://ollama:11434",
+        model: str = "deepseek-r1:7b",
+        temperature: float = 0.3,
     ):
-        super().__init__(
-            agent_name=agent_name, llm_provider=llm_provider, event_bus=event_bus
-        )
-
-    async def analyze(
-        self, features: Dict[str, Any], context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self.memory = memory_agent or MemoryAgent()
+        self.message_bus = message_bus
+        self.ollama_url = ollama_url
+        self.model = model
+        self.temperature = temperature
+        
+        self.name = "SentimentAgent"
+        self.prana = 50.0
+        self.is_active = True
+        self._ollama_available = False
+        
+    async def check_ollama(self) -> bool:
+        """Check if Ollama is available."""
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"{self.ollama_url}/api/tags",
+                    timeout=5
+                ) as resp:
+                    self._ollama_available = resp.status == 200
+                    return self._ollama_available
+        except Exception as e:
+            logger.warning(f"Ollama not available: {e}")
+            self._ollama_available = False
+            return False
+            
+    async def analyze_news(self, headlines: List[str], coin: str = "BTC") -> SentimentAnalysis:
         """
-        Analyze market sentiment using LLM.
-
+        Analyze sentiment of news headlines using DeepSeek.
+        
         Args:
-            features: Market features (price, volume, etc.)
-            context: Additional context (news, social signals, symbol)
-
+            headlines: List of news headlines
+            coin: Coin symbol for context
+            
         Returns:
-            Dict with sentiment, action, confidence, and reasoning
+            SentimentAnalysis with score, trend, and rationale
         """
-        # If no LLM, return fallback
-        if not self.llm_provider:
-            return {
-                "sentiment": "neutral",
-                "action": "hold",
-                "confidence": 0.3,
-                "reasoning": "LLM provider not available - using fallback",
-                "key_factors": [],
-            }
+        if not headlines:
+            return SentimentAnalysis(
+                score=0.5,
+                trend="neutral",
+                confidence=0.0,
+                rationale="No headlines provided",
+                key_factors=[],
+            )
+            
+        # Check Ollama availability
+        if not self._ollama_available:
+            await self.check_ollama()
+            
+        if not self._ollama_available:
+            # Fallback to rule-based scoring
+            return self._fallback_analysis(headlines, coin)
+            
+        # Build prompt
+        headlines_text = "\n".join([f"- {h}" for h in headlines[:15]])  # Limit to 15
+        
+        prompt = f"""You are a crypto trading sentiment analyst. Analyze the following news headlines for {coin} and provide a sentiment assessment.
 
-        # Build prompt with context
-        prompt = self._build_prompt(features, context)
+HEADLINES:
+{headlines_text}
+
+Provide your analysis in this exact JSON format:
+{{
+    "score": 0.75,
+    "trend": "bullish",
+    "confidence": 0.85,
+    "rationale": "Brief explanation of the sentiment",
+    "key_factors": ["Factor 1", "Factor 2", "Factor 3"]
+}}
+
+Score: 0.0-0.4 bearish, 0.4-0.6 neutral, 0.6-1.0 bullish
+Trend: exactly "bullish", "bearish", or "neutral"
+Confidence: 0.0-1.0 based on clarity of signals
+
+JSON response only:"""
 
         try:
-            # Use LLM to analyze sentiment
-            analysis = await self.llm_provider.generate_structured(
-                prompt=prompt,
-                schema=SentimentAnalysis,
-                system_prompt=self.SYSTEM_PROMPT,
-            )
-
-            # Map sentiment to action
-            action = self._sentiment_to_action(analysis.sentiment)
-
-            # Prepare result
-            result = {
-                "sentiment": analysis.sentiment,
-                "action": action,
-                "confidence": analysis.confidence,
-                "reasoning": analysis.reasoning,
-                "key_factors": analysis.key_factors,
-            }
-
-            # Publish thought to event bus
-            if self.event_bus:
-                await self.publish_thought(
-                    reasoning=analysis.reasoning,
-                    confidence=analysis.confidence,
-                    data={
-                        "sentiment": analysis.sentiment,
-                        "key_factors": analysis.key_factors,
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.ollama_url}/api/generate",
+                    json={
+                        "model": self.model,
+                        "prompt": prompt,
+                        "stream": False,
+                        "options": {
+                            "temperature": self.temperature,
+                            "num_predict": 500,
+                        }
                     },
-                )
-
-            return result
-
+                    timeout=60
+                ) as resp:
+                    if resp.status != 200:
+                        raise Exception(f"Ollama returned {resp.status}")
+                    result = await resp.json()
+                    
+            response_text = result.get("response", "")
+            
+            # Extract JSON from response
+            analysis = self._parse_llm_response(response_text)
+            
+            logger.info(f"Sentiment analysis for {coin}: {analysis.trend} ({analysis.score:.2f})")
+            return analysis
+            
         except Exception as e:
-            self.logger.error(f"Sentiment analysis error: {e}")
-            return {
-                "sentiment": "neutral",
-                "action": "hold",
-                "confidence": 0.2,
-                "reasoning": f"Error during analysis: {str(e)}",
-                "key_factors": [],
-            }
-
-    def _build_prompt(self, features: Dict[str, Any], context: Dict[str, Any]) -> str:
-        """Build analysis prompt from features and context."""
-        symbol = context.get("symbol", "Unknown")
-        news = context.get("news", "No news available")
-        price = features.get("price", "N/A")
-        volume = features.get("volume", "N/A")
-
-        prompt = f"""Analyze market sentiment for {symbol}:
-
-Market Data:
-- Current Price: {price}
-- Volume: {volume}
-
-Context:
-{news}
-
-Additional Information:
-{str(context)}
-
-Provide your sentiment analysis."""
-
-        return prompt
-
-    def _sentiment_to_action(self, sentiment: str) -> str:
-        """Map sentiment to trading action."""
-        sentiment_lower = sentiment.lower()
-
-        if sentiment_lower == "bullish":
-            return "buy"
-        elif sentiment_lower == "bearish":
-            return "sell"
+            logger.error(f"LLM sentiment analysis failed: {e}")
+            return self._fallback_analysis(headlines, coin)
+            
+    def _parse_llm_response(self, text: str) -> SentimentAnalysis:
+        """Parse JSON response from LLM."""
+        try:
+            # Try to find JSON in the response
+            json_match = re.search(r'\{[^}]*"score"[^}]*"trend"[^}]*\}', text, re.DOTALL)
+            if json_match:
+                data = json.loads(json_match.group())
+            else:
+                # Try full response as JSON
+                data = json.loads(text)
+                
+            return SentimentAnalysis(
+                score=float(data.get("score", 0.5)),
+                trend=data.get("trend", "neutral"),
+                confidence=float(data.get("confidence", 0.5)),
+                rationale=data.get("rationale", "No rationale provided"),
+                key_factors=data.get("key_factors", []),
+            )
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse LLM JSON: {e}")
+            # Try regex extraction as last resort
+            return self._regex_extract(text)
+            
+    def _regex_extract(self, text: str) -> SentimentAnalysis:
+        """Extract sentiment info using regex as fallback."""
+        text_lower = text.lower()
+        
+        # Determine trend
+        if "bullish" in text_lower or "positive" in text_lower:
+            trend = "bullish"
+            score = 0.75
+        elif "bearish" in text_lower or "negative" in text_lower:
+            trend = "bearish"
+            score = 0.25
         else:
-            return "hold"
+            trend = "neutral"
+            score = 0.5
+            
+        # Extract confidence if mentioned
+        confidence = 0.5
+        conf_match = re.search(r'confidence[:\s]+([0-9.]+)', text_lower)
+        if conf_match:
+            confidence = float(conf_match.group(1))
+            
+        # Extract key factors (bullet points)
+        factors = re.findall(r'[-*]\s*([^\n]+)', text)
+        
+        return SentimentAnalysis(
+            score=score,
+            trend=trend,
+            confidence=confidence,
+            rationale=text[:200] + "..." if len(text) > 200 else text,
+            key_factors=factors[:5],
+        )
+        
+    def _fallback_analysis(self, headlines: List[str], coin: str) -> SentimentAnalysis:
+        """Rule-based fallback when LLM is unavailable."""
+        positive_words = [
+            "surge", "rally", "bull", "breakout", "adoption", "partnership",
+            "launch", "upgrade", "growth", "gain", "up", "high", "record",
+            "moon", "pump", "explode", "soar", "massive", "bullish", "support"
+        ]
+        
+        negative_words = [
+            "crash", "dump", "bear", "decline", "fall", "drop", "low",
+            "hack", "scam", "fud", "ban", "regulation", "sec", "lawsuit",
+            "down", "loss", "bearish", "resistance", "sell", "short"
+        ]
+        
+        all_text = " ".join(headlines).lower()
+        
+        pos_count = sum(1 for word in positive_words if word in all_text)
+        neg_count = sum(1 for word in negative_words if word in all_text)
+        
+        total = pos_count + neg_count
+        if total == 0:
+            score = 0.5
+            trend = "neutral"
+        else:
+            score = pos_count / total
+            if score > 0.6:
+                trend = "bullish"
+            elif score < 0.4:
+                trend = "bearish"
+            else:
+                trend = "neutral"
+                
+        confidence = min(1.0, total / 10)  # More hits = higher confidence
+        
+        # Extract key factors (words that matched)
+        factors = []
+        for word in positive_words[:3]:
+            if word in all_text:
+                factors.append(f"Positive: {word}")
+        for word in negative_words[:3]:
+            if word in all_text:
+                factors.append(f"Negative: {word}")
+                
+        return SentimentAnalysis(
+            score=score,
+            trend=trend,
+            confidence=confidence,
+            rationale=f"Rule-based analysis: {pos_count} positive, {neg_count} negative indicators",
+            key_factors=factors[:5],
+        )
+        
+    async def analyze_social_media(self, texts: List[str], source: str = "twitter") -> SentimentAnalysis:
+        """
+        Analyze sentiment of social media posts.
+        
+        Args:
+            texts: List of social media posts
+            source: Source platform (twitter, reddit, etc.)
+        """
+        # Similar to analyze_news but with social media specific prompt
+        if not texts:
+            return SentimentAnalysis(
+                score=0.5,
+                trend="neutral",
+                confidence=0.0,
+                rationale="No texts provided",
+            )
+            
+        if not self._ollama_available:
+            await self.check_ollama()
+            
+        if not self._ollama_available:
+            return self._fallback_analysis(texts, "SOCIAL")
+            
+        posts_text = "\n".join([f"- {t[:200]}" for t in texts[:20]])  # Limit length
+        
+        prompt = f"""Analyze the sentiment of these {source} posts about cryptocurrency:
+
+POSTS:
+{posts_text}
+
+Provide analysis in JSON format:
+{{
+    "score": 0.65,
+    "trend": "bullish",
+    "confidence": 0.70,
+    "rationale": "Brief summary",
+    "key_factors": ["Factor 1", "Factor 2"]
+}}
+
+JSON only:"""
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.ollama_url}/api/generate",
+                    json={
+                        "model": self.model,
+                        "prompt": prompt,
+                        "stream": False,
+                        "options": {"temperature": self.temperature}
+                    },
+                    timeout=60
+                ) as resp:
+                    result = await resp.json()
+                    return self._parse_llm_response(result.get("response", ""))
+        except Exception as e:
+            logger.error(f"Social media analysis failed: {e}")
+            return self._fallback_analysis(texts, "SOCIAL")
+            
+    async def handle_message(self, message: AgentMessage):
+        """Handle incoming messages."""
+        if message.type == "ANALYZE_SENTIMENT":
+            headlines = message.payload.get("headlines", [])
+            coin = message.payload.get("coin", "BTC")
+            
+            analysis = await self.analyze_news(headlines, coin)
+            
+            # Store in memory
+            self.memory.store_thought(
+                agent_id=self.name,
+                text=f"Sentiment analysis for {coin}: {analysis.trend} (score: {analysis.score:.2f}, confidence: {analysis.confidence:.2f})",
+                metadata={
+                    "type": "sentiment_analysis",
+                    "coin": coin,
+                    "trend": analysis.trend,
+                    "score": analysis.score,
+                    "confidence": analysis.confidence,
+                }
+            )
+            
+            # Broadcast result
+            if self.message_bus:
+                await self.message_bus(AgentMessage(
+                    source=self.name,
+                    target=message.source or "all",
+                    type="SENTIMENT_UPDATE",
+                    payload={
+                        "coin": coin,
+                        "analysis": analysis.to_dict(),
+                    }
+                ))
+                
+            return analysis.to_dict()
+            
+        elif message.type == "NEWS_UPDATE":
+            # Auto-analyze news when received
+            news = message.payload.get("news", {})
+            sentiments = message.payload.get("sentiments", {})
+            
+            for coin, items in news.items():
+                if isinstance(items, list) and len(items) > 0:
+                    headlines = [i.get("title", "") for i in items if isinstance(i, dict)]
+                    if headlines:
+                        await self.handle_message(AgentMessage(
+                            source=message.source,
+                            target=self.name,
+                            type="ANALYZE_SENTIMENT",
+                            payload={"headlines": headlines, "coin": coin},
+                        ))
+                        
+    async def start(self):
+        """Start the agent."""
+        logger.info("SentimentAgent starting...")
+        self.is_active = True
+        await self.check_ollama()
+        if self._ollama_available:
+            logger.info(f"SentimentAgent connected to Ollama ({self.model})")
+        else:
+            logger.warning("SentimentAgent using fallback mode (Ollama unavailable)")
+            
+    async def stop(self):
+        """Stop the agent."""
+        logger.info("SentimentAgent stopped")
+        self.is_active = False

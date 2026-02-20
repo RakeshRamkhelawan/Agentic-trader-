@@ -430,6 +430,71 @@ class CCXTAdapter(ExecutionInterface):
                 logger.error(f"Orders stream error: {e}")
                 await asyncio.sleep(1.0)
 
+    # ==================== CANDLES/OHLCV ====================
+
+    async def get_candles(
+        self, symbol: str, timeframe: str = "1m", limit: int = 100
+    ) -> list[Dict[str, Any]]:
+        """
+        Fetch OHLCV candles asynchronously.
+
+        Args:
+            symbol: Trading pair (e.g., 'BTC/EUR')
+            timeframe: Candle timeframe (e.g., '1m', '5m', '1h', '1d')
+            limit: Number of candles to fetch
+
+        Returns:
+            List of candle dicts with time, open, high, low, close, value
+        """
+        if not self._exchange:
+            # Return mock candles
+            import time
+
+            now = int(time.time())
+            base_price = 45000.0
+            candles = []
+            for i in range(min(limit, 100)):
+                ts = now - (limit - i) * 60
+                candles.append({
+                    "time": ts,
+                    "open": base_price,
+                    "high": base_price * 1.01,
+                    "low": base_price * 0.99,
+                    "close": base_price * (1 + (i % 5 - 2) * 0.001),
+                    "value": 100.0,
+                })
+            return candles
+
+        try:
+            # Use asyncio.to_thread for synchronous CCXT calls
+            ohlcv = await asyncio.to_thread(
+                self._exchange.fetch_ohlcv, symbol, timeframe, limit=limit
+            )
+
+            # CCXT returns list of lists: [timestamp, open, high, low, close, volume]
+            candles = []
+            for candle in ohlcv:
+                candles.append({
+                    "time": candle[0] // 1000,  # Convert ms to seconds
+                    "open": candle[1],
+                    "high": candle[2],
+                    "low": candle[3],
+                    "close": candle[4],
+                    "value": candle[5],  # Volume
+                })
+            return candles
+        except Exception as e:
+            logger.error(f"Failed to fetch candles for {symbol}: {e}")
+            raise
+
+    @property
+    def exchange(self) -> Optional[Any]:
+        """
+        Expose the underlying CCXT exchange instance.
+        Use with caution - prefer using adapter methods.
+        """
+        return self._exchange
+
     # ==================== CONNECTION MANAGEMENT ====================
 
     async def connect(self) -> None:
