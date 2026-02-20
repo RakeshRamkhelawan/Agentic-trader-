@@ -26,7 +26,11 @@ from backend.core.telemetry.tracing import get_tracer, setup_tracing
 from backend.llm.usage_tracker import UsageTracker
 from backend.schemas.agent_messages import AgentMessage
 from backend.schemas.guna import GunaVector
+from backend.agents.news_agent import NewsAgent
+from backend.agents.sentiment_agent import SentimentAgent
+from backend.agents.sentiment_agent_v2 import SentimentAgentV2
 from backend.services.execution_gateway import ExecutionGateway
+from backend.services.federated_triad import FederatedTriadSystem
 from backend.services.intent_monitor import IntentMonitor
 from backend.services.macro_agent import MacroAgent
 # Importeer alle agents die de Orchestrator moet kennen
@@ -85,6 +89,11 @@ class CognitiveOrchestrator:
         self.global_guna_history: List[GunaVector] = []
 
         self.logger = logging.getLogger("Orchestrator")
+        
+        # Federated Triad System - 5 Council deliberation
+        self.federated_triad: Optional[FederatedTriadSystem] = None
+        self.last_federated_decision: Optional[Dict[str, Any]] = None
+        
         self._initialize_agents()
 
     def _initialize_agents(self):
@@ -129,6 +138,21 @@ class CognitiveOrchestrator:
                         event_bus=None,  # TODO: Connect event bus als beschikbaar
                         discovery_interval=86400,  # 1x per dag
                         metadata_sync_interval=3600,  # elk uur
+                    )
+                elif agent_id == "news_v1":
+                    self.agents[agent_id] = NewsAgent(
+                        memory_agent=memory,
+                        message_bus=self.handle_message,
+                        cryptopanic_api_key=None,  # Free tier
+                        finnhub_api_key=None,  # Optional: add key for higher limits
+                    )
+                elif agent_id == "sentiment_v1":
+                    # Use V2 with LLM Gateway for optimized GPU routing
+                    self.agents[agent_id] = SentimentAgentV2(
+                        memory_agent=memory,
+                        message_bus=self.handle_message,
+                        llm_gateway=None,  # Will be initialized on start
+                        enable_cache=True,
                     )
                 else:
                     self.logger.warning(
@@ -613,120 +637,211 @@ class CognitiveOrchestrator:
             self.logger.error(f"Tick processing error: {e}")
 
 
-async def main():
-    logging.basicConfig(level=logging.INFO)
-    setup_tracing("cognitive-orchestrator-service")
-    logging.info("Starting Cognitive Orchestrator Service...")
+    # =========================================================================
+    # FEDERATED TRIAD INTEGRATION
+    # =========================================================================
 
-    # Start Prometheus Metrics for Trading Engine
-    from prometheus_client import start_http_server
-
-    try:
-        start_http_server(8004)
-        logging.info("✓ Trading Engine Metrics Server started on port 8004")
-    except Exception as e:
-        logging.error(f"Failed to start Metrics Server: {e}")
-
-    # Initialize ClickHouse Client
-    from backend.core.config.settings import settings
-    from backend.market_data.sinks.clickhouse_writer import ClickHouseWriter
-    from backend.storage.clickhouse_client import ClickHouseClient
-
-    clickhouse_client = ClickHouseClient(
-        host=settings.CLICKHOUSE_HOST,
-        port=settings.CLICKHOUSE_PORT,
-        username=settings.CLICKHOUSE_USER,
-        password=settings.CLICKHOUSE_PASSWORD,
-        database=settings.CLICKHOUSE_DB,
-    )
-
-    # Connect needs to happen in loop
-    await clickhouse_client.connect()
-
-    market_writer = ClickHouseWriter(
-        clickhouse_client, table="market_events", batch_size=1000, flush_interval=1.0
-    )
-    message_writer = ClickHouseWriter(
-        clickhouse_client, table="agent_events", batch_size=500, flush_interval=1.0
-    )
-
-    # Initialize SignalBridge with RedisPublisher for Decoupled Broadcasting
-    import redis.asyncio as redis
-
-    from backend.core.config.settings import settings
-    from backend.market_data.sinks.redis_publisher import RedisPublisher
-    from backend.services.signal_bridge import SignalBridge
-
-    redis_client = redis.from_url(settings.REDIS_URL, decode_responses=False)
-    redis_publisher = RedisPublisher(redis_client, stream_key="market_events")
-
-    signal_bridge = SignalBridge()
-    # We are in Orchestrator process, so we use Redis Publisher, not WS Manager
-    signal_bridge.set_redis_publisher(redis_publisher)
-
-    try:
-        # Inject dependencies
-        orchestrator = CognitiveOrchestrator(
-            clickhouse_client=clickhouse_client,
-            market_writer=market_writer,
-            message_writer=message_writer,
-            signal_bridge=signal_bridge,
-            execution_gateway=ExecutionGateway(),  # Initialize Default Gateway
-        )
-    except Exception:
-        logging.exception("CRITICAL: Failed to initialize CognitiveOrchestrator")
-        raise
-
-    # Start Execution Gateway
-    if orchestrator.execution_gateway:
-        await orchestrator.execution_gateway.start()
-
-    # Start Writer Tasks
-    market_writer_task = asyncio.create_task(market_writer.run())
-    message_writer_task = asyncio.create_task(message_writer.run())
-
-    # Start Market Consumer Task
-    asyncio.create_task(orchestrator.start_market_consumer())
-
-    # Start Asset Discovery Agent (autonome achtergrond taak)
-    if "asset_discovery_v1" in orchestrator.agents:
-        logging.info("✓ Starting AssetDiscoveryAgent...")
-        try:
-            await orchestrator.agents["asset_discovery_v1"].start()
-            logging.info("✓ AssetDiscoveryAgent started successfully")
-        except Exception as e:
-            logging.error(f"✗ Failed to start AssetDiscoveryAgent: {e}")
-
-    if "research_v1" in orchestrator.agents:
-        await orchestrator.handle_message(
-            AgentMessage(
-                source="orchestrator",
-                target="research_v1",
-                type="TIMER_TICK_1MIN",
-                payload={},
+    async def initialize_federated_triad(self):
+        """Initialize the Federated Triad system."""
+        if self.federated_triad is None:
+            self.federated_triad = FederatedTriadSystem(
+                enable_caching=True,
+                deliberation_iterations=3,
+                chitta_max_nodes=10000,
             )
-        )
+            await self.federated_triad.initialize()
+            self.logger.info("Federated Triad System initialized")
 
-    try:
-        while True:
-            await asyncio.sleep(10)
-    finally:
-        logging.info("Shutting down...")
+    async def run_federated_cycle(self, market_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Run a full Federated Triad deliberation cycle.
+        
+        This coordinates all 5 councils through deliberation and
+        produces a synthesized decision.
+        """
+        if self.federated_triad is None:
+            await self.initialize_federated_triad()
 
-        # Stop Asset Discovery Agent
-        if "asset_discovery_v1" in orchestrator.agents:
-            logging.info("Stopping AssetDiscoveryAgent...")
-            try:
-                await orchestrator.agents["asset_discovery_v1"].stop()
-                logging.info("✓ AssetDiscoveryAgent stopped")
-            except Exception as e:
-                logging.error(f"✗ Error stopping AssetDiscoveryAgent: {e}")
+        # Build market data from agents if not provided
+        if market_data is None:
+            market_data = await self._gather_market_context()
 
-        market_writer.stop()
-        message_writer.stop()
-        await market_writer_task
-        await message_writer_task
-        await clickhouse_client.disconnect()
+        # Run the federated cycle
+        result = await self.federated_triad.process_cycle(market_data)
+        
+        if result.get("success"):
+            self.last_federated_decision = result
+            
+            # Broadcast decision via signal bridge if available
+            if self.signal_bridge and result.get("decision"):
+                await self.signal_bridge.emit_federated_decision(
+                    decision=result["decision"],
+                    coherence=result.get("chitta_stats", {}),
+                )
+
+        return result
+
+    async def _gather_market_context(self) -> Dict[str, Any]:
+        """Gather market context from all agents."""
+        context = {
+            "timestamp": time.time(),
+            "agent_signals": {},
+            "trend": "neutral",
+        }
+
+        # Gather signals from each agent
+        for agent_id, agent in self.agents.items():
+            if agent_id == "orchestrator_v1":
+                continue
+                
+            signal = "neutral"
+            confidence = 0.5
+            
+            # Try to get agent's perspective
+            if hasattr(agent, 'get_signal'):
+                try:
+                    signal_data = await agent.get_signal()
+                    signal = signal_data.get("signal", "neutral")
+                    confidence = signal_data.get("confidence", 0.5)
+                except Exception:
+                    pass
+            elif hasattr(agent, 'prana'):
+                # Derive signal from prana
+                prana = agent.prana if isinstance(agent.prana, (int, float)) else 50
+                if prana > 70:
+                    signal = "bullish"
+                elif prana < 40:
+                    signal = "bearish"
+                confidence = prana / 100
+
+            context["agent_signals"][agent_id] = {
+                "signal": signal,
+                "confidence": confidence,
+            }
+
+        # Determine overall trend
+        bullish = sum(1 for s in context["agent_signals"].values() if s["signal"] == "bullish")
+        bearish = sum(1 for s in context["agent_signals"].values() if s["signal"] == "bearish")
+        
+        if bullish > bearish + 1:
+            context["trend"] = "bullish"
+        elif bearish > bullish + 1:
+            context["trend"] = "bearish"
+
+        return context
+
+    def get_federated_state(self) -> Dict[str, Any]:
+        """Get current Federated Triad state."""
+        if self.federated_triad is None:
+            return {
+                "initialized": False,
+                "cycle_count": 0,
+                "chitta": {"total_nodes": 0, "verified_nodes": 0},
+            }
+        return self.federated_triad.get_state()
+
+    # =========================================================================
+    # FEDERATED TRIAD INTEGRATION
+    # =========================================================================
+
+    async def initialize_federated_triad(self):
+        """Initialize the Federated Triad system."""
+        if self.federated_triad is None:
+            self.federated_triad = FederatedTriadSystem(
+                enable_caching=True,
+                deliberation_iterations=3,
+                chitta_max_nodes=10000,
+            )
+            await self.federated_triad.initialize()
+            self.logger.info("Federated Triad System initialized")
+
+    async def run_federated_cycle(self, market_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Run a full Federated Triad deliberation cycle.
+        
+        This coordinates all 5 councils through deliberation and
+        produces a synthesized decision.
+        """
+        if self.federated_triad is None:
+            await self.initialize_federated_triad()
+
+        # Build market data from agents if not provided
+        if market_data is None:
+            market_data = await self._gather_market_context()
+
+        # Run the federated cycle
+        result = await self.federated_triad.process_cycle(market_data)
+        
+        if result.get("success"):
+            self.last_federated_decision = result
+            
+            # Broadcast decision via signal bridge if available
+            if self.signal_bridge and result.get("decision"):
+                await self.signal_bridge.emit_federated_decision(
+                    decision=result["decision"],
+                    coherence=result.get("chitta_stats", {}),
+                )
+
+        return result
+
+    async def _gather_market_context(self) -> Dict[str, Any]:
+        """Gather market context from all agents."""
+        context = {
+            "timestamp": time.time(),
+            "agent_signals": {},
+            "trend": "neutral",
+        }
+
+        # Gather signals from each agent
+        for agent_id, agent in self.agents.items():
+            if agent_id == "orchestrator_v1":
+                continue
+                
+            signal = "neutral"
+            confidence = 0.5
+            
+            # Try to get agent's perspective
+            if hasattr(agent, 'get_signal'):
+                try:
+                    signal_data = await agent.get_signal()
+                    signal = signal_data.get("signal", "neutral")
+                    confidence = signal_data.get("confidence", 0.5)
+                except Exception:
+                    pass
+            elif hasattr(agent, 'prana'):
+                # Derive signal from prana
+                prana = agent.prana if isinstance(agent.prana, (int, float)) else 50
+                if prana > 70:
+                    signal = "bullish"
+                elif prana < 40:
+                    signal = "bearish"
+                confidence = prana / 100
+
+            context["agent_signals"][agent_id] = {
+                "signal": signal,
+                "confidence": confidence,
+            }
+
+        # Determine overall trend
+        bullish = sum(1 for s in context["agent_signals"].values() if s["signal"] == "bullish")
+        bearish = sum(1 for s in context["agent_signals"].values() if s["signal"] == "bearish")
+        
+        if bullish > bearish + 1:
+            context["trend"] = "bullish"
+        elif bearish > bullish + 1:
+            context["trend"] = "bearish"
+
+        return context
+
+    def get_federated_state(self) -> Dict[str, Any]:
+        """Get current Federated Triad state."""
+        if self.federated_triad is None:
+            return {
+                "initialized": False,
+                "cycle_count": 0,
+                "chitta": {"total_nodes": 0, "verified_nodes": 0},
+            }
+        return self.federated_triad.get_state()
 
 
 if __name__ == "__main__":

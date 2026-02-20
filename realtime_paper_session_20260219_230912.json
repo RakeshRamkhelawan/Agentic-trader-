@@ -1,0 +1,134 @@
+{
+  "session_info": {
+    "exchange": "bitvavo",
+    "symbol": "BTC/EUR",
+    "start_time": "2026-02-19T23:09:12.890997+00:00",
+    "initial_balance": 10000.008
+  },
+  "trades": [
+    {
+      "timestamp": "2026-02-19T23:08:52.808112+00:00",
+      "exchange": "bitvavo",
+      "symbol": "BTC/EUR",
+      "side": "BUY",
+      "qty": 0.001,
+      "market_price": 56743.0,
+      "status": "FILLED",
+      "order_id": "13fabf9b-2f97-401b-8712-d5b5ae585313",
+      "filled_qty": 0.001,
+      "avg_price": 56743.0
+    },
+    {
+      "timestamp": "2026-02-19T23:08:54.814782+00:00",
+      "exchange": "bitvavo",
+      "symbol": "BTC/EUR",
+      "side": "SELL",
+      "qty": 0.001,
+      "market_price": 56743.0,
+      "status": "FILLED",
+      "order_id": "2beca608-7bb3-428c-a156-b4ecdd0fbc48",
+      "filled_qty": 0.001,
+      "avg_price": 56743.0
+    },
+    {
+      "timestamp": "2026-02-19T23:08:56.830407+00:00",
+      "exchange": "bitvavo",
+      "symbol": "BTC/EUR",
+      "side": "BUY",
+      "qty": 0.001,
+      "market_price": 56747.0,
+      "status": "FILLED",
+      "order_id": "0d065e96-a6a2-4945-81c1-32446ff9559e",
+      "filled_qty": 0.001,
+      "avg_price": 56747.0
+    },
+    {
+      "timestamp": "2026-02-19T23:08:58.846058+00:00",
+      "exchange": "bitvavo",
+      "symbol": "BTC/EUR",
+      "side": "SELL",
+      "qty": 0.001,
+      "market_price": 56747.0,
+      "status": "FILLED",
+      "order_id": "f6f75fd0-a70f-4772-94bc-c59642c2bf81",
+      "filled_qty": 0.001,
+      "avg_price": 56747.0
+    },
+    {
+      "timestamp": "2026-02-19T23:09:00.849726+00:00",
+      "exchange": "bitvavo",
+      "symbol": "BTC/EUR",
+      "side": "BUY",
+      "qty": 0.001,
+      "market_price": 56747.0,
+      "status": "FILLED",
+      "order_id": "a366e2d2-4d3f-4521-9850-0cfdaa4d94b3",
+      "filled_qty": 0.001,
+      "avg_price": 56747.0
+    },
+    {
+      "timestamp": "2026-02-19T23:09:02.856267+00:00",
+      "exchange": "bitvavo",
+      "symbol": "BTC/EUR",
+      "side": "SELL",
+      "qty": 0.001,
+      "market_price": 56752.0,
+      "status": "FILLED",
+      "order_id": "14bcff55-b1b4-4cc0-8a6a-6cdda3831fa6",
+      "filled_qty": 0.001,
+      "avg_price": 56752.0
+    },
+    {
+      "timestamp": "2026-02-19T23:09:04.856866+00:00",
+      "exchange": "bitvavo",
+      "symbol": "BTC/EUR",
+      "side": "BUY",
+      "qty": 0.001,
+      "market_price": 56752.0,
+      "status": "FILLED",
+      "order_id": "75864ea4-6662-4cb2-98af-465b514e8139",
+      "filled_qty": 0.001,
+      "avg_price": 56752.0
+    },
+    {
+      "timestamp": "2026-02-19T23:09:06.871688+00:00",
+      "exchange": "bitvavo",
+      "symbol": "BTC/EUR",
+      "side": "SELL",
+      "qty": 0.001,
+      "market_price": 56755.0,
+      "status": "FILLED",
+      "order_id": "12a4630e-e81f-44f2-a3c5-39449bab1e0b",
+      "filled_qty": 0.001,
+      "avg_price": 56755.0
+    },
+    {
+      "timestamp": "2026-02-19T23:09:08.877139+00:00",
+      "exchange": "bitvavo",
+      "symbol": "BTC/EUR",
+      "side": "BUY",
+      "qty": 0.001,
+      "market_price": 56755.0,
+      "status": "FILLED",
+      "order_id": "714de848-d57c-4d4d-8c2d-3c259b3582fc",
+      "filled_qty": 0.001,
+      "avg_price": 56755.0
+    },
+    {
+      "timestamp": "2026-02-19T23:09:10.884046+00:00",
+      "exchange": "bitvavo",
+      "symbol": "BTC/EUR",
+      "side": "SELL",
+      "qty": 0.001,
+      "market_price": 56755.0,
+      "status": "FILLED",
+      "order_id": "24c6f628-35b5-484d-b300-49599b405baa",
+      "filled_qty": 0.001,
+      "avg_price": 56755.0
+    }
+  ],
+  "final_balance": {
+    "EUR": 10000.008,
+    "BTC/EUR": 0.0
+  }
+}

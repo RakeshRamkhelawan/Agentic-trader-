@@ -8,13 +8,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.api import analytics_api  # Added new APIs
-from backend.api import (agents_api, approval_api, backtest_api, kyc_api,
-                         monitoring_api, navagraha_api, ooda_api,
+from backend.api import (agents_api, approval_api, backtest_api, federated_api,
+                         kyc_api, monitoring_api, navagraha_api, ooda_api,
                          prediction_api, trading_api, user_settings_api)
 # Routers
 from backend.api.auth_api import router as auth_router
 from backend.api.websocket_endpoints import router as ws_router
 from backend.api.websocket_manager import ws_manager
+from backend.api.paper_trading_ws_simple import router as paper_trading_ws_router
+from backend.api import paper_trading_api
 from backend.core.auth.jwt_validator import JWTValidator
 # Auth Middleware
 from backend.core.auth.middleware import AuthMiddleware
@@ -24,6 +26,7 @@ from backend.core.system_identity import SystemIdentity
 from backend.core.telemetry.logging_config import configure_logging
 from backend.observability.metrics import (PrometheusMiddleware,
                                            metrics_endpoint)
+from backend.schemas.agent_messages import AgentMessage
 from backend.services.cognitive_orchestrator import CognitiveOrchestrator
 
 # Services
@@ -155,6 +158,30 @@ async def lifespan(app: FastAPI):
         )
         logger.info("Cognitive Orchestrator Initialized")
 
+        # Initialize LLM Gateway for intelligent routing
+        try:
+            from backend.llm.gateway import get_llm_gateway
+            app.state.llm_gateway = await get_llm_gateway()
+            logger.info("LLM Gateway initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize LLM Gateway: {e}")
+            app.state.llm_gateway = None
+
+        # Start NewsAgent and SentimentAgent
+        if "news_v1" in app.state.orchestrator.agents:
+            try:
+                await app.state.orchestrator.agents["news_v1"].start()
+                logger.info("NewsAgent started")
+            except Exception as e:
+                logger.error(f"Failed to start NewsAgent: {e}")
+                
+        if "sentiment_v1" in app.state.orchestrator.agents:
+            try:
+                await app.state.orchestrator.agents["sentiment_v1"].start()
+                logger.info("SentimentAgent started")
+            except Exception as e:
+                logger.error(f"Failed to start SentimentAgent: {e}")
+
         # Start Orchestrator Background Tasks (if any)
         # e.g., consumer_task = asyncio.create_task(app.state.orchestrator.start_market_consumer())
 
@@ -179,7 +206,36 @@ async def lifespan(app: FastAPI):
     )  # Start System Publisher
     logger.info("Background Publishers STARTED")
 
+    # Start NewsAgent periodic fetch
+    async def news_fetcher():
+        """Fetch news every 60 seconds for major coins."""
+        while True:
+            try:
+                if app.state.orchestrator and "news_v1" in app.state.orchestrator.agents:
+                    await app.state.orchestrator.handle_message(
+                        AgentMessage(
+                            source="system",
+                            target="news_v1",
+                            type="FETCH_NEWS_REQUEST",
+                            payload={"coins": ["BTC", "ETH", "SOL"]},
+                        )
+                    )
+            except Exception as e:
+                logger.error(f"News fetcher error: {e}")
+            await asyncio.sleep(60)
+
+    news_task = asyncio.create_task(news_fetcher())
+    logger.info("News Fetcher STARTED")
+
     yield
+
+    # Shutdown
+    logger.info("API Server Shutting Down...")
+    news_task.cancel()
+    try:
+        await news_task
+    except asyncio.CancelledError:
+        pass
 
     # Shutdown
     logger.info("API Server Shutting Down...")
@@ -201,16 +257,7 @@ app = FastAPI(
     redoc_url="/redoc" if settings.DOCS_ENABLED else None,
 )
 
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Prometheus Middleware
+# Prometheus Middleware (add before AuthMiddleware)
 app.add_middleware(PrometheusMiddleware)
 
 
@@ -229,22 +276,72 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
+# ============================================================================
+# CORS Helper Function (must be defined before exception handler)
+# ============================================================================
+
+
+def parse_allowed_origins(origins):
+    """Parse ALLOWED_ORIGINS from settings, handling JSON string format."""
+    import json
+
+    if isinstance(origins, str):
+        try:
+            # Try to parse as JSON list
+            parsed = json.loads(origins)
+            if isinstance(parsed, list):
+                return parsed
+        except (json.JSONDecodeError, ValueError):
+            # Not valid JSON, treat as single origin
+            return [origins]
+    elif isinstance(origins, (list, tuple)):
+        return list(origins)
+    # Fallback to default
+    return ["http://localhost:3000"]
+
+
 # Global Exception Handler (Sanitization)
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """
     Catch-all exception handler to prevent stack traces in production.
     In development (ENV != production), allows FastAPI's default handler (with debug info).
+    
+    IMPORTANT: Adds CORS headers to error responses to prevent CORS errors in browser
+    when the error occurs before the CORS middleware can add headers.
     """
+    # Get origin from request for CORS header
+    origin = request.headers.get("origin")
+    allowed_origins = parse_allowed_origins(settings.ALLOWED_ORIGINS)
+    
+    # Build CORS headers
+    cors_headers = {}
+    if origin and origin in allowed_origins:
+        cors_headers["Access-Control-Allow-Origin"] = origin
+        cors_headers["Access-Control-Allow-Credentials"] = "true"
+    elif "*" in allowed_origins:
+        cors_headers["Access-Control-Allow-Origin"] = "*"
+    
     if settings.ENV == "production":
         logger.error(f"Global Exception: {exc}", exc_info=True)
         return JSONResponse(
             status_code=500,
             content={"detail": "Internal Server Error. Please contact support."},
+            headers=cors_headers,
         )
-    # Re-raise to let FastAPI's default debug handler catch it in dev
-    # (Or return a detailed JSON response if preferred)
-    raise exc
+    
+    # Development mode: return detailed error with CORS headers
+    import traceback
+    error_detail = {
+        "detail": str(exc),
+        "type": type(exc).__name__,
+        "traceback": traceback.format_exc().split("\n") if settings.DEBUG else None,
+    }
+    return JSONResponse(
+        status_code=500,
+        content=error_detail,
+        headers=cors_headers,
+    )
 
 
 # ============================================================================
@@ -273,6 +370,8 @@ AuthMiddleware.PUBLIC_PATHS = {
     "/api/v1/agents/chat",
     "/api/v1/agents/run-cycle",
     "/api/v1/agents/trades",
+    "/api/v1/federated/state",
+    "/api/v1/federated/cycle",
     "/api/v1/ooda/current-cycle",
     "/api/v1/monitoring/health",
     "/api/v1/monitoring/soul-context",
@@ -280,6 +379,11 @@ AuthMiddleware.PUBLIC_PATHS = {
     # Trading Data (Allow Public for Demo/Dev Mode)
     "/api/v1/trading/markets",
     "/api/v1/trading/candles/*",
+    # Paper Trading (Allow Public for Demo/Dev Mode)
+    "/api/v1/paper-trading/status",
+    "/api/v1/paper-trading/ws-url",
+    "/api/v1/paper-trading/start",
+    "/api/v1/paper-trading/stop",
 }
 
 # Use JWTValidator with Auth0 config
@@ -291,8 +395,25 @@ token_validator = JWTValidator(
     algorithms=[settings.AUTH0_ALGORITHM],
 )
 
-# Add AuthMiddleware AFTER CORS (middleware order: last added = first executed)
+# Add AuthMiddleware BEFORE CORS
+# (middleware order: last added = first executed, so CORS must be added last to be outermost)
 app.add_middleware(AuthMiddleware, jwt_validator=token_validator)
+
+# ============================================================================
+# CORS MIDDLEWARE - Must be added LAST to be the OUTERMOST middleware
+# This ensures CORS headers are added to ALL responses, including errors
+# ============================================================================
+
+
+# CORS must be the outermost middleware to handle CORS preflight and
+# add headers to error responses from inner middlewares
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=parse_allowed_origins(settings.ALLOWED_ORIGINS),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Mount Routers
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
@@ -306,10 +427,13 @@ app.include_router(analytics_api.router, prefix="/api/v1/analytics", tags=["anal
 app.include_router(backtest_api.router, prefix="/api/v1/backtest", tags=["backtesting"])
 app.include_router(prediction_api.router, prefix="/api/v1", tags=["prediction"])
 app.include_router(ws_router)  # /ws endpoint
+app.include_router(paper_trading_ws_router)  # /ws/paper-trading endpoint
+app.include_router(paper_trading_api.router)  # Paper trading API
 
 # New Dashboard APIs
 app.include_router(navagraha_api.router, prefix="/api/v1/navagraha", tags=["navagraha"])
 app.include_router(agents_api.router, prefix="/api/v1/agents", tags=["agents"])
+app.include_router(federated_api.router, prefix="/api/v1/federated", tags=["federated"])
 app.include_router(ooda_api.router, prefix="/api/v1/ooda", tags=["ooda"])
 app.include_router(
     monitoring_api.router, prefix="/api/v1/monitoring", tags=["monitoring"]

@@ -20,8 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Import our consciousness system
-from consciousness_agents import (ConsciousnessLLMFactory,
-                                  TattvaState)
+from consciousness_agents import ConsciousnessLLMFactory, TattvaState
 
 
 class ConsciousnessBacktestEngine:
