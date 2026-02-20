@@ -14,7 +14,7 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 # Import Federated Triad
-from trika_federated_system import (FederatedTriadSystem)
+from trika_federated_system import FederatedTriadSystem
 
 # Try to import old system for comparison
 try:

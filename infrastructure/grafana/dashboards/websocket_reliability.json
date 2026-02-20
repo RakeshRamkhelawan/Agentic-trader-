@@ -1,0 +1,233 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "WebSocket Reliability",
+    "tags": ["websocket", "reliability", "adr-003"],
+    "timezone": "utc",
+    "schemaVersion": 36,
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Active Connections",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "ws_connections_current",
+            "legendFormat": "Connections"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 1},
+                {"color": "green", "value": 10}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Connection Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(ws_connect_total[1m])",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 8, "x": 4, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Disconnect Reasons",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "ws_disconnect_total",
+            "legendFormat": "{{reason}}"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Messages per Second",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(ws_messages_sent[1m])",
+            "legendFormat": "sent ({{priority}})"
+          },
+          {
+            "expr": "rate(ws_messages_dropped[1m])",
+            "legendFormat": "dropped"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+      },
+      {
+        "id": 5,
+        "title": "Message Drop Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(ws_messages_dropped[1m]) / rate(ws_messages_sent[1m])",
+            "legendFormat": "{{stream}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit"
+          }
+        },
+        "alert": {
+          "name": "High Drop Rate",
+          "condition": {
+            "evaluator": {"type": "gt", "params": [0.01]},
+            "operator": {"type": "and"},
+            "query": {"params": ["A", "5m", "now"]},
+            "reducer": {"type": "avg", "params": []}
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+      },
+      {
+        "id": 6,
+        "title": "Latency (p50/p95/p99)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(ws_latency_seconds_bucket[1m]))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(ws_latency_seconds_bucket[1m]))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(ws_latency_seconds_bucket[1m]))",
+            "legendFormat": "p99"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}
+      },
+      {
+        "id": 7,
+        "title": "Queue Depth by Connection",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "ws_queue_depth",
+            "legendFormat": "{{connection_id}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}
+      },
+      {
+        "id": 8,
+        "title": "Channel Subscribers",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "ws_channel_subscribers",
+            "legendFormat": "{{channel}}"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 20}
+      },
+      {
+        "id": 9,
+        "title": "Resync Signals",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(ws_resync_signals_total[1m])",
+            "legendFormat": "{{reason}}"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 20}
+      },
+      {
+        "id": 10,
+        "title": "SLO Compliance",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "avg_over_time(ws_connections_current[1h]) > 0",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Value"},
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Connection Uptime"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "mode": "absolute",
+                    "steps": [
+                      {"color": "red", "value": 0},
+                      {"color": "green", "value": 0.999}
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 26}
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "stream",
+          "type": "query",
+          "query": "label_values(ws_messages_sent, stream)",
+          "multi": true,
+          "includeAll": true
+        },
+        {
+          "name": "priority",
+          "type": "custom",
+          "query": "high,low",
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "expr": "changes(ws_connections_current[1m]) > 10",
+          "tagKeys": "deployment",
+          "textFormat": "Deployment detected"
+        }
+      ]
+    },
+    "time": {"from": "now-1h", "to": "now"},
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"]
+    }
+  }
+}

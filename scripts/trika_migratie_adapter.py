@@ -34,7 +34,7 @@ except ImportError as e:
     OLD_SYSTEM_AVAILABLE = False
 
 # Nieuw systeem
-from trika_federated_system import (FederatedTriadSystem)
+from trika_federated_system import FederatedTriadSystem
 
 logger = logging.getLogger(__name__)
 

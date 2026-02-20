@@ -29,6 +29,18 @@ class AgentMessage:
             "TIMER_TICK_1MIN",
             "TIMER_TICK_1HOUR",
             "ORDER_INTENT",
+            # News & Sentiment Agent messages
+            "FETCH_NEWS",
+            "FETCH_NEWS_REQUEST",
+            "NEWS_UPDATE",
+            "ANALYZE_SENTIMENT",
+            "SENTIMENT_UPDATE",
+            "SOCIAL_FEED",
+            # Risk & Validation
+            "VALIDATE_ORDER",
+            "RISK_ALERT",
+            "MARKET_UPDATE",
+            "TIMER_TICK",
         }
         if self.type not in valid_types:
             raise ValueError(f"Invalid message type: {self.type}")

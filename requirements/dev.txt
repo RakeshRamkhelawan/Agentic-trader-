@@ -11,8 +11,10 @@ pre-commit==4.3.0
 ipython==9.10.0
 pdbpp==0.12.0.post1
 
-# --- SEMGREP & MCP (Development Tools, not core) ---
-semgrep==1.135.0
-mcp==1.12.2 # GEDOWNGGRADE voor semgrep-mcp compatibiliteit
-semgrep-mcp==0.9.0
+# --- MCP (Development Tools, not core) ---
+mcp==1.12.2
 pywin32==311; platform_system=="Windows"  # Windows-only, required by mcp
+# NOTE: semgrep removed from dev requirements due to opentelemetry-api version conflicts.
+# For static analysis in this repo, use ruff (linting) and mypy (type checking) from the
+# sections above. If you need semgrep-based security scanning, run it in a separate
+# virtualenv or via the official Docker image instead of adding it to this requirements file.
