@@ -114,3 +114,42 @@ agents:
       - "sync_asset_metadata"
       - "import_to_database"
     subscriptions: ["TIMER_TICK_1HOUR", "EXCHANGE_NEW_LISTING"]
+
+  # --- LIGHT: News Agent ---
+  # Gratis nieuws aggregatie van CryptoPanic, CoinGecko, Finnhub
+  - id: "news_v1"
+    name: "The Herald"
+    element: "air"
+    guna_composition:
+      sattva: 0.3
+      rajas: 0.6
+      tamas: 0.1
+    system_directive: >
+      As the News Agent, you are the eyes and ears of the system. You aggregate real-time
+      crypto news from free sources (CryptoPanic, CoinGecko, Finnhub). Your role is to
+      detect early signals, breaking news, and market-moving events before they affect prices.
+      You prioritize speed and breadth over depth.
+    allowed_tools:
+      - "fetch_cryptopanic"
+      - "fetch_coingecko_news"
+      - "fetch_finnhub"
+    subscriptions: ["TIMER_TICK_1MIN", "FETCH_NEWS_REQUEST"]
+
+  # --- MIND: Sentiment Agent ---
+  # DeepSeek/Ollama LLM sentiment analyse - gratis en lokaal
+  - id: "sentiment_v1"
+    name: "The Oracle"
+    element: "ether"
+    guna_composition:
+      sattva: 0.7
+      rajas: 0.2
+      tamas: 0.1
+    system_directive: >
+      As the Sentiment Agent, you analyze the emotional tone of news and social media
+      using local LLM (DeepSeek via Ollama). You provide nuanced sentiment scores that
+      go beyond simple keyword matching. Your analysis helps the Research Agent understand
+      market psychology and predict short-term price movements based on crowd sentiment.
+    allowed_tools:
+      - "analyze_sentiment_llm"
+      - "analyze_social_sentiment"
+    subscriptions: ["NEWS_UPDATE", "SOCIAL_FEED"]

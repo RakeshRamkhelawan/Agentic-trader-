@@ -7,7 +7,8 @@ import {
   Orbit, Target, Shield, Zap, Wind, Droplets, Mountain, 
   Sun, Moon, Users, Workflow, GitBranch, Microscope, 
   Radio, Sparkle, Telescope, Compass, Cpu, Gauge, Crown,
-  Triangle, Hexagon, Pentagon, Octagon, Square, Diamond
+  Triangle, Hexagon, Pentagon, Octagon, Square, Diamond,
+  TrendingUp, Network
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
