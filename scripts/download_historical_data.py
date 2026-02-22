@@ -1,379 +1,337 @@
-#!/usr/bin/env python3
 """
-Historical Crypto Data Downloader
-
-Downloads gratis OHLCV data van CryptoDataDownload.com
-Geschikt voor backtesting in Agentic Trader Platform
-
-Usage:
-    python scripts/download_historical_data.py --symbol BTC-EUR --timeframe 1h
-    python scripts/download_historical_data.py --symbol ETH-EUR --timeframe 1d --days 1825
+Historical Market Data Downloader
+Downloads 50+ assets from Yahoo Finance (2020-2026) for backtesting
 """
 
-import argparse
+import os
+import sys
 import asyncio
 import logging
-import sys
 from datetime import datetime, timedelta
-from io import StringIO
-from pathlib import Path
-from typing import Optional
-from urllib.request import urlopen
-
+from typing import List, Dict, Optional
 import pandas as pd
+import yfinance as yf
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+# Add project root to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("DataDownloader")
+
+# Top 50+ assets (Crypto + Stocks + ETFs)
+ASSETS = {
+    # Major Cryptos (EUR pairs via USD conversion)
+    "BTC": "BTC-USD",
+    "ETH": "ETH-USD", 
+    "SOL": "SOL-USD",
+    "ADA": "ADA-USD",
+    "DOT": "DOT-USD",
+    "XRP": "XRP-USD",
+    "LINK": "LINK-USD",
+    "DOGE": "DOGE-USD",
+    "LTC": "LTC-USD",
+    "XLM": "XLM-USD",
+    "AVAX": "AVAX-USD",
+    "MATIC": "MATIC-USD",
+    "UNI": "UNI-USD",
+    "AAVE": "AAVE-USD",
+    "ATOM": "ATOM-USD",
+    "ALGO": "ALGO-USD",
+    "ETC": "ETC-USD",
+    "VET": "VET-USD",
+    "FIL": "FIL-USD",
+    "TRX": "TRX-USD",
+    
+    # Major Stocks
+    "AAPL": "AAPL",
+    "MSFT": "MSFT",
+    "GOOGL": "GOOGL",
+    "AMZN": "AMZN",
+    "TSLA": "TSLA",
+    "META": "META",
+    "NVDA": "NVDA",
+    "NFLX": "NFLX",
+    "AMD": "AMD",
+    "INTC": "INTC",
+    "IBM": "IBM",
+    "ORCL": "ORCL",
+    "CRM": "CRM",
+    "ADBE": "ADBE",
+    "PYPL": "PYPL",
+    "UBER": "UBER",
+    "COIN": "COIN",
+    "SNOW": "SNOW",
+    "ZM": "ZM",
+    "ROKU": "ROKU",
+    
+    # ETFs & Indices
+    "SPY": "SPY",
+    "QQQ": "QQQ",
+    "IWM": "IWM",
+    "VTI": "VTI",
+    "EFA": "EFA",
+    "EEM": "EEM",
+    "TLT": "TLT",
+    "GLD": "GLD",
+    "USO": "USO",
+    "VIX": "^VIX",
+    
+    # Inverse ETFs for Hedging (V12+)
+    "SH": "SH",      # S&P 500 Inverse
+    "PSQ": "PSQ",    # Nasdaq Inverse
+    "RWM": "RWM",    # Russell 2000 Inverse
+    "TBF": "TBF",    # Treasury 20+ Year Inverse
+    
+    # European Stocks
+    "ASML": "ASML",
+    "SAP": "SAP",
+    "NESN": "NESN.SW",
+    "ROG": "ROG.SW",
+    "SHEL": "SHEL",
+    "TTE": "TTE",
+    "AIR": "AIR.PA",
+}
+
+# Database configuration
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+asyncpg://trader:trading_secure@localhost:5456/trading_db"
 )
-logger = logging.getLogger(__name__)
+
+# Convert asyncpg to psycopg2 for pandas
+SYNC_DATABASE_URL = DATABASE_URL.replace("+asyncpg", "+psycopg2").replace("postgresql+psycopg2", "postgresql")
 
 
-class CryptoDataDownloader:
-    """
-    Download historical crypto data from free sources.
-    Primary: CryptoDataDownload.com
-    Fallback: CCXT (Bitvavo/Binance)
-    """
-
-    def __init__(self, data_dir: str = "data/historical"):
-        self.data_dir = Path(data_dir)
-        self.data_dir.mkdir(parents=True, exist_ok=True)
-
-    def download_cryptodatadownload(
-        self, symbol: str, exchange: str = "Bitvavo", timeframe: str = "1h"
-    ) -> Optional[pd.DataFrame]:
-        """
-        Download data from CryptoDataDownload.com
-
-        Args:
-            symbol: Trading pair (e.g., 'BTC-EUR')
-            exchange: Exchange name (e.g., 'Bitvavo', 'Binance')
-            timeframe: '1d', '1h', or '1m'
-        """
-        # Convert symbol format
-        base, quote = symbol.replace("-", "/").split("/")
-
-        # Map timeframes
-        tf_map = {"1d": "d", "1h": "h", "1m": "m"}
-        tf_code = tf_map.get(timeframe, "h")
-
-        # Build URL
-        url = f"https://www.cryptodatadownload.com/cdd/{exchange}_{base}{quote}_{tf_code}.csv"
-
-        logger.info(f"Downloading from: {url}")
-
+class HistoricalDataDownloader:
+    """Downloads and stores historical market data"""
+    
+    def __init__(self, start_date: str = "2020-01-01", end_date: str = "2026-12-31"):
+        self.start_date = start_date
+        self.end_date = end_date
+        self.engine = create_engine(SYNC_DATABASE_URL)
+        
+    def ensure_tables(self):
+        """Ensure database tables exist"""
+        logger.info("Creating tables if not exist...")
+        
+        with self.engine.connect() as conn:
+            # MarketCandles table - create it first
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS market_candles (
+                    symbol VARCHAR NOT NULL,
+                    timeframe VARCHAR NOT NULL,
+                    timestamp TIMESTAMPTZ NOT NULL,
+                    open DOUBLE PRECISION NOT NULL,
+                    high DOUBLE PRECISION NOT NULL,
+                    low DOUBLE PRECISION NOT NULL,
+                    close DOUBLE PRECISION NOT NULL,
+                    volume DOUBLE PRECISION NOT NULL,
+                    provider VARCHAR,
+                    PRIMARY KEY (symbol, timeframe, timestamp)
+                );
+            """))
+            conn.commit()
+            
+            # Create hypertable for TimescaleDB (optional)
+            try:
+                conn.execute(text("""
+                    SELECT create_hypertable('market_candles', 'timestamp', 
+                        if_not_exists => TRUE, 
+                        migrate_data => TRUE
+                    );
+                """))
+                conn.commit()
+                logger.info("TimescaleDB hypertable created/verified")
+            except Exception as e:
+                conn.rollback()
+                logger.warning(f"TimescaleDB hypertable creation skipped: {e}")
+            
+            # Create indexes
+            conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS idx_market_candles_symbol 
+                ON market_candles (symbol, timestamp DESC);
+            """))
+            conn.commit()
+        
+        logger.info("Tables ready")
+    
+    def download_asset(self, symbol: str, yf_symbol: str) -> Optional[pd.DataFrame]:
+        """Download historical data for a single asset"""
         try:
-            # Download with user-agent header
-            req = urlopen(url)
-            data = req.read().decode("utf-8")
-
-            # Parse CSV (skip first row which is usually headers/info)
-            lines = data.strip().split("\n")
-
-            # Find the actual header row (usually starts with date)
-            header_idx = 0
-            for i, line in enumerate(lines[:5]):
-                if "date" in line.lower() or "time" in line.lower():
-                    header_idx = i
-                    break
-
-            # Parse CSV
-            df = pd.read_csv(StringIO("\n".join(lines[header_idx:])))
-
-            # Standardize column names
-            df.columns = [c.lower().strip() for c in df.columns]
-
-            # Rename common columns
-            col_mapping = {
-                "date": "timestamp",
-                "time": "timestamp",
-                "datetime": "timestamp",
-                "open": "open",
-                "high": "high",
-                "low": "low",
-                "close": "close",
-                "volume": "volume",
-                "vol": "volume",
-                "symbol": "symbol",
+            logger.info(f"Downloading {symbol} ({yf_symbol})...")
+            
+            ticker = yf.Ticker(yf_symbol)
+            df = ticker.history(
+                start=self.start_date,
+                end=self.end_date,
+                interval="1d"  # Daily data
+            )
+            
+            if df.empty:
+                logger.warning(f"No data for {symbol}")
+                return None
+            
+            # Rename columns to match our schema
+            df = df.rename(columns={
+                "Open": "open",
+                "High": "high",
+                "Low": "low",
+                "Close": "close",
+                "Volume": "volume"
+            })
+            
+            # Add metadata columns
+            df["symbol"] = symbol
+            df["timeframe"] = "1d"
+            df["provider"] = "yahoo_finance"
+            df = df.reset_index()
+            df = df.rename(columns={"Date": "timestamp"})
+            
+            # Ensure timestamp is timezone-aware
+            if df["timestamp"].dt.tz is None:
+                df["timestamp"] = df["timestamp"].dt.tz_localize("UTC")
+            
+            logger.info(f"Downloaded {len(df)} candles for {symbol}")
+            return df[["symbol", "timeframe", "timestamp", "open", "high", "low", "close", "volume", "provider"]]
+            
+        except Exception as e:
+            logger.error(f"Failed to download {symbol}: {e}")
+            return None
+    
+    def store_data(self, df: pd.DataFrame) -> int:
+        """Store DataFrame to database"""
+        if df is None or df.empty:
+            return 0
+        
+        try:
+            # Use COPY for bulk insert
+            rows_inserted = df.to_sql(
+                "market_candles",
+                self.engine,
+                if_exists="append",
+                index=False,
+                method="multi",
+                chunksize=1000
+            )
+            
+            logger.info(f"Stored {rows_inserted} rows")
+            return rows_inserted
+            
+        except Exception as e:
+            logger.error(f"Failed to store data: {e}")
+            return 0
+    
+    def download_all(self, max_assets: Optional[int] = None):
+        """Download all assets"""
+        self.ensure_tables()
+        
+        assets = list(ASSETS.items())[:max_assets] if max_assets else list(ASSETS.items())
+        
+        total_candles = 0
+        successful = 0
+        failed = 0
+        
+        for symbol, yf_symbol in assets:
+            df = self.download_asset(symbol, yf_symbol)
+            
+            if df is not None:
+                rows = self.store_data(df)
+                total_candles += rows
+                successful += 1
+            else:
+                failed += 1
+            
+            # Rate limiting - be nice to Yahoo Finance
+            import time
+            time.sleep(0.5)
+        
+        logger.info("=" * 60)
+        logger.info(f"Download Complete!")
+        logger.info(f"Successful: {successful}/{len(assets)}")
+        logger.info(f"Failed: {failed}")
+        logger.info(f"Total candles: {total_candles:,}")
+        logger.info("=" * 60)
+        
+        return {
+            "successful": successful,
+            "failed": failed,
+            "total_candles": total_candles
+        }
+    
+    def get_stats(self) -> Dict:
+        """Get database statistics"""
+        with self.engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT 
+                    COUNT(*) as total_candles,
+                    COUNT(DISTINCT symbol) as unique_symbols,
+                    MIN(timestamp) as earliest,
+                    MAX(timestamp) as latest
+                FROM market_candles
+            """))
+            row = result.fetchone()
+            
+            symbols_result = conn.execute(text("""
+                SELECT symbol, COUNT(*) as count 
+                FROM market_candles 
+                GROUP BY symbol 
+                ORDER BY count DESC
+            """))
+            symbols = {r[0]: r[1] for r in symbols_result.fetchall()}
+            
+            return {
+                "total_candles": row[0],
+                "unique_symbols": row[1],
+                "earliest": row[2],
+                "latest": row[3],
+                "symbols": symbols
             }
 
-            df = df.rename(
-                columns={k: v for k, v in col_mapping.items() if k in df.columns}
-            )
 
-            # Parse timestamp
-            if "timestamp" in df.columns:
-                df["timestamp"] = pd.to_datetime(df["timestamp"])
-                df = df.sort_values("timestamp")
-
-            # Add symbol column if missing
-            if "symbol" not in df.columns:
-                df["symbol"] = symbol
-
-            logger.info(f"✓ Downloaded {len(df)} rows")
-            return df
-
-        except Exception as e:
-            logger.error(f"✗ Failed to download from CryptoDataDownload: {e}")
-            return None
-
-    async def download_ccxt(
-        self,
-        symbol: str,
-        exchange_id: str = "bitvavo",
-        timeframe: str = "1h",
-        since_days: int = 365,
-    ) -> Optional[pd.DataFrame]:
-        """
-        Download data using CCXT (fallback method)
-
-        Args:
-            symbol: Trading pair (e.g., 'BTC-EUR')
-            exchange_id: 'bitvavo', 'kraken', 'binance'
-            timeframe: '1d', '1h', '15m', '5m', '1m'
-            since_days: How many days back to fetch
-        """
-        try:
-            import ccxt.async_support as ccxt
-
-            # Initialize exchange
-            exchange_class = getattr(ccxt, exchange_id)
-            exchange = exchange_class(
-                {
-                    "enableRateLimit": True,
-                }
-            )
-
-            await exchange.load_markets()
-
-            # Check if symbol exists
-            if (
-                symbol.replace("-", "/") not in exchange.symbols
-                and symbol.replace("-", "") not in exchange.symbols
-            ):
-                logger.warning(f"Symbol {symbol} not found on {exchange_id}")
-                await exchange.close()
-                return None
-
-            # Calculate start timestamp
-            since = int(
-                (datetime.now() - timedelta(days=since_days)).timestamp() * 1000
-            )
-
-            logger.info(
-                f"Fetching {symbol} {timeframe} data from {exchange_id} (last {since_days} days)..."
-            )
-
-            all_ohlcv = []
-            while since < datetime.now().timestamp() * 1000:
-                try:
-                    ohlcv = await exchange.fetch_ohlcv(
-                        symbol.replace("-", "/"), timeframe, since, limit=1000
-                    )
-                    if not ohlcv:
-                        break
-
-                    all_ohlcv.extend(ohlcv)
-                    since = ohlcv[-1][0] + 1  # Next timestamp
-
-                    logger.info(f"  Fetched {len(all_ohlcv)} candles...")
-
-                    # Rate limit
-                    await asyncio.sleep(exchange.rateLimit / 1000)
-
-                except Exception as e:
-                    logger.warning(f"  Fetch error: {e}")
-                    break
-
-            await exchange.close()
-
-            if not all_ohlcv:
-                return None
-
-            # Convert to DataFrame
-            df = pd.DataFrame(
-                all_ohlcv,
-                columns=["timestamp", "open", "high", "low", "close", "volume"],
-            )
-            df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
-            df["symbol"] = symbol
-
-            logger.info(f"✓ Downloaded {len(df)} rows via CCXT")
-            return df
-
-        except Exception as e:
-            logger.error(f"✗ CCXT download failed: {e}")
-            return None
-
-    def save_data(self, df: pd.DataFrame, symbol: str, timeframe: str, source: str):
-        """Save DataFrame to CSV and Parquet."""
-        if df is None or df.empty:
-            return
-
-        # Clean symbol for filename
-        clean_symbol = symbol.replace("/", "-").replace("\\", "-")
-
-        # Save to CSV
-        csv_path = self.data_dir / f"{clean_symbol}_{timeframe}_{source}.csv"
-        df.to_csv(csv_path, index=False)
-        logger.info(f"✓ Saved CSV: {csv_path}")
-
-        # Save to Parquet (better for large datasets)
-        parquet_path = self.data_dir / f"{clean_symbol}_{timeframe}_{source}.parquet"
-        df.to_parquet(parquet_path, index=False)
-        logger.info(f"✓ Saved Parquet: {parquet_path}")
-
-        return csv_path, parquet_path
-
-    def get_data_summary(self, df: pd.DataFrame) -> dict:
-        """Get summary statistics of downloaded data."""
-        if df is None or df.empty:
-            return {}
-
-        return {
-            "total_rows": len(df),
-            "start_date": df["timestamp"].min() if "timestamp" in df.columns else None,
-            "end_date": df["timestamp"].max() if "timestamp" in df.columns else None,
-            "avg_price": df["close"].mean() if "close" in df.columns else None,
-            "min_price": df["low"].min() if "low" in df.columns else None,
-            "max_price": df["high"].max() if "high" in df.columns else None,
-            "avg_volume": df["volume"].mean() if "volume" in df.columns else None,
-        }
-
-
-async def main():
-    parser = argparse.ArgumentParser(
-        description="Download historical crypto data for backtesting",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Download BTC-EUR hourly data (last ~2 years)
-  python scripts/download_historical_data.py --symbol BTC-EUR --timeframe 1h
-  
-  # Download ETH-EUR daily data
-  python scripts/download_historical_data.py --symbol ETH-EUR --timeframe 1d
-  
-  # Download via CCXT (Bitvavo)
-  python scripts/download_historical_data.py --symbol BTC-EUR --source ccxt --days 365
-  
-  # Download multiple symbols
-  python scripts/download_historical_data.py --symbols BTC-EUR,ETH-EUR,SOL-EUR --timeframe 1h
-        """,
-    )
-
-    parser.add_argument(
-        "--symbol", default="BTC-EUR", help="Trading pair (e.g., BTC-EUR)"
-    )
-    parser.add_argument(
-        "--symbols", help="Multiple symbols comma-separated (e.g., BTC-EUR,ETH-EUR)"
-    )
-    parser.add_argument(
-        "--timeframe",
-        default="1h",
-        choices=["1d", "1h", "15m", "5m", "1m"],
-        help="Data granularity (default: 1h)",
-    )
-    parser.add_argument(
-        "--source",
-        default="cryptodatadownload",
-        choices=["cryptodatadownload", "ccxt"],
-        help="Data source (default: cryptodatadownload)",
-    )
-    parser.add_argument(
-        "--exchange",
-        default="Bitvavo",
-        help="Exchange for CryptoDataDownload (default: Bitvavo)",
-    )
-    parser.add_argument(
-        "--days",
-        type=int,
-        default=365,
-        help="Days of history to fetch via CCXT (default: 365)",
-    )
-    parser.add_argument(
-        "--output-dir",
-        default="data/historical",
-        help="Output directory (default: data/historical)",
-    )
-
+def main():
+    """Main entry point"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Download historical market data")
+    parser.add_argument("--start", default="2020-01-01", help="Start date (YYYY-MM-DD)")
+    parser.add_argument("--end", default="2026-12-31", help="End date (YYYY-MM-DD)")
+    parser.add_argument("--max", type=int, help="Max number of assets to download")
+    parser.add_argument("--stats", action="store_true", help="Show database stats only")
+    
     args = parser.parse_args()
-
-    # Initialize downloader
-    downloader = CryptoDataDownloader(data_dir=args.output_dir)
-
-    # Determine symbols to download
-    symbols = args.symbols.split(",") if args.symbols else [args.symbol]
-
-    print("=" * 70)
-    print("HISTORICAL CRYPTO DATA DOWNLOADER")
-    print("=" * 70)
-    print(f"Source:    {args.source}")
-    print(f"Timeframe: {args.timeframe}")
-    print(f"Symbols:   {', '.join(symbols)}")
-    print(f"Output:    {args.output_dir}")
-    print("=" * 70)
-
-    results = []
-
-    for symbol in symbols:
-        symbol = symbol.strip()
-        print(f"\n📊 Processing {symbol}...")
-
-        # Download based on source
-        if args.source == "cryptodatadownload":
-            df = downloader.download_cryptodatadownload(
-                symbol=symbol, exchange=args.exchange, timeframe=args.timeframe
-            )
-        else:  # ccxt
-            df = await downloader.download_ccxt(
-                symbol=symbol, timeframe=args.timeframe, since_days=args.days
-            )
-
-        if df is not None and not df.empty:
-            # Save data
-            paths = downloader.save_data(df, symbol, args.timeframe, args.source)
-
-            # Get summary
-            summary = downloader.get_data_summary(df)
-
-            print(f"\n✓ Downloaded {symbol}:")
-            print(f"  Rows:      {summary['total_rows']:,}")
-            print(f"  Period:    {summary['start_date']} to {summary['end_date']}")
-            print(
-                f"  Price:     €{summary['min_price']:.2f} - €{summary['max_price']:.2f}"
-            )
-            print(f"  Avg Price: €{summary['avg_price']:.2f}")
-            print(f"  Avg Vol:   {summary['avg_volume']:,.0f}")
-
-            results.append(
-                {
-                    "symbol": symbol,
-                    "success": True,
-                    "rows": summary["total_rows"],
-                    "paths": paths,
-                }
-            )
-        else:
-            print(f"\n✗ Failed to download {symbol}")
-            results.append(
-                {"symbol": symbol, "success": False, "rows": 0, "paths": None}
-            )
-
-    # Summary
-    print("\n" + "=" * 70)
-    print("DOWNLOAD SUMMARY")
-    print("=" * 70)
-
-    successful = sum(1 for r in results if r["success"])
-    total_rows = sum(r["rows"] for r in results)
-
-    print(f"Successful: {successful}/{len(results)}")
-    print(f"Total rows: {total_rows:,}")
-    print(f"\nFiles saved to: {args.output_dir}")
-    print("=" * 70)
-
-    return 0 if successful == len(results) else 1
+    
+    downloader = HistoricalDataDownloader(
+        start_date=args.start,
+        end_date=args.end
+    )
+    
+    if args.stats:
+        stats = downloader.get_stats()
+        print("\n" + "=" * 60)
+        print("DATABASE STATISTICS")
+        print("=" * 60)
+        print(f"Total candles: {stats['total_candles']:,}")
+        print(f"Unique symbols: {stats['unique_symbols']}")
+        print(f"Date range: {stats['earliest']} to {stats['latest']}")
+        print("\nTop 10 assets by data points:")
+        for sym, count in list(stats['symbols'].items())[:10]:
+            print(f"  {sym}: {count:,} candles")
+        return
+    
+    # Download all data
+    result = downloader.download_all(max_assets=args.max)
+    
+    if result["successful"] > 0:
+        stats = downloader.get_stats()
+        print("\n" + "=" * 60)
+        print("FINAL STATISTICS")
+        print("=" * 60)
+        print(f"Total candles in DB: {stats['total_candles']:,}")
+        print(f"Unique symbols: {stats['unique_symbols']}")
+        print(f"Date range: {stats['earliest']} to {stats['latest']}")
 
 
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    main()
