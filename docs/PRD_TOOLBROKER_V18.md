@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 # ToolBroker V18 - MCP-Enabled Trading Architecture
 
-> **Project**: Agentic Trader Platform V18  
-> **Feature**: ToolBroker Integration  
-> **Status**: Draft → Ready for Development  
+> **Project**: Agentic Trader Platform V18
+> **Feature**: ToolBroker Integration
+> **Status**: Draft → Ready for Development
 > **Priority**: P0 (Critical Path)
 
 ---
@@ -649,31 +649,31 @@ tool_broker:
     timeout_seconds: 30
     reset_timeout_seconds: 60
     half_open_requests: 3
-  
+
   retry:
     max_attempts: 3
     initial_delay_ms: 100
     max_delay_ms: 10000
     backoff_factor: 2.0
     jitter_enabled: true
-  
+
   # MCP server configurations
   mcp_servers:
     vedastro:
       type: local
       module: backend.tools.vedastro
       enabled: true
-    
+
     elemental:
       type: local
       module: backend.tools.elemental
       enabled: true
-    
+
     data:
       type: local
       module: backend.tools.data
       enabled: true
-    
+
     execution:
       type: local
       module: backend.tools.execution
@@ -815,15 +815,15 @@ Sprint 5: Depends on Sprint 4
 ```python
 def test_circuit_opens_after_5_failures():
     broker = ToolBroker()
-    
+
     # 5 failures triggeren
     for i in range(5):
         with pytest.raises(ToolExecutionException):
             await broker.execute_tool("failing_tool", {})
-    
+
     # Circuit moet open zijn
     assert broker.get_circuit_state("failing_tool") == CircuitState.OPEN
-    
+
     # Direct rejection
     with pytest.raises(CircuitBreakerOpenException):
         await broker.execute_tool("failing_tool", {})
@@ -833,12 +833,12 @@ def test_circuit_opens_after_5_failures():
 ```python
 async def test_vedastro_tool_returns_valid_signal():
     broker = ToolBroker()
-    
+
     result = await broker.execute_tool(
         "vedastro__generate_signal",
         {"symbol": "AAPL", "current_price": 185.50}
     )
-    
+
     assert result.success
     assert result.data["signal"] in ["BUY", "SELL", "HOLD", "STRONG_BUY", "STRONG_SELL"]
     assert 0 <= result.data["confidence"] <= 100
@@ -849,7 +849,7 @@ async def test_vedastro_tool_returns_valid_signal():
 ```python
 async def test_fire_position_size_respects_max():
     broker = ToolBroker()
-    
+
     result = await broker.execute_tool(
         "elemental__fire_position_size",
         {
@@ -859,7 +859,7 @@ async def test_fire_position_size_respects_max():
             "dominant_planet": "JUPITER"
         }
     )
-    
+
     assert result.data["position_size_eur"] <= 2000.0
     assert result.data["max_position_eur"] == 2000.0
 ```

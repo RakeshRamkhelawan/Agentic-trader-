@@ -132,7 +132,7 @@ MIN_VEDASTRO_SCORE = 45.0
 ```python
 # Circuit Breaker States
 CLOSED   → Normal operation, requests pass through
-OPEN     → Service failing, requests rejected immediately  
+OPEN     → Service failing, requests rejected immediately
 HALF_OPEN → Testing recovery, limited requests allowed
 
 # Retry Config
@@ -180,7 +180,7 @@ async def tool_vedastro_evaluate_entry(params: Dict) -> Dict:
 # backend/tools/vedastro/signal_generator.py
 class VedAstroSignalTool:
     """Generates BUY/SELL/HOLD signals from astrological data"""
-    
+
     async def execute(self, symbol: str, current_price: float) -> Dict:
         # 1. Get cached or fresh VedAstro analysis
         # 2. Apply TradingSignalGenerator
@@ -200,10 +200,10 @@ class VedAstroSignalTool:
 # backend/tools/elemental/fire_agent.py
 class FirePositionSizeTool:
     """Calculates position size based on volatility and VedAstro score"""
-    
+
     MAX_POSITION_EUR = 2000.0  # Behouden uit V17
-    
-    async def execute(self, symbol: str, portfolio_value: float, 
+
+    async def execute(self, symbol: str, portfolio_value: float,
                       vedastro_score: float, dominant_planet: str) -> Dict:
         # V17 logica exact behouden
         position_size = self._calculate_v17_logic(...)
@@ -220,7 +220,7 @@ class FirePositionSizeTool:
 # backend/tools/elemental/earth_agent.py
 class EarthEntryCheckTool:
     """Checks if entry is allowed (3-loss rule)"""
-    
+
     async def execute(self, symbol: str, trade_history: List[Dict]) -> Dict:
         # V17: 3 consecutive losses = block entry
         recent_losses = self._count_recent_losses(symbol, trade_history)
@@ -237,7 +237,7 @@ class EarthEntryCheckTool:
 class BacktestEngine:
     def __init__(self):
         self.elemental_agent = VedAstroElementalAgentV17()
-    
+
     async def run(self):
         for day in dates:
             entry = await self.elemental_agent.evaluate_entry(...)
@@ -246,7 +246,7 @@ class BacktestEngine:
 class BacktestEngineV18:
     def __init__(self, tool_broker: ToolBroker):
         self.broker = tool_broker
-    
+
     async def run(self):
         for day in dates:
             # Via ToolBroker - volledige decoupling
@@ -307,7 +307,7 @@ class VedAstroSignalResult(BaseModel):
 class ElementalConsensusResult(BaseModel):
     harmony_score: float  # 0-1
     fire_vote: float
-    earth_vote: float  
+    earth_vote: float
     water_vote: float
     approved: bool  # harmony > 0.45
     blocking_reasons: List[str]
@@ -446,26 +446,26 @@ tool_broker:
     timeout_seconds: 30
     reset_timeout_seconds: 60
     half_open_requests: 3
-  
+
   retry:
     max_attempts: 3
     initial_delay_ms: 100
     max_delay_ms: 10000
     backoff_factor: 2.0
     jitter_enabled: true
-  
+
   # MCP Servers
   servers:
     vedastro:
       type: local
       module: backend.tools.vedastro
       enabled: true
-    
+
     elemental:
       type: local
       module: backend.tools.elemental
       enabled: true
-    
+
     # Externe MCP servers (voorbeeld)
     sentiment:
       type: mcp
@@ -572,6 +572,6 @@ De ToolBroker-architectuur transformeert de Agentic Trader Platform van een stat
 
 ---
 
-*Document Versie: 1.0*  
-*Laatste Update: 2026-02-22*  
+*Document Versie: 1.0*
+*Laatste Update: 2026-02-22*
 *Status: READY FOR IMPLEMENTATION*

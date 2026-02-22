@@ -1,5 +1,5 @@
 # Development Environment Setup Script (Windows PowerShell)
-# 
+#
 # This script sets up everything needed for development
 # Usage: .\scripts\setup-dev.ps1
 
@@ -56,7 +56,7 @@ Write-Host "[4/6] Installing pre-commit hooks..."
 if (Test-Path ".pre-commit-config.yaml") {
     pre-commit install
     Write-Host "[✓] Installed pre-commit hooks" -ForegroundColor Green
-    
+
     Write-Host "    Running initial pre-commit check (this may take a minute)..." -ForegroundColor Blue
     pre-commit run --all-files | Out-Null
     if ($LASTEXITCODE -ne 0) {
@@ -101,7 +101,7 @@ Write-Host "[6/6] Configuring Git..."
 if (Test-Path ".git") {
     git config core.hooksPath .git/hooks
     Write-Host "[✓] Git repository configured" -ForegroundColor Green
-    
+
     Write-Host ""
     Write-Host "Current Git status:" -ForegroundColor Blue
     git status -sb

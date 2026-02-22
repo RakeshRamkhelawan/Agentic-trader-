@@ -72,9 +72,9 @@ class BatchBacktestRequest(BaseModel):
 async def run_backtest(request: BacktestRequest):
     """
     Execute a backtest with the specified parameters.
-    
+
     Uses direct Python imports for maximum performance (NumPy + Redis).
-    
+
     Example:
         ```json
         {
@@ -84,28 +84,28 @@ async def run_backtest(request: BacktestRequest):
             "initial_capital": 100000
         }
         ```
-    
+
     Returns:
         Complete backtest results with performance metrics
     """
     start_time = time.time()
     backtest_id = f"bt_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
-    
+
     logger.info(f"Starting backtest {backtest_id}")
     logger.info(f"  Symbols: {request.symbols}")
     logger.info(f"  Date range: {request.start_date} to {request.end_date}")
-    
+
     try:
         # Parse dates
         start = datetime.fromisoformat(request.start_date)
         end = datetime.fromisoformat(request.end_date)
-        
+
         if start >= end:
             raise HTTPException(
                 status_code=400,
                 detail="start_date must be before end_date"
             )
-        
+
         # Choose engine based on symbol count
         if len(request.symbols) > 10 and request.enable_parallel:
             logger.info("Using Ultra backtest engine (parallel)")
@@ -127,11 +127,11 @@ async def run_backtest(request: BacktestRequest):
                 enable_parallel=request.enable_parallel,
                 max_workers=request.max_workers
             )
-        
+
         execution_time = time.time() - start_time
-        
+
         logger.info(f"Backtest {backtest_id} completed in {execution_time:.2f}s")
-        
+
         return BacktestResponse(
             status="completed",
             backtest_id=backtest_id,
@@ -140,7 +140,7 @@ async def run_backtest(request: BacktestRequest):
             performance=results.get("performance", {}),
             execution_time_seconds=execution_time
         )
-        
+
     except ValueError as e:
         logger.error(f"Invalid request: {e}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -156,26 +156,26 @@ async def run_backtest(request: BacktestRequest):
 async def run_batch_backtest(request: BatchBacktestRequest):
     """
     Run multiple backtest configurations in parallel.
-    
+
     Useful for parameter optimization or comparing strategies.
     """
     import asyncio
-    
+
     logger.info(f"Starting batch backtest with {len(request.configs)} configs")
-    
+
     async def run_single(config: BacktestRequest):
         try:
             result = await run_backtest(config)
             return {"status": "success", "result": result}
         except Exception as e:
             return {"status": "error", "error": str(e)}
-    
+
     # Run all configs in parallel
     tasks = [run_single(config) for config in request.configs]
     results = await asyncio.gather(*tasks)
-    
+
     successful = sum(1 for r in results if r["status"] == "success")
-    
+
     return {
         "batch_id": f"batch_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
         "total": len(request.configs),

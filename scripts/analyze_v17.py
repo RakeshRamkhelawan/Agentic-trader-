@@ -35,7 +35,7 @@ def analyze_v17(filepath):
     print('=== V17 vs V16 COMPARISON ===')
     print(f"{'Metric':<30} {'V16':>12} {'V17':>12} {'Change':>12}")
     print("-" * 70)
-    
+
     # V16 baseline (from previous runs)
     v16_metrics = {
         'return': 2.11,
@@ -46,7 +46,7 @@ def analyze_v17(filepath):
         'ved_entries': 0,
         'hedge': 0,
     }
-    
+
     print(f"{'Return':<30} {f'{v16_metrics['return']:.2f}%':>12} {f"{data['total_return_pct']:.2f}%":>12} {f"{data['total_return_pct']-v16_metrics['return']:+.2f}%":>12}")
     print(f"{'Sharpe':<30} {f'{v16_metrics['sharpe']:.2f}':>12} {data['sharpe_ratio']:>12.2f} {f"{data['sharpe_ratio']-v16_metrics['sharpe']:+.2f}":>12}")
     print(f"{'Trades':<30} {v16_metrics['trades']:>12} {data['total_trades']:>12} {f"{data['total_trades']-v16_metrics['trades']:+d}":>12}")
@@ -69,12 +69,12 @@ def analyze_v17(filepath):
         print("✅ VedAstro is now the PRIMARY driver for entries!")
     else:
         print("⚠️  No VedAstro entries detected")
-    
+
     if data['hedge_entries'] > 0:
         print("✅ Hedge logic is FINALLY working!")
     else:
         print("ℹ️  No hedge entries (market conditions)")
-    
+
     if data['execute_rate_pct'] < 10:
         print(f"⚠️  Execute rate still low ({data['execute_rate_pct']:.2f}%) - thresholds may need further adjustment")
     else:
@@ -84,5 +84,5 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python analyze_v17.py <backtest_v17_full_*.json>")
         sys.exit(1)
-    
+
     analyze_v17(sys.argv[1])

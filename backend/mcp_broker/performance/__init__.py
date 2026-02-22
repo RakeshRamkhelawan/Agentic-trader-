@@ -28,12 +28,12 @@ __all__ = [
     "SymbolPartitioner",
     "PerformanceMetricsCollector",
     "BacktestProfiler",
-    
+
     # Ultra mode (SaaS friendly)
     "UltraPerformanceMode",
     "IncrementalBacktest",
     "get_ultra_mode",
-    
+
     # Parallel processing (asyncio-based)
     "ParallelProcessor",
     "SimpleBacktestRunner",

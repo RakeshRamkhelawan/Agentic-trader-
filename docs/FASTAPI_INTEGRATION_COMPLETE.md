@@ -354,6 +354,6 @@ Alles draait op dezelfde bliksemsnelle core!
 
 ---
 
-*Geïmplementeerd: 22 Februari 2026*  
-*Door: Code Agent*  
+*Geïmplementeerd: 22 Februari 2026*
+*Door: Code Agent*
 *Status: ✅ PRODUCTION READY*

@@ -46,7 +46,7 @@ __version__ = "18.1.0"
 __all__ = [
     # Server
     "mcp",
-    
+
     # Client
     "MCPClientWrapper",
     "SynchronousMCPClient",
@@ -68,7 +68,7 @@ if V18_AVAILABLE:
         "OptimizedBacktestConfig",
         "OptimizedBacktestEngineV18",
         "run_optimized_backtest",
-        
+
         # Elemental Manager
         "ElementalAgentManagerV18",
         "get_elemental_manager_v18",

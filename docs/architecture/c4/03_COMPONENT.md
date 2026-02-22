@@ -89,27 +89,27 @@ flowchart TB
     %% Services to Core
     AuthService -->|"Uses"| JWTHandler
     AuthService -->|"Uses"| Config
-    
+
     TradingService -->|"Uses"| Database
     TradingService -->|"Uses"| Cache
     TradingService -->|"Uses"| BitvavoClient
     TradingService -->|"Uses"| RiskService
     TradingService -->|"Uses"| RLS
     TradingService -->|"Emits"| EventBus
-    
+
     BacktestService -->|"Uses"| Database
     BacktestService -->|"Uses"| Cache
     BacktestService -->|"Uses"| MarketDataService
-    
+
     MarketDataService -->|"Uses"| Cache
     MarketDataService -->|"Uses"| BitvavoClient
-    
+
     RiskService -->|"Uses"| Database
     RiskService -->|"Uses"| Cache
-    
+
     VedAstroService -->|"Uses"| Cache
     VedAstroService -->|"Uses"| DeepSeekClient
-    
+
     ElementalService -->|"Uses"| VedAstroService
     ElementalService -->|"Uses"| MarketDataService
 
@@ -203,10 +203,10 @@ sequenceDiagram
     Middleware->>Middleware: Validate JWT
     Middleware->>Router: Route to handler
     Router->>TradingService: create_order(order_data)
-    
+
     TradingService->>RiskService: check_risk_limits(order)
     RiskService-->>TradingService: approved / rejected
-    
+
     alt Risk check passed
         TradingService->>BitvavoClient: place_order(order)
         BitvavoClient-->>TradingService: order confirmation
@@ -237,24 +237,24 @@ sequenceDiagram
 
     Client->>Router: POST /api/v1/backtest/run
     Router->>BacktestService: run_backtest(config)
-    
+
     BacktestService->>MarketDataService: get_historical_data(symbol, range)
     MarketDataService->>Cache: check_cache(key)
-    
+
     alt Cache miss
         MarketDataService-->>BacktestService: fetch_from_exchange()
         MarketDataService->>Cache: store_data()
     else Cache hit
         Cache-->>MarketDataService: cached_data
     end
-    
+
     MarketDataService-->>BacktestService: historical_data
-    
+
     BacktestService->>ElementalService: calculate_signals(data)
     ElementalService->>VedAstroService: get_astrological_context(date)
     VedAstroService-->>ElementalService: astro_data
     ElementalService-->>BacktestService: consensus_signals
-    
+
     BacktestService->>BacktestService: simulate_trades()
     BacktestService->>Database: save_results()
     BacktestService-->>Router: backtest_results
@@ -273,7 +273,7 @@ flowchart TB
 
     subgraph MCPServerContainer["MCP Server Container"]
         Transport["Transport Layer<br/>stdio/stdout"]
-        
+
         subgraph Tools["Tool Registry"]
             BacktestTool["Backtest Tool<br/>Run backtests"]
             VedAstroTool["VedAstro Tool<br/>Astrological analysis"]
@@ -281,13 +281,13 @@ flowchart TB
             MarketDataTool["MarketData Tool<br/>Price queries"]
             TradingTool["Trading Tool<br/>Order management"]
         end
-        
+
         subgraph Execution["Execution Layer"]
             ToolExecutor["Tool Executor<br/>Async execution"]
             ErrorHandler["Error Handler<br/>Graceful degradation"]
             Logger["Logger<br/>Structured logging"]
         end
-        
+
         subgraph InternalAPI["Internal API"]
             ServiceBridge["Service Bridge<br/>Import backend.services"]
         end
@@ -303,24 +303,24 @@ flowchart TB
     %% Flow
     MCPClient -->|"JSON-RPC<br/>stdio"| Transport
     Transport -->|"Parse requests"| ToolExecutor
-    
+
     ToolExecutor -->|"Dispatch"| BacktestTool
     ToolExecutor -->|"Dispatch"| VedAstroTool
     ToolExecutor -->|"Dispatch"| ElementalTool
     ToolExecutor -->|"Dispatch"| MarketDataTool
     ToolExecutor -->|"Dispatch"| TradingTool
-    
+
     BacktestTool -->|"Calls"| ServiceBridge
     VedAstroTool -->|"Calls"| ServiceBridge
     ElementalTool -->|"Calls"| ServiceBridge
     MarketDataTool -->|"Calls"| ServiceBridge
     TradingTool -->|"Calls"| ServiceBridge
-    
+
     ServiceBridge -->|"Direct import"| BacktestService
     ServiceBridge -->|"Direct import"| VedAstroService
     ServiceBridge -->|"Direct import"| MarketDataService
     ServiceBridge -->|"Direct import"| TradingService
-    
+
     ToolExecutor -->|"On error"| ErrorHandler
     ToolExecutor -->|"Log"| Logger
 ```

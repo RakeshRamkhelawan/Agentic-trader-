@@ -1,7 +1,7 @@
 # ToolBroker V18 - MCP SDK Implementatie Guide
 
-> **Gecorrigeerde Architectuur** | **Anthropic Official MCP SDK** | **FastMCP**  
-> **Agentic Trader Platform V18**  
+> **Gecorrigeerde Architectuur** | **Anthropic Official MCP SDK** | **FastMCP**
+> **Agentic Trader Platform V18**
 > **Status**: READY FOR IMPLEMENTATION
 
 ---
@@ -111,20 +111,20 @@ class CircuitBreakerConfig:
 
 class CircuitBreaker:
     """Circuit breaker state machine per tool."""
-    
+
     _instances: dict = {}
     _lock = asyncio.Lock()
-    
+
     def __new__(cls, name: str, config: CircuitBreakerConfig = None):
         if name not in cls._instances:
             cls._instances[name] = super().__new__(cls)
             cls._instances[name]._initialized = False
         return cls._instances[name]
-    
+
     def __init__(self, name: str, config: CircuitBreakerConfig = None):
         if self._initialized:
             return
-        
+
         self.name = name
         self.config = config or CircuitBreakerConfig()
         self.state = CircuitState.CLOSED
@@ -134,9 +134,9 @@ class CircuitBreaker:
         self.state_change_time: Optional[datetime] = None
         self.half_open_request_count = 0
         self._initialized = True
-        
+
         logger.info(f"CircuitBreaker '{name}' initialized in {self.state.value} state")
-    
+
     async def call(self, func: Callable[..., T], *args, **kwargs) -> T:
         """Execute function through circuit breaker."""
         async with CircuitBreaker._lock:
@@ -149,14 +149,14 @@ class CircuitBreaker:
                     self.state_change_time = datetime.utcnow()
                 else:
                     raise CircuitBreakerOpenException(f"Circuit '{self.name}' is OPEN")
-            
+
             if self.state == CircuitState.HALF_OPEN:
                 if self.half_open_request_count >= self.config.half_open_requests:
                     raise CircuitBreakerOpenException(
                         f"Circuit '{self.name}' half-open limit reached"
                     )
                 self.half_open_request_count += 1
-        
+
         try:
             result = await func(*args, **kwargs)
             await self._on_success()
@@ -164,7 +164,7 @@ class CircuitBreaker:
         except Exception:
             await self._on_failure()
             raise
-    
+
     async def _on_success(self):
         async with CircuitBreaker._lock:
             if self.state == CircuitState.HALF_OPEN:
@@ -177,12 +177,12 @@ class CircuitBreaker:
                     self.state_change_time = datetime.utcnow()
             elif self.state == CircuitState.CLOSED:
                 self.failure_count = max(0, self.failure_count - 1)
-    
+
     async def _on_failure(self):
         async with CircuitBreaker._lock:
             self.failure_count += 1
             self.last_failure_time = datetime.utcnow()
-            
+
             if self.state == CircuitState.HALF_OPEN:
                 logger.warning(f"Circuit '{self.name}' failed during recovery, reopening")
                 self.state = CircuitState.OPEN
@@ -192,13 +192,13 @@ class CircuitBreaker:
                     logger.error(f"Circuit '{self.name}' opening after {self.failure_count} failures")
                     self.state = CircuitState.OPEN
                     self.state_change_time = datetime.utcnow()
-    
+
     def _should_attempt_reset(self) -> bool:
         if not self.last_failure_time:
             return True
         elapsed = datetime.utcnow() - self.last_failure_time
         return elapsed >= timedelta(seconds=self.config.reset_timeout_seconds)
-    
+
     def get_state(self) -> dict:
         return {
             "name": self.name,
@@ -222,7 +222,7 @@ def circuit_breaker(
 ):
     """
     Decorator for adding circuit breaker to MCP tools.
-    
+
     Usage:
         @circuit_breaker(failure_threshold=3)
         @mcp.tool()
@@ -238,11 +238,11 @@ def circuit_breaker(
             reset_timeout_seconds=reset_timeout_seconds
         )
         breaker = CircuitBreaker(breaker_name, config)
-        
+
         @functools.wraps(func)
         async def wrapper(*args, **kwargs) -> T:
             return await breaker.call(func, *args, **kwargs)
-        
+
         # Attach circuit breaker to function for introspection
         wrapper._circuit_breaker = breaker
         return wrapper
@@ -309,7 +309,7 @@ def retry(
 ):
     """
     Decorator for adding retry logic to MCP tools.
-    
+
     Usage:
         @retry(max_attempts=3, initial_delay_ms=100)
         @mcp.tool()
@@ -324,44 +324,44 @@ def retry(
         jitter_enabled=jitter_enabled,
         retryable_exceptions=retryable_exceptions
     )
-    
+
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs) -> T:
             last_exception: Optional[Exception] = None
-            
+
             for attempt in range(config.max_attempts):
                 try:
                     return await func(*args, **kwargs)
                 except config.retryable_exceptions as e:
                     last_exception = e
-                    
+
                     if attempt == config.max_attempts - 1:
                         logger.error(
                             f"{func.__name__} failed after {config.max_attempts} attempts: {e}"
                         )
                         raise
-                    
+
                     # Calculate delay
                     delay_ms = min(
                         config.initial_delay_ms * (config.backoff_factor ** attempt),
                         config.max_delay_ms
                     )
-                    
+
                     # Add jitter
                     if config.jitter_enabled:
                         jitter = random.uniform(0, delay_ms * 0.1)
                         delay_ms += jitter
-                    
+
                     logger.warning(
                         f"{func.__name__} attempt {attempt + 1} failed, "
                         f"retrying in {delay_ms:.0f}ms: {e}"
                     )
-                    
+
                     await asyncio.sleep(delay_ms / 1000.0)
-            
+
             raise RuntimeError("Retry loop exited unexpectedly")
-        
+
         return wrapper
     return decorator
 
@@ -450,28 +450,28 @@ async def vedastro_generate_signal(
 ) -> Dict[str, Any]:
     """
     Generate trading signal from astrological data.
-    
+
     Args:
         symbol: Asset symbol (e.g., "AAPL", "BTC")
         current_price: Current market price
         ctx: MCP context for logging
-    
+
     Returns:
         Trading signal with confidence and astrological context
     """
     ctx.info(f"Generating VedAstro signal for {symbol} at ${current_price}")
-    
+
     try:
         # Get VedAstro analysis
         astro_analysis = await astro_orchestrator.analyze_asset(
             symbol=symbol,
             current_price=current_price
         )
-        
+
         signal = astro_analysis.trading_signal
-        
+
         ctx.info(f"Signal generated: {signal.signal} (confidence: {signal.confidence}%)")
-        
+
         return {
             "signal": signal.signal.value if hasattr(signal.signal, 'value') else str(signal.signal),
             "confidence": signal.confidence,
@@ -481,7 +481,7 @@ async def vedastro_generate_signal(
             "risk_level": signal.risk_level,
             "recommended_action": signal.recommended_action,
         }
-    
+
     except Exception as e:
         logger.error(f"VedAstro signal generation failed: {e}")
         ctx.error(f"Failed to generate signal: {e}")
@@ -496,19 +496,19 @@ async def vedastro_get_dasha(
 ) -> Dict[str, Any]:
     """
     Get current Dasha period for an asset.
-    
+
     Args:
         symbol: Asset symbol
         ctx: MCP context
-    
+
     Returns:
         Dasha information including Mahadasha, Antardasha, Pratyantardasha
     """
     ctx.info(f"Fetching Dasha for {symbol}")
-    
+
     # Implementation using vedastro connector
     # This is a placeholder - actual implementation would use vedastro module
-    
+
     return {
         "symbol": symbol,
         "mahadasha": "Jupiter",
@@ -528,16 +528,16 @@ async def vedastro_get_transits(
 ) -> Dict[str, Any]:
     """
     Get current planetary transits for an asset.
-    
+
     Args:
         symbol: Asset symbol
         ctx: MCP context
-    
+
     Returns:
         Transit information including exalted, debilitated, and retrograde planets
     """
     ctx.info(f"Fetching transits for {symbol}")
-    
+
     return {
         "symbol": symbol,
         "exalted_planets": ["Jupiter", "Venus"],
@@ -596,11 +596,11 @@ async def elemental_fire_position_size(
 ) -> Dict[str, Any]:
     """
     Calculate position size based on VedAstro score and volatility.
-    
+
     V17 Constraints:
     - Max €2,000 per position
     - Max 2% of portfolio
-    
+
     Args:
         symbol: Asset symbol
         portfolio_value: Total portfolio value in EUR
@@ -608,28 +608,28 @@ async def elemental_fire_position_size(
         dominant_planet: Dominant planet for the day
         price_history: Recent price history for volatility calc
         ctx: MCP context
-    
+
     Returns:
         Position sizing recommendation
     """
     ctx.info(f"Calculating Fire position size for {symbol}")
-    
+
     # V17 logic: Calculate ATR-based volatility factor
     if len(price_history) < 20:
         vol_factor = 1.0
     else:
         # Simple volatility calculation
-        returns = [(price_history[i] - price_history[i-1]) / price_history[i-1] 
+        returns = [(price_history[i] - price_history[i-1]) / price_history[i-1]
                    for i in range(1, len(price_history))]
         avg_return = sum(returns) / len(returns)
         variance = sum((r - avg_return) ** 2 for r in returns) / len(returns)
         volatility = variance ** 0.5
-        
+
         vol_factor = max(0.5, min(2.0, 0.03 / (volatility + 0.001)))
-    
+
     # VedAstro score → harmony factor (0.5-1.2)
     harmony_factor = 0.5 + (vedastro_score / 100) * 0.7
-    
+
     # Streak factor
     streak = 0
     for i in range(1, min(6, len(price_history))):
@@ -638,20 +638,20 @@ async def elemental_fire_position_size(
         else:
             break
     streak_factor = 1.0 + (streak * 0.05)
-    
+
     # Planet multiplier
     planet_mult = PLANET_RISK_MULTIPLIERS.get(dominant_planet, 1.0)
-    
+
     # Calculate position size
     base_pct = 0.015 * vol_factor * harmony_factor * streak_factor * planet_mult
     raw_size = portfolio_value * base_pct
     max_pct_size = portfolio_value * 0.02  # 2% max
-    
+
     # V17: Apply €2k cap
     position_size = min(raw_size, max_pct_size, MAX_POSITION_EUR)
-    
+
     ctx.info(f"Position size: €{position_size:.2f} (raw: €{raw_size:.2f})")
-    
+
     return {
         "position_size_eur": position_size,
         "max_position_eur": MAX_POSITION_EUR,
@@ -674,23 +674,23 @@ async def elemental_earth_entry_check(
 ) -> Dict[str, Any]:
     """
     Check if entry is allowed (3-loss rule).
-    
+
     V17 Logic:
     - Block entry after 3 consecutive losses
-    
+
     Args:
         symbol: Asset symbol
         trade_history: List of recent trades with 'pnl' and 'win' fields
         ctx: MCP context
-    
+
     Returns:
         Entry permission and blocking reasons
     """
     ctx.info(f"Checking Earth entry for {symbol}")
-    
+
     # Get recent trades for this symbol
     recent = [t for t in trade_history if t.get('symbol') == symbol][-20:]
-    
+
     # Check 3 consecutive losses
     consecutive_losses = 0
     for trade in reversed(recent):
@@ -698,11 +698,11 @@ async def elemental_earth_entry_check(
             consecutive_losses += 1
         else:
             break
-    
+
     can_enter = consecutive_losses < 3
-    
+
     ctx.info(f"Entry allowed: {can_enter} (consecutive losses: {consecutive_losses})")
-    
+
     return {
         "can_enter": can_enter,
         "blocking_reason": "3_consecutive_losses" if not can_enter else None,
@@ -723,12 +723,12 @@ async def elemental_earth_exit_check(
 ) -> Dict[str, Any]:
     """
     Check if position should be exited.
-    
+
     V17 Constraints:
     - Max 60 days hold
     - Trailing stop: +40% peak → -15% drop = exit
     - Hard stop: -15% from entry
-    
+
     Args:
         symbol: Asset symbol
         entry_date: Entry date (ISO format)
@@ -737,41 +737,41 @@ async def elemental_earth_exit_check(
         current_price: Current price
         peak_price: Highest price since entry
         ctx: MCP context
-    
+
     Returns:
         Exit recommendation
     """
     ctx.info(f"Checking Earth exit for {symbol}")
-    
+
     # Parse dates
     entry = datetime.fromisoformat(entry_date.replace('Z', '+00:00'))
     current = datetime.fromisoformat(current_date.replace('Z', '+00:00'))
     days_held = (current - entry).days
-    
+
     # Calculate P&L
     pnl_pct = (current_price - entry_price) / entry_price
     peak_pnl_pct = (peak_price - entry_price) / entry_price
     drawdown_from_peak = (peak_price - current_price) / peak_price if peak_price > 0 else 0
-    
+
     exit_signals = []
-    
+
     # 60-day failsafe
     if days_held >= MAX_HOLD_DAYS:
         exit_signals.append(f"max_hold_days_{MAX_HOLD_DAYS}")
-    
+
     # Trailing stop
     trailing_stop_active = peak_pnl_pct >= TRAILING_STOP_THRESHOLD
     if trailing_stop_active and drawdown_from_peak >= TRAILING_STOP_DISTANCE:
         exit_signals.append(f"trailing_stop_{drawdown_from_peak:.1%}")
-    
+
     # Hard stop
     if drawdown_from_peak > 0.15 and pnl_pct < 0:
         exit_signals.append(f"hard_stop_{drawdown_from_peak:.1%}")
-    
+
     should_exit = len(exit_signals) > 0
-    
+
     ctx.info(f"Exit recommended: {should_exit} (signals: {exit_signals})")
-    
+
     return {
         "should_exit": should_exit,
         "exit_reasons": exit_signals,
@@ -790,17 +790,17 @@ async def elemental_water_regime_check(
 ) -> Dict[str, Any]:
     """
     Check macro regime and hedge signals.
-    
+
     Args:
         symbol: Asset symbol
         prices: Price history (min 20 points)
         ctx: MCP context
-    
+
     Returns:
         Regime assessment and hedge recommendations
     """
     ctx.info(f"Checking Water regime for {symbol}")
-    
+
     if len(prices) < 20:
         return {
             "regime": "neutral",
@@ -809,13 +809,13 @@ async def elemental_water_regime_check(
             "hedge_confidence": 0.0,
             "reason": "insufficient_data"
         }
-    
+
     # Calculate metrics
     price_change_30d = (prices[-1] - prices[-min(30, len(prices))]) / prices[-min(30, len(prices))]
     advancing = sum(1 for i in range(1, min(20, len(prices))) if prices[-i] > prices[-i-1])
     total = min(19, len(prices) - 1)
     advance_ratio = advancing / total if total > 0 else 0.5
-    
+
     # Determine regime
     if advance_ratio > 0.6 and price_change_30d > 0.10:
         regime = "expansion"
@@ -829,18 +829,18 @@ async def elemental_water_regime_check(
     else:
         regime = "neutral"
         risk_on = 0.5
-    
+
     # Hedge signal (V17: hedge when risk_on < 0.35)
     hedge_pairs = {"SPY": "SH", "QQQ": "PSQ", "IWM": "RWM", "TLT": "TBF"}
     hedge_sym = hedge_pairs.get(symbol)
     hedge_conf = 0.0
-    
+
     if hedge_sym and risk_on < 0.35:
         hedge_conf = 0.70 + (0.35 - risk_on) * 0.5
         hedge_conf = min(hedge_conf, 0.85)
-    
+
     ctx.info(f"Regime: {regime} (risk_on: {risk_on:.2f})")
-    
+
     return {
         "regime": regime,
         "risk_on_score": risk_on,
@@ -861,19 +861,19 @@ async def elemental_ether_consensus(
 ) -> Dict[str, Any]:
     """
     Synthesize elemental consensus.
-    
+
     Args:
         fire_vote: Fire element score (0-1)
         earth_vote: Earth element score (0-1)
         water_vote: Water element score (0-1)
         air_vote: Air element score (0-1)
         ctx: MCP context
-    
+
     Returns:
         Consensus decision
     """
     ctx.info("Calculating Ether consensus")
-    
+
     # Calculate harmony (weighted average)
     weights = {"fire": 0.25, "earth": 0.30, "water": 0.25, "air": 0.20}
     harmony = (
@@ -882,10 +882,10 @@ async def elemental_ether_consensus(
         water_vote * weights["water"] +
         air_vote * weights["air"]
     )
-    
+
     # V17 threshold: harmony > 0.45 = approved
     approved = harmony > 0.45
-    
+
     # Determine dominant element
     votes = {
         "fire": fire_vote,
@@ -894,9 +894,9 @@ async def elemental_ether_consensus(
         "air": air_vote
     }
     dominant = max(votes, key=votes.get)
-    
+
     ctx.info(f"Consensus: {harmony:.2f} (approved: {approved}, dominant: {dominant})")
-    
+
     return {
         "harmony_score": harmony,
         "approved": approved,
@@ -937,19 +937,19 @@ async def data_get_historical_prices(
 ) -> Dict[str, Any]:
     """
     Get historical price data.
-    
+
     Args:
         symbol: Asset symbol
         start_date: Start date (ISO format)
         end_date: End date (ISO format)
         timeframe: Data timeframe (1m, 5m, 1h, 1d)
         ctx: MCP context
-    
+
     Returns:
         OHLCV data
     """
     ctx.info(f"Fetching historical data for {symbol} from {start_date} to {end_date}")
-    
+
     # Implementation would fetch from database or API
     # Placeholder response
     return {
@@ -968,16 +968,16 @@ async def data_get_portfolio_status(
 ) -> Dict[str, Any]:
     """
     Get current portfolio status.
-    
+
     Args:
         account_id: Account identifier
         ctx: MCP context
-    
+
     Returns:
         Portfolio summary
     """
     ctx.info(f"Fetching portfolio status for {account_id}")
-    
+
     # Implementation would query database
     return {
         "account_id": account_id,
@@ -1024,12 +1024,12 @@ async def execution_execute_paper_trade(
 ) -> Dict[str, Any]:
     """
     Execute a paper trade.
-    
+
     V17 Constraints:
     - Max €2,000 position size
     - 0.05% commission
     - 0.1% slippage
-    
+
     Args:
         symbol: Asset symbol
         action: BUY or SELL
@@ -1037,39 +1037,39 @@ async def execution_execute_paper_trade(
         current_price: Current market price
         account_id: Account identifier
         ctx: MCP context
-    
+
     Returns:
         Trade execution details
     """
     ctx.info(f"Executing {action} {quantity} {symbol} for {account_id}")
-    
+
     # Validate action
     if action not in ["BUY", "SELL"]:
         raise ValueError(f"Invalid action: {action}")
-    
+
     # Calculate execution price with slippage
     if action == "BUY":
         execution_price = current_price * (1 + SLIPPAGE_PCT)
     else:
         execution_price = current_price * (1 - SLIPPAGE_PCT)
-    
+
     # Calculate gross value
     gross_value = quantity * execution_price
-    
+
     # V17: Check max position size for BUY
     if action == "BUY" and gross_value > MAX_POSITION_EUR:
         ctx.error(f"Position size €{gross_value:.2f} exceeds max €{MAX_POSITION_EUR}")
         raise ValueError(f"Position size exceeds maximum of €{MAX_POSITION_EUR}")
-    
+
     # Calculate commission
     commission = gross_value * COMMISSION_PCT
     net_value = gross_value - commission
-    
+
     # Generate order ID
     order_id = f"paper_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{symbol}"
-    
+
     ctx.info(f"Trade executed: {order_id} at €{execution_price:.2f}")
-    
+
     return {
         "order_id": order_id,
         "status": "FILLED",
@@ -1147,11 +1147,11 @@ async def vedastro__generate_signal(
 ) -> Dict[str, Any]:
     """
     Generate trading signal from astrological data.
-    
+
     Args:
         symbol: Asset symbol (e.g., "AAPL", "BTC")
         current_price: Current market price
-    
+
     Returns:
         Trading signal with confidence and astrological context
     """
@@ -1162,10 +1162,10 @@ async def vedastro__generate_signal(
 async def vedastro__get_dasha(symbol: str, ctx: Any = None) -> Dict[str, Any]:
     """
     Get current Dasha period for an asset.
-    
+
     Args:
         symbol: Asset symbol
-    
+
     Returns:
         Dasha information including Mahadasha, Antardasha
     """
@@ -1176,10 +1176,10 @@ async def vedastro__get_dasha(symbol: str, ctx: Any = None) -> Dict[str, Any]:
 async def vedastro__get_transits(symbol: str, ctx: Any = None) -> Dict[str, Any]:
     """
     Get current planetary transits.
-    
+
     Args:
         symbol: Asset symbol
-    
+
     Returns:
         Transit information
     """
@@ -1201,18 +1201,18 @@ async def elemental__fire_position_size(
 ) -> Dict[str, Any]:
     """
     Calculate position size using Fire element logic.
-    
+
     Constraints:
     - Max €2,000 per position
     - Max 2% of portfolio
-    
+
     Args:
         symbol: Asset symbol
         portfolio_value: Total portfolio value
         vedastro_score: VedAstro strength (0-100)
         dominant_planet: Dominant planet
         price_history: Recent prices for volatility
-    
+
     Returns:
         Position sizing recommendation
     """
@@ -1229,13 +1229,13 @@ async def elemental__earth_entry_check(
 ) -> Dict[str, Any]:
     """
     Check if entry is allowed (Earth element).
-    
+
     Blocks entry after 3 consecutive losses.
-    
+
     Args:
         symbol: Asset symbol
         trade_history: Recent trade history
-    
+
     Returns:
         Entry permission
     """
@@ -1254,11 +1254,11 @@ async def elemental__earth_exit_check(
 ) -> Dict[str, Any]:
     """
     Check if position should be exited (Earth element).
-    
+
     Constraints:
     - Max 60 days hold
     - Trailing stop: +40% peak → -15% drop
-    
+
     Args:
         symbol: Asset symbol
         entry_date: Entry date (ISO format)
@@ -1266,7 +1266,7 @@ async def elemental__earth_exit_check(
         entry_price: Entry price
         current_price: Current price
         peak_price: Peak price since entry
-    
+
     Returns:
         Exit recommendation
     """
@@ -1283,11 +1283,11 @@ async def elemental__water_regime_check(
 ) -> Dict[str, Any]:
     """
     Check macro regime and hedge signals (Water element).
-    
+
     Args:
         symbol: Asset symbol
         prices: Price history (min 20 points)
-    
+
     Returns:
         Regime assessment
     """
@@ -1304,13 +1304,13 @@ async def elemental__ether_consensus(
 ) -> Dict[str, Any]:
     """
     Synthesize elemental consensus.
-    
+
     Args:
         fire_vote: Fire score (0-1)
         earth_vote: Earth score (0-1)
         water_vote: Water score (0-1)
         air_vote: Air score (0-1)
-    
+
     Returns:
         Consensus decision (approved if harmony > 0.45)
     """
@@ -1331,13 +1331,13 @@ async def data__get_historical_prices(
 ) -> Dict[str, Any]:
     """
     Get historical price data.
-    
+
     Args:
         symbol: Asset symbol
         start_date: Start date (ISO format)
         end_date: End date (ISO format)
         timeframe: Data timeframe (1m, 5m, 1h, 1d)
-    
+
     Returns:
         OHLCV data
     """
@@ -1351,10 +1351,10 @@ async def data__get_portfolio_status(
 ) -> Dict[str, Any]:
     """
     Get current portfolio status.
-    
+
     Args:
         account_id: Account identifier
-    
+
     Returns:
         Portfolio summary
     """
@@ -1376,19 +1376,19 @@ async def execution__execute_paper_trade(
 ) -> Dict[str, Any]:
     """
     Execute a paper trade.
-    
+
     Constraints:
     - Max €2,000 position size
     - 0.05% commission
     - 0.1% slippage
-    
+
     Args:
         symbol: Asset symbol
         action: BUY or SELL
         quantity: Number of shares
         current_price: Current market price
         account_id: Account identifier
-    
+
     Returns:
         Trade execution details
     """
@@ -1405,7 +1405,7 @@ async def execution__execute_paper_trade(
 async def system__health_check() -> Dict[str, Any]:
     """
     Check system health and circuit breaker states.
-    
+
     Returns:
         Health status of all components
     """
@@ -1417,7 +1417,7 @@ async def system__health_check() -> Dict[str, Any]:
         "elemental_water_regime_check",
         "elemental_ether_consensus",
     ]
-    
+
     circuit_states = {}
     for tool in tools:
         state = get_circuit_state(tool)
@@ -1425,9 +1425,9 @@ async def system__health_check() -> Dict[str, Any]:
             circuit_states[tool] = state["state"]
         else:
             circuit_states[tool] = "closed"
-    
+
     all_healthy = all(s == "closed" for s in circuit_states.values())
-    
+
     return {
         "status": "healthy" if all_healthy else "degraded",
         "circuit_breaker_states": circuit_states,
@@ -1444,7 +1444,7 @@ if __name__ == "__main__":
     logger.info("Starting AgenticTraderBroker MCP Server")
     logger.info("Transport: stdio")
     logger.info("Tools registered: %d", len(mcp._tools))
-    
+
     # Run with stdio transport (for Claude Desktop, etc.)
     mcp.run(transport='stdio')
 ```
@@ -1475,28 +1475,28 @@ from mcp.client.stdio import stdio_client
 
 async def test_mcp_server():
     """Test the MCP server."""
-    
+
     # Server parameters
     server_params = StdioServerParameters(
         command="python",
         args=["-m", "backend.mcp_broker.server"],
         env={"PYTHONPATH": "."}
     )
-    
+
     print("Connecting to MCP server...")
-    
+
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             # Initialize
             await session.initialize()
             print("✓ Connected to MCP server")
-            
+
             # List tools
             tools = await session.list_tools()
             print(f"\n✓ Available tools: {len(tools.tools)}")
             for tool in tools.tools:
                 print(f"  - {tool.name}")
-            
+
             # Test VedAstro tool
             print("\n→ Testing vedastro__generate_signal...")
             result = await session.call_tool(
@@ -1504,7 +1504,7 @@ async def test_mcp_server():
                 {"symbol": "AAPL", "current_price": 185.50}
             )
             print(f"  Result: {result}")
-            
+
             # Test Elemental tool
             print("\n→ Testing elemental__ether_consensus...")
             result = await session.call_tool(
@@ -1517,12 +1517,12 @@ async def test_mcp_server():
                 }
             )
             print(f"  Result: {result}")
-            
+
             # Test health check
             print("\n→ Testing system__health_check...")
             result = await session.call_tool("system__health_check", {})
             print(f"  Result: {result}")
-            
+
             print("\n✓ All tests passed!")
 
 
@@ -1583,12 +1583,12 @@ python scripts/test_mcp_client.py
 
 ### Key Features
 
-✅ **Officiële MCP SDK** - Geen custom protocol  
-✅ **Circuit Breakers** - Failure isolatie per tool  
-✅ **Retry Logic** - Exponential backoff met jitter  
-✅ **V17 Constraints** - €2k cap, 60-day failsafe behouden  
-✅ **Type Safety** - Pydantic via FastMCP  
-✅ **LLM Ready** - Native ondersteuning Claude, Cursor, etc.  
+✅ **Officiële MCP SDK** - Geen custom protocol
+✅ **Circuit Breakers** - Failure isolatie per tool
+✅ **Retry Logic** - Exponential backoff met jitter
+✅ **V17 Constraints** - €2k cap, 60-day failsafe behouden
+✅ **Type Safety** - Pydantic via FastMCP
+✅ **LLM Ready** - Native ondersteuning Claude, Cursor, etc.
 
 ### Volgende Stappen
 
@@ -1599,5 +1599,5 @@ python scripts/test_mcp_client.py
 
 ---
 
-*Implementation Guide Version: 2.0 (MCP SDK Edition)*  
+*Implementation Guide Version: 2.0 (MCP SDK Edition)*
 *Status: READY FOR DEVELOPMENT*

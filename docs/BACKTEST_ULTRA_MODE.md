@@ -79,8 +79,8 @@ trailing_stop = jit.compile_trailing_stop_calculation()
 
 # Use compiled function (10-100x faster)
 should_exit, exit_prices = trailing_stop(
-    entry_prices, 
-    current_prices, 
+    entry_prices,
+    current_prices,
     highest_prices
 )
 ```
@@ -190,17 +190,17 @@ config = UltraBacktestConfig(
     enable_caching=True,
     enable_parallel=True,
     max_workers=4,
-    
+
     # Phase 2
     enable_gpu=True,
     enable_jit=True,
     enable_memory_mapping=True,
     enable_incremental=True,
-    
+
     # Phase 3
     enable_distributed=True,
     distributed_workers=16,
-    
+
     # Thresholds
     symbol_threshold_gpu=100,
     symbol_threshold_distributed=500
@@ -403,5 +403,5 @@ config = UltraBacktestConfig(
 
 ---
 
-*Last Updated: February 22, 2026*  
+*Last Updated: February 22, 2026*
 *Version: V18.2 Ultra*

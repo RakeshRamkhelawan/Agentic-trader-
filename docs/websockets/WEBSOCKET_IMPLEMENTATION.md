@@ -142,15 +142,15 @@ async def websocket_endpoint(
 ):
     """
     Main WebSocket endpoint.
-    
+
     Connection:
         ws://localhost:8000/ws?token=eyJhbG...
-    
+
     Query Parameters:
         token: JWT access token (optional in dev mode)
     """
     connection_id = str(uuid.uuid4())
-    
+
     # Validate token (production)
     if token:
         payload = jwt_manager.verify_token(token)
@@ -160,17 +160,17 @@ async def websocket_endpoint(
         # Demo mode
         tenant_id = "demo-tenant"
         account_id = "demo-account"
-    
+
     try:
         await ws_manager.connect(websocket, connection_id, tenant_id, account_id)
-        
+
         while True:
             data = await asyncio.wait_for(
-                websocket.receive_json(), 
+                websocket.receive_json(),
                 timeout=60.0
             )
             await ws_manager.handle_client_message(connection_id, data)
-            
+
     except WebSocketDisconnect:
         logger.info(f"Disconnected: {connection_id}")
     except asyncio.TimeoutError:
@@ -243,7 +243,7 @@ export function useWebSocket(options: UseWebSocketOptions) {
   const connect = useCallback(() => {
     // Build URL with token
     const wsUrl = token ? `${url}?token=${token}` : url;
-    
+
     ws.current = new WebSocket(wsUrl);
 
     ws.current.onopen = () => {
@@ -267,7 +267,7 @@ export function useWebSocket(options: UseWebSocketOptions) {
       console.log('WebSocket disconnected');
       setIsConnected(false);
       onDisconnect?.();
-      
+
       // Reconnect logic
       if (reconnectAttempts.current < maxReconnectAttempts) {
         reconnectAttempts.current += 1;
@@ -368,19 +368,19 @@ export function TradingDashboard() {
       <div className="connection-status">
         {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
       </div>
-      
+
       {ticker && (
         <div className="ticker">
           <h2>BTC/EUR</h2>
           <p>Price: €{ticker.last.toLocaleString()}</p>
           <p className={ticker.change_percent_24h >= 0 ? 'green' : 'red'}>
-            {ticker.change_percent_24h >= 0 ? '▲' : '▼'} 
+            {ticker.change_percent_24h >= 0 ? '▲' : '▼'}
             {Math.abs(ticker.change_percent_24h).toFixed(2)}%
           </p>
           <p>Bid: €{ticker.bid} | Ask: €{ticker.ask}</p>
         </div>
       )}
-      
+
       {orderbook && (
         <div className="orderbook">
           <div className="asks">
@@ -581,7 +581,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
     if not token:
         await websocket.close(code=4001, reason="Missing authentication token")
         return
-    
+
     try:
         payload = jwt_manager.verify_token(token)
         tenant_id = payload["tenant_id"]
@@ -589,7 +589,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
     except JWTError:
         await websocket.close(code=4002, reason="Invalid token")
         return
-    
+
     # Connection authorized
     await ws_manager.connect(websocket, connection_id, tenant_id, account_id)
 ```
@@ -606,7 +606,7 @@ connection_limits = {
 async def check_connection_limit(ip: str, account_id: str) -> bool:
     ip_count = sum(1 for c in ws_manager.connections.values() if c.ip == ip)
     account_count = sum(1 for c in ws_manager.connections.values() if c.account_id == account_id)
-    
+
     return ip_count < connection_limits["per_ip"] and account_count < connection_limits["per_account"]
 ```
 
@@ -731,7 +731,7 @@ async def test_websocket():
             "type": "subscribe",
             "channel": "ticker.BTC-EUR"
         }))
-        
+
         # Listen for messages
         while True:
             message = await ws.recv()

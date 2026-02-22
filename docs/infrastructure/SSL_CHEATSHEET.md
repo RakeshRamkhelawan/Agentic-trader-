@@ -67,12 +67,12 @@ sudo update-ca-certificates
 server {
     listen 443 ssl http2;
     server_name api.yourdomain.com;
-    
+
     # SSL
     ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
     ssl_protocols TLSv1.3;
-    
+
     # WebSocket support
     location /ws {
         proxy_pass http://backend:8000/ws;
@@ -126,7 +126,7 @@ services:
     volumes:
       - ./ssl/certbot/conf:/etc/letsencrypt:ro
       - ./ssl/certbot/www:/var/www/certbot:ro
-      
+
   certbot:
     image: certbot/certbot
     volumes:

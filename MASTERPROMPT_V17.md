@@ -42,19 +42,19 @@ class VedAstroElementalAgentV17:
     """
     Hybride agent die VedAstro signalen combineert met Elemental risk management.
     """
-    
+
     def __init__(self):
         # VedAstro componenten (reeds bestaand in backend.vedastro)
         from backend.vedastro import EnhancedAstroOrchestrator, TradingSignalGenerator
         self.astro_orchestrator = EnhancedAstroOrchestrator()
         self.signal_generator = TradingSignalGenerator()
-        
+
         # Elemental risk componenten (uit V16 behouden)
         self.fire_agent = FireAgentV17()  # Alleen position sizing
         self.earth_agent = EarthAgentV17()  # Alleen entry blocking
         self.water_agent = WaterAgentV12()  # Regime check (preserve)
-    
-    async def evaluate_entry(self, symbol: str, current_price: float, 
+
+    async def evaluate_entry(self, symbol: str, current_price: float,
                            cycle_date: datetime, portfolio_value: float) -> Optional[Dict]:
         """
         V17 Entry evaluatie:
@@ -65,33 +65,33 @@ class VedAstroElementalAgentV17:
         # 1. VEDASTRO ANALYSE (async - gebruik await)
         try:
             astro_analysis = await self.astro_orchestrator.analyze_asset(
-                symbol=symbol, 
+                symbol=symbol,
                 current_price=current_price
             )
             signal = astro_analysis.trading_signal
         except Exception as e:
             logger.warning(f"VedAstro failed for {symbol}: {e}")
             return None
-        
+
         # 2. FILTER: Alleen BUY signalen
         if signal.signal not in ['buy', 'strong_buy']:
             return None
-        
+
         # 3. ELEMENTAL RISK CHECKS
         # Check 3a: Earth entry blocking (3-loss rule preserved)
         if not self.earth_agent.should_enter(symbol):
             return None
-        
+
         # Check 3b: Water regime (TLT logic preserved)
         prices = list(self.fire_agent.price_history.get(symbol, []))
         macro_signal = self.water_agent.get_macro_signal(prices)
         if not self._regime_compatible(symbol, macro_signal):
             return None
-        
+
         # Check 3c: Minimale VedAstro confidence
         if signal.confidence < 50:  # Minimaal 50% VedAstro confidence
             return None
-        
+
         # 4. POSITION SIZING (Fire agent met €2k cap)
         position_size = self.fire_agent.calculate_position_size(
             symbol=symbol,
@@ -99,7 +99,7 @@ class VedAstroElementalAgentV17:
             harmony=signal.strength_score / 100,  # VedAstro score → harmony
             dominant_planet=self._get_dominant_planet(cycle_date)
         )
-        
+
         # 5. RETURN ENTRY DICT
         return {
             "symbol": symbol,
@@ -121,9 +121,9 @@ class VedAstroElementalAgentV17:
 ```python
 class FireAgentV17:
     """V17: Alleen ATR-based position sizing, €2k cap."""
-    
+
     MAX_POSITION_EUR = 2000.0
-    
+
     def calculate_position_size(self, symbol, portfolio_value, harmony, dominant_planet):
         # V16 logica behouden, maar harmony komt nu van VedAstro (0-1)
         # ... (zelfde als V16) ...
@@ -134,9 +134,9 @@ class FireAgentV17:
 ```python
 class EarthAgentV17:
     """V17: Alleen 3-loss entry blocking + trailing stop tracking."""
-    
+
     MAX_HOLD_DAYS = 60
-    
+
     # 3-loss rule (behouden van V16)
     def should_enter(self, symbol: str) -> bool:
         recent = list(self.symbol_memory.get(symbol, []))
@@ -145,11 +145,11 @@ class EarthAgentV17:
             if all(not t['win'] for t in last_three):
                 return False
         return True
-    
+
     # Trailing stop logic (behouden van V16)
     def update_unrealized_pnl(self, symbol: str, pnl_pct: float):
         # ... (zelfde als V16) ...
-    
+
     def check_trailing_stop(self, symbol: str, current_pnl_pct: float) -> bool:
         # ... (zelfde als V16) ...
 ```
@@ -170,31 +170,31 @@ class V17BacktestEngine:
         # ... existing init ...
         self.agent_manager = VedAstroElementalAgentV17()
         self.astro_cache = {}  # Cache voor VedAstro resultaten per dag
-    
+
     async def run_backtest(self):
         """V17: Async backtest met VedAstro integratie."""
         for trading_date in self._trading_dates:
             await self._process_day(trading_date)
-    
+
     async def _process_day(self, trading_date: datetime, price_data: dict):
         """V17: Daily processing met VedAstro."""
         # Cycle counting (preserve)
         self.agent_manager.increment_cycle()
-        
+
         # Position reviews (preserve from V16)
         await self._review_positions(trading_date, price_data)
-        
+
         # Entry evaluations (NIEUW: async VedAstro)
         for symbol in self.symbols:
             if symbol in self.open_positions:
                 continue
-            
+
             current_price = self._get_price_for_date(price_data, symbol, trading_date)
             if not current_price:
                 continue
-            
+
             portfolio_value = self._calculate_portfolio_value(price_data, trading_date)
-            
+
             # V17: ASYNC VedAstro + Elemental evaluatie
             entry_result = await self.agent_manager.evaluate_entry(
                 symbol=symbol,
@@ -202,7 +202,7 @@ class V17BacktestEngine:
                 cycle_date=trading_date,
                 portfolio_value=portfolio_value
             )
-            
+
             if entry_result:
                 self._execute_entry(entry_result, trading_date, price_data)
 ```
@@ -213,11 +213,11 @@ class V17BacktestEngine:
 def _get_cached_astro_or_calculate(self, symbol: str, date: datetime, price: float):
     """Cache VedAstro berekeningen per dag om performance te verbeteren."""
     cache_key = f"{symbol}_{date.strftime('%Y-%m-%d')}"
-    
+
     if cache_key not in self.astro_cache:
         # Bereken en cache
         self.astro_cache[cache_key] = await self.agent_manager.astro_orchestrator.analyze_asset(symbol, price)
-    
+
     return self.astro_cache[cache_key]
 ```
 
@@ -244,12 +244,12 @@ Voeg VedAstro-specifieke exit reasons toe:
 # In _execute_exit():
 if reason == 'vedastro_sell_signal':
     self.agent_manager.position_review_exits += 1
-    
+
 # Nieuwe exit evaluatie in _review_positions():
 async def _review_positions(self, date, price_data):
     for symbol, position in self.open_positions.items():
         # Bestaande checks (time_based, trailing_stop) preserve
-        
+
         # NIEUW: VedAstro SELL signal check
         astro = await self._get_cached_astro_or_calculate(symbol, date, current_price)
         if astro.trading_signal.signal in ['sell', 'strong_sell']:

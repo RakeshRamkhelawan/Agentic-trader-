@@ -69,13 +69,13 @@ interface Channels {
     last: number;
     change_24h: number;
   };
-  
+
   // Order book depth
   'orderbook.{symbol}': {
     bids: [string, string][];  // [price, amount]
     asks: [string, string][];
   };
-  
+
   // User-specific orders
   'orders.{account_id}': {
     order_id: string;
@@ -99,13 +99,13 @@ class WebSocketManager:
     async def connect(self, ws: WebSocket, tenant_id: str, account_id: str):
         await ws.accept()
         # Store connection with tenant context
-        
+
     async def subscribe(self, connection_id: str, channel: str):
         # Enforce tenant isolation
         if channel == "orders":
             channel = f"orders.{self.connections[connection_id].account_id}"
         # Add to channel subscribers
-        
+
     async def broadcast_to_channel(self, channel: str, message: dict):
         # Send to all subscribers
         for conn_id in self.channels[channel]:

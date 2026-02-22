@@ -31,7 +31,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 
 function PriceDisplay() {
   const [price, setPrice] = useState(null);
-  
+
   const { isConnected } = useWebSocket({
     url: import.meta.env.VITE_WS_URL,
     token: accessToken,

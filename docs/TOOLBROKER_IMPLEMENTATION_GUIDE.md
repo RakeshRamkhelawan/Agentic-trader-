@@ -1,7 +1,7 @@
 # ToolBroker Implementatie Guide
 
-> **Agentic Trader Platform V18**  
-> **Step-by-Step Technical Implementation**  
+> **Agentic Trader Platform V18**
+> **Step-by-Step Technical Implementation**
 > **Status**: Ready for Development
 
 ---
@@ -121,7 +121,7 @@ __version__ = "1.0.0"
 
 class ToolBrokerException(Exception):
     """Base exception for ToolBroker."""
-    
+
     def __init__(self, message: str, original_error: Exception = None):
         super().__init__(message)
         self.message = message
@@ -130,7 +130,7 @@ class ToolBrokerException(Exception):
 
 class CircuitBreakerOpenException(ToolBrokerException):
     """Raised when circuit breaker is open."""
-    
+
     def __init__(self, tool_name: str, original_error: Exception = None):
         super().__init__(
             f"Circuit breaker is OPEN for tool '{tool_name}'",
@@ -141,7 +141,7 @@ class CircuitBreakerOpenException(ToolBrokerException):
 
 class ToolExecutionException(ToolBrokerException):
     """Raised when tool execution fails."""
-    
+
     def __init__(self, tool_name: str, error_detail: str, original_error: Exception = None):
         super().__init__(
             f"Tool '{tool_name}' execution failed: {error_detail}",
@@ -153,7 +153,7 @@ class ToolExecutionException(ToolBrokerException):
 
 class ToolNotFoundException(ToolBrokerException):
     """Raised when tool is not in registry."""
-    
+
     def __init__(self, tool_name: str):
         super().__init__(f"Tool '{tool_name}' not found in registry")
         self.tool_name = tool_name
@@ -161,7 +161,7 @@ class ToolNotFoundException(ToolBrokerException):
 
 class MCPConnectionException(ToolBrokerException):
     """Raised when MCP connection fails."""
-    
+
     def __init__(self, server_name: str, original_error: Exception = None):
         super().__init__(
             f"MCP connection to '{server_name}' failed",
@@ -172,7 +172,7 @@ class MCPConnectionException(ToolBrokerException):
 
 class RetryExhaustedException(ToolBrokerException):
     """Raised when all retry attempts are exhausted."""
-    
+
     def __init__(self, tool_name: str, attempts: int, original_error: Exception = None):
         super().__init__(
             f"Tool '{tool_name}' failed after {attempts} retry attempts",
@@ -206,7 +206,7 @@ class CircuitBreakerState(str, Enum):
 
 class ToolExecutionRequest(BaseModel):
     """Request to execute a tool."""
-    
+
     tool_name: str = Field(
         ...,
         description="Tool name in format 'server__tool_name'",
@@ -226,14 +226,14 @@ class ToolExecutionRequest(BaseModel):
         default=None,
         description="Optional request ID for tracing"
     )
-    
+
     @field_validator("tool_name")
     @classmethod
     def validate_tool_name(cls, v: str) -> str:
         if "__" not in v:
             raise ValueError("Tool name must be in format 'server__tool_name'")
         return v
-    
+
     model_config = ConfigDict(json_schema_extra={
         "example": {
             "tool_name": "vedastro__generate_signal",
@@ -246,7 +246,7 @@ class ToolExecutionRequest(BaseModel):
 
 class ToolExecutionResponse(BaseModel):
     """Response from tool execution."""
-    
+
     success: bool = Field(..., description="Whether execution succeeded")
     result: Optional[Dict[str, Any]] = Field(
         default=None,
@@ -282,7 +282,7 @@ class ToolExecutionResponse(BaseModel):
 
 class ToolInfo(BaseModel):
     """Information about a registered tool."""
-    
+
     name: str = Field(..., description="Tool name")
     description: str = Field(..., description="Tool description")
     version: str = Field(default="1.0.0", description="Tool version")
@@ -317,7 +317,7 @@ class ToolInfo(BaseModel):
 
 class CircuitBreakerConfig(BaseModel):
     """Configuration for circuit breaker."""
-    
+
     failure_threshold: int = Field(default=5, ge=1, description="Failures before opening")
     failure_window_seconds: int = Field(default=60, ge=1, description="Window for failure count")
     timeout_seconds: int = Field(default=30, ge=1, description="Reset timeout")
@@ -327,7 +327,7 @@ class CircuitBreakerConfig(BaseModel):
 
 class RetryConfig(BaseModel):
     """Configuration for retry mechanism."""
-    
+
     max_attempts: int = Field(default=3, ge=1, description="Maximum retry attempts")
     initial_delay_ms: int = Field(default=100, ge=0, description="Initial delay")
     max_delay_ms: int = Field(default=10000, ge=0, description="Maximum delay")
@@ -337,7 +337,7 @@ class RetryConfig(BaseModel):
 
 class ResilienceMetrics(BaseModel):
     """Resilience metrics."""
-    
+
     total_calls: int = 0
     successful_calls: int = 0
     failed_calls: int = 0
@@ -345,13 +345,13 @@ class ResilienceMetrics(BaseModel):
     circuit_breaker_resets: int = 0
     total_retry_attempts: int = 0
     successful_retries: int = 0
-    
+
     @property
     def success_rate(self) -> float:
         if self.total_calls == 0:
             return 1.0
         return self.successful_calls / self.total_calls
-    
+
     @property
     def retry_success_rate(self) -> float:
         if self.total_retry_attempts == 0:
@@ -361,7 +361,7 @@ class ResilienceMetrics(BaseModel):
 
 class HealthCheckResponse(BaseModel):
     """Health check response."""
-    
+
     status: str = Field(..., description="Overall status: healthy/degraded/unhealthy")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     service_name: str = Field(default="ToolBroker")
@@ -394,13 +394,13 @@ T = TypeVar("T")
 class CircuitBreaker:
     """
     Circuit breaker for failure isolation.
-    
+
     States:
     - CLOSED: Normal operation, requests pass through
     - OPEN: Service failing, requests rejected immediately
     - HALF_OPEN: Testing if service recovered, limited requests allowed
     """
-    
+
     def __init__(self, name: str, config: Optional[CircuitBreakerConfig] = None):
         self.name = name
         self.config = config or CircuitBreakerConfig()
@@ -411,9 +411,9 @@ class CircuitBreaker:
         self.state_change_time: Optional[datetime] = None
         self.half_open_request_count = 0
         self.lock = asyncio.Lock()
-        
+
         logger.info(f"Circuit breaker '{name}' initialized in {self.state.value} state")
-    
+
     async def call(self, func: Callable[..., Any], *args, **kwargs) -> Any:
         """Execute function through circuit breaker."""
         async with self.lock:
@@ -428,14 +428,14 @@ class CircuitBreaker:
                     raise CircuitBreakerOpenException(
                         f"Circuit breaker '{self.name}' is OPEN"
                     )
-            
+
             if self.state == CircuitBreakerState.HALF_OPEN:
                 if self.half_open_request_count >= self.config.half_open_requests:
                     raise CircuitBreakerOpenException(
                         f"Circuit '{self.name}' half-open request limit reached"
                     )
                 self.half_open_request_count += 1
-        
+
         # Execute outside lock
         try:
             result = await func(*args, **kwargs)
@@ -444,7 +444,7 @@ class CircuitBreaker:
         except Exception as e:
             await self._on_failure()
             raise
-    
+
     async def _on_success(self):
         """Handle successful call."""
         async with self.lock:
@@ -458,13 +458,13 @@ class CircuitBreaker:
                     self.state_change_time = datetime.utcnow()
             elif self.state == CircuitBreakerState.CLOSED:
                 self.failure_count = 0
-    
+
     async def _on_failure(self):
         """Handle failed call."""
         async with self.lock:
             self.failure_count += 1
             self.last_failure_time = datetime.utcnow()
-            
+
             if self.state == CircuitBreakerState.HALF_OPEN:
                 logger.warning(f"Circuit '{self.name}' failed during recovery, reopening")
                 self.state = CircuitBreakerState.OPEN
@@ -477,14 +477,14 @@ class CircuitBreaker:
                     )
                     self.state = CircuitBreakerState.OPEN
                     self.state_change_time = datetime.utcnow()
-    
+
     def _should_attempt_reset(self) -> bool:
         """Check if circuit should attempt to reset."""
         if not self.last_failure_time:
             return True
         elapsed = datetime.utcnow() - self.last_failure_time
         return elapsed >= timedelta(seconds=self.config.reset_timeout_seconds)
-    
+
     def get_state(self) -> Dict[str, Any]:
         """Get current circuit breaker state."""
         return {
@@ -500,11 +500,11 @@ class CircuitBreaker:
 
 class CircuitBreakerRegistry:
     """Registry for managing multiple circuit breakers."""
-    
+
     def __init__(self):
         self._breakers: Dict[str, CircuitBreaker] = {}
         self._lock = asyncio.Lock()
-    
+
     async def get_or_create(
         self,
         name: str,
@@ -515,15 +515,15 @@ class CircuitBreakerRegistry:
             if name not in self._breakers:
                 self._breakers[name] = CircuitBreaker(name, config)
             return self._breakers[name]
-    
+
     def get(self, name: str) -> Optional[CircuitBreaker]:
         """Get circuit breaker by name."""
         return self._breakers.get(name)
-    
+
     def get_all_states(self) -> Dict[str, Dict[str, Any]]:
         """Get states of all circuit breakers."""
         return {name: breaker.get_state() for name, breaker in self._breakers.items()}
-    
+
     async def reset_all(self):
         """Reset all circuit breakers to CLOSED."""
         async with self._lock:
@@ -567,23 +567,23 @@ async def async_retry(
 ) -> Any:
     """
     Execute async function with retry logic.
-    
+
     Args:
         func: Async function to execute
         config: Retry configuration
         on_retry: Optional callback on retry (attempt_number, exception)
         *args, **kwargs: Arguments for func
-    
+
     Returns:
         Function result
-    
+
     Raises:
         RetryExhaustedException: If all retries fail
         Original exception: Last error encountered
     """
     config = config or RetryConfig()
     last_exception: Optional[Exception] = None
-    
+
     for attempt in range(config.max_attempts):
         try:
             result = await func(*args, **kwargs)
@@ -591,7 +591,7 @@ async def async_retry(
             return result
         except Exception as e:
             last_exception = e
-            
+
             if attempt == config.max_attempts - 1:
                 # Last attempt failed
                 logger.error(
@@ -602,32 +602,32 @@ async def async_retry(
                     config.max_attempts,
                     last_exception
                 ) from last_exception
-            
+
             # Calculate delay with exponential backoff
             delay_ms = min(
                 config.initial_delay_ms * (config.backoff_factor ** attempt),
                 config.max_delay_ms
             )
-            
+
             # Add jitter to prevent thundering herd
             if config.jitter_enabled:
                 jitter = random.uniform(0, delay_ms * 0.1)
                 delay_ms += jitter
-            
+
             logger.warning(
                 f"Attempt {attempt + 1} failed, retrying in {delay_ms:.0f}ms: {e}"
             )
-            
+
             # Call optional retry callback
             if on_retry:
                 try:
                     await on_retry(attempt + 1, e)
                 except Exception as callback_error:
                     logger.warning(f"Retry callback failed: {callback_error}")
-            
+
             # Wait before retry
             await asyncio.sleep(delay_ms / 1000.0)
-    
+
     # Should never reach here
     raise RuntimeError("Retry loop exited unexpectedly")
 ```
@@ -651,13 +651,13 @@ logger = logging.getLogger(__name__)
 
 class ToolRegistry:
     """Registry for managing tool registrations."""
-    
+
     def __init__(self):
         self._tools: Dict[str, Dict[str, Any]] = {}
         self._handlers: Dict[str, Callable] = {}
         self._lock = asyncio.Lock()
         self._metrics: Dict[str, Dict[str, Any]] = {}
-    
+
     def register(
         self,
         name: str,
@@ -669,7 +669,7 @@ class ToolRegistry:
     ) -> None:
         """
         Register a tool.
-        
+
         Args:
             name: Tool name (format: "server__tool_name")
             handler: Async function that executes the tool
@@ -680,7 +680,7 @@ class ToolRegistry:
         """
         if name in self._tools:
             logger.warning(f"Tool '{name}' already registered, overwriting")
-        
+
         self._tools[name] = {
             "name": name,
             "description": description,
@@ -695,17 +695,17 @@ class ToolRegistry:
             "failure_count": 0,
             "total_latency_ms": 0,
         }
-        
+
         logger.info(f"Registered tool: {name}")
-    
+
     def get(self, name: str) -> Optional[Dict[str, Any]]:
         """Get tool info."""
         return self._tools.get(name)
-    
+
     def get_handler(self, name: str) -> Optional[Callable]:
         """Get tool handler."""
         return self._handlers.get(name)
-    
+
     def list_tools(self) -> List[ToolInfo]:
         """List all registered tools with metrics."""
         tools = []
@@ -713,7 +713,7 @@ class ToolRegistry:
             metrics = self._metrics.get(name, {})
             execution_count = metrics.get("execution_count", 0)
             success_count = metrics.get("success_count", 0)
-            
+
             tools.append(ToolInfo(
                 name=name,
                 description=info["description"],
@@ -725,7 +725,7 @@ class ToolRegistry:
                 avg_latency_ms=metrics.get("total_latency_ms", 0) / max(execution_count, 1)
             ))
         return tools
-    
+
     async def record_execution(
         self,
         tool_name: str,
@@ -752,7 +752,7 @@ def tool(
 ):
     """
     Decorator for registering tools.
-    
+
     Usage:
         @tool("vedastro__generate_signal", description="Generate signal")
         async def generate_signal(params: Dict) -> Dict:
@@ -807,14 +807,14 @@ logger = logging.getLogger(__name__)
 class ToolBroker:
     """
     Central tool broker with resilience patterns.
-    
+
     Features:
     - Tool registration and discovery
     - Circuit breaker protection
     - Automatic retry with exponential backoff
     - Metrics collection
     """
-    
+
     def __init__(
         self,
         retry_config: Optional[RetryConfig] = None,
@@ -825,9 +825,9 @@ class ToolBroker:
         self.retry_config = retry_config or RetryConfig()
         self.circuit_config = circuit_breaker_config or CircuitBreakerConfig()
         self._metrics = ResilienceMetrics()
-        
+
         logger.info("ToolBroker initialized")
-    
+
     def register_tool(
         self,
         name: str,
@@ -846,12 +846,12 @@ class ToolBroker:
             parameters=parameters,
             returns=returns
         )
-        
+
         # Create circuit breaker for this tool
         asyncio.create_task(
             self.circuit_registry.get_or_create(name, self.circuit_config)
         )
-    
+
     async def execute_tool(
         self,
         tool_name: str,
@@ -861,20 +861,20 @@ class ToolBroker:
     ) -> ToolExecutionResponse:
         """
         Execute a tool with resilience patterns.
-        
+
         Args:
             tool_name: Tool name (format: "server__tool_name")
             params: Tool parameters
             timeout_seconds: Optional timeout override
             request_id: Optional request ID for tracing
-        
+
         Returns:
             ToolExecutionResponse with result or error
         """
         start_time = time.time()
         request_id = request_id or f"req_{int(start_time * 1000)}"
         retry_count = 0
-        
+
         # Check if tool exists
         handler = self.registry.get_handler(tool_name)
         if not handler:
@@ -884,31 +884,31 @@ class ToolBroker:
                 execution_time_ms=(time.time() - start_time) * 1000,
                 request_id=request_id
             )
-        
+
         # Get or create circuit breaker
         circuit_breaker = await self.circuit_registry.get_or_create(
             tool_name, self.circuit_config
         )
-        
+
         try:
             # Execute with circuit breaker and retry
             async def execute_with_retry():
                 nonlocal retry_count
-                
+
                 async def on_retry(attempt: int, error: Exception):
                     nonlocal retry_count
                     retry_count = attempt
                     self._metrics.total_retry_attempts += 1
-                
+
                 return await async_retry(
                     handler,
                     params,
                     config=self.retry_config,
                     on_retry=on_retry
                 )
-            
+
             result = await circuit_breaker.call(execute_with_retry)
-            
+
             # Record success
             execution_time_ms = (time.time() - start_time) * 1000
             await self.registry.record_execution(tool_name, True, execution_time_ms)
@@ -916,7 +916,7 @@ class ToolBroker:
             self._metrics.successful_calls += 1
             if retry_count > 0:
                 self._metrics.successful_retries += 1
-            
+
             return ToolExecutionResponse(
                 success=True,
                 result=result,
@@ -925,12 +925,12 @@ class ToolBroker:
                 retry_count=retry_count,
                 request_id=request_id
             )
-        
+
         except CircuitBreakerOpenException as e:
             self._metrics.total_calls += 1
             self._metrics.failed_calls += 1
             self._metrics.circuit_breaker_opens += 1
-            
+
             return ToolExecutionResponse(
                 success=False,
                 error_message=str(e),
@@ -939,16 +939,16 @@ class ToolBroker:
                 retry_count=retry_count,
                 request_id=request_id
             )
-        
+
         except Exception as e:
             self._metrics.total_calls += 1
             self._metrics.failed_calls += 1
-            
+
             execution_time_ms = (time.time() - start_time) * 1000
             await self.registry.record_execution(tool_name, False, execution_time_ms)
-            
+
             logger.error(f"Tool '{tool_name}' execution failed: {e}")
-            
+
             return ToolExecutionResponse(
                 success=False,
                 error_message=str(e),
@@ -957,11 +957,11 @@ class ToolBroker:
                 retry_count=retry_count,
                 request_id=request_id
             )
-    
+
     def list_tools(self) -> List[ToolInfo]:
         """List all registered tools."""
         return self.registry.list_tools()
-    
+
     def get_tool_info(self, tool_name: str) -> Optional[ToolInfo]:
         """Get info for a specific tool."""
         tools = self.list_tools()
@@ -969,11 +969,11 @@ class ToolBroker:
             if tool.name == tool_name:
                 return tool
         return None
-    
+
     def get_metrics(self) -> ResilienceMetrics:
         """Get resilience metrics."""
         return self._metrics
-    
+
     def get_circuit_states(self) -> Dict[str, Any]:
         """Get all circuit breaker states."""
         return self.circuit_registry.get_all_states()
@@ -1050,13 +1050,13 @@ async def health_check(
 ) -> HealthCheckResponse:
     """Health check endpoint."""
     circuit_states = broker.get_circuit_states()
-    
+
     components = {}
     for name, state in circuit_states.items():
         components[name] = "operational" if state["state"] == "closed" else "degraded"
-    
+
     all_healthy = all(s == "operational" for s in components.values())
-    
+
     return HealthCheckResponse(
         status="healthy" if all_healthy else "degraded",
         components=components,
@@ -1102,15 +1102,15 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
     broker = ToolBroker()
-    
+
     # Register tools (this will be expanded)
     # broker.register_tool("vedastro__generate_signal", vedastro_tool_handler)
-    
+
     toolbroker_api.initialize_broker(broker)
     app.state.tool_broker = broker
-    
+
     yield
-    
+
     # Shutdown
     pass
 
@@ -1136,18 +1136,18 @@ from backend.core.tool_broker.circuit_breaker import CircuitBreaker, CircuitBrea
 @pytest.mark.asyncio
 async def test_circuit_opens_after_failures():
     breaker = CircuitBreaker("test", failure_threshold=3)
-    
+
     async def failing_func():
         raise ValueError("Fail")
-    
+
     # 3 failures
     for _ in range(3):
         with pytest.raises(ValueError):
             await breaker.call(failing_func)
-    
+
     # Circuit should be open
     assert breaker.state == CircuitBreakerState.OPEN
-    
+
     # Next call should raise CircuitBreakerOpenException
     with pytest.raises(Exception) as exc_info:
         await breaker.call(failing_func)
@@ -1177,5 +1177,5 @@ Na deze basis implementatie:
 
 ---
 
-*Implementation Guide Version: 1.0*  
+*Implementation Guide Version: 1.0*
 *Status: Ready for Development*

@@ -37,20 +37,20 @@ class CircuitBreakerConfig:
 
 class CircuitBreaker:
     """Circuit breaker state machine per tool."""
-    
+
     _instances: dict = {}
     _lock = asyncio.Lock()
-    
+
     def __new__(cls, name: str, config: CircuitBreakerConfig = None):
         if name not in cls._instances:
             cls._instances[name] = super().__new__(cls)
             cls._instances[name]._initialized = False
         return cls._instances[name]
-    
+
     def __init__(self, name: str, config: CircuitBreakerConfig = None):
         if self._initialized:
             return
-        
+
         self.name = name
         self.config = config or CircuitBreakerConfig()
         self.state = CircuitState.CLOSED
@@ -60,9 +60,9 @@ class CircuitBreaker:
         self.state_change_time: Optional[datetime] = None
         self.half_open_request_count = 0
         self._initialized = True
-        
+
         logger.info(f"CircuitBreaker '{name}' initialized in {self.state.value} state")
-    
+
     async def call(self, func: Callable[..., T], *args, **kwargs) -> T:
         """Execute function through circuit breaker."""
         async with CircuitBreaker._lock:
@@ -75,14 +75,14 @@ class CircuitBreaker:
                     self.state_change_time = datetime.utcnow()
                 else:
                     raise CircuitBreakerOpenException(f"Circuit '{self.name}' is OPEN")
-            
+
             if self.state == CircuitState.HALF_OPEN:
                 if self.half_open_request_count >= self.config.half_open_requests:
                     raise CircuitBreakerOpenException(
                         f"Circuit '{self.name}' half-open limit reached"
                     )
                 self.half_open_request_count += 1
-        
+
         try:
             result = await func(*args, **kwargs)
             await self._on_success()
@@ -90,7 +90,7 @@ class CircuitBreaker:
         except Exception:
             await self._on_failure()
             raise
-    
+
     async def _on_success(self):
         async with CircuitBreaker._lock:
             if self.state == CircuitState.HALF_OPEN:
@@ -103,12 +103,12 @@ class CircuitBreaker:
                     self.state_change_time = datetime.utcnow()
             elif self.state == CircuitState.CLOSED:
                 self.failure_count = max(0, self.failure_count - 1)
-    
+
     async def _on_failure(self):
         async with CircuitBreaker._lock:
             self.failure_count += 1
             self.last_failure_time = datetime.utcnow()
-            
+
             if self.state == CircuitState.HALF_OPEN:
                 logger.warning(f"Circuit '{self.name}' failed during recovery, reopening")
                 self.state = CircuitState.OPEN
@@ -118,13 +118,13 @@ class CircuitBreaker:
                     logger.error(f"Circuit '{self.name}' opening after {self.failure_count} failures")
                     self.state = CircuitState.OPEN
                     self.state_change_time = datetime.utcnow()
-    
+
     def _should_attempt_reset(self) -> bool:
         if not self.last_failure_time:
             return True
         elapsed = datetime.utcnow() - self.last_failure_time
         return elapsed >= timedelta(seconds=self.config.reset_timeout_seconds)
-    
+
     def get_state(self) -> dict:
         return {
             "name": self.name,
@@ -148,7 +148,7 @@ def circuit_breaker(
 ):
     """
     Decorator for adding circuit breaker to MCP tools.
-    
+
     Usage:
         @circuit_breaker(failure_threshold=3)
         @mcp.tool()
@@ -164,11 +164,11 @@ def circuit_breaker(
             reset_timeout_seconds=reset_timeout_seconds
         )
         breaker = CircuitBreaker(breaker_name, config)
-        
+
         @functools.wraps(func)
         async def wrapper(*args, **kwargs) -> T:
             return await breaker.call(func, *args, **kwargs)
-        
+
         # Attach circuit breaker to function for introspection
         wrapper._circuit_breaker = breaker
         return wrapper

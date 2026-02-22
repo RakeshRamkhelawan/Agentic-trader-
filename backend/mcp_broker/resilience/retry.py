@@ -46,7 +46,7 @@ def retry(
 ):
     """
     Decorator for adding retry logic to MCP tools.
-    
+
     Usage:
         @retry(max_attempts=3, initial_delay_ms=100)
         @mcp.tool()
@@ -61,44 +61,44 @@ def retry(
         jitter_enabled=jitter_enabled,
         retryable_exceptions=retryable_exceptions
     )
-    
+
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs) -> T:
             last_exception: Optional[Exception] = None
-            
+
             for attempt in range(config.max_attempts):
                 try:
                     return await func(*args, **kwargs)
                 except config.retryable_exceptions as e:
                     last_exception = e
-                    
+
                     if attempt == config.max_attempts - 1:
                         logger.error(
                             f"{func.__name__} failed after {config.max_attempts} attempts: {e}"
                         )
                         raise
-                    
+
                     # Calculate delay
                     delay_ms = min(
                         config.initial_delay_ms * (config.backoff_factor ** attempt),
                         config.max_delay_ms
                     )
-                    
+
                     # Add jitter
                     if config.jitter_enabled:
                         jitter = random.uniform(0, delay_ms * 0.1)
                         delay_ms += jitter
-                    
+
                     logger.warning(
                         f"{func.__name__} attempt {attempt + 1} failed, "
                         f"retrying in {delay_ms:.0f}ms: {e}"
                     )
-                    
+
                     await asyncio.sleep(delay_ms / 1000.0)
-            
+
             raise RuntimeError("Retry loop exited unexpectedly")
-        
+
         return wrapper
     return decorator
 

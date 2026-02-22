@@ -63,7 +63,7 @@ V17 successfully integrates VedAstro TradingSignalGenerator with Elemental risk 
 1. **Execute Rate Still Low**: 6.34% (target: 15-25%)
    - VedAstro signal filters (50% confidence, 45 score) are strict
    - Elemental blocking (3-loss rule) filters additional entries
-   
+
 2. **Trade Count**: 331 (similar to V16: 350)
    - Not the 2-3x increase hoped for
    - VedAstro provides quality but not quantity

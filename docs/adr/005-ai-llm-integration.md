@@ -48,34 +48,34 @@ We will use **DeepSeek API** as primary LLM provider with **MCP protocol** for t
 # backend/adapters/deepseek_client.py
 class DeepSeekClient:
     """Client for DeepSeek LLM API."""
-    
+
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.base_url = "https://api.deepseek.com"
-    
+
     async def analyze_market_sentiment(
         self,
         symbol: str,
         news_items: list[str]
     ) -> SentimentAnalysis:
         """Analyze market sentiment using LLM."""
-        
+
         prompt = f"""
         Analyze the sentiment for {symbol} based on these news items:
         {chr(10).join(f"- {item}" for item in news_items)}
-        
+
         Provide:
         1. Overall sentiment (bullish/bearish/neutral)
         2. Confidence score (0-1)
         3. Key factors
         """
-        
+
         response = await self._chat_completion(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
         )
-        
+
         return self._parse_sentiment(response)
 ```
 
@@ -91,20 +91,20 @@ async def analyze_vedastro(
 ) -> VedAstroAnalysis:
     """
     Perform VedAstro analysis for trading timing.
-    
+
     This tool calculates astrological indicators
     for optimal entry/exit timing.
     """
     # Call internal service directly
     from backend.services.consensus import VedAstroService
-    
+
     service = VedAstroService()
     result = await service.calculate(
         symbol=symbol,
         date=datetime.fromisoformat(date),
         location=location
     )
-    
+
     return VedAstroAnalysis(
         planetary_positions=result.positions,
         auspicious_periods=result.timings,

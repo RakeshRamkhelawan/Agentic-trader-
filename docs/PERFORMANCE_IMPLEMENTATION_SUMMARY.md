@@ -239,7 +239,7 @@ async def main():
         enable_parallel=True,
         max_workers=4
     )
-    
+
     print(f"Completed in {results['performance']['total_time_seconds']:.2f}s")
     print(f"Total trades: {len(results['trades'])}")
     print(f"Cache hit rate: {results['performance']['metrics']['cache']['hit_rate']:.1%}")
@@ -390,6 +390,6 @@ for rec in report['recommendations']:
 
 ---
 
-*Implementation completed: February 22, 2026*  
-*Version: V18.1 Performance Edition*  
+*Implementation completed: February 22, 2026*
+*Version: V18.1 Performance Edition*
 *Status: ✅ PRODUCTION READY*

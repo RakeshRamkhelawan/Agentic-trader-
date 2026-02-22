@@ -35,7 +35,7 @@ class CacheConfig:
     # Read from environment variable, fallback to localhost
     redis_url: str = None
     compression: bool = True
-    
+
     def __post_init__(self):
         """Initialize redis_url from environment if not provided."""
         import os
@@ -45,14 +45,14 @@ class CacheConfig:
 
 class MemoryCache:
     """Thread-safe in-memory cache with LRU eviction."""
-    
+
     def __init__(self, max_size: int = 10000):
         self._cache: Dict[str, Any] = {}
         self._timestamps: Dict[str, datetime] = {}
         self._access_order: List[str] = []
         self._max_size = max_size
         self._lock = asyncio.Lock()
-    
+
     async def get(self, key: str) -> Optional[Any]:
         async with self._lock:
             if key in self._cache:
@@ -62,11 +62,11 @@ class MemoryCache:
                 self._access_order.append(key)
                 return self._cache[key]
             return None
-    
+
     async def set(
-        self, 
-        key: str, 
-        value: Any, 
+        self,
+        key: str,
+        value: Any,
         ttl_seconds: Optional[int] = None
     ) -> None:
         async with self._lock:
@@ -76,26 +76,26 @@ class MemoryCache:
                     oldest = self._access_order.pop(0)
                     self._cache.pop(oldest, None)
                     self._timestamps.pop(oldest, None)
-            
+
             self._cache[key] = value
             self._timestamps[key] = datetime.now()
             if key in self._access_order:
                 self._access_order.remove(key)
             self._access_order.append(key)
-    
+
     async def delete(self, key: str) -> None:
         async with self._lock:
             self._cache.pop(key, None)
             self._timestamps.pop(key, None)
             if key in self._access_order:
                 self._access_order.remove(key)
-    
+
     async def clear(self) -> None:
         async with self._lock:
             self._cache.clear()
             self._timestamps.clear()
             self._access_order.clear()
-    
+
     async def get_stats(self) -> Dict[str, Any]:
         async with self._lock:
             return {
@@ -108,20 +108,20 @@ class MemoryCache:
 class BacktestCache:
     """
     High-performance caching system for backtest operations.
-    
+
     Features:
     - Two-tier caching (memory + Redis)
     - Automatic serialization with compression
     - Cache key hashing for efficient lookup
     - TTL-based expiration
     """
-    
+
     def __init__(self, config: Optional[CacheConfig] = None):
         self.config = config or CacheConfig()
         self._memory = MemoryCache(self.config.max_memory_entries)
         self._redis: Optional[Any] = None
         self._redis_connected = False
-        
+
         if REDIS_AVAILABLE and self.config.enable_redis:
             try:
                 self._redis = redis.from_url(
@@ -131,7 +131,7 @@ class BacktestCache:
                 )
             except Exception:
                 pass  # Fallback to memory only
-    
+
     async def connect(self) -> bool:
         """Connect to Redis if available."""
         if self._redis and not self._redis_connected:
@@ -141,14 +141,14 @@ class BacktestCache:
             except Exception:
                 self._redis_connected = False
         return self._redis_connected
-    
+
     def _generate_key(self, prefix: str, params: Dict[str, Any]) -> str:
         """Generate deterministic cache key from parameters."""
         # Sort keys for deterministic hashing
         param_str = json.dumps(params, sort_keys=True, default=str)
         hash_val = hashlib.md5(param_str.encode()).hexdigest()[:16]
         return f"{prefix}:{hash_val}"
-    
+
     def _serialize(self, value: Any) -> bytes:
         """Serialize value to bytes with optional compression."""
         data = pickle.dumps(value)
@@ -159,7 +159,7 @@ class BacktestCache:
             except ImportError:
                 pass
         return data
-    
+
     def _deserialize(self, data: bytes) -> Any:
         """Deserialize bytes to value with optional decompression."""
         if self.config.compression:
@@ -169,20 +169,20 @@ class BacktestCache:
             except Exception:
                 pass  # Wasn't compressed
         return pickle.loads(data)
-    
+
     async def get(
-        self, 
-        prefix: str, 
+        self,
+        prefix: str,
         params: Dict[str, Any]
     ) -> Optional[Any]:
         """Get cached value with two-tier lookup."""
         key = self._generate_key(prefix, params)
-        
+
         # Try memory first
         value = await self._memory.get(key)
         if value is not None:
             return value
-        
+
         # Try Redis second
         if self._redis_connected:
             try:
@@ -194,22 +194,22 @@ class BacktestCache:
                     return value
             except Exception:
                 pass
-        
+
         return None
-    
+
     async def set(
-        self, 
-        prefix: str, 
-        params: Dict[str, Any], 
+        self,
+        prefix: str,
+        params: Dict[str, Any],
         value: Any,
         ttl_seconds: int = 300
     ) -> None:
         """Set cached value in both tiers."""
         key = self._generate_key(prefix, params)
-        
+
         # Set in memory
         await self._memory.set(key, value, ttl_seconds)
-        
+
         # Set in Redis
         if self._redis_connected:
             try:
@@ -217,7 +217,7 @@ class BacktestCache:
                 await self._redis.setex(key, ttl_seconds, data)
             except Exception:
                 pass
-    
+
     async def get_vedastro_signal(
         self,
         symbol: str,
@@ -231,7 +231,7 @@ class BacktestCache:
             **(params or {})
         }
         return await self.get("vedastro", cache_params)
-    
+
     async def set_vedastro_signal(
         self,
         symbol: str,
@@ -246,12 +246,12 @@ class BacktestCache:
             **(params or {})
         }
         await self.set(
-            "vedastro", 
-            cache_params, 
+            "vedastro",
+            cache_params,
             result,
             self.config.vedastro_ttl_seconds
         )
-    
+
     async def get_market_data(
         self,
         symbol: str,
@@ -267,7 +267,7 @@ class BacktestCache:
             "interval": interval
         }
         return await self.get("market_data", cache_params)
-    
+
     async def set_market_data(
         self,
         symbol: str,
@@ -289,7 +289,7 @@ class BacktestCache:
             data,
             self.config.market_data_ttl_seconds
         )
-    
+
     async def get_elemental_consensus(
         self,
         elemental_scores: Dict[str, float],
@@ -301,7 +301,7 @@ class BacktestCache:
             "date": date.strftime("%Y-%m-%d")
         }
         return await self.get("elemental_consensus", cache_params)
-    
+
     async def set_elemental_consensus(
         self,
         elemental_scores: Dict[str, float],
@@ -319,12 +319,12 @@ class BacktestCache:
             result,
             self.config.consensus_ttl_seconds
         )
-    
+
     async def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics."""
         memory_stats = await self._memory.get_stats()
         redis_stats = {"connected": self._redis_connected}
-        
+
         if self._redis_connected:
             try:
                 info = await self._redis.info("memory")
@@ -332,12 +332,12 @@ class BacktestCache:
                 redis_stats["keys"] = await self._redis.dbsize()
             except Exception as e:
                 redis_stats["error"] = str(e)
-        
+
         return {
             "memory": memory_stats,
             "redis": redis_stats
         }
-    
+
     async def clear(self) -> None:
         """Clear all caches."""
         await self._memory.clear()
@@ -359,7 +359,7 @@ def cached_vedastro_calculation(cache: BacktestCache):
             cached = await cache.get_vedastro_signal(symbol, date, kwargs)
             if cached is not None:
                 return cached
-            
+
             # Execute and cache
             result = await func(symbol, date, **kwargs)
             await cache.set_vedastro_signal(symbol, date, result, kwargs)
@@ -373,8 +373,8 @@ def cached_market_data(cache: BacktestCache):
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(
-            symbol: str, 
-            start_date: datetime, 
+            symbol: str,
+            start_date: datetime,
             end_date: datetime,
             interval: str = "1d"
         ) -> List[Dict]:
@@ -382,7 +382,7 @@ def cached_market_data(cache: BacktestCache):
             cached = await cache.get_market_data(symbol, start_date, end_date, interval)
             if cached is not None:
                 return cached
-            
+
             # Execute and cache
             result = await func(symbol, start_date, end_date, interval)
             await cache.set_market_data(symbol, start_date, end_date, result, interval)

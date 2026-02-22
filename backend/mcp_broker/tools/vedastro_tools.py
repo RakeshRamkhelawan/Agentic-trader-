@@ -55,40 +55,40 @@ async def vedastro_generate_signal(
 ) -> Dict[str, Any]:
     """
     Generate trading signal from astrological data.
-    
+
     Args:
         symbol: Asset symbol (e.g., "AAPL", "BTC")
         current_price: Current market price
         ctx: MCP context for logging
-    
+
     Returns:
         Trading signal with confidence and astrological context
     """
     if ctx:
         ctx.info(f"Generating VedAstro signal for {symbol} at ${current_price}")
-    
+
     try:
         # Get VedAstro components
         orchestrator = _get_astro_orchestrator()
-        
+
         # Get VedAstro analysis
         astro_analysis = await orchestrator.analyze_asset(
             symbol=symbol,
             current_price=current_price
         )
-        
+
         signal = astro_analysis.trading_signal
-        
+
         # Extract signal value (handle both enum and string)
         signal_value = signal.signal
         if hasattr(signal_value, 'value'):
             signal_str = signal_value.value
         else:
             signal_str = str(signal_value).lower()
-        
+
         if ctx:
             ctx.info(f"Signal generated: {signal_str} (confidence: {signal.confidence}%)")
-        
+
         return {
             "signal": signal_str,
             "confidence": signal.confidence,
@@ -104,7 +104,7 @@ async def vedastro_generate_signal(
             "stop_loss": getattr(signal, 'stop_loss', None),
             "take_profit": getattr(signal, 'take_profit', None),
         }
-    
+
     except Exception as e:
         logger.error(f"VedAstro signal generation failed: {e}")
         if ctx:
@@ -130,20 +130,20 @@ async def vedastro_get_dasha(
 ) -> Dict[str, Any]:
     """
     Get current Dasha period for an asset.
-    
+
     Args:
         symbol: Asset symbol
         ctx: MCP context
-    
+
     Returns:
         Dasha information including Mahadasha, Antardasha, Pratyantardasha
     """
     if ctx:
         ctx.info(f"Fetching Dasha for {symbol}")
-    
+
     try:
         orchestrator = _get_astro_orchestrator()
-        
+
         # Get Kundli for asset
         birth_date = orchestrator.ASSET_BIRTHDAYS.get(symbol)
         if not birth_date:
@@ -155,11 +155,11 @@ async def vedastro_get_dasha(
                 "pratyantardasha": "Unknown",
                 "note": "No birth data available for this asset"
             }
-        
+
         # Calculate current Dasha
         kundli = await orchestrator.vedastro.calculate_kundli(symbol, birth_date)
         dasha = kundli.get('dasha', {})
-        
+
         return {
             "symbol": symbol,
             "mahadasha": dasha.get('mahadasha_lord', 'Unknown'),
@@ -169,7 +169,7 @@ async def vedastro_get_dasha(
             "mahadasha_end": dasha.get('mahadasha_end', '').isoformat() if hasattr(dasha.get('mahadasha_end'), 'isoformat') else str(dasha.get('mahadasha_end', '')),
             "interpretation": _get_dasha_interpretation(dasha.get('mahadasha_lord', ''))
         }
-    
+
     except Exception as e:
         logger.error(f"Failed to get Dasha: {e}")
         if ctx:
@@ -191,20 +191,20 @@ async def vedastro_get_transits(
 ) -> Dict[str, Any]:
     """
     Get current planetary transits for an asset.
-    
+
     Args:
         symbol: Asset symbol
         ctx: MCP context
-    
+
     Returns:
         Transit information including exalted, debilitated, and retrograde planets
     """
     if ctx:
         ctx.info(f"Fetching transits for {symbol}")
-    
+
     try:
         orchestrator = _get_astro_orchestrator()
-        
+
         # Get Kundli
         birth_date = orchestrator.ASSET_BIRTHDAYS.get(symbol)
         if not birth_date:
@@ -217,24 +217,24 @@ async def vedastro_get_transits(
                 "coherence": 0.5,
                 "note": "No birth data available"
             }
-        
+
         kundli = await orchestrator.vedastro.calculate_kundli(symbol, birth_date)
         transits = await orchestrator.vedastro.calculate_transits(
             datetime.now(), kundli
         )
-        
+
         return {
             "symbol": symbol,
             "exalted_planets": transits.get('exalted_planets', []),
             "debilitated_planets": transits.get('debilitated_planets', []),
-            "retrograde_planets": [p for p, pos in transits.get('current_positions', {}).items() 
+            "retrograde_planets": [p for p, pos in transits.get('current_positions', {}).items()
                                    if pos.get('retrograde', False)],
             "transit_score": _calculate_transit_score(transits),
             "coherence": orchestrator._calculate_astro_coherence(transits),
             "retrograde_count": transits.get('retrograde_count', 0),
             "aspect_count": len(transits.get('aspects', []))
         }
-    
+
     except Exception as e:
         logger.error(f"Failed to get transits: {e}")
         if ctx:
@@ -269,17 +269,17 @@ def _get_dasha_interpretation(mahadasha_lord: str) -> str:
 def _calculate_transit_score(transits: Dict) -> float:
     """Calculate overall transit score (0-1)."""
     score = 0.5
-    
+
     # Exalted planets increase score
     exalted = len(transits.get('exalted_planets', []))
     score += exalted * 0.1
-    
+
     # Debilitated planets decrease score
     debilitated = len(transits.get('debilitated_planets', []))
     score -= debilitated * 0.15
-    
+
     # Retrogrades add uncertainty
     retrograde = transits.get('retrograde_count', 0)
     score -= retrograde * 0.02
-    
+
     return max(0.0, min(1.0, score))

@@ -1,14 +1,14 @@
 # ToolBroker V18 Documentatie Index
 
-> **Agentic Trader Platform V18**  
-> **MCP SDK Implementatie**  
+> **Agentic Trader Platform V18**
+> **MCP SDK Implementatie**
 > **Laatste Update**: 22 Februari 2026
 
 ---
 
 ## ⚠️ BELANGRIJK: Lees Eerst
 
-**[ARCHITECTURE_CORRECTION_NOTICE.md](./ARCHITECTURE_CORRECTION_NOTICE.md)**  
+**[ARCHITECTURE_CORRECTION_NOTICE.md](./ARCHITECTURE_CORRECTION_NOTICE.md)**
 → Essentiële correctie op oorspronkelijk advies. MOET gelezen worden voor implementatie.
 
 ---
@@ -196,13 +196,13 @@ backend/core/tool_broker/        # NIET GEBRUIKEN
 
 ### Veelvoorkomende Vragen
 
-**Q: Moet ik de oude documentatie nog lezen?**  
+**Q: Moet ik de oude documentatie nog lezen?**
 A: Ja, voor conceptueel begrip. De requirements (FR/NFR) zijn nog steeds geldig.
 
-**Q: Wat moet ik implementeren?**  
+**Q: Wat moet ik implementeren?**
 A: Alleen de documenten gemarkeerd met "Actief". Reference material is voor context.
 
-**Q: Is de oude code waardeloos?**  
+**Q: Is de oude code waardeloos?**
 A: Nee, de concepten (circuit breaker, retry logica) zijn correct. Alleen de technische executie is veranderd.
 
 ---
@@ -226,6 +226,6 @@ A: Nee, de concepten (circuit breaker, retry logica) zijn correct. Alleen de tec
 
 ---
 
-*Document Index Version: 1.0*  
-*Status: READY FOR IMPLEMENTATION*  
+*Document Index Version: 1.0*
+*Status: READY FOR IMPLEMENTATION*
 *Last Updated: 2026-02-22*

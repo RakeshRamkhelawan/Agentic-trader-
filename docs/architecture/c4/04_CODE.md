@@ -36,23 +36,23 @@ class JWTHandler:
         self.jwks_client = PyJWKClient(jwks_url)
         self.audience = audience
         self.issuer = issuer
-    
+
     async def verify_token(self, credentials: HTTPAuthorizationCredentials) -> dict:
         """
         Verify and decode JWT token.
-        
+
         Returns:
             dict: Decoded token claims including tenant_id, account_id
-            
+
         Raises:
             HTTPException: 401 if token is invalid
         """
         token = credentials.credentials
-        
+
         try:
             # Get signing key from JWKS
             signing_key = self.jwks_client.get_signing_key_from_jwt(token)
-            
+
             # Verify token
             payload = jwt.decode(
                 token,
@@ -61,7 +61,7 @@ class JWTHandler:
                 audience=self.audience,
                 issuer=self.issuer,
             )
-            
+
             # Extract tenant context for multi-tenancy
             return {
                 "sub": payload["sub"],
@@ -69,7 +69,7 @@ class JWTHandler:
                 "account_id": payload.get("https://yourapp.com/account_id"),
                 "permissions": payload.get("permissions", []),
             }
-            
+
         except jwt.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail="Token expired")
         except jwt.JWTClaimsError:
@@ -105,15 +105,15 @@ from sqlalchemy.orm import Session
 
 class RLSEnforcer:
     """Enforces RLS policies on database queries."""
-    
+
     def __init__(self, tenant_id: str, account_id: str):
         self.tenant_id = tenant_id
         self.account_id = account_id
-    
+
     def apply_to_query(self, query, model_class):
         """
         Apply RLS filter to SQLAlchemy query.
-        
+
         Usage:
             query = session.query(Order)
             query = rls.apply_to_query(query, Order)
@@ -121,10 +121,10 @@ class RLSEnforcer:
         """
         if hasattr(model_class, 'tenant_id'):
             query = query.filter(model_class.tenant_id == self.tenant_id)
-        
+
         if hasattr(model_class, 'account_id'):
             query = query.filter(model_class.account_id == self.account_id)
-            
+
         return query
 
 # SQLAlchemy model base with RLS
@@ -140,7 +140,7 @@ class TenantMixin:
 
 class Order(Base, TenantMixin):
     __tablename__ = 'orders'
-    
+
     id = Column(String, primary_key=True)
     symbol = Column(String, nullable=False)
     side = Column(String, nullable=False)  # buy/sell
@@ -169,7 +169,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 class TradingService:
     """
     Manages the complete order lifecycle.
-    
+
     Responsibilities:
     - Order validation
     - Risk checking
@@ -177,7 +177,7 @@ class TradingService:
     - Order state management
     - Audit logging
     """
-    
+
     def __init__(
         self,
         db: AsyncSession,
@@ -191,7 +191,7 @@ class TradingService:
         self.exchange = exchange_client
         self.event_bus = event_bus
         self.audit = audit_logger
-    
+
     async def create_order(
         self,
         tenant_id: str,
@@ -204,7 +204,7 @@ class TradingService:
     ) -> Order:
         """
         Create and execute a new order.
-        
+
         Workflow:
         1. Validate order parameters
         2. Check risk limits
@@ -212,7 +212,7 @@ class TradingService:
         4. Save to database
         5. Publish event
         6. Log audit trail
-        
+
         Args:
             tenant_id: Organization identifier
             account_id: User account identifier
@@ -221,17 +221,17 @@ class TradingService:
             amount: Order quantity
             order_type: "market", "limit", "stop"
             price: Limit price (required for limit orders)
-            
+
         Returns:
             Order: Created order object
-            
+
         Raises:
             RiskViolationError: If order exceeds risk limits
             ExchangeError: If exchange execution fails
         """
         # 1. Validate
         self._validate_order(symbol, side, amount, order_type, price)
-        
+
         # 2. Risk check
         risk_check = await self.risk_service.check_order(
             account_id=account_id,
@@ -240,11 +240,11 @@ class TradingService:
             amount=amount,
             current_price=await self.exchange.get_price(symbol)
         )
-        
+
         if not risk_check.approved:
             await self.audit.log_rejected_order(tenant_id, account_id, risk_check.reason)
             raise RiskViolationError(risk_check.reason)
-        
+
         # 3. Execute on exchange
         try:
             exchange_order = await self.exchange.place_order(
@@ -257,7 +257,7 @@ class TradingService:
         except ExchangeError as e:
             await self.audit.log_exchange_error(tenant_id, account_id, str(e))
             raise
-        
+
         # 4. Save to database
         order = Order(
             id=exchange_order['orderId'],
@@ -270,10 +270,10 @@ class TradingService:
             status=exchange_order['status'],
             exchange_order_id=exchange_order['orderId']
         )
-        
+
         self.db.add(order)
         await self.db.commit()
-        
+
         # 5. Publish event for real-time updates
         await self.event_bus.publish("orders", {
             "type": "order_created",
@@ -281,12 +281,12 @@ class TradingService:
             "account_id": account_id,
             "order": order.to_dict()
         })
-        
+
         # 6. Audit log
         await self.audit.log_order_created(tenant_id, account_id, order)
-        
+
         return order
-    
+
     async def get_orders(
         self,
         tenant_id: str,
@@ -296,7 +296,7 @@ class TradingService:
     ) -> list[Order]:
         """
         Get orders for account with RLS enforcement.
-        
+
         Returns only orders belonging to the specified
         tenant and account (row-level security).
         """
@@ -304,10 +304,10 @@ class TradingService:
             Order.tenant_id == tenant_id,
             Order.account_id == account_id
         )
-        
+
         if status:
             query = query.filter(Order.status == status)
-        
+
         return await query.order_by(Order.created_at.desc()).limit(limit).all()
 ```
 
@@ -349,7 +349,7 @@ class BacktestResult:
     trades: pd.DataFrame
     equity_curve: pd.DataFrame
     metrics: dict
-    
+
     # Performance metrics
     total_return: float
     sharpe_ratio: float
@@ -360,14 +360,14 @@ class BacktestResult:
 class BacktestService:
     """
     Backtesting engine for trading strategies.
-    
+
     Implements event-driven backtesting with support for:
     - Historical market data replay
     - Elemental consensus signals
     - VedAstro astrological timing
     - Multi-asset portfolio simulation
     """
-    
+
     def __init__(
         self,
         market_data_service: MarketDataService,
@@ -379,7 +379,7 @@ class BacktestService:
         self.elemental = elemental_service
         self.vedastro = vedastro_service
         self.cache = cache
-    
+
     async def run_backtest(
         self,
         config: BacktestConfig,
@@ -387,11 +387,11 @@ class BacktestService:
     ) -> BacktestResult:
         """
         Execute backtest with given configuration.
-        
+
         Args:
             config: Backtest parameters
             strategy: Optional custom strategy function
-            
+
         Returns:
             BacktestResult with trades and metrics
         """
@@ -400,16 +400,16 @@ class BacktestService:
         cached = await self.cache.get(cache_key)
         if cached:
             return BacktestResult(**cached)
-        
+
         # Fetch historical data
         historical_data = await self._fetch_historical_data(config)
-        
+
         # Initialize portfolio
         portfolio = Portfolio(
             initial_capital=config.initial_capital,
             symbols=config.symbols
         )
-        
+
         # Run simulation
         trades = []
         for timestamp, market_snapshot in historical_data.iterrows():
@@ -419,13 +419,13 @@ class BacktestService:
                 data=market_snapshot,
                 config=config
             )
-            
+
             # Execute strategy
             if strategy:
                 actions = strategy(portfolio, signals, market_snapshot)
             else:
                 actions = self._default_strategy(portfolio, signals)
-            
+
             # Execute trades
             for action in actions:
                 trade = await self._execute_trade(
@@ -436,10 +436,10 @@ class BacktestService:
                 )
                 if trade:
                     trades.append(trade)
-        
+
         # Calculate metrics
         metrics = self._calculate_metrics(trades, portfolio)
-        
+
         # Build result
         result = BacktestResult(
             config=config,
@@ -452,12 +452,12 @@ class BacktestService:
             win_rate=metrics['win_rate'],
             profit_factor=metrics['profit_factor']
         )
-        
+
         # Cache results
         await self.cache.set(cache_key, result.__dict__, ttl=3600)
-        
+
         return result
-    
+
     async def _generate_signals(
         self,
         timestamp: datetime,
@@ -466,26 +466,26 @@ class BacktestService:
     ) -> dict:
         """Generate trading signals from all sources."""
         signals = {}
-        
+
         # Technical signals (from data)
         signals['technical'] = self._calculate_technical_signals(data)
-        
+
         # Elemental consensus
         if config.use_elemental:
             signals['elemental'] = await self.elemental.calculate_consensus(
                 timestamp=timestamp,
                 symbols=config.symbols
             )
-        
+
         # VedAstro timing
         if config.use_vedastro:
             signals['vedastro'] = await self.vedastro.get_timings(
                 timestamp=timestamp,
                 location="Amsterdam"  # Configurable
             )
-        
+
         return signals
-    
+
     def _calculate_metrics(
         self,
         trades: list,
@@ -500,13 +500,13 @@ class BacktestService:
                 'win_rate': 0.0,
                 'profit_factor': 0.0
             }
-        
+
         trades_df = pd.DataFrame(trades)
-        
+
         returns = trades_df['profit_loss']
         wins = returns[returns > 0]
         losses = returns[returns < 0]
-        
+
         return {
             'total_return': (portfolio.current_value / portfolio.initial_capital - 1) * 100,
             'sharpe_ratio': returns.mean() / returns.std() * (252 ** 0.5),  # Annualized
@@ -548,21 +548,21 @@ class Connection:
 class WebSocketManager:
     """
     Manages WebSocket connections and message routing.
-    
+
     Features:
     - Multi-tenant channel isolation
     - Automatic heartbeat/ping-pong
     - Broadcast to channel subscribers
     - Connection statistics
     """
-    
+
     def __init__(self):
         # connection_id -> Connection
         self.connections: Dict[str, Connection] = {}
         # channel -> set of connection_ids
         self.channels: Dict[str, Set[str]] = {}
         self._lock = asyncio.Lock()
-    
+
     async def connect(
         self,
         websocket: WebSocket,
@@ -572,25 +572,25 @@ class WebSocketManager:
     ) -> None:
         """Accept new WebSocket connection."""
         await websocket.accept()
-        
+
         async with self._lock:
             self.connections[connection_id] = Connection(
                 websocket=websocket,
                 tenant_id=tenant_id,
                 account_id=account_id
             )
-        
+
         # Send connection confirmation
         await websocket.send_json({
             "type": "connected",
             "connection_id": connection_id,
             "timestamp": datetime.utcnow().isoformat()
         })
-    
+
     async def subscribe(self, connection_id: str, channel: str) -> bool:
         """
         Subscribe connection to a channel.
-        
+
         Channels:
         - ticker.{symbol}: Price updates
         - orderbook.{symbol}: Orderbook depth
@@ -598,22 +598,22 @@ class WebSocketManager:
         """
         if connection_id not in self.connections:
             return False
-        
+
         conn = self.connections[connection_id]
-        
+
         # Tenant isolation for user-specific channels
         if channel == "orders":
             channel = f"orders.{conn.account_id}"
-        
+
         async with self._lock:
             conn.subscriptions.add(channel)
-            
+
             if channel not in self.channels:
                 self.channels[channel] = set()
             self.channels[channel].add(connection_id)
-        
+
         return True
-    
+
     async def broadcast_to_channel(
         self,
         channel: str,
@@ -622,23 +622,23 @@ class WebSocketManager:
     ) -> int:
         """
         Broadcast message to all subscribers of a channel.
-        
+
         Returns:
             int: Number of successful deliveries
         """
         if channel not in self.channels:
             return 0
-        
+
         full_message = {
             "channel": channel,
             "type": message_type,
             "data": message,
             "timestamp": datetime.utcnow().isoformat()
         }
-        
+
         subscribers = list(self.channels[channel])
         sent_count = 0
-        
+
         for conn_id in subscribers:
             if conn_id in self.connections:
                 conn = self.connections[conn_id]
@@ -648,22 +648,22 @@ class WebSocketManager:
                 except Exception:
                     # Connection closed, will be cleaned up
                     await self.disconnect(conn_id)
-        
+
         return sent_count
-    
+
     async def disconnect(self, connection_id: str) -> None:
         """Clean up disconnected client."""
         async with self._lock:
             if connection_id in self.connections:
                 conn = self.connections[connection_id]
-                
+
                 # Remove from all channels
                 for channel in conn.subscriptions:
                     if channel in self.channels:
                         self.channels[channel].discard(connection_id)
                         if not self.channels[channel]:
                             del self.channels[channel]
-                
+
                 del self.connections[connection_id]
 ```
 
@@ -722,16 +722,16 @@ class BacktestOutput(BaseModel):
 async def run_backtest(params: BacktestInput) -> BacktestOutput:
     """
     Run historical backtest of trading strategy.
-    
+
     This tool simulates trading over historical data to validate
     strategy performance before deploying with real capital.
-    
+
     Args:
         params: Backtest configuration
-        
+
     Returns:
         Performance metrics and trade summary
-        
+
     Example:
         "Run a backtest for BTC-EUR from January to March 2024"
         → run_backtest(
@@ -742,11 +742,11 @@ async def run_backtest(params: BacktestInput) -> BacktestOutput:
     """
     # Import service (direct import, no HTTP overhead)
     from backend.services.backtest_service import BacktestService, BacktestConfig
-    
+
     # Parse dates
     start = datetime.fromisoformat(params.start_date)
     end = datetime.fromisoformat(params.end_date)
-    
+
     # Create config
     config = BacktestConfig(
         symbols=params.symbols,
@@ -755,11 +755,11 @@ async def run_backtest(params: BacktestInput) -> BacktestOutput:
         initial_capital=params.initial_capital,
         use_elemental=params.strategy in ["elemental", "combined"]
     )
-    
+
     # Execute backtest
     service = BacktestService(...)  # Dependencies injected
     result = await service.run_backtest(config)
-    
+
     # Format output for AI consumption
     return BacktestOutput(
         total_return=result.total_return,

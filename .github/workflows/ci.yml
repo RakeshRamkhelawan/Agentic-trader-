@@ -18,7 +18,7 @@ jobs:
   quick-checks:
     name: Quick Validation
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -76,7 +76,7 @@ jobs:
     needs: quick-checks
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.event_name == 'pull_request'
-    
+
     services:
       redis:
         image: redis:7-alpine
@@ -133,7 +133,7 @@ jobs:
     name: Docker Build Test
     needs: quick-checks
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -155,10 +155,10 @@ jobs:
           docker run -d --name test-api -p 8000:8000 \
             -e REDIS_URL=redis://host.docker.internal:6379/0 \
             agentic-trader:test
-          
+
           # Wait for startup
           sleep 10
-          
+
           # Check if healthy
           docker ps | grep test-api || {
             echo "Container logs:"
@@ -166,7 +166,7 @@ jobs:
             docker rm -f test-api || true
             echo "⚠️ Container may have issues but build succeeded"
           }
-          
+
           # Cleanup
           docker rm -f test-api || true
         continue-on-error: true
@@ -179,7 +179,7 @@ jobs:
     needs: quick-checks
     runs-on: ubuntu-latest
     continue-on-error: true  # Don't fail the pipeline
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -214,7 +214,7 @@ jobs:
     needs: quick-checks
     runs-on: ubuntu-latest
     continue-on-error: true  # Don't fail the pipeline
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -265,7 +265,7 @@ jobs:
     environment:
       name: production
       url: https://your-domain.com
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

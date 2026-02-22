@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Dependency Check
       uses: dependency-check/Dependency-Check_Action@main
       with:
@@ -28,23 +28,23 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       security-events: write
-    
+
     strategy:
       fail-fast: false
       matrix:
         language: [ 'python' ]
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
-    
+
     - name: Autobuild
       uses: github/codeql-action/autobuild@v2
-    
+
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
