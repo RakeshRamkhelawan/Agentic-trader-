@@ -17,12 +17,14 @@ Environment Variables:
 """
 
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
 import ccxt.async_support as ccxt
 
 from backend.core.config.settings import settings
 from backend.core.market_data.circuit_breaker import CircuitBreaker
+from backend.execution._paper_guard import paper_guard, PaperModeViolation
 
 logger = logging.getLogger(__name__)
 
@@ -200,6 +202,7 @@ class BitvavoAdapter:
     # Trading Methods
     # =========================================================================
 
+    @paper_guard
     async def create_limit_order(
         self,
         symbol: str,
@@ -209,6 +212,10 @@ class BitvavoAdapter:
     ) -> Optional[Dict[str, Any]]:
         """
         Create a limit order.
+        
+        🔒 PAPER MODE: Deze methode wordt geblokkeerd door @paper_guard 
+        decorator als TRADING_MODE=paper. Gebruik ShadowPortfolioManager
+        voor paper trading.
 
         Args:
             symbol: Trading pair (e.g., 'BTC/EUR')
@@ -238,13 +245,20 @@ class BitvavoAdapter:
             await self.circuit_breaker.record_failure()
             return None
 
+    @paper_guard
     async def create_market_order(
         self,
         symbol: str,
         side: str,
         amount: float,
     ) -> Optional[Dict[str, Any]]:
-        """Create a market order."""
+        """
+        Create a market order.
+        
+        🔒 PAPER MODE: Deze methode wordt geblokkeerd door @paper_guard 
+        decorator als TRADING_MODE=paper. Gebruik ShadowPortfolioManager
+        voor paper trading.
+        """
         if not self.exchange or not self._check_credentials():
             return None
 
@@ -267,8 +281,13 @@ class BitvavoAdapter:
             await self.circuit_breaker.record_failure()
             return None
 
+    @paper_guard
     async def cancel_order(self, order_id: str, symbol: str) -> bool:
-        """Cancel an existing order."""
+        """
+        Cancel an existing order.
+        
+        🔒 PAPER MODE: Geblokkeerd door @paper_guard in paper mode.
+        """
         if not self.exchange or not self._check_credentials():
             return False
 
@@ -280,10 +299,15 @@ class BitvavoAdapter:
             logger.error(f"Error cancelling order: {e}")
             return False
 
+    @paper_guard
     async def fetch_open_orders(
         self, symbol: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """Fetch all open orders."""
+        """
+        Fetch all open orders.
+        
+        🔒 PAPER MODE: Geblokkeerd door @paper_guard in paper mode.
+        """
         if not self.exchange or not self._check_credentials():
             return []
 

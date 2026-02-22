@@ -131,6 +131,19 @@ class CCXTAdapter(ExecutionInterface):
 
     async def submit_order(self, order: OrderRequest) -> OrderResult:
         """Submit an order to the exchange."""
+        # 🔒 PAPER MODE GUARD - KRITISCH: NOOIT echte orders in paper mode
+        import os
+        trading_mode = os.getenv("TRADING_MODE", "paper")
+        if trading_mode == "paper":
+            logger.error("🚫 BLOCKED: CCXT submit_order() aangeroepen in PAPER mode!")
+            logger.error("   Gebruik ShadowPortfolioManager of PaperExchange voor paper trading.")
+            return OrderResult(
+                order_id="",
+                client_order_id=str(order.client_order_id) if order.client_order_id else "",
+                status=OrderStatus.REJECTED,
+                error_message="Cannot place real orders in PAPER mode. Use paper trading components.",
+            )
+        
         if not self._exchange:
             return OrderResult(
                 order_id="mock-order-001",

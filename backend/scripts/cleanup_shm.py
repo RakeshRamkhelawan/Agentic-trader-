@@ -3,7 +3,7 @@ import multiprocessing.shared_memory as shared_memory
 
 def cleanup():
     print("Cleaning up Shared Memory segments...", flush=True)
-    for name in ["market_data", "trading_intents"]:
+    for name in ["market_data_v2", "trading_intents_v2"]:
         try:
             # Try to attach
             probs_shm = shared_memory.SharedMemory(name=name)

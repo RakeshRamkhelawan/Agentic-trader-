@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { AgentDecisions } from './AgentDecisions';
 import { FederatedTriad } from './FederatedTriad';
+import { VedicContextPanel } from './VedicContextPanel';
 
 interface Trade {
   timestamp: string;
@@ -127,6 +128,12 @@ export function LivePaperTrading() {
               break;
             case 'connected':
               console.log('WebSocket connection confirmed');
+              break;
+            case 'soul_update':
+            case 'prana_update':
+            case 'harmony_update':
+            case 'cosmic_block':
+              // Vedic context messages - handled by VedicContextPanel
               break;
           }
         } catch (err) {
@@ -366,6 +373,11 @@ export function LivePaperTrading() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Vedic Context Panel - Always visible when running */}
+      {isRunning && (
+        <VedicContextPanel wsUrl={getWsUrl()} isRunning={isRunning} />
       )}
 
       {/* Tabs */}

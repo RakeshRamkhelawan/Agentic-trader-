@@ -27,6 +27,9 @@ chromadb==0.5.0
 numpy==1.26.4
 pandas==2.2.0
 
+# --- MACHINE LEARNING ---
+river==0.23.0
+
 # --- STREAMING & EVENTS ---
 aiokafka==0.13.0
 

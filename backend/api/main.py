@@ -17,6 +17,7 @@ from backend.api.websocket_endpoints import router as ws_router
 from backend.api.websocket_manager import ws_manager
 from backend.api.paper_trading_ws_simple import router as paper_trading_ws_router
 from backend.api import paper_trading_api
+from backend.api import health as health_api
 from backend.core.auth.jwt_validator import JWTValidator
 # Auth Middleware
 from backend.core.auth.middleware import AuthMiddleware
@@ -439,10 +440,8 @@ app.include_router(
     monitoring_api.router, prefix="/api/v1/monitoring", tags=["monitoring"]
 )
 
+# Health API (Enterprise Resiliency)
+app.include_router(health_api.router)
+
 # Metrics Endpoint
 app.add_route("/metrics", metrics_endpoint)
-
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}

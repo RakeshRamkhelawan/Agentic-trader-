@@ -31,6 +31,13 @@ from backend.schemas.orders import OrderRequest, OrderSide, OrderType
 from backend.core.config.settings import settings
 from backend.services.paper_trading_live import paper_trading_broadcaster
 
+# Elemental Agents voor Vedic context
+from backend.agents.elemental_orchestrator import ElementalOrchestrator
+from backend.agents.elemental_research import ElementalResearch
+from backend.agents.elemental_risk_guardian import ElementalRiskGuardian
+from backend.agents.elemental_macro import ElementalMacro
+from backend.agents.elemental_valuation import ElementalValuation
+
 
 @dataclass
 class TradingAgent:
@@ -96,6 +103,29 @@ class LivePaperTradingProduction:
             TradingAgent("ConservativeMR", "mean_reversion", risk_level=0.05),
             TradingAgent("AggressiveMom", "momentum", risk_level=0.20),
         ]
+        
+        # Elemental Agents (Panca Tattva) voor Vedic context
+        self.elemental_agents = {
+            'ether': ElementalOrchestrator(),
+            'air': ElementalResearch(),
+            'fire': ElementalRiskGuardian(),
+            'water': ElementalMacro(),
+            'earth': ElementalValuation(),
+        }
+        
+        # Vedic context state
+        self.vedic_context = {
+            'rahu_kala_active': False,
+            'market_regime': 'neutral',
+            'vedic_time': 'Brahma Muhurta',
+            'navagraha_dominant': 'Jupiter',
+            'consciousness_level': 0.75,
+            'trading_gate_open': True,
+        }
+        
+        # Harmony tracking
+        self.current_harmony = 0.75
+        self.harmony_trend = []
         
         # Tracking
         self.trades = []
@@ -360,6 +390,52 @@ class LivePaperTradingProduction:
         
         return total_value, pnl, pnl_pct
     
+    async def broadcast_vedic_context(self):
+        """Broadcast Vedic context updates (Soul, Prana, Harmony)."""
+        # Update prana levels van elemental agents
+        prana_levels = {
+            name: agent.prana 
+            for name, agent in self.elemental_agents.items()
+        }
+        
+        # Broadcast soul context
+        await paper_trading_broadcaster.broadcast_soul_update(self.vedic_context)
+        
+        # Broadcast prana levels
+        await paper_trading_broadcaster.broadcast_prana_update(prana_levels)
+        
+        # Calculate harmony score gebaseerd op prana levels
+        avg_prana = sum(prana_levels.values()) / len(prana_levels) if prana_levels else 50
+        self.current_harmony = min(1.0, avg_prana / 100) * (0.8 + 0.2 * random.random())
+        
+        # Simuleer synthesis data
+        synthesis = {
+            'focus_element': random.choice(['ether', 'air', 'fire', 'water', 'earth']),
+            'action': 'Execute' if self.current_harmony > 0.5 else 'Hold',
+            'confidence': self.current_harmony,
+        }
+        
+        # Broadcast harmony update
+        await paper_trading_broadcaster.broadcast_harmony_update(
+            self.current_harmony, 
+            synthesis
+        )
+        
+        logger.debug(f"[VEDIC] Harmony: {self.current_harmony:.2f}, Prana: {prana_levels}")
+    
+    async def vedic_context_reporter(self, interval: int = 10):
+        """Periodic Vedic context updates."""
+        while self.running:
+            await asyncio.sleep(interval)
+            
+            if not self.running:
+                break
+            
+            try:
+                await self.broadcast_vedic_context()
+            except Exception as e:
+                logger.error(f"Error broadcasting vedic context: {e}")
+    
     async def stats_reporter(self, interval: int = 30):
         """Periodic stats report."""
         while self.running:
@@ -403,6 +479,9 @@ class LivePaperTradingProduction:
         # Start stats reporter
         reporter = asyncio.create_task(self.stats_reporter(interval=30))
         
+        # Start Vedic context reporter
+        vedic_reporter = asyncio.create_task(self.vedic_context_reporter(interval=10))
+        
         try:
             while datetime.now(UTC) < end_time and self.running:
                 # Fetch prices
@@ -421,8 +500,10 @@ class LivePaperTradingProduction:
         finally:
             self.running = False
             reporter.cancel()
+            vedic_reporter.cancel()
             try:
                 await reporter
+                await vedic_reporter
             except asyncio.CancelledError:
                 pass
         
