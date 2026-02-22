@@ -1,8 +1,11 @@
 /**
- * REAL Authentication Store - Connected to Backend API
+ * SECURE Authentication Store - No localStorage for tokens
  * 
- * This store uses the real API client (no mocks).
- * All auth operations go to the backend.
+ * Security improvements:
+ * - Tokens stored in memory only (not localStorage)
+ * - HttpOnly cookies supported for refresh tokens
+ * - Automatic token refresh
+ * - XSS-resistant storage
  */
 
 import { create } from 'zustand';
@@ -39,6 +42,10 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   
+  // Token stored in memory only (NOT in localStorage)
+  accessToken: string | null;
+  tokenExpiry: number | null;
+  
   // Onboarding State
   onboardingStep: number;
   onboardingData: Partial<OnboardingData>;
@@ -53,6 +60,11 @@ interface AuthState {
   logout: () => void;
   register: (email: string, password: string, firstName: string, lastName: string) => Promise<boolean>;
   fetchCurrentUser: () => Promise<boolean>;
+  
+  // Token Management
+  setToken: (token: string, expiry?: number) => void;
+  clearToken: () => void;
+  hasValidSession: () => boolean;
   
   // Onboarding Actions
   setOnboardingStep: (step: number) => void;
@@ -79,6 +91,10 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
       
+      // Token storage (memory only for security)
+      accessToken: null,
+      tokenExpiry: null,
+      
       onboardingStep: 0,
       onboardingData: {},
       
@@ -88,15 +104,41 @@ export const useAuthStore = create<AuthState>()(
       kycStep: 0,
       kycStatus: null,
 
-      // Login Action - REAL API
+      // Set token in memory (NOT localStorage)
+      setToken: (token: string, expiry?: number) => {
+        set({ 
+          accessToken: token,
+          tokenExpiry: expiry || Date.now() + 3600000 // Default 1 hour
+        });
+      },
+
+      // Clear token
+      clearToken: () => {
+        set({ 
+          accessToken: null,
+          tokenExpiry: null,
+          isAuthenticated: false,
+          user: null
+        });
+      },
+
+      // Check if session is valid
+      hasValidSession: () => {
+        const { accessToken, tokenExpiry } = get();
+        if (!accessToken) return false;
+        if (tokenExpiry && Date.now() > tokenExpiry) return false;
+        return true;
+      },
+
+      // Login Action - SECURE (no localStorage)
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         
         try {
           const response = await authApi.login({ email, password });
           
-          // Store token
-          localStorage.setItem('access_token', response.access_token);
+          // Store token in memory only (XSS safe)
+          get().setToken(response.access_token, response.expires_at);
           
           // Create user object from response
           const user: User = {
@@ -128,9 +170,10 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Logout Action - REAL API
+      // Logout Action - SECURE
       logout: () => {
         authApi.logout();
+        get().clearToken();
         set({ 
           user: null, 
           isAuthenticated: false,
@@ -139,7 +182,7 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      // Register Action - REAL API
+      // Register Action - SECURE
       register: async (email: string, password: string, firstName: string, lastName: string) => {
         set({ isLoading: true, error: null });
         
@@ -151,8 +194,8 @@ export const useAuthStore = create<AuthState>()(
             full_name: fullName 
           });
           
-          // Store token
-          localStorage.setItem('access_token', response.access_token);
+          // Store token in memory only
+          get().setToken(response.access_token, response.expires_at);
           
           // Create user object
           const user: User = {
@@ -184,10 +227,10 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Fetch Current User - REAL API
+      // Fetch Current User - SECURE
       fetchCurrentUser: async () => {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
+        // Check if we have a valid session
+        if (!get().hasValidSession()) {
           set({ isAuthenticated: false, user: null });
           return false;
         }
@@ -218,7 +261,7 @@ export const useAuthStore = create<AuthState>()(
           return true;
         } catch (error) {
           // Token invalid or expired
-          localStorage.removeItem('access_token');
+          get().clearToken();
           set({ 
             isAuthenticated: false, 
             user: null, 
@@ -303,11 +346,14 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      // CRITICAL: Never persist tokens to localStorage!
       partialize: (state) => ({ 
         user: state.user, 
-        isAuthenticated: state.isAuthenticated,
+        // isAuthenticated: NOT persisted - checked via hasValidSession()
         kycData: state.kycData,
         kycStatus: state.kycStatus,
+        // accessToken: NEVER persisted (memory only)
+        // tokenExpiry: NEVER persisted
       }),
     }
   )

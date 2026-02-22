@@ -18,13 +18,33 @@ import { Register } from '@/pages/auth/Register';
 import { KYC } from '@/pages/auth/KYC';
 import { Toaster } from '@/components/ui/sonner';
 
-// Auth0 Configuration
+// Validate required environment variables
+const requiredEnvVars = [
+  'VITE_AUTH0_DOMAIN',
+  'VITE_AUTH0_CLIENT_ID',
+  'VITE_AUTH0_AUDIENCE',
+  'VITE_API_URL',
+];
+
+const missingEnvVars = requiredEnvVars.filter(
+  (key) => !import.meta.env[key]
+);
+
+if (missingEnvVars.length > 0) {
+  console.error(
+    '[CRITICAL] Missing required environment variables:\n' +
+      missingEnvVars.map((v) => `  - ${v}`).join('\n') +
+      '\n\nPlease copy .env.example to .env and fill in your values.'
+  );
+}
+
+// Auth0 Configuration - NO fallback values for security
 const auth0Config = {
-  domain: import.meta.env.VITE_AUTH0_DOMAIN || 'agentictrader.eu.auth0.com',
-  clientId: import.meta.env.VITE_AUTH0_CLIENT_ID || 'aO41wQ7VRzDoHavsdxamJpuSCa47wUJ8',
+  domain: import.meta.env.VITE_AUTH0_DOMAIN || '',
+  clientId: import.meta.env.VITE_AUTH0_CLIENT_ID || '',
   authorizationParams: {
     redirect_uri: window.location.origin,
-    audience: import.meta.env.VITE_AUTH0_AUDIENCE || 'https://api.agentic-trader.com',
+    audience: import.meta.env.VITE_AUTH0_AUDIENCE || '',
   },
 };
 
@@ -40,14 +60,16 @@ function AppInitializer() {
       if (isAuth0Authenticated) {
         try {
           const token = await getAccessTokenSilently();
-          localStorage.setItem('access_token', token);
+          // Store in memory (not localStorage for security)
+          useAuthStore.getState().setToken(token);
         } catch (e) {
           console.error('Failed to get Auth0 token:', e);
         }
       }
       
-      const token = localStorage.getItem('access_token');
-      if (token) {
+      // Check for existing session
+      const hasSession = useAuthStore.getState().hasValidSession();
+      if (hasSession) {
         fetchCurrentUser().then((ok) => {
           if (ok) initializeData();
         });
@@ -195,6 +217,28 @@ function AppRoutes() {
 }
 
 function App() {
+  // Show error if env vars are missing
+  if (missingEnvVars.length > 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white p-8">
+        <div className="max-w-2xl">
+          <h1 className="text-3xl font-bold text-red-500 mb-4">Configuration Error</h1>
+          <p className="mb-4">
+            Missing required environment variables. Please copy <code>.env.example</code> to{' '}
+            <code>.env</code> and fill in your values.
+          </p>
+          <ul className="list-disc list-inside bg-red-950/30 p-4 rounded border border-red-500/30">
+            {missingEnvVars.map((v) => (
+              <li key={v} className="font-mono text-red-300">
+                {v}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Auth0Provider {...auth0Config}>
       <AppRoutes />
