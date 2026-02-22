@@ -15,7 +15,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/store/authStore';
+import { useUserStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,7 +46,7 @@ const idTypes = [
 
 export function KYC() {
   const navigate = useNavigate();
-  const { kycData, updateKYCData, submitKYC, isLoading } = useAuthStore();
+  const { kycData, updateKYCData, submitKYC, kycIsLoading: isLoading } = useUserStore();
   
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({

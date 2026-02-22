@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
+import { Auth0Provider } from '@auth0/auth0-react';
 import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/store/authStore';
 import { useAppStore } from '@/store/appStore';
+import { AuthProvider, useAuth, WebSocketProvider } from '@/context';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/Header';
 import { Dashboard } from '@/pages/Dashboard';
@@ -48,52 +48,24 @@ const auth0Config = {
   },
 };
 
-// Restore session on first load
+// Initialize app data when user authenticates
 function AppInitializer() {
-  const { fetchCurrentUser, isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuth();
   const { initializeData } = useAppStore();
-  const { isAuthenticated: isAuth0Authenticated, getAccessTokenSilently } = useAuth0();
 
   useEffect(() => {
-    const init = async () => {
-      // Check for Auth0 token
-      if (isAuth0Authenticated) {
-        try {
-          const token = await getAccessTokenSilently();
-          // Store in memory (not localStorage for security)
-          useAuthStore.getState().setToken(token);
-        } catch (e) {
-          console.error('Failed to get Auth0 token:', e);
-        }
-      }
-      
-      // Check for existing session
-      const hasSession = useAuthStore.getState().hasValidSession();
-      if (hasSession) {
-        fetchCurrentUser().then((ok) => {
-          if (ok) initializeData();
-        });
-      }
-    };
-    init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuth0Authenticated]);
-
-  // When the user logs in after initial load, fetch all data
-  useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
       initializeData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   return null;
 }
 
-// Protected Route Component
+// Protected Route Component - uses unified auth context
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
-  const { isAuthenticated: isAuth0Authenticated, isLoading } = useAuth0();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -104,7 +76,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated && !isAuth0Authenticated) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -113,12 +85,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Public Route Component (redirect if already authenticated)
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
-  const { isAuthenticated: isAuth0Authenticated } = useAuth0();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname || '/dashboard';
 
-  if (isAuthenticated || isAuth0Authenticated) {
+  if (isAuthenticated) {
     return <Navigate to={from} replace />;
   }
 
@@ -172,46 +143,50 @@ function MainLayout() {
 function AppRoutes() {
   return (
     <BrowserRouter>
-      <AppInitializer />
-      <Routes>
-        {/* Public Routes */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          }
-        />
+      <AuthProvider>
+        <WebSocketProvider>
+          <AppInitializer />
+          <Routes>
+            {/* Public Routes */}
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <PublicRoute>
+                  <Register />
+                </PublicRoute>
+              }
+            />
 
-        {/* KYC Route */}
-        <Route
-          path="/kyc"
-          element={
-            <ProtectedRoute>
-              <KYC />
-            </ProtectedRoute>
-          }
-        />
+            {/* KYC Route */}
+            <Route
+              path="/kyc"
+              element={
+                <ProtectedRoute>
+                  <KYC />
+                </ProtectedRoute>
+              }
+            />
 
-        {/* Protected Routes with Layout */}
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+            {/* Protected Routes with Layout */}
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </WebSocketProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

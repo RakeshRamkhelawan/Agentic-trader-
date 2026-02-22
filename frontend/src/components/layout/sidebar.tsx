@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
-import { useAuthStore } from '@/store/authStore';
+import { useAuth } from '@/context';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -48,7 +48,7 @@ export function Sidebar() {
     setCurrentPage
   } = useAppStore();
   
-  const { logout, user } = useAuthStore();
+  const { logout, user } = useAuth();
 
   const handleNavClick = (item: NavItem) => {
     setCurrentPage(item.id);
