@@ -14,6 +14,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { useAuth0, User as Auth0User } from '@auth0/auth0-react';
+import { setApiToken } from '@/lib/api';
 
 interface User {
   id: string;
@@ -91,6 +92,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             },
           });
           setAccessToken(token);
+          setApiToken(token); // Sync with API client
         } catch (error) {
           console.error('Failed to get access token:', error);
           setAccessToken(null);
