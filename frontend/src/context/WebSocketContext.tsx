@@ -57,9 +57,13 @@ export function WebSocketProvider({ children, defaultChannels = [] }: WebSocketP
     }
   }, []);
 
+  // Use public WebSocket endpoint for development (no auth required)
+  // In production, use the authenticated endpoint with token
+  const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws/public';
+  
   const ws = useWebSocket({
-    url: import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws',
-    token: isAuthenticated ? accessToken : null,
+    url: wsUrl,
+    token: null, // Public endpoint doesn't require token
     onMessage: handleMessage,
     reconnectInterval: 3000,
     maxReconnectAttempts: 5,

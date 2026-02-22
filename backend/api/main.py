@@ -59,13 +59,31 @@ app = FastAPI(
 )
 
 # CORS middleware for React frontend
+# Note: WebSocket CORS is handled at the endpoint level, not here
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure for production: ["https://yourdomain.com"]
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "*",  # Allow all in development
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+
+# WebSocket-specific middleware for better logging
+@app.middleware("http")
+async def websocket_logging_middleware(request, call_next):
+    """Log WebSocket upgrade requests."""
+    if request.headers.get("upgrade") == "websocket":
+        logger.info(f"WebSocket upgrade request from: {request.client}")
+    response = await call_next(request)
+    return response
 
 # Include routers
 app.include_router(health.router, prefix="/api/v1")
