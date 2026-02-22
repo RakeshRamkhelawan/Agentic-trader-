@@ -80,7 +80,7 @@ async def get_trading_timings() -> Dict[str, Any]:
 async def analyze_timing(request: Dict[str, Any]) -> Dict[str, Any]:
     """Analyze a specific time for trading suitability."""
     symbol = request.get("symbol", "BTC-EUR")
-    
+
     return {
         "symbol": symbol,
         "timestamp": "2026-02-22T15:00:00Z",
