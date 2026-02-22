@@ -62,7 +62,7 @@ class RLSEnforcer:
     def __init__(self, tenant_id: str, account_id: str):
         self.tenant_id = tenant_id
         self.account_id = account_id
-    
+
     def apply_to_query(self, query, model):
         if hasattr(model, 'tenant_id'):
             query = query.filter(model.tenant_id == self.tenant_id)

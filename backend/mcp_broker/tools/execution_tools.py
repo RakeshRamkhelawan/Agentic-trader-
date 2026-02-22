@@ -31,12 +31,12 @@ async def execution_execute_paper_trade(
 ) -> Dict[str, Any]:
     """
     Execute a paper trade.
-    
+
     V17 Constraints:
     - Max €2,000 position size
     - 0.05% commission
     - 0.1% slippage
-    
+
     Args:
         symbol: Asset symbol
         action: BUY or SELL
@@ -44,44 +44,44 @@ async def execution_execute_paper_trade(
         current_price: Current market price
         account_id: Account identifier
         ctx: MCP context
-    
+
     Returns:
         Trade execution details
     """
     if ctx:
         ctx.info(f"Executing {action} {quantity} {symbol} for {account_id}")
-    
+
     # Validate action
     action = action.upper()
     if action not in ["BUY", "SELL"]:
         raise ValueError(f"Invalid action: {action}. Must be BUY or SELL")
-    
+
     # Validate quantity
     if quantity <= 0:
         raise ValueError(f"Invalid quantity: {quantity}. Must be positive")
-    
+
     # Calculate execution price with slippage
     if action == "BUY":
         execution_price = current_price * (1 + SLIPPAGE_PCT)
     else:
         execution_price = current_price * (1 - SLIPPAGE_PCT)
-    
+
     # Calculate gross value
     gross_value = quantity * execution_price
-    
+
     # V17: Check max position size for BUY
     if action == "BUY" and gross_value > MAX_POSITION_EUR:
         error_msg = f"Position size €{gross_value:.2f} exceeds maximum of €{MAX_POSITION_EUR}"
         if ctx:
             ctx.error(error_msg)
         raise ValueError(error_msg)
-    
+
     try:
         # Try to execute via paper exchange
         from backend.execution.paper_exchange import PaperExchange
-        
+
         exchange = PaperExchange(account_id=account_id)
-        
+
         order = await exchange.place_order(
             symbol=symbol,
             side=action.lower(),
@@ -89,10 +89,10 @@ async def execution_execute_paper_trade(
             order_type="market",
             current_price=current_price
         )
-        
+
         if ctx:
             ctx.info(f"Trade executed: {order.id}")
-        
+
         return {
             "order_id": order.id,
             "status": order.status,
@@ -107,21 +107,21 @@ async def execution_execute_paper_trade(
             "account_id": account_id,
             "constraints_applied": ["max_2000_eur", "commission_0.05pct", "slippage_0.1pct"]
         }
-    
+
     except Exception as e:
         logger.warning(f"Paper exchange failed: {e}, using mock execution")
-        
+
         # Fallback: mock execution
         # Calculate commission
         commission = gross_value * COMMISSION_PCT
         net_value = gross_value - commission
-        
+
         # Generate order ID
         order_id = f"paper_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{symbol}"
-        
+
         if ctx:
             ctx.info(f"Mock trade executed: {order_id}")
-        
+
         return {
             "order_id": order_id,
             "status": "FILLED",
@@ -146,23 +146,23 @@ async def execution_get_open_positions(
 ) -> Dict[str, Any]:
     """
     Get all open positions for an account.
-    
+
     Args:
         account_id: Account identifier
         ctx: MCP context
-    
+
     Returns:
         List of open positions
     """
     if ctx:
         ctx.info(f"Fetching open positions for {account_id}")
-    
+
     try:
         from backend.execution.paper_exchange import PaperExchange
-        
+
         exchange = PaperExchange(account_id=account_id)
         positions = await exchange.get_positions()
-        
+
         return {
             "account_id": account_id,
             "positions": [
@@ -179,10 +179,10 @@ async def execution_get_open_positions(
             ],
             "count": len(positions)
         }
-    
+
     except Exception as e:
         logger.warning(f"Failed to get positions: {e}, using mock")
-        
+
         return {
             "account_id": account_id,
             "positions": [],
@@ -200,33 +200,33 @@ async def execution_close_position(
 ) -> Dict[str, Any]:
     """
     Close an open position.
-    
+
     Args:
         symbol: Asset symbol
         account_id: Account identifier
         current_price: Current market price
         ctx: MCP context
-    
+
     Returns:
         Close order details
     """
     if ctx:
         ctx.info(f"Closing position {symbol} for {account_id}")
-    
+
     try:
         from backend.execution.paper_exchange import PaperExchange
-        
+
         exchange = PaperExchange(account_id=account_id)
-        
+
         # Get position
         position = await exchange.get_position(symbol)
         if not position:
             raise ValueError(f"No open position found for {symbol}")
-        
+
         # Close position (sell if long, buy if short)
         action = "SELL" if position.quantity > 0 else "BUY"
         quantity = abs(position.quantity)
-        
+
         order = await exchange.place_order(
             symbol=symbol,
             side="sell" if position.quantity > 0 else "buy",
@@ -234,10 +234,10 @@ async def execution_close_position(
             order_type="market",
             current_price=current_price
         )
-        
+
         if ctx:
             ctx.info(f"Position closed: {order.id}")
-        
+
         return {
             "order_id": order.id,
             "status": order.status,
@@ -249,7 +249,7 @@ async def execution_close_position(
             "timestamp": order.timestamp.isoformat(),
             "account_id": account_id
         }
-    
+
     except Exception as e:
         logger.error(f"Failed to close position: {e}")
         raise
@@ -263,24 +263,24 @@ async def execution_get_trade_history(
 ) -> Dict[str, Any]:
     """
     Get trade history for an account.
-    
+
     Args:
         account_id: Account identifier
         limit: Maximum number of trades to return
         ctx: MCP context
-    
+
     Returns:
         Trade history
     """
     if ctx:
         ctx.info(f"Fetching trade history for {account_id}")
-    
+
     try:
         from backend.execution.paper_exchange import PaperExchange
-        
+
         exchange = PaperExchange(account_id=account_id)
         trades = await exchange.get_trade_history(limit=limit)
-        
+
         return {
             "account_id": account_id,
             "trades": [
@@ -298,10 +298,10 @@ async def execution_get_trade_history(
             ],
             "count": len(trades)
         }
-    
+
     except Exception as e:
         logger.warning(f"Failed to get trade history: {e}, using mock")
-        
+
         return {
             "account_id": account_id,
             "trades": [],

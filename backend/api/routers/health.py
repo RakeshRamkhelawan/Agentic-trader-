@@ -40,15 +40,15 @@ class ComponentStatus(BaseModel):
 async def health_check():
     """
     Comprehensive health check endpoint.
-    
+
     Returns:
         Service health status and component states
     """
     start_time = time.time()
-    
+
     components = {}
     all_healthy = True
-    
+
     # Check circuit breakers
     try:
         cb_start = time.time()
@@ -58,15 +58,15 @@ async def health_check():
             "elemental_ether_consensus",
             "execution_execute_paper_trade"
         ]
-        
+
         circuit_states = {}
         for tool in tools:
             state = get_circuit_state(tool)
             circuit_states[tool] = state["state"] if state else "unknown"
-        
+
         all_closed = all(s == "closed" for s in circuit_states.values())
         all_healthy = all_healthy and all_closed
-        
+
         components["circuit_breakers"] = {
             "status": "healthy" if all_closed else "degraded",
             "latency_ms": (time.time() - cb_start) * 1000,
@@ -80,15 +80,15 @@ async def health_check():
             "latency_ms": 0,
             "details": {"error": str(e)}
         }
-    
+
     # Check cache (if Redis available)
     try:
         cache_start = time.time()
         from backend.mcp_broker.performance.cache import get_cache
-        
+
         cache = get_cache()
         cache_connected = await cache.connect()
-        
+
         components["cache"] = {
             "status": "healthy" if cache_connected else "degraded",
             "latency_ms": (time.time() - cache_start) * 1000,
@@ -104,15 +104,15 @@ async def health_check():
             "latency_ms": 0,
             "details": {"error": str(e), "type": "memory_only"}
         }
-    
+
     # Check performance capabilities
     try:
         perf_start = time.time()
         from backend.mcp_broker.performance.ultra_mode import UltraPerformanceMode
-        
+
         ultra = UltraPerformanceMode()
         caps = ultra.get_capabilities()
-        
+
         components["performance"] = {
             "status": "healthy",
             "latency_ms": (time.time() - perf_start) * 1000,
@@ -126,9 +126,9 @@ async def health_check():
             "latency_ms": 0,
             "details": {"error": str(e)}
         }
-    
+
     total_latency = (time.time() - start_time) * 1000
-    
+
     return HealthResponse(
         status="healthy" if all_healthy else "degraded",
         timestamp=datetime.utcnow().isoformat(),
@@ -150,7 +150,7 @@ async def readiness_check():
         # Quick check that critical components are available
         from backend.mcp_broker.tools.vedastro_tools import vedastro_generate_signal
         from backend.mcp_broker.tools.elemental_tools import elemental_ether_consensus
-        
+
         return {
             "ready": True,
             "timestamp": datetime.utcnow().isoformat()
@@ -167,7 +167,7 @@ async def readiness_check():
 async def metrics():
     """Prometheus-style metrics endpoint."""
     from backend.mcp_broker.performance.metrics import PerformanceMetricsCollector
-    
+
     # This would collect actual metrics in production
     return {
         "timestamp": datetime.utcnow().isoformat(),

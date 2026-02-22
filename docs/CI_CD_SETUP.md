@@ -263,11 +263,11 @@ docs/
 
 ## 🎯 Succes Criteria
 
-✅ **Commit duurt < 10 seconden** (pre-commit hooks)  
-✅ **CI/CD pipeline duurt < 5 minuten**  
-✅ **Geen false positives** (niet-blokkerende quality checks)  
-✅ **Werkt met Windows/Mac/Linux**  
-✅ **Eenvoudig te debuggen** (clear error messages)  
+✅ **Commit duurt < 10 seconden** (pre-commit hooks)
+✅ **CI/CD pipeline duurt < 5 minuten**
+✅ **Geen false positives** (niet-blokkerende quality checks)
+✅ **Werkt met Windows/Mac/Linux**
+✅ **Eenvoudig te debuggen** (clear error messages)
 
 ---
 
@@ -282,6 +282,6 @@ docs/
 
 ---
 
-*Laatst bijgewerkt: February 22, 2026*  
-*Versie: 2.0 - Streamlined*  
+*Laatst bijgewerkt: February 22, 2026*
+*Versie: 2.0 - Streamlined*
 *Status: ✅ PRODUCTION READY*

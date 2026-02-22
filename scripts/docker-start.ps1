@@ -53,18 +53,18 @@ function Setup-Directories {
 
 function Start-Dev {
     Write-Status "Starting in DEVELOPMENT mode with hot reload..."
-    
+
     if (!(Test-Docker)) { exit 1 }
     Setup-Directories
-    
+
     # Copy .env.example if .env doesn't exist
     if (!(Test-Path ".env")) {
         Write-Warning ".env file not found, copying from .env.example"
         Copy-Item ".env.example" ".env"
     }
-    
+
     docker-compose up --build -d
-    
+
     Write-Status "Services started!"
     Write-Host ""
     Write-Host "API Documentation: http://localhost:8000/docs"
@@ -76,10 +76,10 @@ function Start-Dev {
 
 function Start-Prod {
     Write-Status "Starting in PRODUCTION mode..."
-    
+
     if (!(Test-Docker)) { exit 1 }
     Setup-Directories
-    
+
     # Check if .env exists
     if (!(Test-Path ".env")) {
         Write-Error ".env file not found! Please create it from .env.example"
@@ -87,9 +87,9 @@ function Start-Prod {
         Write-Error "Then edit .env with your production settings"
         exit 1
     }
-    
+
     docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
-    
+
     Write-Status "Production services started!"
 }
 

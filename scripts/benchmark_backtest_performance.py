@@ -25,10 +25,10 @@ sys.path.insert(0, "c:\\Users\\rsram\\Downloads\\agentic_trader_platform_1734_20
 
 class PerformanceBenchmark:
     """Benchmark suite for backtest performance."""
-    
+
     def __init__(self):
         self.results = []
-    
+
     async def run_benchmark(
         self,
         symbols: List[str],
@@ -38,7 +38,7 @@ class PerformanceBenchmark:
         """Run comprehensive benchmark."""
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
-        
+
         print(f"\n{'='*60}")
         print(f"BACKTEST PERFORMANCE BENCHMARK")
         print(f"{'='*60}")
@@ -46,7 +46,7 @@ class PerformanceBenchmark:
         print(f"Date range: {start_date.date()} to {end_date.date()}")
         print(f"Iterations per test: {iterations}")
         print(f"{'='*60}\n")
-        
+
         benchmark_results = {
             "config": {
                 "symbols": symbols,
@@ -57,7 +57,7 @@ class PerformanceBenchmark:
             },
             "tests": []
         }
-        
+
         # Test 1: V18 Sequential with caching disabled
         print("\n[1/4] Testing V18 Sequential (no cache)...")
         seq_result = await self._benchmark_sequential(
@@ -65,7 +65,7 @@ class PerformanceBenchmark:
         )
         benchmark_results["tests"].append(seq_result)
         self._print_result(seq_result)
-        
+
         # Test 2: V18 Sequential with caching enabled
         print("\n[2/4] Testing V18 Sequential (with cache)...")
         seq_cached_result = await self._benchmark_sequential(
@@ -73,7 +73,7 @@ class PerformanceBenchmark:
         )
         benchmark_results["tests"].append(seq_cached_result)
         self._print_result(seq_cached_result)
-        
+
         # Test 3: V18 Parallel processing
         print("\n[3/4] Testing V18 Parallel...")
         parallel_result = await self._benchmark_parallel(
@@ -81,7 +81,7 @@ class PerformanceBenchmark:
         )
         benchmark_results["tests"].append(parallel_result)
         self._print_result(parallel_result)
-        
+
         # Test 4: V18 Full optimizations
         print("\n[4/4] Testing V18 Full Optimizations...")
         optimized_result = await self._benchmark_optimized(
@@ -89,7 +89,7 @@ class PerformanceBenchmark:
         )
         benchmark_results["tests"].append(optimized_result)
         self._print_result(optimized_result)
-        
+
         # Calculate speedups
         baseline_time = seq_result["avg_time_seconds"]
         benchmark_results["speedups"] = {
@@ -97,7 +97,7 @@ class PerformanceBenchmark:
             "parallel_vs_sequential": baseline_time / parallel_result["avg_time_seconds"],
             "optimized_vs_baseline": baseline_time / optimized_result["avg_time_seconds"]
         }
-        
+
         # Summary
         print(f"\n{'='*60}")
         print("BENCHMARK SUMMARY")
@@ -106,9 +106,9 @@ class PerformanceBenchmark:
         print(f"Parallel speedup: {benchmark_results['speedups']['parallel_vs_sequential']:.2f}x")
         print(f"Full optimization speedup: {benchmark_results['speedups']['optimized_vs_baseline']:.2f}x")
         print(f"{'='*60}\n")
-        
+
         return benchmark_results
-    
+
     async def _benchmark_sequential(
         self,
         symbols: List[str],
@@ -119,12 +119,12 @@ class PerformanceBenchmark:
     ) -> Dict[str, Any]:
         """Benchmark sequential processing."""
         from backend.mcp_broker.backtest_engine_v18_optimized import (
-            OptimizedBacktestEngineV18, 
+            OptimizedBacktestEngineV18,
             OptimizedBacktestConfig
         )
-        
+
         times = []
-        
+
         for i in range(iterations):
             config = OptimizedBacktestConfig(
                 enable_caching=enable_cache,
@@ -133,14 +133,14 @@ class PerformanceBenchmark:
                 enable_vectorization=False
             )
             engine = OptimizedBacktestEngineV18(config)
-            
+
             start = time.perf_counter()
             result = await engine.run_backtest(symbols, start_date, end_date)
             elapsed = time.perf_counter() - start
             times.append(elapsed)
-            
+
             print(f"  Iteration {i+1}/{iterations}: {elapsed:.2f}s")
-        
+
         return {
             "name": f"Sequential {'(cached)' if enable_cache else '(no cache)'}",
             "avg_time_seconds": sum(times) / len(times),
@@ -149,7 +149,7 @@ class PerformanceBenchmark:
             "trades": result.get("trades", []),
             "iterations": iterations
         }
-    
+
     async def _benchmark_parallel(
         self,
         symbols: List[str],
@@ -159,12 +159,12 @@ class PerformanceBenchmark:
     ) -> Dict[str, Any]:
         """Benchmark parallel processing."""
         from backend.mcp_broker.backtest_engine_v18_optimized import (
-            OptimizedBacktestEngineV18, 
+            OptimizedBacktestEngineV18,
             OptimizedBacktestConfig
         )
-        
+
         times = []
-        
+
         for i in range(iterations):
             config = OptimizedBacktestConfig(
                 enable_caching=True,
@@ -173,14 +173,14 @@ class PerformanceBenchmark:
                 max_workers=min(4, len(symbols))
             )
             engine = OptimizedBacktestEngineV18(config)
-            
+
             start = time.perf_counter()
             result = await engine.run_backtest(symbols, start_date, end_date)
             elapsed = time.perf_counter() - start
             times.append(elapsed)
-            
+
             print(f"  Iteration {i+1}/{iterations}: {elapsed:.2f}s")
-        
+
         return {
             "name": "Parallel",
             "avg_time_seconds": sum(times) / len(times),
@@ -189,7 +189,7 @@ class PerformanceBenchmark:
             "trades": result.get("trades", []),
             "iterations": iterations
         }
-    
+
     async def _benchmark_optimized(
         self,
         symbols: List[str],
@@ -201,9 +201,9 @@ class PerformanceBenchmark:
         from backend.mcp_broker.backtest_engine_v18_optimized import (
             run_optimized_backtest
         )
-        
+
         times = []
-        
+
         for i in range(iterations):
             start = time.perf_counter()
             result = await run_optimized_backtest(
@@ -215,9 +215,9 @@ class PerformanceBenchmark:
             )
             elapsed = time.perf_counter() - start
             times.append(elapsed)
-            
+
             print(f"  Iteration {i+1}/{iterations}: {elapsed:.2f}s")
-        
+
         return {
             "name": "Full Optimizations",
             "avg_time_seconds": sum(times) / len(times),
@@ -227,7 +227,7 @@ class PerformanceBenchmark:
             "iterations": iterations,
             "performance": result.get("performance", {})
         }
-    
+
     def _print_result(self, result: Dict[str, Any]) -> None:
         """Print benchmark result."""
         print(f"  Average: {result['avg_time_seconds']:.2f}s")
@@ -263,22 +263,22 @@ def main():
         default="benchmark_results.json",
         help="Output file for results"
     )
-    
+
     args = parser.parse_args()
-    
+
     symbols = args.symbols.split(",")
-    
+
     benchmark = PerformanceBenchmark()
     results = asyncio.run(benchmark.run_benchmark(
         symbols=symbols,
         days=args.days,
         iterations=args.iterations
     ))
-    
+
     # Save results
     with open(args.output, "w") as f:
         json.dump(results, f, indent=2)
-    
+
     print(f"\nResults saved to: {args.output}")
 
 

@@ -19,26 +19,26 @@ async def list_mcp_tools(
 ) -> Dict[str, Any]:
     """
     List all available MCP tools.
-    
+
     Returns:
         List of registered tools with their schemas
     """
     try:
         tool_manager = mcp._tool_manager
         tools = tool_manager._tools
-        
+
         tool_list = []
         for name, tool in tools.items():
             tool_list.append({
                 "name": name,
                 "description": getattr(tool, 'description', 'No description'),
             })
-        
+
         return {
             "tools": tool_list,
             "count": len(tool_list)
         }
-    
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -52,7 +52,7 @@ async def mcp_health_check(
 ) -> Dict[str, Any]:
     """
     Check MCP ToolBroker health status.
-    
+
     Returns:
         Health status and circuit breaker states
     """
@@ -66,7 +66,7 @@ async def mcp_health_check(
             "elemental_water_regime_check",
             "elemental_ether_consensus",
         ]
-        
+
         circuit_states = {}
         for tool in tools:
             state = get_circuit_state(tool)
@@ -74,11 +74,11 @@ async def mcp_health_check(
                 circuit_states[tool] = state
             else:
                 circuit_states[tool] = {"state": "closed"}
-        
+
         all_healthy = all(
             s.get("state") == "closed" for s in circuit_states.values()
         )
-        
+
         return {
             "status": "healthy" if all_healthy else "degraded",
             "server_name": "AgenticTraderBroker",
@@ -86,7 +86,7 @@ async def mcp_health_check(
             "circuit_breaker_states": circuit_states,
             "tool_count": len(mcp._tool_manager._tools)
         }
-    
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -100,22 +100,22 @@ async def get_circuit_breaker_states(
 ) -> Dict[str, Any]:
     """
     Get detailed circuit breaker states.
-    
+
     Returns:
         Circuit breaker states for all tools
     """
     try:
         from backend.mcp_broker.resilience.circuit_breaker import CircuitBreaker
-        
+
         states = {}
         for name, breaker in CircuitBreaker._instances.items():
             states[name] = breaker.get_state()
-        
+
         return {
             "circuit_breakers": states,
             "count": len(states)
         }
-    
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -131,11 +131,11 @@ async def execute_mcp_tool(
 ) -> Dict[str, Any]:
     """
     Execute an MCP tool directly via HTTP.
-    
+
     Args:
         tool_name: Name of the tool to execute
         params: Tool parameters
-    
+
     Returns:
         Tool execution result
     """
@@ -147,10 +147,10 @@ async def execute_mcp_tool(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Tool '{tool_name}' not found"
             )
-        
+
         # Execute tool
         result = await mcp.call_tool(tool_name, params)
-        
+
         # Parse result
         if result.content and len(result.content) > 0:
             content = result.content[0]
@@ -160,9 +160,9 @@ async def execute_mcp_tool(
                     return json.loads(content.text)
                 except json.JSONDecodeError:
                     return {"result": content.text}
-        
+
         return {"success": True}
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -178,14 +178,14 @@ async def get_mcp_stats(
 ) -> Dict[str, Any]:
     """
     Get MCP ToolBroker statistics.
-    
+
     Returns:
         Usage statistics and metrics
     """
     try:
         tool_manager = mcp._tool_manager
         tools = tool_manager._tools
-        
+
         return {
             "total_tools": len(tools),
             "tool_categories": {
@@ -198,7 +198,7 @@ async def get_mcp_stats(
             "server_version": "1.0.0",
             "protocol": "MCP"
         }
-    
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -216,32 +216,32 @@ async def run_backtest_v18_endpoint(
 ) -> Dict[str, Any]:
     """
     Run a backtest using MCP tools.
-    
+
     Args:
         symbols: List of symbols to trade
         start_date: Start date (ISO format)
         end_date: End date (ISO format)
         initial_cash: Initial cash
-    
+
     Returns:
         Backtest results
     """
     try:
         from datetime import datetime
         from backend.mcp_broker import run_backtest_v18
-        
+
         start = datetime.fromisoformat(start_date)
         end = datetime.fromisoformat(end_date)
-        
+
         results = await run_backtest_v18(
             symbols=symbols,
             start_date=start,
             end_date=end,
             initial_cash=initial_cash
         )
-        
+
         return results
-    
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

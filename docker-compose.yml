@@ -1,5 +1,5 @@
 # Agentic Trader Platform - Docker Compose Production Stack
-# 
+#
 # Usage:
 #   docker-compose up --build -d          # Start all services
 #   docker-compose logs -f api            # View API logs
@@ -42,19 +42,19 @@ services:
       # Core settings
       - REDIS_URL=redis://redis:6379/0
       - LOG_LEVEL=INFO
-      
+
       # Security (set these in production!)
       # - SECRET_KEY=your-secret-key-here
       # - JWT_SECRET_KEY=your-jwt-secret-here
-      
+
       # Performance
       - UVICORN_WORKERS=4
       - MAX_WORKERS=4
-      
+
       # Cache settings
       - CACHE_TTL_VEDASTRO=3600
       - CACHE_TTL_MARKET_DATA=300
-      
+
       # Feature flags
       - ENABLE_CACHE=true
       - ENABLE_PARALLEL=true

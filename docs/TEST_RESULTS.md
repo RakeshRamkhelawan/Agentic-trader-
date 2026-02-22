@@ -1,6 +1,6 @@
 # Diepgaande Test Resultaten - Backtest Engine V18
 
-> **Getest op:** 22 Februari 2026  
+> **Getest op:** 22 Februari 2026
 > **Test omgeving:** Windows 11, Python 3.13.7, 16GB RAM
 
 ---
@@ -168,13 +168,13 @@ from backend.mcp_broker.performance.cache import BacktestCache
 class ProductionBacktestEngine:
     async def run_backtest(self, symbols, start, end):
         cache = BacktestCache()
-        
+
         for date in date_range:
             for symbol in symbols:
                 # Directe calls (geen MCP client)
                 signal = await vedastro_generate_signal(symbol, price)
                 consensus = await elemental_ether_consensus(...)
-                
+
                 if consensus['should_enter']:
                     size = await elemental_fire_position_size(...)
                     # Execute trade...
@@ -249,6 +249,6 @@ $ mcp install backend.mcp_broker.server
 
 ---
 
-*Getest door: Code Agent*  
-*Datum: 2026-02-22*  
+*Getest door: Code Agent*
+*Datum: 2026-02-22*
 *Test duur: ~30 minuten*

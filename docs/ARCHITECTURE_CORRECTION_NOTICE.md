@@ -1,6 +1,6 @@
 # ⚠️ Architectuur Correctie Notice
 
-> **Datum**: 22 Februari 2026  
+> **Datum**: 22 Februari 2026
 > **Status**: CRITICAL UPDATE
 
 ---
@@ -187,6 +187,6 @@ De **functionele requirements** en **architecturale principes** blijven identiek
 
 ---
 
-*Correctie uitgevoerd*: 2026-02-22  
-*Door*: Code Architect  
+*Correctie uitgevoerd*: 2026-02-22
+*Door*: Code Architect
 *Status*: APPROVED

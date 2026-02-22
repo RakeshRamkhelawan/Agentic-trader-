@@ -1,5 +1,5 @@
 # Pre-commit hooks for Agentic Trader Platform
-# 
+#
 # Installation:
 #   pip install pre-commit
 #   pre-commit install
@@ -27,33 +27,33 @@ repos:
       - id: no-commit-to-branch
         args: [--branch, main, --branch, develop]
         stages: [commit-msg]
-      
+
       # Check for merge conflicts
       - id: check-merge-conflict
-      
+
       # Check for broken symlinks
       - id: check-symlinks
-      
+
       # Check JSON syntax
       - id: check-json
         files: \.(json)$
-      
+
       # Check YAML syntax
       - id: check-yaml
         files: \.(yml|yaml)$
         exclude: ^(.github/workflows/archive/|docker-compose\.)
-      
+
       # Check TOML syntax
       - id: check-toml
-      
+
       # Prevent large files
       - id: check-added-large-files
         args: ['--maxkb=1000']
-      
+
       # Trim trailing whitespace
       - id: trailing-whitespace
         exclude: ^(frontend/|\.md$)
-      
+
       # Ensure files end with newline
       - id: end-of-file-fixer
         exclude: ^(frontend/|\.min\.|\.lock$)

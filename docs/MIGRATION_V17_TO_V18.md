@@ -1,7 +1,7 @@
 # Migration Guide: V17 → V18 (MCP ToolBroker)
 
-> **Agentic Trader Platform**  
-> **Date**: February 22, 2026  
+> **Agentic Trader Platform**
+> **Date**: February 22, 2026
 > **Status**: Production Ready
 
 ---
@@ -122,7 +122,7 @@ entry = await agent.evaluate_entry(symbol, price, date, portfolio)
 async with MCPClientWrapper() as client:
     manager = ElementalAgentManagerV18(client)
     await manager.initialize()
-    
+
     entry = await manager.evaluate_entry(
         symbol=symbol,
         current_price=price,
@@ -346,11 +346,11 @@ V18 migration provides:
 - ✅ **Standard MCP protocol** compatibility
 - ✅ **Improved monitoring** and observability
 
-**Migration effort**: Low (mostly import changes)  
-**Risk**: Low (V17 code preserved)  
+**Migration effort**: Low (mostly import changes)
+**Risk**: Low (V17 code preserved)
 **Benefit**: High (resilience + LLM support)
 
 ---
 
-*Migration Guide Version: 1.0*  
+*Migration Guide Version: 1.0*
 *Last Updated: 2026-02-22*

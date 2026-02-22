@@ -41,12 +41,12 @@ check_docker() {
         print_error "Docker is not installed. Please install Docker first."
         exit 1
     fi
-    
+
     if ! command -v docker-compose &> /dev/null; then
         print_error "Docker Compose is not installed. Please install Docker Compose first."
         exit 1
     fi
-    
+
     print_status "Docker and Docker Compose are installed"
 }
 
@@ -54,28 +54,28 @@ check_docker() {
 setup_directories() {
     print_status "Creating necessary directories..."
     mkdir -p logs data cache redis_data nginx/logs nginx/ssl
-    
+
     # Set permissions
     chmod 755 logs data cache redis_data
-    
+
     print_status "Directories created"
 }
 
 # Start development mode
 start_dev() {
     print_status "Starting in DEVELOPMENT mode with hot reload..."
-    
+
     check_docker
     setup_directories
-    
+
     # Copy .env.example if .env doesn't exist
     if [ ! -f .env ]; then
         print_warning ".env file not found, copying from .env.example"
         cp .env.example .env
     fi
-    
+
     docker-compose up --build -d
-    
+
     print_status "Services started!"
     echo ""
     echo "API Documentation: http://localhost:8000/docs"
@@ -88,10 +88,10 @@ start_dev() {
 # Start production mode
 start_prod() {
     print_status "Starting in PRODUCTION mode..."
-    
+
     check_docker
     setup_directories
-    
+
     # Check if .env exists
     if [ ! -f .env ]; then
         print_error ".env file not found! Please create it from .env.example"
@@ -99,7 +99,7 @@ start_prod() {
         print_error "Then edit .env with your production settings"
         exit 1
     fi
-    
+
     # Check for SECRET_KEY
     if ! grep -q "SECRET_KEY=your" .env && ! grep -q "^SECRET_KEY=" .env; then
         print_warning "SECRET_KEY not set in .env. Generating one..."
@@ -107,9 +107,9 @@ start_prod() {
         echo "SECRET_KEY=$SECRET_KEY" >> .env
         print_status "Generated SECRET_KEY and added to .env"
     fi
-    
+
     docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
-    
+
     print_status "Production services started!"
     echo ""
     echo "API:      https://your-domain.com"

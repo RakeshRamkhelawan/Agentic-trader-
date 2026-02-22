@@ -129,17 +129,17 @@ from backend.mcp_broker.backtest_engine_v18_optimized import (
 config = OptimizedBacktestConfig(
     initial_capital=100000.0,
     max_position_eur=2000.0,
-    
+
     # Performance toggles
     enable_caching=True,
     enable_parallel_processing=True,
     enable_batch_processing=True,
     enable_vectorization=True,
-    
+
     # Parallel settings
     max_workers=4,
     symbols_per_worker=10,
-    
+
     # Progress callback
     progress_callback=lambda completed, total, details: print(
         f"Progress: {completed}/{total}"

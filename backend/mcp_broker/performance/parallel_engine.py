@@ -44,13 +44,13 @@ class WorkerResult:
 class SymbolPartitioner:
     """
     Intelligent symbol partitioning for parallel processing.
-    
+
     Strategies:
     - Round-robin: Distribute evenly
     - By volatility: Group similar volatility symbols
     - By sector: Keep related symbols together
     """
-    
+
     @staticmethod
     def round_robin(symbols: List[str], num_partitions: int) -> List[List[str]]:
         """Distribute symbols evenly across partitions."""
@@ -58,7 +58,7 @@ class SymbolPartitioner:
         for i, symbol in enumerate(symbols):
             partitions[i % num_partitions].append(symbol)
         return partitions
-    
+
     @staticmethod
     def by_volatility(
         symbols: List[str],
@@ -72,16 +72,16 @@ class SymbolPartitioner:
             key=lambda s: volatility_data.get(s, 0.5),
             reverse=True
         )
-        
+
         # Distribute high/low volatility evenly
         partitions = [[] for _ in range(num_partitions)]
         for i, symbol in enumerate(sorted_symbols):
             # Alternate direction for better balance
             partition_idx = i % num_partitions if (i // num_partitions) % 2 == 0 else (num_partitions - 1 - i % num_partitions)
             partitions[partition_idx].append(symbol)
-        
+
         return partitions
-    
+
     @staticmethod
     def by_sector(
         symbols: List[str],
@@ -96,7 +96,7 @@ class SymbolPartitioner:
             if sector not in sectors:
                 sectors[sector] = []
             sectors[sector].append(symbol)
-        
+
         # Distribute sectors across partitions
         partitions = [[] for _ in range(num_partitions)]
         partition_idx = 0
@@ -104,9 +104,9 @@ class SymbolPartitioner:
             for symbol in sector_symbols:
                 partitions[partition_idx].append(symbol)
                 partition_idx = (partition_idx + 1) % num_partitions
-        
+
         return partitions
-    
+
     @staticmethod
     def adaptive(
         symbols: List[str],
@@ -115,7 +115,7 @@ class SymbolPartitioner:
     ) -> List[List[str]]:
         """
         Adaptive partitioning based on historical processing times.
-        
+
         Uses greedy bin-packing to balance expected workload.
         """
         # Sort by expected processing time (descending)
@@ -124,29 +124,29 @@ class SymbolPartitioner:
             key=lambda s: historical_performance.get(s, 1.0),
             reverse=True
         )
-        
+
         # Greedy assignment to least-loaded partition
         partitions: List[List[str]] = [[] for _ in range(num_partitions)]
         partition_loads = [0.0] * num_partitions
-        
+
         for symbol in sorted_symbols:
             load = historical_performance.get(symbol, 1.0)
             # Find partition with minimum load
             min_idx = partition_loads.index(min(partition_loads))
             partitions[min_idx].append(symbol)
             partition_loads[min_idx] += load
-        
+
         return partitions
 
 
 class ParallelBacktestEngine:
     """
     High-performance parallel backtest engine.
-    
+
     Executes backtests across multiple symbols in parallel,
     with intelligent partitioning and result aggregation.
     """
-    
+
     def __init__(
         self,
         mcp_client: MCPClientWrapper,
@@ -159,15 +159,15 @@ class ParallelBacktestEngine:
         self.batch_processor = BatchProcessor(mcp_client)
         self._workers: List[asyncio.Task] = []
         self._progress_callbacks: List[Callable] = []
-    
+
     def on_progress(self, callback: Callable[[int, int, Dict], None]) -> None:
         """Register a progress callback."""
         self._progress_callbacks.append(callback)
-    
+
     async def _notify_progress(
-        self, 
-        completed: int, 
-        total: int, 
+        self,
+        completed: int,
+        total: int,
         details: Dict
     ) -> None:
         """Notify all progress callbacks."""
@@ -179,7 +179,7 @@ class ParallelBacktestEngine:
                     callback(completed, total, details)
             except Exception:
                 pass  # Don't let callbacks break execution
-    
+
     async def _worker_loop(
         self,
         worker_id: int,
@@ -197,7 +197,7 @@ class ParallelBacktestEngine:
             worker_id=worker_id,
             symbols=symbols
         )
-        
+
         try:
             # Process each symbol
             for symbol in symbols:
@@ -206,20 +206,20 @@ class ParallelBacktestEngine:
                     symbol_result = await self._run_symbol_backtest(
                         symbol, start_date, end_date, initial_capital / len(symbols)
                     )
-                    
+
                     worker_result.trades.extend(symbol_result.get("trades", []))
                     worker_result.metrics[symbol] = symbol_result.get("metrics", {})
-                    
+
                 except Exception as e:
                     worker_result.errors.append(f"{symbol}: {str(e)}")
-            
+
         except Exception as e:
             worker_result.errors.append(f"Worker {worker_id} failed: {str(e)}")
-        
+
         finally:
             worker_result.processing_time_seconds = time.time() - start_time
             await result_queue.put(worker_result)
-    
+
     async def _run_symbol_backtest(
         self,
         symbol: str,
@@ -231,7 +231,7 @@ class ParallelBacktestEngine:
         trades = []
         current_date = start_date
         capital = allocated_capital
-        
+
         # Generate date range
         while current_date <= end_date:
             try:
@@ -244,21 +244,21 @@ class ParallelBacktestEngine:
                         "end_date": current_date.isoformat()
                     }
                 )
-                
+
                 if not market_data or "error" in market_data:
                     current_date += timedelta(days=1)
                     continue
-                
+
                 price = market_data.get("close", 100.0)
-                
+
                 # Get VedAstro signal
                 signal = await self.client.call_tool(
                     "vedastro__generate_signal",
                     {"symbol": symbol, "current_price": price}
                 )
-                
+
                 vedastro_score = signal.get("score", 50)
-                
+
                 # Get Elemental consensus
                 consensus = await self.client.call_tool(
                     "elemental__ether_consensus",
@@ -270,7 +270,7 @@ class ParallelBacktestEngine:
                         "symbol": symbol
                     }
                 )
-                
+
                 if consensus.get("should_enter") and capital > 1000:
                     # Get position size
                     position = await self.client.call_tool(
@@ -282,9 +282,9 @@ class ParallelBacktestEngine:
                             "price_history": market_data.get("prices", [price] * 20)
                         }
                     )
-                    
+
                     position_size = position.get("position_size_eur", 1000)
-                    
+
                     if position_size > 100:
                         # Execute trade
                         trade_result = await self.client.call_tool(
@@ -296,7 +296,7 @@ class ParallelBacktestEngine:
                                 "current_price": price
                             }
                         )
-                        
+
                         if "error" not in trade_result:
                             trades.append({
                                 "date": current_date.isoformat(),
@@ -307,12 +307,12 @@ class ParallelBacktestEngine:
                                 "pnl": trade_result.get("pnl", 0)
                             })
                             capital -= position_size
-                
+
             except Exception as e:
                 pass  # Continue to next date
-            
+
             current_date += timedelta(days=1)
-        
+
         return {
             "trades": trades,
             "metrics": {
@@ -321,7 +321,7 @@ class ParallelBacktestEngine:
                 "allocated_capital": allocated_capital
             }
         }
-    
+
     async def run_parallel_backtest(
         self,
         symbols: List[str],
@@ -332,19 +332,19 @@ class ParallelBacktestEngine:
     ) -> Dict[str, Any]:
         """
         Run parallel backtest across multiple symbols.
-        
+
         Args:
             symbols: List of symbols to backtest
             start_date: Start date for backtest
             end_date: End date for backtest
             initial_capital: Starting capital
             partition_strategy: "round_robin", "volatility", "sector", "adaptive"
-            
+
         Returns:
             Combined backtest results
         """
         total_start_time = time.time()
-        
+
         # Partition symbols
         if partition_strategy == "round_robin":
             partitions = SymbolPartitioner.round_robin(
@@ -355,13 +355,13 @@ class ParallelBacktestEngine:
             partitions = SymbolPartitioner.round_robin(
                 symbols, self.config.max_workers
             )
-        
+
         # Remove empty partitions
         partitions = [p for p in partitions if p]
-        
+
         # Result queue
         result_queue: asyncio.Queue = asyncio.Queue()
-        
+
         # Start workers
         workers = []
         for worker_id, partition in enumerate(partitions):
@@ -376,11 +376,11 @@ class ParallelBacktestEngine:
                 )
             )
             workers.append(worker)
-        
+
         # Wait for all workers with progress reporting
         completed_workers = 0
         total_workers = len(workers)
-        
+
         while completed_workers < total_workers:
             try:
                 # Wait for next result with timeout for progress updates
@@ -389,7 +389,7 @@ class ParallelBacktestEngine:
                     timeout=self.config.progress_interval_seconds
                 )
                 completed_workers += 1
-                
+
                 await self._notify_progress(
                     completed_workers,
                     total_workers,
@@ -401,7 +401,7 @@ class ParallelBacktestEngine:
                         "time": result.processing_time_seconds
                     }
                 )
-                
+
             except asyncio.TimeoutError:
                 # Progress update
                 await self._notify_progress(
@@ -409,26 +409,26 @@ class ParallelBacktestEngine:
                     total_workers,
                     {"status": "in_progress"}
                 )
-        
+
         # Collect all results
         all_results = []
         while not result_queue.empty():
             all_results.append(await result_queue.get())
-        
+
         # Aggregate results
         all_trades = []
         all_metrics = {}
         all_errors = []
         total_worker_time = 0.0
-        
+
         for result in all_results:
             all_trades.extend(result.trades)
             all_metrics.update(result.metrics)
             all_errors.extend(result.errors)
             total_worker_time += result.processing_time_seconds
-        
+
         total_time = time.time() - total_start_time
-        
+
         return {
             "status": "completed",
             "symbols": symbols,
@@ -449,7 +449,7 @@ class ParallelBacktestEngine:
                 "trades_per_second": len(all_trades) / total_time if total_time > 0 else 0
             }
         }
-    
+
     async def run_chunked_backtest(
         self,
         symbols: List[str],
@@ -459,18 +459,18 @@ class ParallelBacktestEngine:
     ) -> Dict[str, Any]:
         """
         Run backtest in time chunks for memory efficiency.
-        
+
         Processes data in chunks (e.g., monthly) to limit memory usage.
         """
         chunk_results = []
         current_start = start_date
-        
+
         while current_start < end_date:
             current_end = min(
                 current_start + timedelta(days=self.config.chunk_size_days),
                 end_date
             )
-            
+
             # Run backtest for this chunk
             chunk_result = await self.run_parallel_backtest(
                 symbols,
@@ -479,15 +479,15 @@ class ParallelBacktestEngine:
                 initial_capital / ((end_date - start_date).days / self.config.chunk_size_days),
                 "round_robin"
             )
-            
+
             chunk_results.append(chunk_result)
             current_start = current_end + timedelta(days=1)
-        
+
         # Aggregate chunk results
         all_trades = []
         for chunk in chunk_results:
             all_trades.extend(chunk.get("trades", []))
-        
+
         return {
             "status": "completed",
             "chunks_processed": len(chunk_results),

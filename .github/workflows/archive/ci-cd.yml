@@ -17,7 +17,7 @@ jobs:
   code-quality:
     name: Code Quality & Linting
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -75,7 +75,7 @@ jobs:
     name: Unit Tests
     needs: code-quality
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -134,7 +134,7 @@ jobs:
     name: Integration Tests
     needs: code-quality
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -227,7 +227,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -287,7 +287,7 @@ jobs:
     needs: docker-build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -333,7 +333,7 @@ jobs:
     name: Security Vulnerability Scan
     needs: code-quality
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -360,7 +360,7 @@ jobs:
     environment:
       name: staging
       url: https://staging.agentic-trader.example.com
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -378,7 +378,7 @@ jobs:
     environment:
       name: production
       url: https://agentic-trader.example.com
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

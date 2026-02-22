@@ -139,7 +139,7 @@ websocat ws://localhost:8000/ws
 ```tsx
 function PriceTicker({ symbol }) {
   const [price, setPrice] = useState(null);
-  
+
   const { subscribe, unsubscribe } = useWebSocket({
     url: WS_URL,
     onConnect: () => subscribe(`ticker.${symbol}`),
@@ -168,7 +168,7 @@ function OrderMonitor() {
     onMessage: (msg) => {
       if (msg.channel === `orders.${accountId}`) {
         // Update order in list
-        setOrders(prev => prev.map(o => 
+        setOrders(prev => prev.map(o =>
           o.id === msg.data.order_id ? { ...o, ...msg.data } : o
         ));
       }

@@ -105,10 +105,10 @@ class PositionSizeResponse(BaseModel):
 async def get_vedastro_signal(request: VedAstroRequest):
     """
     Generate VedAstro trading signal for a symbol.
-    
+
     Uses Swiss Ephemeris for precise planetary calculations.
     Results are cached in Redis for 1 hour.
-    
+
     Example:
         ```json
         {
@@ -118,17 +118,17 @@ async def get_vedastro_signal(request: VedAstroRequest):
         ```
     """
     start_time = time.time()
-    
+
     # Check cache first
     cache_key = f"vedastro:{request.symbol}:{request.date or datetime.now().strftime('%Y-%m-%d')}"
     cache = get_cache()
-    
+
     try:
         cached = await cache.get("vedastro", {
             "symbol": request.symbol,
             "date": request.date or datetime.now().strftime('%Y-%m-%d')
         })
-        
+
         if cached:
             logger.info(f"Cache hit for {request.symbol}")
             return VedAstroResponse(
@@ -137,14 +137,14 @@ async def get_vedastro_signal(request: VedAstroRequest):
             )
     except Exception as e:
         logger.warning(f"Cache lookup failed: {e}")
-    
+
     # Generate signal (DIRECT call - no MCP overhead)
     try:
         result = await vedastro_generate_signal(
             symbol=request.symbol,
             current_price=request.current_price
         )
-        
+
         # Format response
         response = VedAstroResponse(
             symbol=request.symbol,
@@ -155,7 +155,7 @@ async def get_vedastro_signal(request: VedAstroRequest):
             timestamp=datetime.utcnow().isoformat(),
             cached=False
         )
-        
+
         # Cache result
         try:
             await cache.set_vedastro_signal(
@@ -165,9 +165,9 @@ async def get_vedastro_signal(request: VedAstroRequest):
             )
         except Exception as e:
             logger.warning(f"Failed to cache result: {e}")
-        
+
         return response
-        
+
     except Exception as e:
         logger.error(f"VedAstro signal generation failed: {e}", exc_info=True)
         raise HTTPException(
@@ -195,10 +195,10 @@ async def get_vedastro_signal_get(
 async def get_consensus(request: ConsensusRequest):
     """
     Calculate Elemental consensus for multiple symbols.
-    
+
     Uses vectorized NumPy operations for maximum performance.
     Batch processes all symbols in parallel.
-    
+
     Example:
         ```json
         {
@@ -209,11 +209,11 @@ async def get_consensus(request: ConsensusRequest):
         ```
     """
     start_time = time.time()
-    
+
     logger.info(f"Calculating consensus for {len(request.symbols)} symbols")
-    
+
     results = []
-    
+
     # Process each symbol
     for symbol in request.symbols:
         try:
@@ -221,12 +221,12 @@ async def get_consensus(request: ConsensusRequest):
             # Using hash for deterministic but varied results
             import hashlib
             hash_val = int(hashlib.md5(symbol.encode()).hexdigest(), 16)
-            
+
             fire_score = (hash_val % 40 + 30) / 100.0  # 0.3 - 0.7
             earth_score = ((hash_val // 100) % 40 + 30) / 100.0
             water_score = ((hash_val // 10000) % 40 + 30) / 100.0
             air_score = ((hash_val // 1000000) % 40 + 30) / 100.0
-            
+
             # Calculate weighted consensus
             weighted_avg = (
                 fire_score * request.fire_weight +
@@ -234,7 +234,7 @@ async def get_consensus(request: ConsensusRequest):
                 water_score * request.water_weight +
                 air_score * request.air_weight
             )
-            
+
             # Direct call to consensus function
             consensus_result = await elemental_ether_consensus(
                 fire_vote=fire_score,
@@ -242,7 +242,7 @@ async def get_consensus(request: ConsensusRequest):
                 water_vote=water_score,
                 air_vote=air_score
             )
-            
+
             results.append(ConsensusItem(
                 symbol=symbol,
                 should_enter=consensus_result.get("should_enter", False),
@@ -252,15 +252,15 @@ async def get_consensus(request: ConsensusRequest):
                 water_score=water_score,
                 air_score=air_score
             ))
-            
+
         except Exception as e:
             logger.error(f"Failed to calculate consensus for {symbol}: {e}")
             # Continue with other symbols
-    
+
     execution_time = (time.time() - start_time) * 1000
-    
+
     logger.info(f"Consensus calculated in {execution_time:.2f}ms")
-    
+
     return ConsensusResponse(
         results=results,
         timestamp=datetime.utcnow().isoformat(),
@@ -272,12 +272,12 @@ async def get_consensus(request: ConsensusRequest):
 async def calculate_position_size(request: PositionSizeRequest):
     """
     Calculate optimal position size using Elemental Fire algorithm.
-    
+
     Applies V17 constraints:
     - Max 2% of portfolio
     - Max €2,000 per position
     - Scaled by VedAstro score
-    
+
     Example:
         ```json
         {
@@ -295,22 +295,22 @@ async def calculate_position_size(request: PositionSizeRequest):
             vedastro_score=request.vedastro_score,
             price_history=request.price_history or [100.0] * 20
         )
-        
+
         # Calculate shares
         current_price = request.price_history[-1] if request.price_history else 100.0
         shares = result.get("position_size_eur", 0) / current_price if current_price > 0 else 0
-        
+
         # Determine which constraints were applied
         constraints = []
         position_size = result.get("position_size_eur", 0)
-        
+
         if position_size <= request.portfolio_value * 0.02:
             constraints.append("portfolio_limit_2pct")
         if position_size <= 2000.0:
             constraints.append("absolute_cap_2k_eur")
         if request.vedastro_score < 50:
             constraints.append("low_vedastro_score")
-        
+
         return PositionSizeResponse(
             symbol=request.symbol,
             position_size_eur=position_size,
@@ -318,7 +318,7 @@ async def calculate_position_size(request: PositionSizeRequest):
             confidence=result.get("confidence", request.confidence),
             constraints_applied=constraints
         )
-        
+
     except Exception as e:
         logger.error(f"Position sizing failed: {e}", exc_info=True)
         raise HTTPException(

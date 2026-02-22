@@ -13,7 +13,7 @@ async def quick_test():
     print("=" * 60)
     print("QUICK MCP CLIENT TEST")
     print("=" * 60)
-    
+
     async with MCPClientWrapper() as client:
         print("1. Testing Elemental Consensus...")
         result = await client.call_tool(
@@ -22,7 +22,7 @@ async def quick_test():
         )
         print(f"   Harmony: {result.get('harmony_score', 0):.2f}")
         print(f"   Approved: {result.get('approved', False)}")
-        
+
         print("2. Testing Fire Position Size...")
         result = await client.call_tool(
             "elemental__fire_position_size",
@@ -36,7 +36,7 @@ async def quick_test():
         )
         print(f"   Position: €{result.get('position_size_eur', 0):.2f}")
         print(f"   Constraints: {result.get('constraints_applied', [])}")
-        
+
         print("3. Testing VedAstro...")
         result = await client.call_tool(
             "vedastro__generate_signal",
@@ -44,11 +44,11 @@ async def quick_test():
         )
         print(f"   Signal: {result.get('signal', 'UNKNOWN')}")
         print(f"   Confidence: {result.get('confidence', 0)}%")
-        
+
         print("4. Testing Health Check...")
         result = await client.call_tool("system__health_check", {})
         print(f"   Status: {result.get('status', 'UNKNOWN')}")
-    
+
     print("=" * 60)
     print("ALL TESTS PASSED!")
     print("=" * 60)

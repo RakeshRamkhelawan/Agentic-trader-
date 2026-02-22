@@ -82,12 +82,12 @@ class VedAstroTradingAgent:
     def __init__(self):
         self.signal_generator = TradingSignalGenerator()
         self.orchestrator = EnhancedAstroOrchestrator()
-    
+
     async def evaluate_entry(self, symbol, price, date) -> dict:
         # Get complete astro analysis
         analysis = await self.orchestrator.analyze_asset(symbol, price)
         signal = analysis.trading_signal
-        
+
         # Convert to Elemental-compatible format
         return {
             'signal': signal.signal,  # BUY/SELL/HOLD
@@ -121,7 +121,7 @@ vedastro = await vedastro_agent.evaluate_entry(symbol, price, date)
 if fire.position_size(symbol, portfolio) > 0 and \
    earth.should_enter(symbol) and \
    water.regime_compatible(symbol):
-    
+
     execute_with_vedastro_signal(vedastro)
 ```
 

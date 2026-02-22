@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Development Environment Setup Script
-# 
+#
 # This script sets up everything needed for development:
 # - Python virtual environment
 # - Pre-commit hooks
@@ -108,7 +108,7 @@ echo "[4/6] Installing pre-commit hooks..."
 if [ -f ".pre-commit-config.yaml" ]; then
     pre-commit install
     print_status "Installed pre-commit hooks"
-    
+
     # Run once to setup
     print_info "Running initial pre-commit check (this may take a minute)..."
     pre-commit run --all-files || {
@@ -161,7 +161,7 @@ if [ -d ".git" ]; then
     # Set up git hooks path (if needed)
     git config core.hooksPath .git/hooks
     print_status "Git repository configured"
-    
+
     # Show git status
     echo ""
     print_info "Current Git status:"

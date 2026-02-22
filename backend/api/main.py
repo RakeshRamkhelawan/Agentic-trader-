@@ -38,13 +38,13 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info("Starting Agentic Trader REST API")
     logger.info("=" * 60)
-    
+
     # Startup: Initialize connections
     logger.info("Initializing Redis cache connection...")
     # Cache is initialized lazily in endpoints
-    
+
     yield
-    
+
     # Shutdown: Cleanup
     logger.info("Shutting down REST API...")
 
@@ -120,7 +120,7 @@ async def global_exception_handler(request, exc):
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     logger.info("Starting Uvicorn server...")
     uvicorn.run(
         "backend.api.main:app",

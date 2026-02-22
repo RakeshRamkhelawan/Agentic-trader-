@@ -297,17 +297,17 @@ async def execute_trade(
 ) -> Dict[str, Any]:
     """
     Execute a trade order.
-    
+
     Args:
         symbol: Trading pair (e.g., "BTC-EUR")
         side: "buy" or "sell"
         amount: Order quantity
         order_type: Order type (market, limit, stop)
         price: Limit price (required for limit orders)
-        
+
     Returns:
         dict: Order details including order_id and status
-        
+
     Raises:
         RiskViolationError: If order exceeds risk limits
         ExchangeError: If exchange execution fails
@@ -423,9 +423,9 @@ async def test_create_order_success():
         'orderId': 'test-123',
         'status': 'filled'
     })
-    
+
     service = TradingService(mock_db, mock_risk, mock_exchange)
-    
+
     # Act
     order = await service.create_order(
         tenant_id='tenant-1',
@@ -434,7 +434,7 @@ async def test_create_order_success():
         side='buy',
         amount=Decimal('0.1')
     )
-    
+
     # Assert
     assert order.id == 'test-123'
     assert order.status == 'filled'
@@ -450,7 +450,7 @@ import { TradeButton } from '../TradeButton';
 describe('TradeButton', () => {
   it('calls onTrade when clicked', async () => {
     const mockTrade = jest.fn().mockResolvedValue(undefined);
-    
+
     render(
       <TradeButton
         symbol="BTC-EUR"
@@ -458,9 +458,9 @@ describe('TradeButton', () => {
         onTrade={mockTrade}
       />
     );
-    
+
     fireEvent.click(screen.getByText('BUY BTC-EUR'));
-    
+
     expect(mockTrade).toHaveBeenCalledWith(0.1);
   });
 });
