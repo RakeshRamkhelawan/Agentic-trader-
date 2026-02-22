@@ -34,16 +34,18 @@ class ReflexExecutor:
         self.market_bridge: Optional[ZeroCopyBridge] = None
         self.running = False
         self._task: Optional[asyncio.Task] = None
-        
+
         # 🔒 PAPER MODE: ALTIJD hardcoded op "paper" voor veiligheid
         # Dit kan alleen worden overschreven via expliciete environment variable in live deployments
         env_mode = os.getenv("TRADING_MODE", "paper")
         self.trading_mode = trading_mode if trading_mode == env_mode else env_mode
-        
+
         if self.trading_mode == "paper":
             # Paper mode: gebruik ShadowPortfolioManager voor simulatie
             self.portfolio = ShadowPortfolioManager(initial_cash=initial_capital)
-            logger.info("🛡️ ReflexExecutor in PAPER MODE - Simulatie met ShadowPortfolio")
+            logger.info(
+                "🛡️ ReflexExecutor in PAPER MODE - Simulatie met ShadowPortfolio"
+            )
         else:
             self.portfolio = None
             logger.critical("⚠️ ReflexExecutor in LIVE MODE - Echte orders mogelijk!")
@@ -141,13 +143,13 @@ class ReflexExecutor:
         if not self.portfolio:
             logger.error("Geen portfolio manager beschikbaar")
             return None
-        
+
         # Update portfolio met huidige marktprijs
         if self.market_bridge:
             market_data = self.market_bridge.read_market_data(intent.symbol)
             if market_data:
                 self.portfolio.update_price(intent.symbol, market_data["last"])
-        
+
         # Maak order request
         side = OrderSide.BUY if intent.action == 1 else OrderSide.SELL
         order = OrderRequest(
@@ -155,15 +157,15 @@ class ReflexExecutor:
             side=side,
             qty=abs(intent.size),
             order_type="market",
-            client_order_id=str(uuid.uuid4())
+            client_order_id=str(uuid.uuid4()),
         )
-        
+
         # Simuleer slippage: 0.02-0.05% van prijs
         slippage_pct = 0.02 + (hash(intent.symbol) % 30) / 1000  # 0.02-0.05%
-        
+
         # Voer order uit in portfolio
         result = await self.portfolio.submit_order(order)
-        
+
         if result.status == OrderStatus.FILLED:
             fill_info = {
                 "symbol": intent.symbol,
@@ -174,12 +176,16 @@ class ReflexExecutor:
                 "order_id": str(result.order_id),
                 "simulated": True,
             }
-            logger.info(f"[PAPER FILL] {side.value} {intent.size} {intent.symbol} @ {result.avg_price:.2f}")
+            logger.info(
+                f"[PAPER FILL] {side.value} {intent.size} {intent.symbol} @ {result.avg_price:.2f}"
+            )
             return fill_info
         else:
-            logger.warning(f"[PAPER REJECTED] {side.value} {intent.symbol}: {result.error_message}")
+            logger.warning(
+                f"[PAPER REJECTED] {side.value} {intent.symbol}: {result.error_message}"
+            )
             return None
-    
+
     async def _reflex_loop(self):
         """
         High-frequency poll loop.
@@ -189,11 +195,13 @@ class ReflexExecutor:
         # 🔒 KRITISCHE PAPER MODE GUARD
         if self.trading_mode != "paper":
             logger.critical("🚫 REFLEX EXECUTOR BLOCKED: Niet in paper mode!")
-            logger.critical("   Dit systeem is alleen geconfigureerd voor paper trading.")
+            logger.critical(
+                "   Dit systeem is alleen geconfigureerd voor paper trading."
+            )
             # In een live systeem zou je hier de live executie starten
             # Voor nu: alleen loggen en stoppen
             return
-        
+
         symbol = "BTC/USD"  # Monitoring this symbol
 
         while self.running:

@@ -14,10 +14,9 @@ import hashlib
 import logging
 import os
 import time
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 import jwt
 import redis.asyncio as redis
@@ -26,7 +25,6 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel, Field
 
-from backend.core.auth.rbac import require_role, require_any_role
 from backend.core.config.settings import settings
 
 _logger = logging.getLogger(__name__)
@@ -103,11 +101,11 @@ class HealthResponse(BaseModel):
 
 class TokenCacheEntry:
     """Cached token validation result."""
-    
+
     def __init__(self, payload: Dict, cached_at: float):
         self.payload = payload
         self.cached_at = cached_at
-    
+
     def is_expired(self, ttl_seconds: int = 300) -> bool:
         """Check if cache entry is expired (default 5 minutes)."""
         return (time.time() - self.cached_at) > ttl_seconds
@@ -126,8 +124,8 @@ class RateLimiter:
     """
 
     def __init__(
-        self, 
-        requests_per_minute: int = 60, 
+        self,
+        requests_per_minute: int = 60,
         redis_url: Optional[str] = None,
         use_pipeline: bool = True,
     ):
@@ -152,7 +150,7 @@ class RateLimiter:
         if self.redis:
             try:
                 key = f"rate_limit:{api_key}"
-                
+
                 if self.use_pipeline:
                     # Use pipeline for atomic operations
                     pipe = self.redis.pipeline()
@@ -161,14 +159,14 @@ class RateLimiter:
                     results = await pipe.execute()
                     count = results[0]
                     ttl = results[1]
-                    
+
                     # Set expiry if new key or TTL is -1 (no expiry)
                     if count == 1 or ttl == -1:
                         await self.redis.expire(key, 60)
                 else:
                     # Atomic INCR
                     count = await self.redis.incr(key)
-                    
+
                     # Set expiry on first request
                     if count == 1:
                         await self.redis.expire(key, 60)
@@ -205,14 +203,14 @@ class RateLimiter:
 class JWTManager:
     """
     JWT token management with SHA256 hash-based caching.
-    
+
     NEVER stores raw tokens - only SHA256 hashes as cache keys.
     Cache TTL: 5 minutes (300 seconds).
     """
 
     def __init__(
-        self, 
-        secret_key: Optional[str] = None, 
+        self,
+        secret_key: Optional[str] = None,
         algorithm: str = "HS256",
         cache_ttl_seconds: int = 300,
         redis_url: Optional[str] = None,
@@ -224,10 +222,10 @@ class JWTManager:
         self.secret_key = secret_key
         self.algorithm = algorithm
         self.cache_ttl_seconds = cache_ttl_seconds
-        
+
         # Token cache: SHA256 hash -> TokenCacheEntry
         self._token_cache: Dict[str, TokenCacheEntry] = {}
-        
+
         # Redis for distributed caching (optional)
         self.redis: Optional[redis.Redis] = None
         if redis_url:
@@ -235,7 +233,7 @@ class JWTManager:
                 self.redis = redis.from_url(redis_url)
             except Exception as e:
                 _logger.error(f"Failed to initialize Redis for token cache: {e}")
-        
+
         # Cache hit/miss metrics
         self.cache_hits = 0
         self.cache_misses = 0
@@ -250,85 +248,91 @@ class JWTManager:
     async def verify_token(self, token: str) -> Dict:
         """
         Verify and decode JWT token with caching.
-        
+
         Args:
             token: Raw JWT token
-            
+
         Returns:
             Decoded token payload
-            
+
         Raises:
             HTTPException: If token is invalid or expired
         """
         token_hash = self._hash_token(token)
-        
+
         # Check in-memory cache first
         cached_entry = self._token_cache.get(token_hash)
         if cached_entry and not cached_entry.is_expired(self.cache_ttl_seconds):
             self.cache_hits += 1
             _logger.debug(f"Token cache HIT for hash: {token_hash[:16]}...")
             return cached_entry.payload
-        
+
         # Check Redis cache (distributed)
         if self.redis:
             try:
                 cached_payload = await self.redis.get(f"token_cache:{token_hash}")
                 if cached_payload:
                     import json
+
                     payload = json.loads(cached_payload)
                     # Update in-memory cache
-                    self._token_cache[token_hash] = TokenCacheEntry(payload, time.time())
+                    self._token_cache[token_hash] = TokenCacheEntry(
+                        payload, time.time()
+                    )
                     self.cache_hits += 1
-                    _logger.debug(f"Token cache HIT (Redis) for hash: {token_hash[:16]}...")
+                    _logger.debug(
+                        f"Token cache HIT (Redis) for hash: {token_hash[:16]}..."
+                    )
                     return payload
             except Exception as e:
                 _logger.error(f"Redis token cache read failed: {e}")
-        
+
         # Cache miss - verify token cryptographically
         self.cache_misses += 1
         _logger.debug(f"Token cache MISS for hash: {token_hash[:16]}...")
-        
+
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
-            
+
             # Cache the verified payload
             self._token_cache[token_hash] = TokenCacheEntry(payload, time.time())
-            
+
             # Also cache in Redis (distributed)
             if self.redis:
                 try:
                     import json
+
                     await self.redis.setex(
                         f"token_cache:{token_hash}",
                         self.cache_ttl_seconds,
-                        json.dumps(payload)
+                        json.dumps(payload),
                     )
                 except Exception as e:
                     _logger.error(f"Redis token cache write failed: {e}")
-            
+
             return payload
-            
+
         except jwt.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail="Token expired")
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail="Invalid token")
 
     def create_token(
-        self, 
-        tenant_id: str, 
-        account_id: str, 
+        self,
+        tenant_id: str,
+        account_id: str,
         roles: List[str],
-        expires_in_hours: int = 24
+        expires_in_hours: int = 24,
     ) -> str:
         """
         Create JWT token for API access with role claims.
-        
+
         Args:
             tenant_id: Tenant identifier
             account_id: Account identifier
             roles: List of roles (e.g., ["trader", "viewer"])
             expires_in_hours: Token expiration time
-            
+
         Returns:
             JWT token string
         """
@@ -347,21 +351,22 @@ class JWTManager:
     def invalidate_cache(self, token: str) -> None:
         """
         Invalidate token cache (e.g., on logout).
-        
+
         Args:
             token: Raw JWT token to invalidate
         """
         token_hash = self._hash_token(token)
-        
+
         # Remove from in-memory cache
         if token_hash in self._token_cache:
             del self._token_cache[token_hash]
-        
+
         # Remove from Redis
         if self.redis:
             try:
                 # Use sync delete in async context - fire and forget
                 import asyncio
+
                 asyncio.create_task(self.redis.delete(f"token_cache:{token_hash}"))
             except Exception as e:
                 _logger.error(f"Redis token cache invalidation failed: {e}")
@@ -370,7 +375,7 @@ class JWTManager:
         """Get token cache statistics."""
         total_requests = self.cache_hits + self.cache_misses
         hit_rate = (self.cache_hits / total_requests * 100) if total_requests > 0 else 0
-        
+
         return {
             "cache_hits": self.cache_hits,
             "cache_misses": self.cache_misses,
@@ -389,24 +394,27 @@ class JWTManager:
 # RBAC DEPENDENCIES
 # ============================================
 
-async def get_current_user(token: str = Header(...), jwt_manager: JWTManager = None) -> Dict:
+
+async def get_current_user(
+    token: str = Header(...), jwt_manager: JWTManager = None
+) -> Dict:
     """
     FastAPI dependency to get current user from token.
-    
+
     Args:
         token: Authorization header with Bearer token
         jwt_manager: JWTManager instance
-        
+
     Returns:
         User payload dictionary
     """
     if jwt_manager is None:
         jwt_manager = JWTManager()
-    
+
     # Extract token from Bearer header
     if token.startswith("Bearer "):
         token = token[7:]
-    
+
     return await jwt_manager.verify_token(token)
 
 
@@ -433,7 +441,7 @@ class APIGateway:
     ):
         self.app = FastAPI(title="Agentic Trader API", version="1.0.0")
         self.jwt_manager = JWTManager(
-            secret_key, 
+            secret_key,
             redis_url=redis_url,
             cache_ttl_seconds=300,  # 5 minutes
         )
@@ -443,7 +451,7 @@ class APIGateway:
             redis_url = settings.REDIS_URL
 
         self.rate_limiter = RateLimiter(
-            requests_per_minute, 
+            requests_per_minute,
             redis_url,
             use_pipeline=True,
         )
@@ -508,12 +516,12 @@ class APIGateway:
         async def get_token(tenant_id: str, account_id: str, roles: str = "viewer"):
             """
             Get JWT token for API access.
-            
+
             Args:
                 tenant_id: Tenant identifier
                 account_id: Account identifier
                 roles: Comma-separated list of roles
-                
+
             Returns:
                 JWT token for use in subsequent requests
             """
@@ -525,7 +533,7 @@ class APIGateway:
         async def logout(authorization: str = Header(None)):
             """
             Logout and invalidate token cache.
-            
+
             Note: JWT tokens are stateless - this only clears server-side cache.
             Token will remain valid until expiry.
             """
@@ -534,27 +542,24 @@ class APIGateway:
             return {"detail": "Token cache invalidated"}
 
         @self.app.post("/orders", response_model=ExecutionResponse)
-        async def place_order(
-            order: OrderRequest, 
-            user: Dict = Depends(get_user)
-        ):
+        async def place_order(order: OrderRequest, user: Dict = Depends(get_user)):
             """
             Place a trading order.
-            
-            Requires: 
+
+            Requires:
             - JWT token with 'trader' or 'admin' role
             - Rate limit compliance
             """
             # Check roles
             if not has_role(user, ["trader", "admin"]):
                 raise HTTPException(
-                    status_code=403, 
-                    detail="Insufficient permissions. Required: trader or admin"
+                    status_code=403,
+                    detail="Insufficient permissions. Required: trader or admin",
                 )
-            
+
             # Get and verify token
             account_id = user.get("account_id")
-            
+
             # Check rate limit
             if not await self.rate_limiter.is_allowed(account_id):
                 raise HTTPException(status_code=429, detail="Rate limit exceeded")
@@ -581,25 +586,22 @@ class APIGateway:
             )
 
         @self.app.get("/portfolio", response_model=PortfolioResponse)
-        async def get_portfolio(
-            account_id: str, 
-            user: Dict = Depends(get_user)
-        ):
+        async def get_portfolio(account_id: str, user: Dict = Depends(get_user)):
             """
             Get portfolio details.
-            
-            Requires: 
+
+            Requires:
             - JWT token
             - Must own account_id or have admin role
             """
             # Check permissions
             is_owner = user.get("account_id") == account_id
             is_admin = has_role(user, ["admin"])
-            
+
             if not (is_owner or is_admin):
                 raise HTTPException(
-                    status_code=403, 
-                    detail="Access denied. Can only access own portfolio or have admin role."
+                    status_code=403,
+                    detail="Access denied. Can only access own portfolio or have admin role.",
                 )
 
             # Check rate limit
@@ -621,15 +623,15 @@ class APIGateway:
         async def get_var(
             account_id: str,
             confidence_level: float = 0.95,
-            user: Dict = Depends(get_user)
+            user: Dict = Depends(get_user),
         ):
             """
             Get Value at Risk metrics.
-            
+
             Requires:
             - JWT token
             - Must own account or have admin/risk_manager role
-            
+
             Args:
                 account_id: Account to analyze
                 confidence_level: VaR confidence (0.90, 0.95, 0.99)
@@ -637,11 +639,11 @@ class APIGateway:
             # Check permissions
             is_owner = user.get("account_id") == account_id
             has_permission = has_role(user, ["admin", "risk_manager", "trader"])
-            
+
             if not (is_owner or has_permission):
                 raise HTTPException(
                     status_code=403,
-                    detail="Access denied. Requires admin, risk_manager, or trader role."
+                    detail="Access denied. Requires admin, risk_manager, or trader role.",
                 )
 
             if not (0.85 < confidence_level < 0.995):
@@ -660,15 +662,12 @@ class APIGateway:
         async def admin_list_users(user: Dict = Depends(get_user)):
             """
             Admin endpoint to list all users.
-            
+
             Requires: admin role
             """
             if not has_role(user, ["admin"]):
-                raise HTTPException(
-                    status_code=403,
-                    detail="Admin access required"
-                )
-            
+                raise HTTPException(status_code=403, detail="Admin access required")
+
             # Mock response
             return {"users": []}
 
@@ -683,7 +682,7 @@ class APIGateway:
 
 
 def create_gateway(
-    secret_key: Optional[str] = None, 
+    secret_key: Optional[str] = None,
     requests_per_minute: int = 60,
     redis_url: Optional[str] = None,
 ) -> FastAPI:

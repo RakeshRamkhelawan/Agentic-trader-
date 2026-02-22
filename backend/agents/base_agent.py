@@ -38,7 +38,7 @@ logging.basicConfig(
 class BaseAgent(ABC):
     """
     Abstract base class for all trading agents.
-    
+
     Features:
     - ReAct (Reasoning + Acting) pattern implementation
     - Memory-safe bounded collections (prevents OOM)
@@ -58,7 +58,7 @@ class BaseAgent(ABC):
     ):
         """
         Initialize base agent.
-        
+
         Args:
             agent_name: Unique name for this agent instance
             llm_provider: Optional LLM provider for reasoning
@@ -74,25 +74,29 @@ class BaseAgent(ABC):
 
         # State management
         self.state: Dict[str, Any] = {}
-        
+
         # MEMORY-SAFE: Use deque with maxlen to prevent unbounded growth
         # This prevents OOM crashes during long trading sessions
         self._max_reasoning_history = max_reasoning_history
-        self.reasoning_history: deque[Dict[str, Any]] = deque(maxlen=max_reasoning_history)
-        
+        self.reasoning_history: deque[Dict[str, Any]] = deque(
+            maxlen=max_reasoning_history
+        )
+
         # Event buffer for async processing (also bounded)
         self._max_event_buffer = max_event_buffer
         self._event_buffer: deque[Dict[str, Any]] = deque(maxlen=max_event_buffer)
-        
+
         # Logger
         self.logger = logging.getLogger(f"{__name__}.{agent_name}")
-        self.logger.info(f"{agent_name} initialized (max_history={max_reasoning_history})")
+        self.logger.info(
+            f"{agent_name} initialized (max_history={max_reasoning_history})"
+        )
 
         # Health Monitoring
         self.last_heartbeat = time.time()
         self.processed_events = 0
         self.failed_events = 0
-        
+
         # Memory tracking
         self._peak_reasoning_size = 0
 
@@ -195,32 +199,34 @@ class BaseAgent(ABC):
     def think(self, observation: str) -> str:
         """
         ReAct THINK step: Internal reasoning about observation.
-        
+
         Stores thought in bounded reasoning_history (deque with maxlen).
         """
         thought = f"[THINK] {observation}"
-        
+
         # Add to bounded deque - oldest entry auto-removed at maxlen
-        self.reasoning_history.append({
-            "timestamp": datetime.now(timezone.utc),
-            "type": "think",
-            "content": observation,
-        })
-        
+        self.reasoning_history.append(
+            {
+                "timestamp": datetime.now(timezone.utc),
+                "type": "think",
+                "content": observation,
+            }
+        )
+
         # Log if approaching capacity
         if len(self.reasoning_history) >= self._max_reasoning_history * 0.9:
             self.logger.warning(
                 f"Reasoning history at {len(self.reasoning_history)}/{self._max_reasoning_history} "
                 f"capacity - old entries being dropped"
             )
-        
+
         self.logger.debug(thought)
         return thought
 
     def act(self, action: str, rationale: str) -> Dict[str, Any]:
         """
         ReAct ACT step: Take action based on reasoning.
-        
+
         Stores action in bounded reasoning_history (deque with maxlen).
         """
         action_record = {
@@ -229,30 +235,30 @@ class BaseAgent(ABC):
             "action": action,
             "rationale": rationale,
         }
-        
+
         # Add to bounded deque - oldest entry auto-removed at maxlen
         self.reasoning_history.append(action_record)
-        
+
         self.logger.info(f"[ACT] {action}: {rationale}")
         return action_record
 
     def get_reasoning_chain(self, limit: Optional[int] = None) -> List[str]:
         """
         Get complete reasoning chain for explainability.
-        
+
         Args:
             limit: Maximum number of entries to return (None = all)
-            
+
         Returns:
             List of formatted reasoning strings
         """
         chain = []
-        
+
         # Convert deque to list for slicing (respects maxlen)
         history_list = list(self.reasoning_history)
         if limit:
             history_list = history_list[-limit:]
-        
+
         for entry in history_list:
             if entry["type"] == "think":
                 chain.append(f"[THINK] {entry['content']}")
@@ -263,7 +269,7 @@ class BaseAgent(ABC):
     def clear_reasoning_history(self) -> int:
         """
         Clear reasoning history (useful for long-running sessions).
-        
+
         Returns:
             Number of entries cleared
         """
@@ -291,27 +297,29 @@ class BaseAgent(ABC):
     def buffer_event(self, event: Dict[str, Any]) -> bool:
         """
         Buffer an event for async processing.
-        
+
         Args:
             event: Event data to buffer
-            
+
         Returns:
             True if buffered, False if buffer is full
         """
         if len(self._event_buffer) >= self._max_event_buffer:
-            self.logger.warning(f"Event buffer full ({self._max_event_buffer}), dropping event")
+            self.logger.warning(
+                f"Event buffer full ({self._max_event_buffer}), dropping event"
+            )
             return False
-        
+
         self._event_buffer.append(event)
         return True
 
     def get_buffered_events(self, clear: bool = True) -> List[Dict[str, Any]]:
         """
         Get buffered events for processing.
-        
+
         Args:
             clear: If True, clear buffer after retrieval
-            
+
         Returns:
             List of buffered events
         """
@@ -323,7 +331,7 @@ class BaseAgent(ABC):
     def get_memory_stats(self) -> Dict[str, Any]:
         """
         Get detailed memory usage statistics.
-        
+
         Returns:
             Dictionary with memory statistics
         """
@@ -332,7 +340,8 @@ class BaseAgent(ABC):
                 "current": len(self.reasoning_history),
                 "max": self._max_reasoning_history,
                 "peak": self._peak_reasoning_size,
-                "utilization": len(self.reasoning_history) / self._max_reasoning_history,
+                "utilization": len(self.reasoning_history)
+                / self._max_reasoning_history,
             },
             "event_buffer": {
                 "current": len(self._event_buffer),

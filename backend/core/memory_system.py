@@ -16,6 +16,7 @@ import numpy as np
 @dataclass
 class VasanaCacheEntry:
     """Entry in the Vasana LRU Cache."""
+
     pattern_hash: str
     pattern: np.ndarray
     action: int
@@ -54,24 +55,24 @@ class MemoryCluster:
 class VasanaCache:
     """
     LRU Cache for Vasana (tendency) patterns.
-    
+
     Provides O(1) lookup for recently queried patterns before
     falling back to FAISS vector search or O(N) linear scan.
-    
+
     Philosophy:
     Vasana = habitual tendency, latent impression. The cache
     stores the most frequently accessed tendencies for rapid recall.
-    
+
     Performance:
     - Lookup: O(1) via dict + OrderedDict
     - Similarity check: < 10μs for cache hits
     - Max size: 1000 entries (configurable)
     """
-    
+
     def __init__(self, maxsize: int = 1000, similarity_threshold: float = 0.98):
         """
         Initialize Vasana Cache.
-        
+
         Args:
             maxsize: Maximum number of entries in cache
             similarity_threshold: Min cosine similarity for cache hit (0.98 = very similar)
@@ -86,13 +87,13 @@ class VasanaCache:
             "evictions": 0,
             "insertions": 0,
         }
-    
+
     def _hash_pattern(self, pattern: np.ndarray) -> str:
         """Create deterministic hash for pattern."""
         # Round to reduce sensitivity to tiny floating point differences
         rounded = np.round(pattern, decimals=6)
         return hashlib.md5(rounded.tobytes()).hexdigest()
-    
+
     def _cosine_similarity(self, a: np.ndarray, b: np.ndarray) -> float:
         """Calculate cosine similarity between two vectors."""
         norm_a = np.linalg.norm(a)
@@ -100,21 +101,21 @@ class VasanaCache:
         if norm_a < 1e-10 or norm_b < 1e-10:
             return 0.0
         return float(np.dot(a, b) / (norm_a * norm_b))
-    
+
     def get(self, pattern: np.ndarray) -> Optional[Tuple[int, float]]:
         """
         Query cache for similar pattern.
-        
+
         Args:
             pattern: Input pattern to match
-            
+
         Returns:
             Tuple of (action, confidence) if cache hit, None otherwise
-            
+
         Performance: O(1) for exact hash, O(k) for k similar patterns
         """
         pattern_hash = self._hash_pattern(pattern)
-        
+
         # O(1) exact hash lookup
         if pattern_hash in self._cache:
             entry = self._cache[pattern_hash]
@@ -123,7 +124,7 @@ class VasanaCache:
             entry.access_count += 1
             self._stats["hits"] += 1
             return (entry.action, entry.confidence)
-        
+
         # Check for semantically similar patterns (bounded search)
         # Only check last 100 entries for performance
         for key, entry in list(self._cache.items())[-100:]:
@@ -134,21 +135,21 @@ class VasanaCache:
                 entry.access_count += 1
                 self._stats["hits"] += 1
                 return (entry.action, entry.confidence * sim)
-        
+
         self._stats["misses"] += 1
         return None
-    
+
     def put(self, pattern: np.ndarray, action: int, confidence: float = 1.0) -> None:
         """
         Store pattern-action pair in cache.
-        
+
         Args:
             pattern: Input pattern
             action: Action taken
             confidence: Confidence score (0-1)
         """
         pattern_hash = self._hash_pattern(pattern)
-        
+
         if pattern_hash in self._cache:
             # Update existing entry
             entry = self._cache[pattern_hash]
@@ -165,15 +166,15 @@ class VasanaCache:
                 confidence=confidence,
                 timestamp=time.time(),
             )
-            
+
             # Evict oldest if at capacity
             if len(self._cache) >= self.maxsize:
                 self._cache.popitem(last=False)
                 self._stats["evictions"] += 1
-            
+
             self._cache[pattern_hash] = entry
             self._stats["insertions"] += 1
-    
+
     def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics."""
         total = self._stats["hits"] + self._stats["misses"]
@@ -184,7 +185,7 @@ class VasanaCache:
             "size": len(self._cache),
             "maxsize": self.maxsize,
         }
-    
+
     def clear(self) -> None:
         """Clear all cache entries."""
         self._cache.clear()
@@ -205,7 +206,7 @@ class MemorySystem:
     def __init__(self, capacity: int = 10000, cache_size: int = 1000):
         """
         Initialize memory system.
-        
+
         Args:
             capacity: Maximum number of memories in buffer
             cache_size: Maximum entries in Vasana LRU cache
@@ -214,11 +215,12 @@ class MemorySystem:
         self.memory_buffer: deque[MemoryTrace] = deque(maxlen=capacity)
         self.clusters: List[MemoryCluster] = []
         self.cluster_threshold = 0.7
-        
+
         # Vasana LRU Cache for O(1) pattern lookup
         self.vasana_cache = VasanaCache(maxsize=cache_size)
-        
+
         from backend.core.database import AsyncSessionLocal
+
         self._db_factory = AsyncSessionLocal
 
     async def load_from_db(self):
@@ -339,18 +341,18 @@ class MemorySystem:
     def get_tendency(self, current_perception: Dict[str, Any]) -> Optional[int]:
         """
         Get habitual tendency (Vasana) for current situation.
-        
+
         Uses LRU cache first (O(1)), then falls back to cluster search.
         """
         current_pattern = self._extract_pattern(current_perception)
-        
+
         # 1. Check Vasana Cache first (O(1) lookup, < 10μs)
         cached_result = self.vasana_cache.get(current_pattern)
         if cached_result is not None:
             action, confidence = cached_result
             if confidence > 0.8:  # High confidence cache hit
                 return action
-        
+
         # 2. Fall back to cluster search (O(N) or FAISS)
         closest_cluster = self._find_closest_cluster(current_pattern)
 
@@ -362,7 +364,7 @@ class MemorySystem:
         if not actions:
             return None
         most_common = max(set(actions), key=actions.count)
-        
+
         # 3. Update cache with result for future queries
         confidence = self.get_cluster_quality(closest_cluster)
         self.vasana_cache.put(current_pattern, most_common, confidence)
@@ -449,7 +451,7 @@ class MemorySystem:
                 "avg_outcome": float(np.mean(outcomes)),
                 "win_rate": float(sum(1 for o in outcomes if o > 0) / len(outcomes)),
             }
-        
+
         # Add cache statistics
         base_stats["vasana_cache"] = self.vasana_cache.get_stats()
         return base_stats

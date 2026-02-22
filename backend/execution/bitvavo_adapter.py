@@ -17,14 +17,13 @@ Environment Variables:
 """
 
 import logging
-import os
 from typing import Any, Dict, List, Optional
 
 import ccxt.async_support as ccxt
 
 from backend.core.config.settings import settings
 from backend.core.market_data.circuit_breaker import CircuitBreaker
-from backend.execution._paper_guard import paper_guard, PaperModeViolation
+from backend.execution._paper_guard import paper_guard
 
 logger = logging.getLogger(__name__)
 
@@ -212,8 +211,8 @@ class BitvavoAdapter:
     ) -> Optional[Dict[str, Any]]:
         """
         Create a limit order.
-        
-        🔒 PAPER MODE: Deze methode wordt geblokkeerd door @paper_guard 
+
+        🔒 PAPER MODE: Deze methode wordt geblokkeerd door @paper_guard
         decorator als TRADING_MODE=paper. Gebruik ShadowPortfolioManager
         voor paper trading.
 
@@ -254,8 +253,8 @@ class BitvavoAdapter:
     ) -> Optional[Dict[str, Any]]:
         """
         Create a market order.
-        
-        🔒 PAPER MODE: Deze methode wordt geblokkeerd door @paper_guard 
+
+        🔒 PAPER MODE: Deze methode wordt geblokkeerd door @paper_guard
         decorator als TRADING_MODE=paper. Gebruik ShadowPortfolioManager
         voor paper trading.
         """
@@ -285,7 +284,7 @@ class BitvavoAdapter:
     async def cancel_order(self, order_id: str, symbol: str) -> bool:
         """
         Cancel an existing order.
-        
+
         🔒 PAPER MODE: Geblokkeerd door @paper_guard in paper mode.
         """
         if not self.exchange or not self._check_credentials():
@@ -305,7 +304,7 @@ class BitvavoAdapter:
     ) -> List[Dict[str, Any]]:
         """
         Fetch all open orders.
-        
+
         🔒 PAPER MODE: Geblokkeerd door @paper_guard in paper mode.
         """
         if not self.exchange or not self._check_credentials():

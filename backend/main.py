@@ -15,37 +15,42 @@ from backend.services.cognitive_orchestrator import CognitiveOrchestrator
 _shutdown_event = asyncio.Event()
 _active_services = []
 
+
 async def graceful_shutdown(signal_name: str, logger):
     """
     Enterprise-grade graceful shutdown — sluit alle resources netjes.
     """
     logger.info(f"🔴 Shutdown signaal ontvangen: {signal_name}")
     logger.info("🔄 Start graceful shutdown sequence...")
-    
+
     # 1. Stop accepting new trading cycles
     _shutdown_event.set()
-    
+
     # 2. Stop services in omgekeerde volgorde (Body → Mind → Soul)
     for service_name, service in reversed(_active_services):
         try:
             logger.info(f"  → Stopping {service_name}...")
-            if hasattr(service, 'stop'):
+            if hasattr(service, "stop"):
                 await service.stop()
             logger.info(f"  ✓ {service_name} stopped")
         except Exception as e:
             logger.error(f"  ✗ Error stopping {service_name}: {e}")
-    
+
     # 3. Save any active paper trading session
     try:
-        from backend.services.paper_trading_live import paper_trading_broadcaster
-        await paper_trading_broadcaster.broadcast_session_end({
-            "reason": f"graceful_shutdown:{signal_name}",
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        from backend.services.paper_trading_live import \
+            paper_trading_broadcaster
+
+        await paper_trading_broadcaster.broadcast_session_end(
+            {
+                "reason": f"graceful_shutdown:{signal_name}",
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
         logger.info("  ✓ Session end broadcasted")
     except Exception as e:
         logger.warning(f"  ✗ Could not broadcast session end: {e}")
-    
+
     logger.info("✅ Graceful shutdown complete")
 
 
@@ -53,15 +58,14 @@ def setup_signal_handlers(loop, logger):
     """Setup signal handlers for graceful shutdown."""
     for sig in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(
-            sig,
-            lambda s=sig: asyncio.create_task(graceful_shutdown(s.name, logger))
+            sig, lambda s=sig: asyncio.create_task(graceful_shutdown(s.name, logger))
         )
     logger.info("✓ Signal handlers registered (SIGTERM, SIGINT)")
 
 
 async def start_services():
     import os
-    
+
     # ═══════════════════════════════════════════════════════════════════════
     # ENTERPRISE SAFETY: TRADING_MODE VERIFICATIE
     # ═══════════════════════════════════════════════════════════════════════
@@ -77,7 +81,7 @@ async def start_services():
             f"Refusing to start to prevent any risk of live orders.\n"
             f"{'='*60}\n"
         )
-    
+
     # ═══════════════════════════════════════════════════════════════════════
     # Initialize logging en tracing
     # ═══════════════════════════════════════════════════════════════════════
@@ -87,7 +91,7 @@ async def start_services():
     logger = logging.getLogger("MainApp")
     logger.info("Starting Agentic Trader Platform...")
     logger.info(f"✓ SAFETY CHECK: TRADING_MODE={TRADING_MODE} (verified)")
-    
+
     # Setup signal handlers voor graceful shutdown
     loop = asyncio.get_event_loop()
     setup_signal_handlers(loop, logger)
@@ -187,27 +191,36 @@ async def start_services():
         """Send TIMER_TICK_1MIN to all agents every minute."""
         while True:
             await asyncio.sleep(60)  # Every minute
-            
+
             # Get current market data for context
             from backend.core.cache_layer import get_cache
+
             cache = get_cache()
             market_data = await cache.get("markets:all") or []
-            
+
             # Calculate top movers for payload
             if market_data:
-                sorted_markets = sorted(market_data, key=lambda x: x.get("change_24h", 0), reverse=True)
+                sorted_markets = sorted(
+                    market_data, key=lambda x: x.get("change_24h", 0), reverse=True
+                )
                 top_gainers = sorted_markets[:3]
                 top_losers = sorted_markets[-3:]
-                
+
                 payload = {
-                    "top_gainers": [{"symbol": m["symbol"], "change": m["change_24h"]} for m in top_gainers],
-                    "top_losers": [{"symbol": m["symbol"], "change": m["change_24h"]} for m in top_losers],
+                    "top_gainers": [
+                        {"symbol": m["symbol"], "change": m["change_24h"]}
+                        for m in top_gainers
+                    ],
+                    "top_losers": [
+                        {"symbol": m["symbol"], "change": m["change_24h"]}
+                        for m in top_losers
+                    ],
                     "market_count": len(market_data),
                     "timestamp": datetime.now().isoformat(),
                 }
             else:
                 payload = {}
-            
+
             # Send tick to all agents
             for agent_id in orchestrator.agents.keys():
                 if agent_id != "orchestrator_v1":  # Don't send to self
@@ -222,12 +235,14 @@ async def start_services():
                         )
                     except Exception as e:
                         logger.warning(f"Failed to send timer tick to {agent_id}: {e}")
-            
-            logger.debug(f"TIMER_TICK_1MIN sent to {len(orchestrator.agents) - 1} agents")
+
+            logger.debug(
+                f"TIMER_TICK_1MIN sent to {len(orchestrator.agents) - 1} agents"
+            )
 
     # Start timer loop as background task
     timer_task = asyncio.create_task(timer_loop())
-    
+
     # Send initial tick immediately
     for agent_id in orchestrator.agents.keys():
         if agent_id != "orchestrator_v1":

@@ -13,7 +13,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Callable, Dict, List, Optional
 
@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class AdvancedOrderStatus(Enum):
     """Status of advanced order execution."""
+
     PENDING = "pending"
     ACTIVE = "active"
     PARTIAL = "partial"
@@ -36,6 +37,7 @@ class AdvancedOrderStatus(Enum):
 @dataclass
 class IcebergConfig:
     """Configuration for Iceberg order."""
+
     total_quantity: float
     visible_quantity: float
     min_fill_quantity: Optional[float] = None
@@ -44,6 +46,7 @@ class IcebergConfig:
 @dataclass
 class TWAPConfig:
     """Configuration for TWAP order."""
+
     total_quantity: float
     num_slices: int = 10
     duration_seconds: int = 300  # 5 minutes
@@ -53,6 +56,7 @@ class TWAPConfig:
 @dataclass
 class StopLimitConfig:
     """Configuration for Stop-Limit order."""
+
     stop_price: float
     limit_price: float
     quantity: float
@@ -95,7 +99,7 @@ class AdvancedOrderExecutor(ABC):
 class IcebergExecutor(AdvancedOrderExecutor):
     """
     Iceberg order executor.
-    
+
     Breaks large orders into smaller visible chunks.
     Only shows small portion of order at a time to minimize market impact.
     """
@@ -117,7 +121,7 @@ class IcebergExecutor(AdvancedOrderExecutor):
     async def execute(self) -> List[OrderResult]:
         """
         Execute iceberg order.
-        
+
         Slices large order into visible chunks and executes sequentially.
         """
         self.status = AdvancedOrderStatus.ACTIVE
@@ -132,7 +136,7 @@ class IcebergExecutor(AdvancedOrderExecutor):
         while remaining > 0 and not self._cancelled:
             # Calculate next chunk size
             chunk_size = min(visible, remaining)
-            
+
             # Submit visible portion
             order = OrderRequest(
                 symbol=self.symbol,
@@ -177,7 +181,7 @@ class IcebergExecutor(AdvancedOrderExecutor):
 class TWAPExecutor(AdvancedOrderExecutor):
     """
     TWAP (Time-Weighted Average Price) executor.
-    
+
     Executes order evenly distributed over time to achieve
     time-weighted average price.
     """
@@ -200,12 +204,12 @@ class TWAPExecutor(AdvancedOrderExecutor):
     async def execute(self) -> List[OrderResult]:
         """
         Execute TWAP order.
-        
+
         Divides order into time slices and executes at regular intervals.
         """
         self.status = AdvancedOrderStatus.ACTIVE
         self._start_time = datetime.now(timezone.utc)
-        
+
         slice_quantity = self.config.total_quantity / self.config.num_slices
         interval = self.config.duration_seconds / self.config.num_slices
 
@@ -222,6 +226,7 @@ class TWAPExecutor(AdvancedOrderExecutor):
             sleep_time = interval
             if self.config.randomize:
                 import random
+
                 sleep_time *= random.uniform(0.8, 1.2)
 
             # Wait before executing slice (except first)
@@ -269,7 +274,7 @@ class TWAPExecutor(AdvancedOrderExecutor):
 class StopLimitExecutor(AdvancedOrderExecutor):
     """
     Stop-Limit order executor.
-    
+
     Monitors price and triggers limit order when stop price is reached.
     Optional trailing stop functionality.
     """
@@ -293,7 +298,7 @@ class StopLimitExecutor(AdvancedOrderExecutor):
     async def execute(self) -> List[OrderResult]:
         """
         Execute stop-limit order.
-        
+
         Monitors price until stop trigger, then submits limit order.
         """
         self.status = AdvancedOrderStatus.ACTIVE
@@ -389,7 +394,7 @@ class StopLimitExecutor(AdvancedOrderExecutor):
 class AdvancedOrderManager:
     """
     Manager for advanced order execution.
-    
+
     Handles lifecycle of iceberg, TWAP, and stop-limit orders.
     """
 
