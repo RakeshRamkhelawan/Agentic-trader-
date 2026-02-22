@@ -1,9 +1,13 @@
 import asyncio
 import logging
+import os
 import time
+import uuid
 from typing import Optional
 
 from backend.core.zero_copy_bridge import TradingIntent, ZeroCopyBridge
+from backend.execution.shadow_portfolio import ShadowPortfolioManager
+from backend.schemas.orders import OrderRequest, OrderSide, OrderStatus
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +25,8 @@ class ReflexExecutor:
         self,
         shm_name: str = "trading_intents_v2",
         market_shm_name: str = "market_data_v2",
+        trading_mode: str = "paper",
+        initial_capital: float = 10000.0,
     ):
         self.shm_name = shm_name
         self.market_shm_name = market_shm_name
@@ -28,6 +34,21 @@ class ReflexExecutor:
         self.market_bridge: Optional[ZeroCopyBridge] = None
         self.running = False
         self._task: Optional[asyncio.Task] = None
+
+        # 🔒 PAPER MODE: ALTIJD hardcoded op "paper" voor veiligheid
+        # Dit kan alleen worden overschreven via expliciete environment variable in live deployments
+        env_mode = os.getenv("TRADING_MODE", "paper")
+        self.trading_mode = trading_mode if trading_mode == env_mode else env_mode
+
+        if self.trading_mode == "paper":
+            # Paper mode: gebruik ShadowPortfolioManager voor simulatie
+            self.portfolio = ShadowPortfolioManager(initial_cash=initial_capital)
+            logger.info(
+                "🛡️ ReflexExecutor in PAPER MODE - Simulatie met ShadowPortfolio"
+            )
+        else:
+            self.portfolio = None
+            logger.critical("⚠️ ReflexExecutor in LIVE MODE - Echte orders mogelijk!")
 
         # Metrics
         from backend.core.telemetry.metrics import PrometheusMetrics
@@ -114,12 +135,73 @@ class ReflexExecutor:
 
         return intent
 
+    async def _execute_paper_order(self, intent: TradingIntent) -> Optional[dict]:
+        """
+        Execute order in PAPER mode - simuleert fill zonder echte exchange call.
+        Dit is de ENIGE toegestane executie methode in paper mode.
+        """
+        if not self.portfolio:
+            logger.error("Geen portfolio manager beschikbaar")
+            return None
+
+        # Update portfolio met huidige marktprijs
+        if self.market_bridge:
+            market_data = self.market_bridge.read_market_data(intent.symbol)
+            if market_data:
+                self.portfolio.update_price(intent.symbol, market_data["last"])
+
+        # Maak order request
+        side = OrderSide.BUY if intent.action == 1 else OrderSide.SELL
+        order = OrderRequest(
+            symbol=intent.symbol,
+            side=side,
+            qty=abs(intent.size),
+            order_type="market",
+            client_order_id=str(uuid.uuid4()),
+        )
+
+        # Simuleer slippage: 0.02-0.05% van prijs
+        slippage_pct = 0.02 + (hash(intent.symbol) % 30) / 1000  # 0.02-0.05%
+
+        # Voer order uit in portfolio
+        result = await self.portfolio.submit_order(order)
+
+        if result.status == OrderStatus.FILLED:
+            fill_info = {
+                "symbol": intent.symbol,
+                "side": side.value,
+                "qty": result.filled_qty,
+                "price": result.avg_price,
+                "slippage_pct": slippage_pct,
+                "order_id": str(result.order_id),
+                "simulated": True,
+            }
+            logger.info(
+                f"[PAPER FILL] {side.value} {intent.size} {intent.symbol} @ {result.avg_price:.2f}"
+            )
+            return fill_info
+        else:
+            logger.warning(
+                f"[PAPER REJECTED] {side.value} {intent.symbol}: {result.error_message}"
+            )
+            return None
+
     async def _reflex_loop(self):
         """
         High-frequency poll loop.
         In a real HFT system, this might be a busy-wait C++ extension.
         In Python async, we do our best with 1ms sleep or 0 sleep.
         """
+        # 🔒 KRITISCHE PAPER MODE GUARD
+        if self.trading_mode != "paper":
+            logger.critical("🚫 REFLEX EXECUTOR BLOCKED: Niet in paper mode!")
+            logger.critical(
+                "   Dit systeem is alleen geconfigureerd voor paper trading."
+            )
+            # In een live systeem zou je hier de live executie starten
+            # Voor nu: alleen loggen en stoppen
+            return
+
         symbol = "BTC/USD"  # Monitoring this symbol
 
         while self.running:
@@ -132,9 +214,7 @@ class ReflexExecutor:
 
                     if intent.action != 0:
                         # 2. Check Execution Triggers (Price, etc.)
-                        # For Phase 1, we just LOG that we received a signal
                         action_str = "BUY" if intent.action == 1 else "SELL"
-                        # Recalculate latency for logging purposes if needed, or pass from read_intent
                         latency_ns = time.time_ns() - intent.timestamp_ns
                         latency_ms = latency_ns / 1_000_000
                         latency_sec = latency_ns / 1_000_000_000
@@ -147,7 +227,15 @@ class ReflexExecutor:
                             f"[REFLEX] EXECUTE {action_str} {symbol} Size={intent.size} (Latency={latency_ms:.2f}ms)"
                         )
 
-                        # EXECUTE ORDER HERE (API Call)
+                        # 🔒 ALTIJD paper mode executie - GEEN echte exchange calls
+                        if self.trading_mode == "paper":
+                            fill = await self._execute_paper_order(intent)
+                            if fill:
+                                # Hier zou je ook kunnen broadcasten via WebSocket
+                                pass
+                        else:
+                            # Dit zou nooit mogen gebeuren vanwege de guard bovenaan
+                            logger.critical("🚫 LIVE MODE EXECUTION BLOCKED!")
 
                     # else: HOLD/WATCH - efficient no-op
 
