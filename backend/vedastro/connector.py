@@ -5,10 +5,15 @@ Provides high-performance Vedic astrology calculations using:
 1. Direct C# interop via pythonnet (10x faster)
 2. HTTP fallback for containerized deployments
 3. Aggressive caching for immutable Kundli data
+
+NOTE: To use C# mode, place VedAstro.Library.dll in the libs/ directory.
+The HTTP fallback mode works without any C# dependencies.
 """
 
 import asyncio
 import logging
+import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
@@ -103,9 +108,22 @@ class VedAstroConnector:
         try:
             import clr
 
-            clr.AddReference(self.config.dll_path)
+            # Add libs directory to sys.path for DLL resolution
+            dll_dir = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "../../libs")
+            )
+            if dll_dir not in sys.path:
+                sys.path.append(dll_dir)
+                logger.debug(f"Added {dll_dir} to sys.path")
 
-            from VedAstro import Calculate, GeoLocation, PlanetName, Time
+            # Try to load the DLL
+            try:
+                clr.AddReference("VedAstro.Library")
+                from VedAstro.Library import Calculate, GeoLocation, PlanetName, Time
+            except:
+                # Fallback: try without .Library suffix
+                clr.AddReference("VedAstro")
+                from VedAstro import Calculate, GeoLocation, PlanetName, Time
 
             self._csharp_calculator = Calculate
             self._csharp_types = {
