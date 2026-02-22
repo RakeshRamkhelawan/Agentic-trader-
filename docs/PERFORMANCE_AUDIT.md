@@ -217,5 +217,5 @@ Run `node scripts/performance-audit.js` after building to see:
 
 ---
 
-*Last Updated*: 2026-02-22  
+*Last Updated*: 2026-02-22
 *Tool Version*: Lighthouse 12.0+
