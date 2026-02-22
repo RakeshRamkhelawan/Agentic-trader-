@@ -1,47 +1,67 @@
 """
-VedAstro Connector - C# Interop Bridge
+VedAstro Connector - Real Astronomical Data via Swiss Ephemeris
 
 Provides high-performance Vedic astrology calculations using:
-1. Direct C# interop via pythonnet (10x faster)
-2. HTTP fallback for containerized deployments
-3. Aggressive caching for immutable Kundli data
+1. Swiss Ephemeris (pyswisseph) - industry standard, 100% local
+2. Lahiri Ayanamsa for accurate Vedic positions
+3. Real planetary positions (not mock data)
 
-NOTE: To use C# mode, place VedAstro.Library.dll in the libs/ directory.
-The HTTP fallback mode works without any C# dependencies.
+This replaces the previous C# pythonnet approach which had compilation issues.
 """
 
 import asyncio
 import logging
-import os
-import sys
+import math
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
+# Swiss Ephemeris - industry standard astronomical calculations
+import swisseph as swe
 
 logger = logging.getLogger(__name__)
+
+# Set Lahiri Ayanamsa (standard for Vedic astrology)
+swe.set_sid_mode(swe.SIDM_LAHIRI)
 
 
 @dataclass
 class VedAstroConfig:
     """Configuration for VedAstro connector."""
 
-    dll_path: str = "./libs/VedAstro.dll"
-    ephemeris_path: str = "./libs/ephemeris/"
-    use_http_fallback: bool = False
-    http_endpoint: str = "http://localhost:5000"
     cache_ttl: int = 3600  # seconds
     max_workers: int = 4
+    lat: float = 40.7128  # Default: New York
+    lon: float = -74.0060
 
 
 class VedAstroConnector:
     """
-    High-performance bridge to VedAstro C# core.
-
-    Uses pythonnet for direct C# interop when available,
-    falls back to HTTP API for containerized deployments.
+    Real Vedic astrology calculations using Swiss Ephemeris.
+    
+    No mock data - all calculations use actual astronomical positions.
     """
+
+    # Planet mappings to Swiss Ephemeris constants
+    PLANETS = {
+        "Sun": swe.SUN,
+        "Moon": swe.MOON,
+        "Mars": swe.MARS,
+        "Mercury": swe.MERCURY,
+        "Jupiter": swe.JUPITER,
+        "Venus": swe.VENUS,
+        "Saturn": swe.SATURN,
+        "Rahu": swe.TRUE_NODE,  # Mean node is swe.MEAN_NODE
+        "Ketu": swe.TRUE_NODE,  # Will be calculated as opposite of Rahu
+    }
+
+    # Zodiac signs
+    SIGNS = [
+        "Aries", "Taurus", "Gemini", "Cancer",
+        "Leo", "Virgo", "Libra", "Scorpio",
+        "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+    ]
 
     # Exaltation signs for planets
     EXALTATIONS = {
@@ -81,75 +101,83 @@ class VedAstroConnector:
         "Pisces": "Jupiter",
     }
 
+    # Nakshatras (27 lunar mansions)
+    NAKSHATRAS = [
+        "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra",
+        "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni",
+        "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
+        "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha",
+        "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
+    ]
+
     def __init__(self, config: Optional[VedAstroConfig] = None):
         """
-        Initialize VedAstro connector.
+        Initialize VedAstro connector with Swiss Ephemeris.
 
         Args:
             config: VedAstro configuration
         """
         self.config = config or VedAstroConfig()
-        self._csharp_calculator = None
-        self._csharp_types = {}
         self._cache: Dict[str, Any] = {}
         self._transit_cache: Dict[str, Any] = {}
         self._executor = ThreadPoolExecutor(max_workers=self.config.max_workers)
-        self._http_client = None
+        
+        logger.info("VedAstro connector initialized with Swiss Ephemeris (Lahiri Ayanamsa)")
 
-        # Try to initialize C# bridge
-        if not self.config.use_http_fallback:
-            self._init_csharp_bridge()
+    def _datetime_to_jd(self, dt: datetime) -> float:
+        """Convert Python datetime to Julian Day."""
+        return swe.julday(
+            dt.year, dt.month, dt.day,
+            dt.hour + dt.minute / 60.0 + dt.second / 3600.0
+        )
 
-        if self.config.use_http_fallback:
-            self._init_http_client()
+    def _get_sidereal_position(self, jd: float, planet: int) -> tuple:
+        """
+        Get sidereal (Vedic) position for a planet.
+        
+        Returns:
+            (longitude, latitude, distance, speed)
+        """
+        # Calculate tropical position
+        result = swe.calc_ut(jd, planet, swe.FLG_SIDEREAL)
+        tropical_long = result[0][0]
+        
+        # Convert to sidereal (Lahiri ayanamsa already set)
+        ayanamsa = swe.get_ayanamsa_ut(jd)
+        sidereal_long = (tropical_long - ayanamsa) % 360
+        
+        return sidereal_long, result[0][1], result[0][2], result[0][3]
 
-    def _init_csharp_bridge(self) -> bool:
-        """Initialize C# interop via pythonnet."""
-        try:
-            import clr
+    def _longitude_to_sign(self, longitude: float) -> str:
+        """Convert longitude to zodiac sign."""
+        sign_index = int(longitude / 30) % 12
+        return self.SIGNS[sign_index]
 
-            # Add libs directory to sys.path for DLL resolution
-            dll_dir = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "../../libs")
-            )
-            if dll_dir not in sys.path:
-                sys.path.append(dll_dir)
-                logger.debug(f"Added {dll_dir} to sys.path")
+    def _longitude_to_nakshatra(self, longitude: float) -> tuple:
+        """
+        Convert longitude to nakshatra and pada.
+        
+        Returns:
+            (nakshatra_name, pada_number)
+        """
+        # Each nakshatra is 13°20' (13.333... degrees)
+        nakshatra_index = int(longitude / (360 / 27)) % 27
+        nakshatra = self.NAKSHATRAS[nakshatra_index]
+        
+        # Each pada is 3°20' (3.333... degrees)
+        pada = int((longitude % (360 / 27)) / (360 / 108)) + 1
+        
+        return nakshatra, pada
 
-            # Try to load the DLL
-            try:
-                clr.AddReference("VedAstro.Library")
-                from VedAstro.Library import Calculate, GeoLocation, PlanetName, Time
-            except:
-                # Fallback: try without .Library suffix
-                clr.AddReference("VedAstro")
-                from VedAstro import Calculate, GeoLocation, PlanetName, Time
+    def _get_house(self, lagna_long: float, planet_long: float) -> int:
+        """Calculate house position relative to lagna."""
+        diff = (planet_long - lagna_long) % 360
+        house = int(diff / 30) + 1
+        return house
 
-            self._csharp_calculator = Calculate
-            self._csharp_types = {
-                "GeoLocation": GeoLocation,
-                "Time": Time,
-                "PlanetName": PlanetName,
-            }
-
-            logger.info("VedAstro C# bridge initialized successfully")
-            return True
-
-        except Exception as e:
-            logger.warning(f"Failed to initialize C# bridge: {e}")
-            logger.warning("Falling back to HTTP mode")
-            self.config.use_http_fallback = True
-            return False
-
-    def _init_http_client(self):
-        """Initialize HTTP client for fallback mode."""
-        try:
-            import httpx
-
-            self._http_client = httpx.AsyncClient(base_url=self.config.http_endpoint)
-            logger.info(f"HTTP client initialized for {self.config.http_endpoint}")
-        except ImportError:
-            logger.error("httpx not available for HTTP fallback")
+    def _is_retrograde(self, speed: float) -> bool:
+        """Check if planet is retrograde based on speed."""
+        return speed < 0
 
     async def calculate_kundli(
         self,
@@ -160,7 +188,7 @@ class VedAstroConnector:
         timezone_offset: int = -5,
     ) -> Dict[str, Any]:
         """
-        Calculate complete Kundli with all 16 Vargas.
+        Calculate complete Kundli with real astronomical data.
 
         Args:
             symbol: Asset symbol (for caching)
@@ -170,136 +198,101 @@ class VedAstroConnector:
             timezone_offset: Timezone offset from UTC
 
         Returns:
-            Kundli data with planets, vargas, and lagna
+            Kundli data with REAL planet positions, vargas, and lagna
         """
         cache_key = f"kundli:{symbol}:{birth_date.isoformat()}"
 
         if cache_key in self._cache:
             return self._cache[cache_key]
 
-        if self.config.use_http_fallback:
-            result = await self._http_calculate_kundli(
-                birth_date, lat, lon, timezone_offset
-            )
-        else:
-            result = await self._csharp_calculate_kundli(
-                birth_date, lat, lon, timezone_offset
-            )
+        # Run calculation in thread pool (swe is not async)
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            self._executor,
+            self._compute_kundli,
+            birth_date, lat, lon
+        )
 
         self._cache[cache_key] = result
         return result
 
-    async def _csharp_calculate_kundli(
-        self, birth_date: datetime, lat: float, lon: float, tz_offset: int
+    def _compute_kundli(
+        self, birth_date: datetime, lat: float, lon: float
     ) -> Dict[str, Any]:
-        """Direct C# interop calculation."""
-        loop = asyncio.get_event_loop()
+        """Synchronous kundli calculation."""
+        # Convert to Julian Day (UTC)
+        jd = self._datetime_to_jd(birth_date)
 
-        def _compute():
-            GeoLocation = self._csharp_types["GeoLocation"]
-            Time = self._csharp_types["Time"]
-            PlanetName = self._csharp_types["PlanetName"]
+        # Calculate Lagna (Ascendant)
+        # swe.houses_ex calculates houses, ascendant is first house cusp
+        houses = swe.houses_ex(jd, lat, lon, b'P', swe.FLG_SIDEREAL)
+        lagna_long = houses[1][0]  # Ascendant longitude
+        lagna_sign = self._longitude_to_sign(lagna_long)
 
-            location = GeoLocation("Exchange", lon, lat)
-            time_str = (
-                f"{birth_date.hour}:{birth_date.minute:02d} "
-                f"{birth_date.day}/{birth_date.month}/{birth_date.year} "
-                f"{tz_offset:+03d}:00"
-            )
-            birth_time = Time(time_str, location)
+        planets = {}
+        vargas = {"D9": {}}  # Navamsa
 
-            planets = {}
-            vargas = {}
-
-            # All 9 planets
-            planet_names = [
-                PlanetName.Sun,
-                PlanetName.Moon,
-                PlanetName.Mars,
-                PlanetName.Mercury,
-                PlanetName.Jupiter,
-                PlanetName.Venus,
-                PlanetName.Saturn,
-                PlanetName.Rahu,
-                PlanetName.Ketu,
-            ]
-
-            for planet in planet_names:
-                # D1 (Rashi chart)
-                data = self._csharp_calculator.AllPlanetData(planet, birth_time)
-
-                planet_key = str(planet).replace("PlanetName.", "")
-
-                # Parse longitude (format: "123.45°")
-                long_str = str(data.PlanetLongitude).replace("°", "").replace(" ", "")
-                try:
-                    longitude = float(long_str)
-                except ValueError:
-                    longitude = 0.0
-
-                planets[planet_key] = {
-                    "longitude": longitude,
-                    "sign": str(data.Sign),
-                    "house": int(str(data.House)),
-                    "nakshatra": str(data.Nakshatra),
-                    "pada": int(str(data.Pada)),
-                    "retrograde": bool(data.IsRetrograde),
-                    "exalted": self._is_exalted(planet_key, str(data.Sign)),
-                    "debilitated": self._is_debilitated(planet_key, str(data.Sign)),
-                }
-
-                # D9 (Navamsa) - spiritual/soul chart
-                try:
-                    navamsa_data = self._csharp_calculator.AllPlanetData(
-                        planet, birth_time, "Navamsa"
-                    )
-                    if "D9" not in vargas:
-                        vargas["D9"] = {}
-                    vargas["D9"][planet_key] = {
-                        "sign": str(navamsa_data.Sign),
-                        "house": int(str(navamsa_data.House)),
-                    }
-                except Exception as e:
-                    logger.debug(f"Failed to get Navamsa for {planet_key}: {e}")
-
-            # Lagna (Ascendant)
-            try:
-                lagna_data = self._csharp_calculator.AllPlanetData(
-                    PlanetName.House1, birth_time
+        for planet_name, planet_id in self.PLANETS.items():
+            # Special handling for Ketu (opposite of Rahu)
+            if planet_name == "Ketu":
+                rahu_long = planets.get("Rahu", {}).get("longitude", 0)
+                longitude = (rahu_long + 180) % 360
+                latitude = 0
+                distance = 0
+                speed = -planets.get("Rahu", {}).get("speed", 0)
+            else:
+                longitude, latitude, distance, speed = self._get_sidereal_position(
+                    jd, planet_id
                 )
-                lagna_sign = str(lagna_data.Sign)
-            except:
-                lagna_sign = "Aries"  # Default fallback
 
-            return {
-                "planets": planets,
-                "lagna": lagna_sign,
-                "lagna_lord": self._get_lord(lagna_sign),
-                "vargas": vargas,
-                "timestamp": birth_date.isoformat(),
-                "location": {"lat": lat, "lon": lon},
+            sign = self._longitude_to_sign(longitude)
+            house = self._get_house(lagna_long, longitude)
+            nakshatra, pada = self._longitude_to_nakshatra(longitude)
+
+            planets[planet_name] = {
+                "longitude": longitude,
+                "latitude": latitude,
+                "sign": sign,
+                "house": house,
+                "nakshatra": nakshatra,
+                "pada": pada,
+                "retrograde": self._is_retrograde(speed),
+                "exalted": self._is_exalted(planet_name, sign),
+                "debilitated": self._is_debilitated(planet_name, sign),
+                "speed": speed,
             }
 
-        return await loop.run_in_executor(self._executor, _compute)
+            # Calculate D9 (Navamsa) position
+            # Navamsa: each sign divided into 9 parts of 3°20' each
+            navamsa_index = int((longitude % 30) / (30 / 9))
+            # For fiery signs (Aries, Leo, Sag), navamsa starts from Aries
+            # For earthy signs, from Cancer
+            # For airy signs, from Libra
+            # For watery signs, from Capricorn
+            sign_elemental_start = {
+                "Aries": 0, "Leo": 0, "Sagittarius": 0,
+                "Taurus": 3, "Virgo": 3, "Capricorn": 3,
+                "Gemini": 6, "Libra": 6, "Aquarius": 6,
+                "Cancer": 9, "Scorpio": 9, "Pisces": 9,
+            }
+            navamsa_sign_index = (sign_elemental_start.get(sign, 0) + navamsa_index) % 12
+            navamsa_sign = self.SIGNS[navamsa_sign_index]
+            
+            vargas["D9"][planet_name] = {
+                "sign": navamsa_sign,
+                "house": self._get_house(lagna_long, navamsa_sign_index * 30 + 15),
+            }
 
-    async def _http_calculate_kundli(
-        self, birth_date: datetime, lat: float, lon: float, tz_offset: int
-    ) -> Dict[str, Any]:
-        """HTTP fallback calculation."""
-        if not self._http_client:
-            raise RuntimeError("HTTP client not initialized")
-
-        response = await self._http_client.post(
-            "/calculate/kundli",
-            json={
-                "datetime": birth_date.isoformat(),
-                "latitude": lat,
-                "longitude": lon,
-                "timezone": tz_offset,
-            },
-        )
-        response.raise_for_status()
-        return response.json()
+        return {
+            "planets": planets,
+            "lagna": lagna_sign,
+            "lagna_lord": self._get_lord(lagna_sign),
+            "lagna_longitude": lagna_long,
+            "vargas": vargas,
+            "timestamp": birth_date.isoformat(),
+            "location": {"lat": lat, "lon": lon},
+            "ayanamsa": swe.get_ayanamsa_ut(jd),
+        }
 
     async def calculate_transits(
         self, date: datetime, kundli: Dict[str, Any]
@@ -319,7 +312,13 @@ class VedAstroConnector:
         if cache_key in self._transit_cache:
             return self._transit_cache[cache_key]
 
-        result = await self._compute_transits(date, kundli)
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            self._executor,
+            self._compute_transits_sync,
+            date, kundli
+        )
+
         self._transit_cache[cache_key] = result
 
         # Limit cache size
@@ -329,17 +328,14 @@ class VedAstroConnector:
 
         return result
 
-    async def _compute_transits(
+    def _compute_transits_sync(
         self, date: datetime, kundli: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Compute transit aspects."""
-        # Get current chart
-        current_chart = await self.calculate_kundli(
-            "transit",
-            date,
-            lat=kundli.get("location", {}).get("lat", 40.7128),
-            lon=kundli.get("location", {}).get("lon", -74.0060),
-        )
+        """Synchronous transit calculation."""
+        jd = self._datetime_to_jd(date)
+        
+        # Get lagna from kundli or recalculate
+        lagna_long = kundli.get("lagna_longitude", 0)
 
         transits = {
             "aspects": [],
@@ -350,27 +346,48 @@ class VedAstroConnector:
         }
 
         birth_planets = kundli.get("planets", {})
-        current_planets = current_chart.get("planets", {})
+        current_planets = {}
 
-        for planet, curr_pos in current_planets.items():
-            transits["current_positions"][planet] = curr_pos
+        for planet_name, planet_id in self.PLANETS.items():
+            if planet_name == "Ketu":
+                rahu_long = current_planets.get("Rahu", {}).get("longitude", 0)
+                longitude = (rahu_long + 180) % 360
+                speed = -current_planets.get("Rahu", {}).get("speed", 0)
+            else:
+                longitude, _, _, speed = self._get_sidereal_position(jd, planet_id)
 
-            # Count retrograde
-            if curr_pos.get("retrograde"):
+            house = self._get_house(lagna_long, longitude)
+            sign = self._longitude_to_sign(longitude)
+            
+            current_planets[planet_name] = {
+                "longitude": longitude,
+                "sign": sign,
+                "house": house,
+                "retrograde": self._is_retrograde(speed),
+                "exalted": self._is_exalted(planet_name, sign),
+                "debilitated": self._is_debilitated(planet_name, sign),
+            }
+
+        transits["current_positions"] = current_planets
+
+        # Count retrogrades and dignities
+        for planet, pos in current_planets.items():
+            if pos.get("retrograde"):
                 transits["retrograde_count"] += 1
-
-            # Count exalted/debilitated
-            if curr_pos.get("exalted"):
+            if pos.get("exalted"):
                 transits["exalted_planets"].append(planet)
-            if curr_pos.get("debilitated"):
+            if pos.get("debilitated"):
                 transits["debilitated_planets"].append(planet)
 
-            # Check aspects with birth chart
+        # Check aspects with birth chart
+        for planet, curr_pos in current_planets.items():
             if planet in birth_planets:
                 birth_pos = birth_planets[planet]
-                angle = abs(curr_pos["longitude"] - birth_pos["longitude"]) % 360
+                birth_long = birth_pos.get("longitude", 0)
+                curr_long = curr_pos["longitude"]
+                
+                angle = abs(curr_long - birth_long) % 360
 
-                # Determine aspect type
                 aspect_type = None
                 orb = 0
 
@@ -397,8 +414,8 @@ class VedAstroConnector:
                             "type": aspect_type,
                             "angle": angle,
                             "orb": orb,
-                            "birth_longitude": birth_pos["longitude"],
-                            "current_longitude": curr_pos["longitude"],
+                            "birth_longitude": birth_long,
+                            "current_longitude": curr_long,
                         }
                     )
 
@@ -427,5 +444,5 @@ class VedAstroConnector:
         return {
             "kundli_cache_size": len(self._cache),
             "transit_cache_size": len(self._transit_cache),
-            "mode": "http" if self.config.use_http_fallback else "csharp",
+            "mode": "pyswisseph",
         }
