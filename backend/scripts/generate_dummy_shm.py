@@ -14,24 +14,24 @@ def run_generator():
     # 1. Create Market Data Writer
     try:
         market_bridge = ZeroCopyBridge(
-            create=True, shm_name="market_data", dtype_name="market", max_symbols=100
+            create=True, shm_name="market_data_v2", dtype_name="market", max_symbols=100
         )
-        print("[OK] Created 'market_data' SHM", flush=True)
+        print("[OK] Created 'market_data_v2' SHM", flush=True)
     except Exception as e:
-        print(f"[ERR] Failed to create 'market_data': {e}", flush=True)
+        print(f"[ERR] Failed to create 'market_data_v2': {e}", flush=True)
         return
 
     # 2. Create Trading Intent Writer
     try:
         intent_bridge = ZeroCopyBridge(
             create=True,
-            shm_name="trading_intents",
+            shm_name="trading_intents_v2",
             dtype_name="intent",
             max_symbols=100,
         )
-        print("[OK] Created 'trading_intents' SHM", flush=True)
+        print("[OK] Created 'trading_intents_v2' SHM", flush=True)
     except Exception as e:
-        print(f"[ERR] Failed to create 'trading_intents': {e}", flush=True)
+        print(f"[ERR] Failed to create 'trading_intents_v2': {e}", flush=True)
         market_bridge.close()
         return
 

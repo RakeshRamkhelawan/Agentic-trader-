@@ -14270,5 +14270,55 @@
       "price": 0.00035679,
       "value": 9.154843757693142e-49
     }
+  ],
+  "audit_intercepts": [
+    {
+      "event": "paper_guard_intercept",
+      "function": "test_paper_mode_safety.TestPaperModeAbsoluteGuarantee.test_paper_guard_blocks_decorated_function.<locals>.fake_exchange_call",
+      "trading_mode": "paper",
+      "timestamp": "2026-02-20T12:56:47.056007+00:00",
+      "intercepted": true,
+      "session_id": null,
+      "intent": {
+        "symbol": "BTC/EUR",
+        "qty": 0.001
+      }
+    },
+    {
+      "event": "paper_guard_intercept",
+      "function": "test_paper_mode_safety.TestPaperModeAbsoluteGuarantee.test_paper_guard_blocks_decorated_function.<locals>.fake_exchange_call",
+      "trading_mode": "paper",
+      "timestamp": "2026-02-20T12:57:36.308209+00:00",
+      "intercepted": true,
+      "session_id": null,
+      "intent": {
+        "symbol": "BTC/EUR",
+        "qty": 0.001
+      }
+    },
+    {
+      "event": "paper_guard_intercept",
+      "function": "test_paper_mode_safety.TestPaperModeAbsoluteGuarantee.test_paper_guard_blocks_decorated_function.<locals>.fake_exchange_call",
+      "trading_mode": "paper",
+      "timestamp": "2026-02-20T12:58:06.652237+00:00",
+      "intercepted": true,
+      "session_id": null,
+      "intent": {
+        "symbol": "BTC/EUR",
+        "qty": 0.001
+      }
+    },
+    {
+      "event": "paper_guard_intercept",
+      "function": "test_paper_mode_safety.TestPaperModeAbsoluteGuarantee.test_paper_guard_blocks_decorated_function.<locals>.fake_exchange_call",
+      "trading_mode": "paper",
+      "timestamp": "2026-02-20T13:07:58.311586+00:00",
+      "intercepted": true,
+      "session_id": null,
+      "intent": {
+        "symbol": "BTC/EUR",
+        "qty": 0.001
+      }
+    }
   ]
 }
