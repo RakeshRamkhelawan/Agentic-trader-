@@ -27,11 +27,11 @@ async def handle_websocket_connection(websocket: WebSocket, token: Optional[str]
     """
     # Generate connection ID
     connection_id = str(uuid.uuid4())
-    
+
     # Use demo credentials for now (in production, validate token)
     tenant_id = "demo-tenant"
     account_id = "demo-account"
-    
+
     # TODO: In production, validate JWT token here
     # if token:
     #     from backend.security.jwt_handler import JWTHandler
@@ -39,7 +39,7 @@ async def handle_websocket_connection(websocket: WebSocket, token: Optional[str]
     #     payload = handler.verify_token(token)
     #     tenant_id = payload.get("tenant_id")
     #     account_id = payload.get("account_id")
-    
+
     try:
         # Accept connection
         await ws_manager.connect(
@@ -48,7 +48,7 @@ async def handle_websocket_connection(websocket: WebSocket, token: Optional[str]
             tenant_id=tenant_id,
             account_id=account_id,
         )
-        
+
         logger.info(f"WebSocket connected: {connection_id}")
 
         # Message handling loop
@@ -56,7 +56,7 @@ async def handle_websocket_connection(websocket: WebSocket, token: Optional[str]
             try:
                 # Receive message with timeout for heartbeat
                 data = await asyncio.wait_for(
-                    websocket.receive_json(), 
+                    websocket.receive_json(),
                     timeout=60.0
                 )
 

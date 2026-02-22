@@ -20,25 +20,25 @@ import argparse
 async def test_websocket(url: str, token: str = None):
     """Test WebSocket connection."""
     print(f"Connecting to: {url}")
-    
+
     try:
         # Build URL with token if provided
         full_url = url
         if token:
             full_url = f"{url}?token={token}"
-        
+
         async with websockets.connect(full_url) as websocket:
             print("[PASS] Connected successfully")
-            
+
             # Wait for connection confirmation
             try:
                 message = await asyncio.wait_for(websocket.recv(), timeout=5.0)
                 data = json.loads(message)
                 print(f"[INFO] Server response: {data.get('type', 'unknown')}")
-                
+
                 if data.get('type') == 'connected':
                     print(f"[INFO] Connection ID: {data.get('connection_id', 'N/A')[:8]}...")
-                
+
                 # Subscribe to a channel
                 subscribe_msg = {
                     "type": "subscribe",
@@ -46,7 +46,7 @@ async def test_websocket(url: str, token: str = None):
                 }
                 await websocket.send(json.dumps(subscribe_msg))
                 print("[INFO] Subscribed to ticker.BTC-EUR")
-                
+
                 # Wait for messages
                 print("[INFO] Waiting for messages (5 seconds)...")
                 for _ in range(5):
@@ -56,7 +56,7 @@ async def test_websocket(url: str, token: str = None):
                         print(f"[DATA] {data.get('type', 'message')}: {data.get('channel', '')}")
                     except asyncio.TimeoutError:
                         print("[INFO] No message received (timeout)")
-                        
+
                 # Unsubscribe
                 unsubscribe_msg = {
                     "type": "unsubscribe",
@@ -64,18 +64,18 @@ async def test_websocket(url: str, token: str = None):
                 }
                 await websocket.send(json.dumps(unsubscribe_msg))
                 print("[INFO] Unsubscribed")
-                
+
                 # Send ping
                 await websocket.send(json.dumps({"type": "ping"}))
                 pong = await asyncio.wait_for(websocket.recv(), timeout=2.0)
                 print(f"[INFO] Ping/Pong: {pong}")
-                
+
             except asyncio.TimeoutError:
                 print("[WARN] Timeout waiting for server message")
-            
+
             print("[PASS] WebSocket test completed successfully")
             return True
-            
+
     except websockets.exceptions.InvalidStatusCode as e:
         print(f"[FAIL] Connection failed with status {e.status_code}")
         if e.status_code == 403:
@@ -91,20 +91,20 @@ def main():
     parser.add_argument("--url", default="ws://localhost:8000/ws", help="WebSocket URL")
     parser.add_argument("--public", action="store_true", help="Use public endpoint")
     parser.add_argument("--token", help="JWT token for authentication")
-    
+
     args = parser.parse_args()
-    
+
     # Use public endpoint if requested
     url = args.url
     if args.public:
         url = url.replace("/ws", "/ws/public")
         print("Using public endpoint (no auth required)")
-    
+
     print("=" * 60)
     print("WebSocket Connection Test")
     print("=" * 60)
     print()
-    
+
     try:
         success = asyncio.run(test_websocket(url, args.token))
         sys.exit(0 if success else 1)
