@@ -133,17 +133,22 @@ class CCXTAdapter(ExecutionInterface):
         """Submit an order to the exchange."""
         # 🔒 PAPER MODE GUARD - KRITISCH: NOOIT echte orders in paper mode
         import os
+
         trading_mode = os.getenv("TRADING_MODE", "paper")
         if trading_mode == "paper":
             logger.error("🚫 BLOCKED: CCXT submit_order() aangeroepen in PAPER mode!")
-            logger.error("   Gebruik ShadowPortfolioManager of PaperExchange voor paper trading.")
+            logger.error(
+                "   Gebruik ShadowPortfolioManager of PaperExchange voor paper trading."
+            )
             return OrderResult(
                 order_id="",
-                client_order_id=str(order.client_order_id) if order.client_order_id else "",
+                client_order_id=str(order.client_order_id)
+                if order.client_order_id
+                else "",
                 status=OrderStatus.REJECTED,
                 error_message="Cannot place real orders in PAPER mode. Use paper trading components.",
             )
-        
+
         if not self._exchange:
             return OrderResult(
                 order_id="mock-order-001",
@@ -177,7 +182,9 @@ class CCXTAdapter(ExecutionInterface):
             logger.error(f"Order submission failed: {e}")
             return OrderResult(
                 order_id="",
-                client_order_id=str(order.client_order_id) if order.client_order_id else "",
+                client_order_id=str(order.client_order_id)
+                if order.client_order_id
+                else "",
                 status=OrderStatus.REJECTED,
                 error_message=str(e),
             )
@@ -468,14 +475,16 @@ class CCXTAdapter(ExecutionInterface):
             candles = []
             for i in range(min(limit, 100)):
                 ts = now - (limit - i) * 60
-                candles.append({
-                    "time": ts,
-                    "open": base_price,
-                    "high": base_price * 1.01,
-                    "low": base_price * 0.99,
-                    "close": base_price * (1 + (i % 5 - 2) * 0.001),
-                    "value": 100.0,
-                })
+                candles.append(
+                    {
+                        "time": ts,
+                        "open": base_price,
+                        "high": base_price * 1.01,
+                        "low": base_price * 0.99,
+                        "close": base_price * (1 + (i % 5 - 2) * 0.001),
+                        "value": 100.0,
+                    }
+                )
             return candles
 
         try:
@@ -487,14 +496,16 @@ class CCXTAdapter(ExecutionInterface):
             # CCXT returns list of lists: [timestamp, open, high, low, close, volume]
             candles = []
             for candle in ohlcv:
-                candles.append({
-                    "time": candle[0] // 1000,  # Convert ms to seconds
-                    "open": candle[1],
-                    "high": candle[2],
-                    "low": candle[3],
-                    "close": candle[4],
-                    "value": candle[5],  # Volume
-                })
+                candles.append(
+                    {
+                        "time": candle[0] // 1000,  # Convert ms to seconds
+                        "open": candle[1],
+                        "high": candle[2],
+                        "low": candle[3],
+                        "close": candle[4],
+                        "value": candle[5],  # Volume
+                    }
+                )
             return candles
         except Exception as e:
             logger.error(f"Failed to fetch candles for {symbol}: {e}")

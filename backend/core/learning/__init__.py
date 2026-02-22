@@ -8,8 +8,8 @@ the "alertness" mechanism - detecting when the market has fundamentally
 shifted and old patterns no longer apply.
 """
 
-from backend.core.learning.online_learner import OnlineLearner
 from backend.core.learning.drift_detector import ADWINDriftDetector
+from backend.core.learning.online_learner import OnlineLearner
 from backend.core.learning.strategy_adapter import StrategyWeightAdapter
 
 __all__ = ["OnlineLearner", "ADWINDriftDetector", "StrategyWeightAdapter"]

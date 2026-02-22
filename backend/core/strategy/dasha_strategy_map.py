@@ -24,20 +24,22 @@ logger = logging.getLogger(__name__)
 
 class Graha(Enum):
     """The nine grahas (planets) in Vedic astrology."""
-    SURYA = "Surya"      # Sun - Authority, trend following
+
+    SURYA = "Surya"  # Sun - Authority, trend following
     CHANDRA = "Chandra"  # Moon - Sentiment, mean reversion
     MANGALA = "Mangala"  # Mars - Aggression, momentum breakout
-    BUDHA = "Budha"      # Mercury - Analysis, arbitrage, scalping
-    GURU = "Guru"        # Jupiter - Expansion, long-term growth
-    SHUKRA = "Shukra"    # Venus - Value, dividends, stability
-    SHANI = "Shani"      # Saturn - Discipline, risk management
-    RAHU = "Rahu"        # North Node - Disruption, contrarian
-    KETU = "Ketu"        # South Node - Detachment, exit signals
+    BUDHA = "Budha"  # Mercury - Analysis, arbitrage, scalping
+    GURU = "Guru"  # Jupiter - Expansion, long-term growth
+    SHUKRA = "Shukra"  # Venus - Value, dividends, stability
+    SHANI = "Shani"  # Saturn - Discipline, risk management
+    RAHU = "Rahu"  # North Node - Disruption, contrarian
+    KETU = "Ketu"  # South Node - Detachment, exit signals
 
 
 @dataclass
 class StrategyProfile:
     """Trading strategy profile for a Graha."""
+
     graha: Graha
     strategy_type: str
     time_horizon: str  # "scalping", "day", "swing", "long_term"
@@ -126,7 +128,7 @@ GRAHA_STRATEGIES: Dict[Graha, StrategyProfile] = {
 class DashaStrategySelector:
     """
     Selects trading strategies based on Dasha (planetary period) system.
-    
+
     In Vedic astrology, Dashas are planetary periods that influence
     life events and tendencies. We map these to trading strategies.
     """
@@ -138,13 +140,13 @@ class DashaStrategySelector:
 
     def update_dasha(
         self,
-        maha_dasha: Graha,      # Major period
-        antar_dasha: Graha,     # Sub-period
+        maha_dasha: Graha,  # Major period
+        antar_dasha: Graha,  # Sub-period
         pratyantar_dasha: Graha,  # Sub-sub-period
     ) -> None:
         """
         Update current Dasha periods.
-        
+
         Args:
             maha_dasha: Major planetary period (years)
             antar_dasha: Sub-period (months)
@@ -152,14 +154,14 @@ class DashaStrategySelector:
         """
         # Weight by period level
         self.dasha_weights = {g: 0.0 for g in Graha}
-        
+
         self.dasha_weights[maha_dasha] += 0.6
         self.dasha_weights[antar_dasha] += 0.3
         self.dasha_weights[pratyantar_dasha] += 0.1
-        
+
         # Determine dominant Graha
         self.active_graha = max(self.dasha_weights, key=self.dasha_weights.get)
-        
+
         logger.info(
             f"Dasha updated: Maha={maha_dasha.value}, "
             f"Antar={antar_dasha.value}, "
@@ -171,56 +173,53 @@ class DashaStrategySelector:
         if self.active_graha is None:
             # Default to Budha (Mercury) for analytical trading
             return GRAHA_STRATEGIES[Graha.BUDHA]
-        
+
         return GRAHA_STRATEGIES[self.active_graha]
 
     def get_strategy_blend(self) -> Dict[str, float]:
         """
         Get weighted blend of strategies based on Dasha weights.
-        
+
         Returns:
             Dictionary mapping strategy types to weights
         """
         blend = {}
-        
+
         for graha, weight in self.dasha_weights.items():
             if weight > 0:
                 strategy_type = GRAHA_STRATEGIES[graha].strategy_type
                 blend[strategy_type] = blend.get(strategy_type, 0.0) + weight
-        
+
         # Normalize
         total = sum(blend.values())
         if total > 0:
             blend = {k: v / total for k, v in blend.items()}
-        
+
         return blend
 
     def is_budha_active(self) -> bool:
         """Check if Budha (Mercury) is active - for arbitrage strategies."""
-        return (
-            self.active_graha == Graha.BUDHA or
-            self.dasha_weights[Graha.BUDHA] > 0.3
-        )
+        return self.active_graha == Graha.BUDHA or self.dasha_weights[Graha.BUDHA] > 0.3
 
     def get_arbitrage_confidence(self) -> float:
         """
         Get confidence level for arbitrage strategies.
-        
+
         Returns:
             Confidence based on Budha's influence
         """
         budha_weight = self.dasha_weights.get(Graha.BUDHA, 0.0)
-        
+
         # Scale to 0.5 - 0.95 range
         confidence = 0.5 + (budha_weight * 0.45)
-        
+
         return min(confidence, 0.95)
 
 
 class TransitAnalyzer:
     """
     Analyzes planetary transits for trading timing.
-    
+
     Transits are current planetary positions relative to birth chart.
     They indicate short-term influences on trading performance.
     """
@@ -237,28 +236,34 @@ class TransitAnalyzer:
     ) -> Dict:
         """
         Analyze transit of a planet.
-        
+
         Args:
             planet: Transiting planet
             position: Current position in degrees
             natal_positions: Natal chart positions
-            
+
         Returns:
             Transit analysis
         """
         aspects = []
-        
+
         for natal_planet, natal_pos in natal_positions.items():
             angle = abs(position - natal_pos)
-            
+
             # Check major aspects
             if angle < 10 or angle > 350:
-                aspects.append({"planet": natal_planet, "aspect": "conjunction", "angle": angle})
+                aspects.append(
+                    {"planet": natal_planet, "aspect": "conjunction", "angle": angle}
+                )
             elif 170 < angle < 190:
-                aspects.append({"planet": natal_planet, "aspect": "opposition", "angle": angle})
+                aspects.append(
+                    {"planet": natal_planet, "aspect": "opposition", "angle": angle}
+                )
             elif 110 < angle < 130:
-                aspects.append({"planet": natal_planet, "aspect": "trine", "angle": angle})
-        
+                aspects.append(
+                    {"planet": natal_planet, "aspect": "trine", "angle": angle}
+                )
+
         return {
             "transiting_planet": planet,
             "aspects": aspects,
@@ -269,26 +274,26 @@ class TransitAnalyzer:
         """Get trading implication of transit."""
         if not aspects:
             return "neutral"
-        
+
         # Budha aspects favor analysis/arbitrage
         if planet == Graha.BUDHA:
             return "favorable_for_analysis"
-        
+
         # Mangala aspects favor action/breakouts
         if planet == Graha.MANGALA:
             return "favorable_for_breakouts"
-        
+
         # Shani aspects favor caution/risk_management
         if planet == Graha.SHANI:
             return "favorable_for_risk_management"
-        
+
         return "neutral"
 
 
 def get_budha_arbitrage_config() -> Dict:
     """
     Get arbitrage configuration optimized for Budha Graha.
-    
+
     Returns:
         Configuration dict for arbitrage strategy
     """

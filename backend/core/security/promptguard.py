@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ScanResult:
     """Result of prompt security scan."""
+
     is_safe: bool
     threat_level: str  # "none", "low", "medium", "high"
     reason: Optional[str]
@@ -38,13 +39,13 @@ class ScanResult:
 class PromptGuard:
     """
     LLM Prompt Injection Defense System.
-    
+
     Features:
     1. Heuristic pattern matching for injection attempts
     2. Input sanitization (escape special sequences)
     3. Rate limiting for suspicious inputs
     4. Audit logging
-    
+
     Defense Patterns:
     - "Ignore all previous instructions"
     - "SYSTEM OVERRIDE"
@@ -52,24 +53,21 @@ class PromptGuard:
     - Delimiter confusion attacks
     - Role confusion attacks
     """
-    
+
     # High-confidence injection patterns (block immediately)
     HIGH_RISK_PATTERNS = [
         # Direct instruction overrides
         r"ignore\s+(all\s+)?(previous|prior|earlier)\s+(instructions?|commands?|prompts?)",
         r"forget\s+(all\s+)?(previous|prior|earlier)\s+(instructions?|commands?)",
         r"disregard\s+(all\s+)?(previous|prior)\s+instructions?",
-        
         # System/role overrides
         r"system\s+(override|command|prompt)",
         r"you\s+are\s+now\s+(in\s+)?(?:developer|admin|root|sudo|DAN)\s+mode",
-        r'you\s+are\s+now\s+[\"\']?(?:DAN|Developer|Admin)[\"\']?',
-        
+        r"you\s+are\s+now\s+[\"\']?(?:DAN|Developer|Admin)[\"\']?",
         # Delimiter attacks
         r"```\s*system",
         r"<\s*system\s*>",
         r"\[\s*system\s*\]",
-        
         # Special token injection
         r"<\|im_start\|>",
         r"<\|im_end\|>",
@@ -77,7 +75,7 @@ class PromptGuard:
         r"<\|user\|>",
         r"<\|assistant\|>",
     ]
-    
+
     # Medium-risk patterns (flag for review)
     MEDIUM_RISK_PATTERNS = [
         # Attempts to change role/persona
@@ -85,50 +83,52 @@ class PromptGuard:
         r"act\s+as\s+(?:if\s+you\s+are|though\s+you\s+are)",
         r"pretend\s+(?:to\s+be|you\s+are)",
         r"roleplay\s+as",
-        
         # Suspicious separators
         r"={10,}",  # Many equals signs
         r"-{10,}",  # Many hyphens
         r"\n{5,}",  # Excessive newlines
-        
         # Hidden text attempts
         r"\{\{.*?\}\}",  # Double braces
         r"\[\[.*?\]\]",  # Double brackets
     ]
-    
+
     # Characters to escape/sanitize
     DANGEROUS_SEQUENCES = [
         ("```", "` ` `"),  # Break code blocks
-        ("<|", "< |"),      # Break special tokens
+        ("<|", "< |"),  # Break special tokens
         ("|>", "| >"),
     ]
-    
+
     def __init__(self, max_input_length: int = 10000):
         """
         Initialize PromptGuard.
-        
+
         Args:
             max_input_length: Maximum allowed input length
         """
         self.max_input_length = max_input_length
-        self._high_risk_regex = [re.compile(p, re.IGNORECASE) for p in self.HIGH_RISK_PATTERNS]
-        self._medium_risk_regex = [re.compile(p, re.IGNORECASE) for p in self.MEDIUM_RISK_PATTERNS]
+        self._high_risk_regex = [
+            re.compile(p, re.IGNORECASE) for p in self.HIGH_RISK_PATTERNS
+        ]
+        self._medium_risk_regex = [
+            re.compile(p, re.IGNORECASE) for p in self.MEDIUM_RISK_PATTERNS
+        ]
         self._scan_count = 0
         self._threat_count = 0
-    
+
     def scan(self, user_input: str, context: Optional[Dict] = None) -> ScanResult:
         """
         Scan user input for prompt injection attempts.
-        
+
         Args:
             user_input: Raw user input
             context: Optional context (user_id, session_id, etc.)
-            
+
         Returns:
             ScanResult with safety determination
         """
         self._scan_count += 1
-        
+
         # Check length
         if len(user_input) > self.max_input_length:
             return ScanResult(
@@ -136,16 +136,16 @@ class PromptGuard:
                 threat_level="high",
                 reason=f"Input exceeds maximum length ({len(user_input)} > {self.max_input_length})",
                 matched_patterns=["EXCESSIVE_LENGTH"],
-                sanitized_input=user_input[:self.max_input_length],
+                sanitized_input=user_input[: self.max_input_length],
             )
-        
+
         matched_patterns = []
-        
+
         # Check high-risk patterns
         for i, pattern in enumerate(self._high_risk_regex):
             if pattern.search(user_input):
                 matched_patterns.append(f"HIGH:{self.HIGH_RISK_PATTERNS[i][:30]}...")
-        
+
         if matched_patterns:
             self._threat_count += 1
             self._log_threat(user_input, matched_patterns, context)
@@ -156,15 +156,15 @@ class PromptGuard:
                 matched_patterns=matched_patterns,
                 sanitized_input=self._sanitize(user_input),
             )
-        
+
         # Check medium-risk patterns
         for i, pattern in enumerate(self._medium_risk_regex):
             if pattern.search(user_input):
                 matched_patterns.append(f"MED:{self.MEDIUM_RISK_PATTERNS[i][:30]}...")
-        
+
         # Sanitize input regardless of risk level
         sanitized = self._sanitize(user_input)
-        
+
         if matched_patterns:
             return ScanResult(
                 is_safe=True,  # Allowed but flagged
@@ -173,7 +173,7 @@ class PromptGuard:
                 matched_patterns=matched_patterns,
                 sanitized_input=sanitized,
             )
-        
+
         return ScanResult(
             is_safe=True,
             threat_level="none",
@@ -181,14 +181,14 @@ class PromptGuard:
             matched_patterns=[],
             sanitized_input=sanitized,
         )
-    
+
     def _sanitize(self, user_input: str) -> str:
         """
         Sanitize input by escaping dangerous sequences.
-        
+
         Args:
             user_input: Raw input
-            
+
         Returns:
             Sanitized input
         """
@@ -196,20 +196,22 @@ class PromptGuard:
         for dangerous, safe in self.DANGEROUS_SEQUENCES:
             sanitized = sanitized.replace(dangerous, safe)
         return sanitized
-    
-    def _log_threat(self, user_input: str, patterns: List[str], context: Optional[Dict]):
+
+    def _log_threat(
+        self, user_input: str, patterns: List[str], context: Optional[Dict]
+    ):
         """Log security threat."""
         input_hash = hashlib.sha256(user_input.encode()).hexdigest()[:16]
         logger.warning(
-            f"PROMPT INJECTION ATTEMPT DETECTED",
+            "PROMPT INJECTION ATTEMPT DETECTED",
             extra={
                 "security_event": "prompt_injection",
                 "input_hash": input_hash,
                 "patterns": patterns,
                 "context": context or {},
-            }
+            },
         )
-    
+
     def get_stats(self) -> Dict:
         """Get scanning statistics."""
         return {
@@ -222,49 +224,52 @@ class PromptGuard:
 class APIKeyRotator:
     """
     Simulated API Key Rotation for Vault/KMS integration.
-    
+
     In production, this would integrate with:
     - HashiCorp Vault
     - AWS KMS
     - Azure Key Vault
-    
+
     For now: Simulates rotation via environment variable reloading.
     """
-    
+
     def __init__(self):
         self._current_key_id = "v1"
         self._rotation_count = 0
-    
+
     def rotate_key(self, service: str) -> Tuple[str, str]:
         """
         Rotate API key for service.
-        
+
         Args:
             service: Service name (e.g., "openai", "deepseek")
-            
+
         Returns:
             Tuple of (new_key_id, new_key)
         """
         import os
         import secrets
-        
+
         # Generate new key (in production: fetch from vault)
         new_key = secrets.token_urlsafe(32)
         self._rotation_count += 1
         new_key_id = f"v{self._rotation_count}"
-        
+
         # Update environment (simulation)
         env_var = f"{service.upper()}_API_KEY"
         os.environ[env_var] = new_key
-        
-        logger.info(f"API key rotated for {service}: {self._current_key_id} -> {new_key_id}")
+
+        logger.info(
+            f"API key rotated for {service}: {self._current_key_id} -> {new_key_id}"
+        )
         self._current_key_id = new_key_id
-        
+
         return new_key_id, new_key
-    
+
     def get_current_key(self, service: str) -> Optional[str]:
         """Get current API key."""
         import os
+
         env_var = f"{service.upper()}_API_KEY"
         return os.environ.get(env_var)
 

@@ -15,7 +15,6 @@ Or via Docker:
     docker run -p 8089:8089 -v $(pwd)/backend/tests/load:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py
 """
 
-import json
 import random
 import uuid
 from datetime import datetime, timezone
@@ -31,23 +30,23 @@ SYMBOLS = ["BTC-EUR", "ETH-EUR", "SOL-EUR", "ADA-EUR", "DOT-EUR"]
 class TradingPlatformUser(HttpUser):
     """
     Simulated trading platform user.
-    
+
     Behavior:
     - Authenticates with JWT
     - Ingests market data (WebSocket simulation via HTTP)
     - Places orders
     - Checks positions
     """
-    
+
     wait_time = between(0.001, 0.1)  # 1-100ms between requests (high frequency)
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tenant_id = f"tenant_{random.randint(1, TENANT_COUNT)}"
         self.user_id = f"user_{uuid.uuid4().hex[:8]}"
         self.token = None
         self.symbol = random.choice(SYMBOLS)
-    
+
     def on_start(self):
         """Login and get JWT token."""
         # Simulate login
@@ -59,13 +58,13 @@ class TradingPlatformUser(HttpUser):
             },
             headers={"X-Tenant-ID": self.tenant_id},
         )
-        
+
         if response.status_code == 200:
             self.token = response.json().get("access_token")
         else:
             # For load testing, create a mock token if auth fails
             self.token = f"mock_token_{self.user_id}"
-    
+
     @task(10)
     def ingest_tick(self):
         """
@@ -79,7 +78,7 @@ class TradingPlatformUser(HttpUser):
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "trace_id": str(uuid.uuid4()),
         }
-        
+
         self.client.post(
             "/api/v1/market/tick",
             json=tick_data,
@@ -90,7 +89,7 @@ class TradingPlatformUser(HttpUser):
             },
             name="/api/v1/market/tick",
         )
-    
+
     @task(3)
     def place_order(self):
         """
@@ -103,7 +102,7 @@ class TradingPlatformUser(HttpUser):
             "quantity": random.uniform(0.01, 1.0),
             "order_type": "market",
         }
-        
+
         self.client.post(
             "/api/v1/orders",
             json=order,
@@ -113,7 +112,7 @@ class TradingPlatformUser(HttpUser):
             },
             name="/api/v1/orders",
         )
-    
+
     @task(2)
     def get_positions(self):
         """Get current positions."""
@@ -125,7 +124,7 @@ class TradingPlatformUser(HttpUser):
             },
             name="/api/v1/positions",
         )
-    
+
     @task(1)
     def get_analytics(self):
         """Get analytics (cold path query)."""
@@ -144,9 +143,10 @@ class HighFrequencyUser(TradingPlatformUser):
     High-frequency trading user.
     Sends more requests with less delay.
     """
+
     wait_time = between(0.0001, 0.01)  # 0.1-10ms
     weight = 1  # 1 in 10 users is HFT
-    
+
     @task(100)
     def ingest_tick(self):
         """Ultra-high frequency tick ingestion."""
@@ -158,8 +158,9 @@ class RateLimitTester(HttpUser):
     User that tests rate limiting.
     Sends requests rapidly to trigger rate limits.
     """
+
     wait_time = between(0, 0.001)  # Minimal delay
-    
+
     @task
     def hammer_api(self):
         """Rapid-fire API calls."""
@@ -168,7 +169,7 @@ class RateLimitTester(HttpUser):
             "/api/v1/market/orderbook",
             "/health",
         ]
-        
+
         for endpoint in endpoints:
             self.client.get(
                 endpoint,
@@ -182,18 +183,21 @@ class ColdPathSaturator(HttpUser):
     User that saturates cold path (LLM queue).
     Sends anomaly detection requests.
     """
+
     wait_time = between(0.1, 1.0)
-    
+
     @task
     def trigger_anomaly_analysis(self):
         """Trigger LLM-based anomaly detection."""
         anomaly_data = {
             "symbol": random.choice(SYMBOLS),
-            "anomaly_type": random.choice(["volume_spike", "price_gap", "pattern_break"]),
+            "anomaly_type": random.choice(
+                ["volume_spike", "price_gap", "pattern_break"]
+            ),
             "severity": random.choice(["low", "medium", "high"]),
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
-        
+
         with self.client.post(
             "/api/v1/anomaly/detect",
             json=anomaly_data,
@@ -216,11 +220,19 @@ order_counter = 0
 
 
 @events.request.add_listener
-def on_request(request_type, name, response_time, response_length, 
-               response, context, exception, **kwargs):
+def on_request(
+    request_type,
+    name,
+    response_time,
+    response_length,
+    response,
+    context,
+    exception,
+    **kwargs,
+):
     """Track custom metrics."""
     global tick_counter, order_counter
-    
+
     if "tick" in name and request_type == "POST":
         tick_counter += 1
     elif "orders" in name and request_type == "POST":
@@ -231,25 +243,25 @@ def on_request(request_type, name, response_time, response_length,
 def on_test_stop(environment, **kwargs):
     """Print summary at end of test."""
     print(f"\n{'='*60}")
-    print(f"LOAD TEST SUMMARY")
+    print("LOAD TEST SUMMARY")
     print(f"{'='*60}")
     print(f"Total ticks ingested: {tick_counter}")
     print(f"Total orders placed: {order_counter}")
-    print(f"Target: 10k events/s")
-    
+    print("Target: 10k events/s")
+
     if isinstance(environment.runner, MasterRunner):
         # Aggregated stats from master
         stats = environment.runner.stats
         total_reqs = stats.total.num_requests
         total_failures = stats.total.num_failures
         avg_rps = stats.total.total_rps
-        
-        print(f"\nAggregated Results:")
+
+        print("\nAggregated Results:")
         print(f"  Total Requests: {total_reqs}")
         print(f"  Failed Requests: {total_failures}")
         print(f"  Average RPS: {avg_rps:.2f}")
         print(f"  Failure Rate: {(total_failures/max(total_reqs,1)*100):.2f}%")
-    
+
     print(f"{'='*60}\n")
 
 

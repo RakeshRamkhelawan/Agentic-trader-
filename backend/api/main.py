@@ -8,16 +8,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.api import analytics_api  # Added new APIs
-from backend.api import (agents_api, approval_api, backtest_api, federated_api,
-                         kyc_api, monitoring_api, navagraha_api, ooda_api,
-                         prediction_api, trading_api, user_settings_api)
+from backend.api import agents_api, approval_api, backtest_api, federated_api
+from backend.api import health as health_api
+from backend.api import (kyc_api, monitoring_api, navagraha_api, ooda_api,
+                         paper_trading_api, prediction_api, trading_api,
+                         user_settings_api)
 # Routers
 from backend.api.auth_api import router as auth_router
+from backend.api.paper_trading_ws_simple import \
+    router as paper_trading_ws_router
 from backend.api.websocket_endpoints import router as ws_router
 from backend.api.websocket_manager import ws_manager
-from backend.api.paper_trading_ws_simple import router as paper_trading_ws_router
-from backend.api import paper_trading_api
-from backend.api import health as health_api
 from backend.core.auth.jwt_validator import JWTValidator
 # Auth Middleware
 from backend.core.auth.middleware import AuthMiddleware
@@ -162,6 +163,7 @@ async def lifespan(app: FastAPI):
         # Initialize LLM Gateway for intelligent routing
         try:
             from backend.llm.gateway import get_llm_gateway
+
             app.state.llm_gateway = await get_llm_gateway()
             logger.info("LLM Gateway initialized")
         except Exception as e:
@@ -175,7 +177,7 @@ async def lifespan(app: FastAPI):
                 logger.info("NewsAgent started")
             except Exception as e:
                 logger.error(f"Failed to start NewsAgent: {e}")
-                
+
         if "sentiment_v1" in app.state.orchestrator.agents:
             try:
                 await app.state.orchestrator.agents["sentiment_v1"].start()
@@ -212,7 +214,10 @@ async def lifespan(app: FastAPI):
         """Fetch news every 60 seconds for major coins."""
         while True:
             try:
-                if app.state.orchestrator and "news_v1" in app.state.orchestrator.agents:
+                if (
+                    app.state.orchestrator
+                    and "news_v1" in app.state.orchestrator.agents
+                ):
                     await app.state.orchestrator.handle_message(
                         AgentMessage(
                             source="system",
@@ -307,14 +312,14 @@ async def global_exception_handler(request: Request, exc: Exception):
     """
     Catch-all exception handler to prevent stack traces in production.
     In development (ENV != production), allows FastAPI's default handler (with debug info).
-    
+
     IMPORTANT: Adds CORS headers to error responses to prevent CORS errors in browser
     when the error occurs before the CORS middleware can add headers.
     """
     # Get origin from request for CORS header
     origin = request.headers.get("origin")
     allowed_origins = parse_allowed_origins(settings.ALLOWED_ORIGINS)
-    
+
     # Build CORS headers
     cors_headers = {}
     if origin and origin in allowed_origins:
@@ -322,7 +327,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         cors_headers["Access-Control-Allow-Credentials"] = "true"
     elif "*" in allowed_origins:
         cors_headers["Access-Control-Allow-Origin"] = "*"
-    
+
     if settings.ENV == "production":
         logger.error(f"Global Exception: {exc}", exc_info=True)
         return JSONResponse(
@@ -330,9 +335,10 @@ async def global_exception_handler(request: Request, exc: Exception):
             content={"detail": "Internal Server Error. Please contact support."},
             headers=cors_headers,
         )
-    
+
     # Development mode: return detailed error with CORS headers
     import traceback
+
     error_detail = {
         "detail": str(exc),
         "type": type(exc).__name__,
