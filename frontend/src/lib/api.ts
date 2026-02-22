@@ -12,10 +12,28 @@
  */
 
 import axios from 'axios';
-import type { AxiosError, AxiosInstance } from 'axios';
+import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+// Token storage (in-memory, not localStorage for security)
+let accessToken: string | null = null;
+
+/**
+ * Set the access token for API requests.
+ * Called by AuthContext when user authenticates.
+ */
+export function setApiToken(token: string | null) {
+  accessToken = token;
+}
+
+/**
+ * Get the current access token.
+ */
+export function getApiToken(): string | null {
+  return accessToken;
+}
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -28,10 +46,9 @@ const api: AxiosInstance = axios.create({
 
 // Request interceptor - add auth token
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  (config: InternalAxiosRequestConfig) => {
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
   },
@@ -43,7 +60,8 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
+      // Clear token and redirect to login
+      accessToken = null;
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -89,7 +107,7 @@ export const authApi = {
   },
 
   logout: async (): Promise<void> => {
-    localStorage.removeItem('access_token');
+    accessToken = null;
   },
 
   getMe: async () => {
@@ -489,19 +507,19 @@ export const agentsApi = {
     const response = await api.get<AgentsStatusResponse>('/agents/status');
     return response.data;
   },
-  
+
   /** POST /api/v1/agents/chat - Get advice from AI advisor */
   chat: async (message: string, history: ChatHistoryEntry[] = []): Promise<{ response: string }> => {
     const response = await api.post<{ response: string }>('/agents/chat', { message, history });
     return response.data;
   },
-  
+
   /** POST /api/v1/agents/run-cycle - Trigger agent analysis */
   runCycle: async (): Promise<{ insights: string; market_data: { gainers: any[]; losers: any[] }; agents_triggered: number; trades_generated?: number }> => {
     const response = await api.post('/agents/run-cycle', {});
     return response.data;
   },
-  
+
   /** GET /api/v1/agents/trades - Get agent trade history */
   getTrades: async (): Promise<{ trades: any[]; count: number }> => {
     const response = await api.get('/agents/trades');
@@ -648,10 +666,10 @@ export const federatedApi = {
       };
     }
   },
-  
+
   /** POST /api/v1/federated/cycle - Trigger a full Federated Triad cycle */
-  runCycle: async (): Promise<{ 
-    decision: BuddhiDecision; 
+  runCycle: async (): Promise<{
+    decision: BuddhiDecision;
     coherence: FederatedState['coherence'];
     insights: string;
   }> => {
@@ -685,125 +703,6 @@ export const federatedApi = {
     }
   },
 };
-
-// ============================================================================
-// WEBSOCKET CLIENT
-// Backend protocol:
-//   subscribe:   { type: "subscribe",   channel: "ticker.BTC-EUR" }
-//   unsubscribe: { type: "unsubscribe", channel: "ticker.BTC-EUR" }
-//   ping:        { type: "ping" }
-// ============================================================================
-
-export class WebSocketClient {
-  private ws: WebSocket | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
-  private pendingChannels: Set<string> = new Set();
-  private listeners: Set<(data: any) => void> = new Set();
-  private onConnectCb?: () => void;
-  private onDisconnectCb?: () => void;
-
-  constructor(private url: string) {}
-
-  /**
-   * Add a message listener. Returns a cleanup function to remove it.
-   * Multiple components can each call addListener without stepping on each other.
-   */
-  addListener(fn: (data: any) => void): () => void {
-    this.listeners.add(fn);
-    return () => this.listeners.delete(fn);
-  }
-
-  /**
-   * Connect (idempotent).
-   * If a socket is already OPEN or CONNECTING this is a no-op.
-   */
-  connect(onConnect?: () => void, onDisconnect?: () => void) {
-    if (onConnect) this.onConnectCb = onConnect;
-    if (onDisconnect) this.onDisconnectCb = onDisconnect;
-
-    if (
-      this.ws &&
-      (this.ws.readyState === WebSocket.OPEN ||
-        this.ws.readyState === WebSocket.CONNECTING)
-    ) {
-      return;
-    }
-
-    this._openSocket();
-  }
-
-  private _openSocket() {
-    const token = localStorage.getItem('access_token');
-    const wsUrl = token ? `${this.url}?token=${token}` : this.url;
-
-    this.ws = new WebSocket(wsUrl);
-
-    this.ws.onopen = () => {
-      console.log('WebSocket connected');
-      this.reconnectAttempts = 0;
-      this.onConnectCb?.();
-      // Re-subscribe to all tracked channels after (re)connect
-      this.pendingChannels.forEach((ch) => this._send({ type: 'subscribe', channel: ch }));
-    };
-
-    this.ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        this.listeners.forEach((fn) => fn(data));
-      } catch (error) {
-        console.error('WebSocket message parse error:', error);
-      }
-    };
-
-    this.ws.onclose = () => {
-      console.log('WebSocket disconnected');
-      this.onDisconnectCb?.();
-      this._attemptReconnect();
-    };
-
-    this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-  }
-
-  private _attemptReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
-      console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`);
-      setTimeout(() => this._openSocket(), this.reconnectDelay * this.reconnectAttempts);
-    }
-  }
-
-  private _send(msg: object) {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(msg));
-    }
-  }
-
-  disconnect() {
-    this.pendingChannels.clear();
-    this.ws?.close();
-    this.ws = null;
-  }
-
-  /** Subscribe to a channel – backend expects { type: "subscribe", channel: "..." } */
-  subscribe(channel: string) {
-    this.pendingChannels.add(channel);
-    this._send({ type: 'subscribe', channel });
-  }
-
-  /** Unsubscribe from a channel */
-  unsubscribe(channel: string) {
-    this.pendingChannels.delete(channel);
-    this._send({ type: 'unsubscribe', channel });
-  }
-}
-
-export const wsClient = new WebSocketClient(
-  API_BASE_URL.replace(/^http/, 'ws') + '/ws'
-);
 
 // ============================================================================
 // ERROR HANDLING
