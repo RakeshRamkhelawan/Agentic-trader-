@@ -1,21 +1,14 @@
-# =============================================================================
-# DOCKER IGNORE FILE
-# =============================================================================
-
 # Git
 .git
 .gitignore
 .gitattributes
 
 # Python
-__pycache__
+__pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
-venv/
-ENV/
 build/
 develop-eggs/
 dist/
@@ -34,87 +27,105 @@ wheels/
 
 # Virtual environments
 venv/
-venv/
 ENV/
 env/
+.venv
 
 # IDE
-.idea
-.vscode
+.vscode/
+.idea/
 *.swp
 *.swo
 *~
 .DS_Store
 
-# Testing
-.pytest_cache
-.coverage
-htmlcov/
-.tox
-.nox
-.hypothesis
+# Environment files (security)
+.env
+.env.local
+.env.*.local
+.env.prod
+.env.prod.example
 
-# Documentation
-docs/_build
-site/
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
 
-# Data files (large)
-data/historical/**/*.csv
-data/historical/**/*.parquet
-*.parquet
-data/**/*.db
-*.db
-
-# Logs
+# Logs (we mount these as volumes)
 logs/
 *.log
 
+# Cache directories
+cache/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Data files (we mount these as volumes)
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Test files
+tests/
+test_*.py
+*_test.py
+pytest.ini
+.coverage
+htmlcov/
+
+# Documentation build
+docs/_build/
+docs/_static/
+docs/_templates/
+
 # Temporary files
-tmp/
-temp/
 *.tmp
+*.bak
+*.backup
+*.old
 
-# Docker files (prevent recursion)
-Dockerfile*
-docker-compose*.yml
-.docker/
+# Large binary files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
+*.zip
+*.tar.gz
+*.rar
 
-# Node.js (for frontend)
+# Node modules (if any frontend)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Frontend build
-frontend/dist
-frontend/build
-frontend/.cache
+# Local development files
+*.local
+TODO.md
+NOTES.md
 
-# Secrets (should be mounted or use env vars)
-*.pem
-*.key
-secrets/
-
-# Local environment
-.env.local
-.env.*.local
-
-# Backup files
-*.bak
-*.backup
-
-# Jupyter
-.ipynb_checkpoints
+# Jupyter notebooks
+.ipynb_checkpoints/
 *.ipynb
 
-# ML/AI models (large files)
+# Backtest results (large JSON files)
+backtest_*.json
+*.json.gz
+backtest_results/
+backtest_logs/
+
+# Model files
+model/
 *.pkl
 *.h5
-*.onnx
-models/
-checkpoints/
+*.pt
+*.pth
 
-# Cache
-.cache/
-.mypy_cache/
-.dmypy.json
+# Other
+.github/
+.gitlab-ci.yml
+.travis.yml
+.benchmarks/

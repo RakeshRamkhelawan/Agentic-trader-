@@ -1,240 +1,68 @@
-# =============================================================================
-# PRODUCTION DOCKER COMPOSE
-# Optimized for production deployment
-# =============================================================================
+# Docker Compose - Production Configuration
+#
 # Usage:
-#   1. Copy .env.prod.example to .env.prod
-#   2. Fill in your production credentials
-#   3. docker compose -f docker-compose.prod.yml --env-file .env.prod config
-#   4. docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
-# =============================================================================
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# This adds production-specific settings:
+# - SSL/TLS certificates
+# - Nginx reverse proxy
+# - Resource limits
+# - Production logging
+
+version: '3.8'
 
 services:
-  # ---------------------------------------------------------------------------
-  # Infrastructure (Production Optimized)
-  # ---------------------------------------------------------------------------
-  
-  postgres:
-    image: timescale/timescaledb:latest-pg15
-    container_name: postgres-prod
+  api:
     restart: always
     environment:
-      - POSTGRES_USER=${DB_USER:-trader}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD is required. Copy .env.prod.example to .env.prod and set a strong password.}
-      - POSTGRES_DB=${DB_NAME:-trading_db}
-    volumes:
-      - postgres_prod_data:/var/lib/postgresql/data
-    networks:
-      - prod-network
+      - LOG_LEVEL=INFO
+      - UVICORN_RELOAD=false
+      - UVICORN_WORKERS=4
     deploy:
       resources:
         limits:
-          cpus: '2'
-          memory: 4G
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-trader} -d ${DB_NAME:-trading_db}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   redis:
-    image: redis:7.2-alpine
-    container_name: redis-prod
     restart: always
-    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis_prod_data:/data
-    networks:
-      - prod-network
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 2G
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  clickhouse:
-    image: clickhouse/clickhouse-server:24.3
-    container_name: clickhouse-prod
+  # Nginx reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    container_name: trader-nginx
     restart: always
-    environment:
-      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-trader}
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:?CLICKHOUSE_PASSWORD is required}
-      - CLICKHOUSE_DB=${CLICKHOUSE_DB:-trading_db}
-    volumes:
-      - clickhouse_prod_data:/var/lib/clickhouse
-    networks:
-      - prod-network
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 4G
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ---------------------------------------------------------------------------
-  # Backend (Production)
-  # ---------------------------------------------------------------------------
-  
-  api-server:
-    build:
-      context: .
-      dockerfile: infrastructure/docker/Dockerfile.backend
-      target: production
-    # Geen container_name bij gebruik van replicas
-    restart: always
-    environment:
-      - ENVIRONMENT=production
-      - DEBUG=False
-      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-trader}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-trading_db}
-      - REDIS_URL=redis://redis:6379/0
-      - CLICKHOUSE_HOST=clickhouse
-      - CLICKHOUSE_PORT=8123
-      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-trader}
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["https://yourdomain.com"]}
-      - CORS_ORIGINS=${ALLOWED_ORIGINS:-["https://yourdomain.com"]}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
-      - WORKERS=4
-      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-    env_file:
-      - .env.prod
-    ports:
-      - "8000:8000"
-    networks:
-      - prod-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      clickhouse:
-        condition: service_healthy
-    deploy:
-      replicas: 2
-      resources:
-        limits:
-          cpus: '4'
-          memory: 8G
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-
-  # ---------------------------------------------------------------------------
-  # Frontend (Production with Nginx)
-  # ---------------------------------------------------------------------------
-  
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: ../infrastructure/docker/Dockerfile.frontend.prod
-    # Geen container_name bij gebruik van replicas
-    restart: always
-    environment:
-      - VITE_API_URL=${FRONTEND_API_URL:-http://api-server:8000}
-      - VITE_WS_URL=${FRONTEND_WS_URL:-ws://api-server:8000/ws}
-    env_file:
-      - .env.prod
     ports:
       - "80:80"
       - "443:443"
-    networks:
-      - prod-network
-    depends_on:
-      - api-server
-    deploy:
-      replicas: 2
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-
-  # ---------------------------------------------------------------------------
-  # Monitoring
-  # ---------------------------------------------------------------------------
-  
-  prometheus:
-    image: prom/prometheus:v2.47.0
-    container_name: prometheus-prod
-    restart: always
     volumes:
-      - ./infrastructure/prometheus/prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_prod_data:/prometheus
-    networks:
-      - prod-network
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=30d'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 2G
-
-  grafana:
-    image: grafana/grafana:10.2.2
-    container_name: grafana-prod
-    restart: always
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
-      - GF_SECURITY_DISABLE_GRAVATAR=true
-      - GF_SECURITY_ANGULAR_SUPPORT_ENABLED=false
-      - GF_AUTH_DISABLE_LOGIN_FORM=false
-      - GF_AUTH_DISABLE_SIGNOUT_MENU=false
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3000}
-    volumes:
-      - grafana_prod_data:/var/lib/grafana
-      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning:ro
-    networks:
-      - prod-network
-    ports:
-      - "3000:3000"
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
     depends_on:
-      - prometheus
+      - api
+    networks:
+      - trader-network
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 512M
-
-# ---------------------------------------------------------------------------
-# Volumes
-# ---------------------------------------------------------------------------
-volumes:
-  postgres_prod_data:
-    driver: local
-  redis_prod_data:
-    driver: local
-  clickhouse_prod_data:
-    driver: local
-  prometheus_prod_data:
-    driver: local
-  grafana_prod_data:
-    driver: local
-
-# ---------------------------------------------------------------------------
-# Networks
-# ---------------------------------------------------------------------------
-networks:
-  prod-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+          cpus: '0.5'
+          memory: 256M
