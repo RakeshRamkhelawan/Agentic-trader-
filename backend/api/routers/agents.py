@@ -68,21 +68,21 @@ async def chat_with_advisor(message: str, history: List[Dict[str, str]] = None) 
     """Chat with AI trading advisor."""
     if history is None:
         history = []
-    
+
     # Simple mock response
     responses = {
         "market": "Based on current market conditions and VedAstro analysis, I see a bullish trend emerging. The elemental consensus suggests accumulating positions.",
         "trade": "Consider a measured approach. The Fire agent indicates strong momentum, but Water suggests caution. A 60% position size might be optimal.",
         "risk": "Current portfolio risk is within acceptable limits. VaR is at 2.3% with a Sharpe ratio of 1.8. Consider diversifying into BTC-EUR.",
     }
-    
+
     # Find best matching response
     response_text = responses.get("market")
     for key, value in responses.items():
         if key in message.lower():
             response_text = value
             break
-    
+
     return {"response": response_text}
 
 
