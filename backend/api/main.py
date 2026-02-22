@@ -29,7 +29,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.api.routers import backtest, trading, health
+from backend.api.routers import backtest, trading, health, agents, navagraha, ooda
+from backend.api.websocket_endpoints import router as websocket_router
 
 
 @asynccontextmanager
@@ -70,6 +71,10 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(backtest.router, prefix="/api/v1")
 app.include_router(trading.router, prefix="/api/v1")
+app.include_router(agents.router, prefix="/api/v1")
+app.include_router(navagraha.router, prefix="/api/v1")
+app.include_router(ooda.router, prefix="/api/v1")
+app.include_router(websocket_router)
 
 
 @app.get("/")
