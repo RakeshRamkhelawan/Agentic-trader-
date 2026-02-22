@@ -11,9 +11,8 @@
  * ```
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { useWebSocket } from '@/hooks/useWebSocket';
-import { useAuthStore } from '@/store/authStore';
+import { useState, useCallback } from 'react';
+import { useChannel } from '@/context';
 
 interface TickerData {
   symbol: string;
@@ -47,36 +46,32 @@ export function LivePriceTicker({
   showOrderbook = false,
   orderbookLevels = 5 
 }: LivePriceTickerProps) {
-  const { accessToken } = useAuthStore();
   const [ticker, setTicker] = useState<TickerData | null>(null);
   const [orderbook, setOrderbook] = useState<OrderbookData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws';
-
-  const handleMessage = useCallback((message: { channel?: string; type?: string; data?: TickerData | OrderbookData }) => {
-    if (message.channel === `ticker.${symbol}`) {
-      setTicker(message.data as TickerData);
-      setLastUpdate(new Date());
-    } else if (message.channel === `orderbook.${symbol}`) {
-      setOrderbook(message.data as OrderbookData);
-    }
-  }, [symbol]);
-
-  const { isConnected, subscribe, unsubscribe } = useWebSocket({
-    url: wsUrl,
-    token: accessToken,
-    onConnect: () => {
-      // Subscribe to channels on connect
-      subscribe(`ticker.${symbol}`);
-      if (showOrderbook) {
-        subscribe(`orderbook.${symbol}`);
+  // Use global WebSocket context with automatic subscription management
+  const { isConnected: isTickerConnected } = useChannel(
+    `ticker.${symbol}`,
+    useCallback((message) => {
+      if (message.data) {
+        setTicker(message.data as TickerData);
+        setLastUpdate(new Date());
       }
-    },
-    onMessage: handleMessage,
-    reconnectInterval: 3000,
-    maxReconnectAttempts: 5
-  });
+    }, [])
+  );
+
+  const { isConnected: isOrderbookConnected } = useChannel(
+    `orderbook.${symbol}`,
+    useCallback((message) => {
+      if (message.data) {
+        setOrderbook(message.data as OrderbookData);
+      }
+    }, [])
+  );
+
+  // Connection is ready when ticker is connected (orderbook is optional)
+  const isConnected = isTickerConnected && (!showOrderbook || isOrderbookConnected);
 
   // Resubscribe when symbol changes
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, Zap, ArrowRight, ArrowLeft, Loader2, Check } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
+import { useUserStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 
 export function Register() {
   const navigate = useNavigate();
-  const { register, isLoading, error, clearError } = useAuthStore();
+  const { register, isLoading, error, clearError } = useUserStore();
   
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
