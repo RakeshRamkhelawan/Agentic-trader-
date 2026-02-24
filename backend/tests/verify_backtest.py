@@ -1,16 +1,15 @@
 import asyncio
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from backend.core.database import AsyncSessionLocal
 from backend.execution.backtest_engine import BacktestEngine
-from backend.execution.paper_exchange import (OrderRequest, OrderStatus,
-                                              PaperExchange)
+from backend.execution.paper_exchange import OrderRequest, OrderStatus, PaperExchange
 from backend.models.market_data import MarketTick
 
 SYMBOL = "BTC-EUR"
-START_TIME = datetime.now(timezone.utc) - timedelta(days=1)
-END_TIME = datetime.now(timezone.utc)
+START_TIME = datetime.now(UTC) - timedelta(days=1)
+END_TIME = datetime.now(UTC)
 
 
 async def seed_data():
@@ -65,9 +64,7 @@ async def verify_backtest():
             print(f"⏱️  Tick {tick_count} @ {tick.last}. Placing BUY order...")
 
             # Place Order
-            req = OrderRequest(
-                symbol=SYMBOL, side="buy", qty=1.0, client_order_id="test-order-1"
-            )
+            req = OrderRequest(symbol=SYMBOL, side="buy", qty=1.0, client_order_id="test-order-1")
             result = await exchange.submit_order(req)
 
             print(f"📝 Order Result: {result.status} @ {result.avg_price}")

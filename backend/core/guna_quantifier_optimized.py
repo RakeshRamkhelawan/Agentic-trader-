@@ -16,7 +16,6 @@ The circadian rhythm reflects the natural cycles:
 
 import logging
 from datetime import datetime
-from typing import Dict
 
 import numpy as np
 
@@ -176,7 +175,7 @@ class GunaQuantifierOptimized:
             f"sattva={len(SATTVA_KEYWORDS)}, rajas={len(RAJAS_KEYWORDS)}, tamas={len(TAMAS_KEYWORDS)}"
         )
 
-    def _compute_circadian_weights(self) -> Dict[int, np.ndarray]:
+    def _compute_circadian_weights(self) -> dict[int, np.ndarray]:
         """
         Compute circadian weights for each hour of the day.
 
@@ -201,7 +200,7 @@ class GunaQuantifierOptimized:
 
         return weights
 
-    def quantify_text(self, text: str) -> Dict[str, float]:
+    def quantify_text(self, text: str) -> dict[str, float]:
         """
         Quantify Guna composition of text using vectorized operations.
 
@@ -251,7 +250,7 @@ class GunaQuantifierOptimized:
 
         return result
 
-    def quantify_numerical_data(self, data: Dict[str, float]) -> Dict[str, float]:
+    def quantify_numerical_data(self, data: dict[str, float]) -> dict[str, float]:
         """
         Quantify Guna composition of numerical data using vectorized operations.
 
@@ -322,9 +321,7 @@ class GunaQuantifierOptimized:
 
         return result
 
-    def _apply_circadian_modulation(
-        self, guna_vector: Dict[str, float]
-    ) -> Dict[str, float]:
+    def _apply_circadian_modulation(self, guna_vector: dict[str, float]) -> dict[str, float]:
         """
         Apply circadian rhythm modulation to Guna vector.
 
@@ -349,7 +346,7 @@ class GunaQuantifierOptimized:
         total = sum(modulated.values())
         return {k: v / total for k, v in modulated.items()}
 
-    def get_dominant_guna(self, guna_vector: Dict[str, float]) -> str:
+    def get_dominant_guna(self, guna_vector: dict[str, float]) -> str:
         """
         Get the dominant Guna from a vector.
 
@@ -361,7 +358,7 @@ class GunaQuantifierOptimized:
         """
         return max(guna_vector, key=guna_vector.get)
 
-    def get_strategy_recommendation(self, guna_vector: Dict[str, float]) -> str:
+    def get_strategy_recommendation(self, guna_vector: dict[str, float]) -> str:
         """
         Get trading strategy recommendation based on Guna balance.
 

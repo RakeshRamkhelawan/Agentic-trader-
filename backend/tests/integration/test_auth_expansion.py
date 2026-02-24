@@ -1,3 +1,4 @@
+from datetime import UTC
 from uuid import uuid4
 
 import pytest
@@ -48,14 +49,10 @@ async def test_10_protected_endpoint_with_valid_token(async_client, system_db):
     password = "SecurePassword123!"
     tenant_id = f"tenant-{uuid4().hex[:12]}"
 
-    await system_db.execute(
-        text(
-            f"""
+    await system_db.execute(text(f"""
         INSERT INTO users (id, email, password_hash, tenant_id, role, is_active, created_at)
         VALUES ('{uuid4()}', '{email}', '{hash_password(password)}', '{tenant_id}', 'user', true, now())
-    """
-        )
-    )
+    """))
     await system_db.commit()
 
     # Login
@@ -88,7 +85,7 @@ async def test_11_invalid_jwt_token(async_client):
 async def test_12_expired_jwt_token(async_client):
     """Verify 401 response for expired JWT token (simulated)."""
     # Create an expired token manually
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
     from jose import jwt
 
@@ -102,8 +99,8 @@ async def test_12_expired_jwt_token(async_client):
 
     expired_payload = {
         "sub": str(uuid4()),
-        "exp": datetime.now(timezone.utc) - timedelta(hours=1),
-        "iat": datetime.now(timezone.utc) - timedelta(hours=2),
+        "exp": datetime.now(UTC) - timedelta(hours=1),
+        "iat": datetime.now(UTC) - timedelta(hours=2),
         "iss": "agentic-trader",
     }
     token = jwt.encode(expired_payload, secret, algorithm="HS256")

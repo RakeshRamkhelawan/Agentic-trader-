@@ -2,21 +2,20 @@ import argparse
 import asyncio
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 # Ensure backend modules are found
 sys.path.append(os.getcwd())
 
 from backend.execution.backtest_engine import BacktestEngine
-from backend.execution.paper_exchange import (OrderRequest, OrderStatus,
-                                              PaperExchange)
+from backend.execution.paper_exchange import OrderRequest, OrderStatus, PaperExchange
 from backend.services.performance_analytics import PerformanceAnalytics
 
 
 async def run_backtest(symbol: str, days: int, speed: float):
     print(f"🚀 Starting Backtest for {symbol} ({days} days) @ {speed}x speed")
 
-    end_time = datetime.now(timezone.utc)
+    end_time = datetime.now(UTC)
     start_time = end_time - timedelta(days=days)
 
     engine = BacktestEngine(start_time, end_time, speed=speed)
@@ -37,9 +36,7 @@ async def run_backtest(symbol: str, days: int, speed: float):
 
     async for tick in engine.stream_ticks(symbol):
         tick_count += 1
-        current_equity = exchange.balances["EUR"] + (
-            exchange.balances["BTC"] * tick.last
-        )
+        current_equity = exchange.balances["EUR"] + (exchange.balances["BTC"] * tick.last)
         equity_curve.append(current_equity)
 
         if tick_count % 10 == 0:

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 import jwt
@@ -71,7 +71,7 @@ class Order:
     side: OrderSide
     order_type: OrderType
     quantity: float
-    price: Optional[float]  # For limit orders
+    price: float | None  # For limit orders
     status: str  # PENDING, FILLED, CANCELLED
     filled_qty: float
     average_price: float
@@ -117,8 +117,8 @@ class RevolutXClient:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        private_key_path: Optional[str] = None,
+        api_key: str | None = None,
+        private_key_path: str | None = None,
         sandbox: bool = False,
         timeout: float = 30.0,
     ):
@@ -132,23 +132,19 @@ class RevolutXClient:
             timeout: Request timeout in seconds
         """
         self.api_key = api_key or os.getenv("REVOLUT_API_KEY")
-        self.private_key_path = private_key_path or os.getenv(
-            "REVOLUT_PRIVATE_KEY_PATH"
-        )
-        self.sandbox = (
-            sandbox or os.getenv("REVOLUT_SANDBOX", "False").lower() == "true"
-        )
+        self.private_key_path = private_key_path or os.getenv("REVOLUT_PRIVATE_KEY_PATH")
+        self.sandbox = sandbox or os.getenv("REVOLUT_SANDBOX", "False").lower() == "true"
         self.timeout = timeout
 
         self.base_url = self.SANDBOX_URL if self.sandbox else self.BASE_URL
 
-        self._session: Optional[httpx.AsyncClient] = None
+        self._session: httpx.AsyncClient | None = None
         self._authenticated = False
-        self._last_auth_time: Optional[datetime] = None
+        self._last_auth_time: datetime | None = None
 
         logger.info(f"RevolutXClient initialized (sandbox={self.sandbox})")
 
-    def _generate_jwt_token(self) -> Optional[str]:
+    def _generate_jwt_token(self) -> str | None:
         """
         Generate JWT token signed with Ed25519 private key
         Revolut API requires JWT-signed requests
@@ -181,9 +177,7 @@ class RevolutXClient:
             }
 
             # Sign with Ed25519 private key
-            token = jwt.encode(
-                payload, private_key, algorithm="EdDSA"  # Ed25519 uses EdDSA
-            )
+            token = jwt.encode(payload, private_key, algorithm="EdDSA")  # Ed25519 uses EdDSA
 
             logger.debug(f"✅ JWT token generated (exp: {payload['exp']})")
             return token
@@ -257,13 +251,9 @@ class RevolutXClient:
                         try:
                             data = response.json()
                             logger.info(f"✅ Connected via {endpoint}!")
-                            logger.info(
-                                f"   Response preview: {json.dumps(data, indent=2)[:300]}"
-                            )
+                            logger.info(f"   Response preview: {json.dumps(data, indent=2)[:300]}")
                         except (ValueError, json.JSONDecodeError):
-                            logger.info(
-                                f"✅ Connected via {endpoint}! (no JSON response)"
-                            )
+                            logger.info(f"✅ Connected via {endpoint}! (no JSON response)")
                         return True
 
                     elif response.status_code == 401:
@@ -280,9 +270,7 @@ class RevolutXClient:
                         continue
 
                     else:
-                        logger.debug(
-                            f"   Status {response.status_code}, trying next..."
-                        )
+                        logger.debug(f"   Status {response.status_code}, trying next...")
                         try:
                             logger.debug(f"   Response: {response.text[:200]}")
                         except Exception:
@@ -316,7 +304,7 @@ class RevolutXClient:
             await self._session.aclose()
             logger.info("Disconnected from Revolut X")
 
-    async def get_account_info(self) -> Optional[Dict[str, Any]]:
+    async def get_account_info(self) -> dict[str, Any] | None:
         """
         Get account information
 
@@ -335,7 +323,7 @@ class RevolutXClient:
             logger.error(f"Failed to get account info: {e}")
             return None
 
-    async def get_crypto_balance(self, crypto: str = "BTC") -> Optional[CryptoBalance]:
+    async def get_crypto_balance(self, crypto: str = "BTC") -> CryptoBalance | None:
         """
         Get crypto balance for specific asset
 
@@ -372,7 +360,7 @@ class RevolutXClient:
             logger.error(f"Failed to get balance: {e}")
             return None
 
-    async def get_portfolio(self) -> Optional[Dict[str, CryptoBalance]]:
+    async def get_portfolio(self) -> dict[str, CryptoBalance] | None:
         """
         Get full crypto portfolio
 
@@ -408,7 +396,7 @@ class RevolutXClient:
             logger.error(f"Failed to get portfolio: {e}")
             return None
 
-    async def get_price(self, crypto: str) -> Optional[CryptoPrice]:
+    async def get_price(self, crypto: str) -> CryptoPrice | None:
         """
         Get current crypto price
 
@@ -445,7 +433,7 @@ class RevolutXClient:
             logger.error(f"Failed to get price for {crypto}: {e}")
             return None
 
-    async def get_prices(self, cryptos: List[str]) -> Dict[str, CryptoPrice]:
+    async def get_prices(self, cryptos: list[str]) -> dict[str, CryptoPrice]:
         """
         Get prices for multiple cryptos
 
@@ -471,9 +459,9 @@ class RevolutXClient:
         symbol: str,
         side: OrderSide,
         quantity: float,
-        price: Optional[float] = None,
+        price: float | None = None,
         order_type: OrderType = OrderType.MARKET,
-    ) -> Optional[Order]:
+    ) -> Order | None:
         """
         Place a trading order
 
@@ -532,7 +520,7 @@ class RevolutXClient:
             logger.error(f"Failed to place order: {e}")
             return None
 
-    async def get_order_status(self, order_id: str) -> Optional[Order]:
+    async def get_order_status(self, order_id: str) -> Order | None:
         """
         Get status of existing order
 

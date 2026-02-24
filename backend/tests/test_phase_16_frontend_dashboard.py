@@ -15,16 +15,20 @@ All tests are production-ready with proper fixtures and assertions.
 """
 
 import asyncio
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 
 # Import classes from production implementation
-from backend.api.dashboard import (AlertService, DashboardAPI,
-                                   DashboardIntegration,
-                                   HistoricalAnalyticsService,
-                                   RealMetricsProvider, RealtimeMetricsService)
+from backend.api.dashboard import (
+    AlertService,
+    DashboardAPI,
+    DashboardIntegration,
+    HistoricalAnalyticsService,
+    RealMetricsProvider,
+    RealtimeMetricsService,
+)
 
 # ============================================================================
 # FIXTURES
@@ -38,7 +42,7 @@ class MockMetricsIntegration:
         self.coherence_override = coherence_override or {}
         self.call_count = 0
 
-    def get_current_metrics(self) -> Dict[str, Any]:
+    def get_current_metrics(self) -> dict[str, Any]:
         """Return mock hardware metrics."""
         self.call_count += 1
         return {
@@ -48,7 +52,7 @@ class MockMetricsIntegration:
             "network_latency_ms": 120.5 + (self.call_count % 50),
         }
 
-    def get_coherence_state(self) -> Dict[str, float]:
+    def get_coherence_state(self) -> dict[str, float]:
         """Return mock coherence values."""
         base = {f"L{i}": 0.75 + (self.call_count % 100) * 0.001 for i in range(32, 37)}
         return {**base, **self.coherence_override}
@@ -93,9 +97,7 @@ class TestMetricsProvider:
     """Test MetricsProvider abstract class and RealMetricsProvider implementation."""
 
     @pytest.mark.asyncio
-    async def test_get_current_metrics_returns_dict_with_required_keys(
-        self, metrics_provider
-    ):
+    async def test_get_current_metrics_returns_dict_with_required_keys(self, metrics_provider):
         """Verify current metrics contain all required keys."""
         metrics = await metrics_provider.get_current_metrics()
 
@@ -491,9 +493,7 @@ class TestAlertService:
         # Add old alerts (more than retention hours ago)
         alert_service.alerts.append(
             {
-                "timestamp": (
-                    datetime.now(timezone.utc) - timedelta(hours=48)
-                ).isoformat(),
+                "timestamp": (datetime.now(UTC) - timedelta(hours=48)).isoformat(),
                 "message": "Old alert",
                 "severity": "info",
             }
@@ -521,7 +521,7 @@ class TestHistoricalAnalyticsService:
     def test_add_metrics_sample_stores_data(self, analytics_service):
         """Verify metrics samples are stored."""
         sample = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "mahabhutas_coherence": {f"L{i}": 0.75 for i in range(32, 37)},
             "hardware": {"cpu_percent": 45.0},
         }
@@ -535,12 +535,12 @@ class TestHistoricalAnalyticsService:
         """Verify history time filtering."""
         # Add old sample
         old_sample = {
-            "timestamp": (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat(),
+            "timestamp": (datetime.now(UTC) - timedelta(hours=2)).isoformat(),
             "mahabhutas_coherence": {f"L{i}": 0.75 for i in range(32, 37)},
         }
 
         new_sample = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "mahabhutas_coherence": {f"L{i}": 0.75 for i in range(32, 37)},
         }
 
@@ -557,9 +557,7 @@ class TestHistoricalAnalyticsService:
         # Add samples with upward trend
         for i in range(20):
             sample = {
-                "timestamp": (
-                    datetime.now(timezone.utc) - timedelta(seconds=i)
-                ).isoformat(),
+                "timestamp": (datetime.now(UTC) - timedelta(seconds=i)).isoformat(),
                 "mahabhutas_coherence": {"L32": 0.7 + (i * 0.01)},
             }
             analytics_service.add_metrics_sample(sample)
@@ -573,7 +571,7 @@ class TestHistoricalAnalyticsService:
         # Add samples
         for i in range(50):
             sample = {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "mahabhutas_coherence": {"L32": 0.5 + (i % 5) * 0.1},
             }
             analytics_service.add_metrics_sample(sample)
@@ -592,7 +590,7 @@ class TestHistoricalAnalyticsService:
         # Build baseline
         for i in range(50):
             sample = {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "mahabhutas_coherence": {"L32": 0.75},
             }
             analytics_service.add_metrics_sample(sample)
@@ -612,9 +610,7 @@ class TestHistoricalAnalyticsService:
         # Build history
         for i in range(20):
             sample = {
-                "timestamp": (
-                    datetime.now(timezone.utc) - timedelta(minutes=i)
-                ).isoformat(),
+                "timestamp": (datetime.now(UTC) - timedelta(minutes=i)).isoformat(),
                 "mahabhutas_coherence": {"L32": 0.7 + (i * 0.01)},
             }
             analytics_service.add_metrics_sample(sample)

@@ -26,32 +26,49 @@ TRADING INTEGRATION:
 
 Usage:
     from backend.vedastro import EnhancedAstroOrchestrator
-    
+
     orchestrator = EnhancedAstroOrchestrator()
     analysis = await orchestrator.analyze_asset("BTC", 65000)
-    
+
     print(analysis.trading_signal.signal)
     print(analysis.trading_prompt)  # For LLM agents
 """
 
 # Advanced features
-from .advanced_features import (AdvancedVedAstroFeatures, Avasta, MuhurthaData,
-                                PanchaPakshiData, PlanetState, VargaChart,
-                                Yoga)
+from .advanced_features import (
+    AdvancedVedAstroFeatures,
+    Avasta,
+    MuhurthaData,
+    PanchaPakshiData,
+    PlanetState,
+    VargaChart,
+    Yoga,
+)
+
 # Core connectors
 from .connector import VedAstroConfig, VedAstroConnector
 from .enhanced_connector import DashaInfo, EnhancedVedAstroConnector
+
 # Orchestration
-from .enhanced_orchestrator import (CompleteAstroAnalysis,
-                                    EnhancedAstroOrchestrator,
-                                    get_trading_recommendation)
+from .enhanced_orchestrator import (
+    CompleteAstroAnalysis,
+    EnhancedAstroOrchestrator,
+    get_trading_recommendation,
+)
+
 # Legacy components (kept for compatibility)
 from .features import AstroFeatures, FeatureEngine
 from .oracle import XGBoostOracle
 from .orchestrator import TattvaOrchestrator
+
 # Trading integration
-from .trading_signals import (AgentPromptBuilder, SignalStrength, TimeFrame,
-                              TradingSignal, TradingSignalGenerator)
+from .trading_signals import (
+    AgentPromptBuilder,
+    SignalStrength,
+    TimeFrame,
+    TradingSignal,
+    TradingSignalGenerator,
+)
 
 __version__ = "2.0.0"
 __author__ = "VedAstro Trading Integration"

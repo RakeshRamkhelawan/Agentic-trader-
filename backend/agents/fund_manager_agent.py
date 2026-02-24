@@ -5,12 +5,16 @@ Uses Kelly Criterion for optimal position sizing with safety multipliers.
 Enforces portfolio-level risk constraints (max limits, exposure).
 """
 
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import (CapitalAllocation, PortfolioState,
-                                             RiskAssessment, TradeProposal)
+from backend.core.schemas.ooda_types import (
+    CapitalAllocation,
+    PortfolioState,
+    RiskAssessment,
+    TradeProposal,
+)
 from backend.governance.agent_gatekeeper import AgentRole
 
 
@@ -25,8 +29,8 @@ class FundManagerAgent(BaseAgent):
     def __init__(
         self,
         agent_name: str = "FundManager",
-        llm_provider: Optional[Any] = None,
-        event_bus: Optional[Any] = None,
+        llm_provider: Any | None = None,
+        event_bus: Any | None = None,
         max_position_pct: float = 0.10,  # 10% max per position
         max_total_exposure: float = 0.90,  # 90% max total exposure
         kelly_multiplier: float = 0.5,  # Half-Kelly safety
@@ -78,10 +82,7 @@ class FundManagerAgent(BaseAgent):
         # RiskAssessment decision is an Enum (RiskDecision.APPROVE, etc.)
         # We need to check if it's approved.
         # Assuming RiskDecision is a string-based Enum as seen in ooda_types.py
-        if (
-            risk_assessment.decision != "approve"
-            and risk_assessment.decision != "reduce_size"
-        ):
+        if risk_assessment.decision != "approve" and risk_assessment.decision != "reduce_size":
             return self._create_rejection(
                 f"Risk Rejected: {risk_assessment.decision} - {risk_assessment.rationale}"
             )
@@ -162,12 +163,10 @@ class FundManagerAgent(BaseAgent):
             kelly_fraction=kelly_fraction,
             approved=True,
             reasoning=reasoning,
-            timestamp=datetime.now(timezone.utc).timestamp(),
+            timestamp=datetime.now(UTC).timestamp(),
         )
 
-    def _calculate_kelly(
-        self, win_probability: float, avg_win: float, avg_loss: float
-    ) -> float:
+    def _calculate_kelly(self, win_probability: float, avg_win: float, avg_loss: float) -> float:
         """
         Kelly = p/a - q/b ? No, usually: f = p/L - q/W ... no
         Standard: f = (bp - q) / b where b = odds (win_amt/loss_amt)
@@ -199,9 +198,7 @@ class FundManagerAgent(BaseAgent):
 
     def _estimate_avg_loss(self, proposal: TradeProposal) -> float:
         """Estimate loss % based on stop loss."""
-        entry = (
-            proposal.entry_price if proposal.entry_price else proposal.stop_loss * 1.01
-        )
+        entry = proposal.entry_price if proposal.entry_price else proposal.stop_loss * 1.01
         if entry == 0:
             return 0.0
 
@@ -217,5 +214,5 @@ class FundManagerAgent(BaseAgent):
             kelly_fraction=0.0,
             approved=False,
             reasoning=reason,
-            timestamp=datetime.now(timezone.utc).timestamp(),
+            timestamp=datetime.now(UTC).timestamp(),
         )

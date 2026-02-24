@@ -8,9 +8,10 @@ exponential backoff retry, and DLQ for failed messages.
 import hashlib
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import redis.asyncio as redis
 
@@ -56,10 +57,10 @@ class EventMetadata:
     event_id: str
     timestamp: str
     retry_count: int = 0
-    original_stream: Optional[str] = None
-    error_info: Optional[str] = None
+    original_stream: str | None = None
+    error_info: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": self.event_id,
             "timestamp": self.timestamp,
@@ -69,7 +70,7 @@ class EventMetadata:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "EventMetadata":
+    def from_dict(cls, data: dict[str, Any]) -> "EventMetadata":
         return cls(
             event_id=data.get("event_id", ""),
             timestamp=data.get("timestamp", ""),
@@ -97,7 +98,7 @@ class EventBus:
     def __init__(
         self,
         redis_url: str,
-        retry_config: Optional[RetryConfig] = None,
+        retry_config: RetryConfig | None = None,
         enable_dlq: bool = True,
     ):
         """
@@ -109,12 +110,12 @@ class EventBus:
             enable_dlq: If True, enable Dead Letter Queue
         """
         self.redis_url = redis_url
-        self.client: Optional[redis.Redis] = None
+        self.client: redis.Redis | None = None
         self.retry_config = retry_config or RetryConfig()
         self.enable_dlq = enable_dlq
 
         # Batch publishing buffer
-        self._batch_buffer: List[tuple] = []
+        self._batch_buffer: list[tuple] = []
         self._batch_size = 100
         self._batch_flush_interval = 1.0  # seconds
 
@@ -133,18 +134,16 @@ class EventBus:
             await self.client.aclose()
             logger.info("EventBus disconnected from Redis")
 
-    def _generate_event_id(self, event_data: Dict[str, Any]) -> str:
+    def _generate_event_id(self, event_data: dict[str, Any]) -> str:
         """Generate unique event ID based on content hash."""
         content = json.dumps(event_data, sort_keys=True, default=str)
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    def _add_metadata(
-        self, event_data: Dict[str, Any], retry_count: int = 0
-    ) -> Dict[str, Any]:
+    def _add_metadata(self, event_data: dict[str, Any], retry_count: int = 0) -> dict[str, Any]:
         """Add metadata to event data."""
         metadata = EventMetadata(
             event_id=self._generate_event_id(event_data),
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             retry_count=retry_count,
             original_stream=event_data.get("_original_stream"),
         )
@@ -154,7 +153,7 @@ class EventBus:
         event_with_meta["_metadata"] = metadata.to_dict()
         return event_with_meta
 
-    async def publish(self, stream: str, event_data: Dict[str, Any]) -> str:
+    async def publish(self, stream: str, event_data: dict[str, Any]) -> str:
         """
         Publish event to Redis stream.
 
@@ -181,9 +180,7 @@ class EventBus:
         logger.debug(f"Published event to {stream}: {message_id}")
         return message_id.decode()
 
-    async def publish_batch(
-        self, stream: str, events: List[Dict[str, Any]]
-    ) -> List[str]:
+    async def publish_batch(self, stream: str, events: list[dict[str, Any]]) -> list[str]:
         """
         Publish multiple events in a batch (using Redis pipeline).
 
@@ -218,7 +215,7 @@ class EventBus:
         consumer: str,
         count: int = 10,
         block: int = 1000,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Subscribe to stream using consumer group.
 
@@ -261,13 +258,13 @@ class EventBus:
 
                     messages.append(
                         {
-                            "id": message_id.decode()
-                            if isinstance(message_id, bytes)
-                            else message_id,
+                            "id": (
+                                message_id.decode() if isinstance(message_id, bytes) else message_id
+                            ),
                             "data": parsed_data,
-                            "stream": stream.decode()
-                            if isinstance(stream_name, bytes)
-                            else stream_name,
+                            "stream": (
+                                stream.decode() if isinstance(stream_name, bytes) else stream_name
+                            ),
                         }
                     )
 
@@ -278,10 +275,10 @@ class EventBus:
         stream: str,
         group: str,
         consumer: str,
-        processor: Callable[[Dict[str, Any]], Any],
+        processor: Callable[[dict[str, Any]], Any],
         count: int = 10,
         block: int = 1000,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Subscribe and process messages with automatic retry and DLQ support.
 
@@ -303,9 +300,7 @@ class EventBus:
             try:
                 # Process message
                 result = await processor(message["data"])
-                results.append(
-                    {"message_id": message["id"], "result": result, "success": True}
-                )
+                results.append({"message_id": message["id"], "result": result, "success": True})
 
                 # Acknowledge successful processing
                 await self.ack(stream, group, message["id"])
@@ -325,20 +320,16 @@ class EventBus:
                 else:
                     # Max retries exhausted - send to DLQ
                     await self._send_to_dlq(stream, message["data"], str(e))
-                    logger.error(
-                        f"Message {message['id']} exhausted all retries, sent to DLQ"
-                    )
+                    logger.error(f"Message {message['id']} exhausted all retries, sent to DLQ")
 
                 # Acknowledge original message (we've either retried or DLQ'd)
                 await self.ack(stream, group, message["id"])
-                results.append(
-                    {"message_id": message["id"], "error": str(e), "success": False}
-                )
+                results.append({"message_id": message["id"], "error": str(e), "success": False})
 
         return results
 
     async def _schedule_retry(
-        self, original_stream: str, event_data: Dict[str, Any], error: str
+        self, original_stream: str, event_data: dict[str, Any], error: str
     ) -> None:
         """
         Schedule a message for retry with exponential backoff.
@@ -359,21 +350,17 @@ class EventBus:
 
         # Publish to retry stream with scheduled time
         retry_stream = f"{original_stream}{self.RETRY_SUFFIX}"
-        event_data["_scheduled_time"] = datetime.now(timezone.utc).timestamp() + delay
+        event_data["_scheduled_time"] = datetime.now(UTC).timestamp() + delay
 
         await self.publish(retry_stream, event_data)
-        logger.debug(
-            f"Scheduled retry {retry_count + 1} for {original_stream} in {delay}s"
-        )
+        logger.debug(f"Scheduled retry {retry_count + 1} for {original_stream} in {delay}s")
 
     async def _send_to_dlq(
-        self, original_stream: str, event_data: Dict[str, Any], error: str
+        self, original_stream: str, event_data: dict[str, Any], error: str
     ) -> None:
         """Send message to Dead Letter Queue."""
         if not self.enable_dlq:
-            logger.error(
-                f"DLQ disabled, dropping failed message from {original_stream}"
-            )
+            logger.error(f"DLQ disabled, dropping failed message from {original_stream}")
             return
 
         dlq_stream = f"{original_stream}{self.DLQ_SUFFIX}"
@@ -382,7 +369,7 @@ class EventBus:
         metadata = event_data.get("_metadata", {})
         metadata["error_info"] = error
         metadata["original_stream"] = original_stream
-        metadata["dlq_timestamp"] = datetime.now(timezone.utc).isoformat()
+        metadata["dlq_timestamp"] = datetime.now(UTC).isoformat()
         event_data["_metadata"] = metadata
 
         await self.publish(dlq_stream, event_data)
@@ -402,7 +389,7 @@ class EventBus:
             return 0
 
         retry_stream = f"{original_stream}{self.RETRY_SUFFIX}"
-        now = datetime.now(timezone.utc).timestamp()
+        now = datetime.now(UTC).timestamp()
 
         # Read pending messages from retry stream
         messages = await self.client.xrange(retry_stream, min="-", max="+")
@@ -436,15 +423,13 @@ class EventBus:
                 await self.client.xdel(retry_stream, message_id)
 
                 retried += 1
-                logger.debug(
-                    f"Retried message to {original_stream} (attempt {retry_count})"
-                )
+                logger.debug(f"Retried message to {original_stream} (attempt {retry_count})")
 
         return retried
 
     async def get_dlq_messages(
         self, original_stream: str, count: int = 100
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get messages from Dead Letter Queue.
 
@@ -475,18 +460,14 @@ class EventBus:
 
             result.append(
                 {
-                    "id": message_id.decode()
-                    if isinstance(message_id, bytes)
-                    else message_id,
+                    "id": message_id.decode() if isinstance(message_id, bytes) else message_id,
                     "data": parsed,
                 }
             )
 
         return result
 
-    async def replay_from_dlq(
-        self, original_stream: str, message_id: Optional[str] = None
-    ) -> bool:
+    async def replay_from_dlq(self, original_stream: str, message_id: str | None = None) -> bool:
         """
         Replay a message from DLQ back to original stream.
 
@@ -504,9 +485,7 @@ class EventBus:
 
         if message_id:
             # Get specific message
-            messages = await self.client.xrange(
-                dlq_stream, min=message_id, max=message_id
-            )
+            messages = await self.client.xrange(dlq_stream, min=message_id, max=message_id)
         else:
             # Get all messages
             messages = await self.client.xrange(dlq_stream, min="-", max="+")
@@ -537,9 +516,7 @@ class EventBus:
         logger.info(f"Replayed {len(messages)} messages from DLQ to {original_stream}")
         return True
 
-    async def create_consumer_group(
-        self, stream: str, group: str, id: str = "0"
-    ) -> None:
+    async def create_consumer_group(self, stream: str, group: str, id: str = "0") -> None:
         """
         Create consumer group for stream.
 
@@ -596,7 +573,7 @@ class EventBus:
         logger.debug(f"Flushed batch of {len(self._batch_buffer)} messages")
         self._batch_buffer.clear()
 
-    async def add_to_batch(self, stream: str, event_data: Dict[str, Any]) -> None:
+    async def add_to_batch(self, stream: str, event_data: dict[str, Any]) -> None:
         """Add event to batch buffer (manual batching)."""
         self._batch_buffer.append((stream, event_data))
 

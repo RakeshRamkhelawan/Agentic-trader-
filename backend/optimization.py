@@ -8,7 +8,7 @@ FastAPI performance, security, and reliability.
 import logging
 import time
 from functools import wraps
-from typing import Any, Dict, Optional
+from typing import Any
 
 from fastapi import FastAPI, Request
 from starlette.middleware.gzip import GZipMiddleware as GZIPMiddleware
@@ -31,10 +31,10 @@ class ResponseCache:
     """
 
     def __init__(self, ttl_seconds: int = 300):
-        self.cache: Dict[str, tuple[Any, float]] = {}
+        self.cache: dict[str, tuple[Any, float]] = {}
         self.ttl = ttl_seconds
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get cached value if not expired."""
         if key not in self.cache:
             return None
@@ -169,9 +169,9 @@ def add_security_headers(app: FastAPI):
 
         # Disable browser caching for sensitive endpoints
         if "/api/" in request.url.path:
-            response.headers[
-                "Cache-Control"
-            ] = "no-store, no-cache, must-revalidate, proxy-revalidate"
+            response.headers["Cache-Control"] = (
+                "no-store, no-cache, must-revalidate, proxy-revalidate"
+            )
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
 
@@ -202,7 +202,7 @@ def add_request_id_header(app: FastAPI):
 # =============================================================================
 
 
-async def get_connection_pool_settings(db_url: str) -> Dict[str, Any]:
+async def get_connection_pool_settings(db_url: str) -> dict[str, Any]:
     """
     Get optimized connection pool settings for database.
 
@@ -248,8 +248,7 @@ def add_performance_monitoring(app: FastAPI):
         # Log slow requests (> 1 second)
         if process_time > 1000:
             logger.warning(
-                f"Slow request: {request.method} {request.url.path} "
-                f"took {process_time:.2f}ms"
+                f"Slow request: {request.method} {request.url.path} " f"took {process_time:.2f}ms"
             )
 
         # Add timing header

@@ -6,7 +6,6 @@ Now uses PostgreSQL via SQLAlchemy + AsyncPG.
 
 import logging
 import os
-from typing import List, Optional
 
 from cryptography.fernet import Fernet
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,11 +16,15 @@ from backend.models.user_settings import User as DBUser
 from backend.models.user_settings import UserPreferences as DBUserPreferences
 from backend.models.user_settings import UserProfile as DBUserProfile
 from backend.models.user_settings import UserSecurity as DBUserSecurity
-from backend.schemas.user_settings import (AppearanceSettings, BrokerAPIKey,
-                                           BrokerAPIKeyCreate,
-                                           NotificationSettings,
-                                           SecuritySettings, UserPreferences,
-                                           UserProfile)
+from backend.schemas.user_settings import (
+    AppearanceSettings,
+    BrokerAPIKey,
+    BrokerAPIKeyCreate,
+    NotificationSettings,
+    SecuritySettings,
+    UserPreferences,
+    UserProfile,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -64,18 +67,14 @@ class UserSettingsService:
     async def get_profile(self, db: AsyncSession, tenant_id: str) -> UserProfile:
         user = await self._get_or_create_user(db, tenant_id)
         # Load profile relation if needed, but it's likely already attached or we query it
-        result = await db.execute(
-            select(DBUserProfile).where(DBUserProfile.user_id == user.id)
-        )
+        result = await db.execute(select(DBUserProfile).where(DBUserProfile.user_id == user.id))
         db_profile = result.scalars().first()
 
         if not db_profile:
             return UserProfile(first_name="", last_name="", email=str(user.email))
 
         return UserProfile(
-            first_name=(
-                db_profile.full_name.split(" ")[0] if db_profile.full_name else ""
-            ),
+            first_name=(db_profile.full_name.split(" ")[0] if db_profile.full_name else ""),
             last_name=(
                 db_profile.full_name.split(" ")[-1]
                 if db_profile.full_name and " " in db_profile.full_name
@@ -88,9 +87,7 @@ class UserSettingsService:
         self, db: AsyncSession, tenant_id: str, profile: UserProfile
     ) -> UserProfile:
         user = await self._get_or_create_user(db, tenant_id)
-        result = await db.execute(
-            select(DBUserProfile).where(DBUserProfile.user_id == user.id)
-        )
+        result = await db.execute(select(DBUserProfile).where(DBUserProfile.user_id == user.id))
         db_profile = result.scalars().first()
 
         if db_profile:
@@ -104,13 +101,9 @@ class UserSettingsService:
     # Notifications
     # =========================================================================
 
-    async def get_notifications(
-        self, db: AsyncSession, tenant_id: str
-    ) -> NotificationSettings:
+    async def get_notifications(self, db: AsyncSession, tenant_id: str) -> NotificationSettings:
         user = await self._get_or_create_user(db, tenant_id)
-        result = await db.execute(
-            select(DBUserProfile).where(DBUserProfile.user_id == user.id)
-        )
+        result = await db.execute(select(DBUserProfile).where(DBUserProfile.user_id == user.id))
         db_profile = result.scalars().first()
 
         prefs = db_profile.notification_preferences or {}
@@ -121,9 +114,7 @@ class UserSettingsService:
         self, db: AsyncSession, tenant_id: str, prefs: NotificationSettings
     ) -> NotificationSettings:
         user = await self._get_or_create_user(db, tenant_id)
-        result = await db.execute(
-            select(DBUserProfile).where(DBUserProfile.user_id == user.id)
-        )
+        result = await db.execute(select(DBUserProfile).where(DBUserProfile.user_id == user.id))
         db_profile = result.scalars().first()
 
         # Pydantic model to dict
@@ -135,13 +126,9 @@ class UserSettingsService:
     # Security
     # =========================================================================
 
-    async def get_security_settings(
-        self, db: AsyncSession, tenant_id: str
-    ) -> SecuritySettings:
+    async def get_security_settings(self, db: AsyncSession, tenant_id: str) -> SecuritySettings:
         user = await self._get_or_create_user(db, tenant_id)
-        result = await db.execute(
-            select(DBUserSecurity).where(DBUserSecurity.user_id == user.id)
-        )
+        result = await db.execute(select(DBUserSecurity).where(DBUserSecurity.user_id == user.id))
         db_sec = result.scalars().first()
 
         return SecuritySettings(
@@ -151,9 +138,7 @@ class UserSettingsService:
 
     async def toggle_2fa(self, db: AsyncSession, tenant_id: str, enabled: bool) -> bool:
         user = await self._get_or_create_user(db, tenant_id)
-        result = await db.execute(
-            select(DBUserSecurity).where(DBUserSecurity.user_id == user.id)
-        )
+        result = await db.execute(select(DBUserSecurity).where(DBUserSecurity.user_id == user.id))
         db_sec = result.scalars().first()
 
         db_sec.two_factor_enabled = enabled
@@ -164,9 +149,7 @@ class UserSettingsService:
     # Appearance & Preferences
     # =========================================================================
 
-    async def get_appearance(
-        self, db: AsyncSession, tenant_id: str
-    ) -> AppearanceSettings:
+    async def get_appearance(self, db: AsyncSession, tenant_id: str) -> AppearanceSettings:
         user = await self._get_or_create_user(db, tenant_id)
         result = await db.execute(
             select(DBUserPreferences).where(DBUserPreferences.user_id == user.id)
@@ -188,9 +171,7 @@ class UserSettingsService:
         await db.commit()
         return appearance
 
-    async def get_preferences(
-        self, db: AsyncSession, tenant_id: str
-    ) -> UserPreferences:
+    async def get_preferences(self, db: AsyncSession, tenant_id: str) -> UserPreferences:
         user = await self._get_or_create_user(db, tenant_id)
         result = await db.execute(
             select(DBUserPreferences).where(DBUserPreferences.user_id == user.id)
@@ -220,9 +201,7 @@ class UserSettingsService:
     # API Keys
     # =========================================================================
 
-    async def get_api_keys(
-        self, db: AsyncSession, tenant_id: str
-    ) -> List[BrokerAPIKey]:
+    async def get_api_keys(self, db: AsyncSession, tenant_id: str) -> list[BrokerAPIKey]:
         user = await self._get_or_create_user(db, tenant_id)
         result = await db.execute(select(DBAPIKey).where(DBAPIKey.user_id == user.id))
         db_keys = result.scalars().all()
@@ -291,7 +270,7 @@ class UserSettingsService:
 
     async def get_decrypted_api_key(
         self, db: AsyncSession, tenant_id: str, key_id: str
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Internal method to get decrypted keys for trading service."""
         user = await self._get_or_create_user(db, tenant_id)
         result = await db.execute(
@@ -304,9 +283,7 @@ class UserSettingsService:
 
         return {
             "api_key": cipher_suite.decrypt(key.api_key_encrypted.encode()).decode(),
-            "api_secret": cipher_suite.decrypt(
-                key.api_secret_encrypted.encode()
-            ).decode(),
+            "api_secret": cipher_suite.decrypt(key.api_secret_encrypted.encode()).decode(),
             "passphrase": (
                 cipher_suite.decrypt(key.passphrase_encrypted.encode()).decode()
                 if key.passphrase_encrypted

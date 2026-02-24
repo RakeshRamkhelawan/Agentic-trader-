@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import List, Optional
 
 import pandas as pd
 from pydantic import BaseModel
@@ -25,7 +24,7 @@ class PatternSignal(BaseModel):
     pattern: PatternName
     signal: SignalType
     confidence: float
-    timestamp: Optional[str] = None
+    timestamp: str | None = None
 
 
 class PatternDetector:
@@ -36,7 +35,7 @@ class PatternDetector:
     def __init__(self):
         pass
 
-    def analyze(self, df: pd.DataFrame) -> List[PatternSignal]:
+    def analyze(self, df: pd.DataFrame) -> list[PatternSignal]:
         """
         Analyze DataFrame for patterns.
         df columns: ['timestamp', 'open', 'high', 'low', 'close', 'volume']
@@ -69,10 +68,7 @@ class PatternDetector:
         prev_row = df.iloc[-2]
 
         # 1. SMA Crossover (Golden Cross / Death Cross - approx on 20/50 for ease)
-        if (
-            prev_row["sma_20"] <= prev_row["sma_50"]
-            and last_row["sma_20"] > last_row["sma_50"]
-        ):
+        if prev_row["sma_20"] <= prev_row["sma_50"] and last_row["sma_20"] > last_row["sma_50"]:
             signals.append(
                 PatternSignal(
                     pattern=PatternName.SMA_CROSSOVER,
@@ -80,10 +76,7 @@ class PatternDetector:
                     confidence=0.8,
                 )
             )
-        elif (
-            prev_row["sma_20"] >= prev_row["sma_50"]
-            and last_row["sma_20"] < last_row["sma_50"]
-        ):
+        elif prev_row["sma_20"] >= prev_row["sma_50"] and last_row["sma_20"] < last_row["sma_50"]:
             signals.append(
                 PatternSignal(
                     pattern=PatternName.SMA_CROSSOVER,
@@ -133,9 +126,7 @@ class PatternDetector:
         range_ = last_row["high"] - last_row["low"]
         if range_ > 0 and (body / range_) < 0.1:
             signals.append(
-                PatternSignal(
-                    pattern=PatternName.DOJI, signal=SignalType.NEUTRAL, confidence=0.5
-                )
+                PatternSignal(pattern=PatternName.DOJI, signal=SignalType.NEUTRAL, confidence=0.5)
             )
 
         return signals

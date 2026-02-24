@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -16,7 +15,7 @@ router = APIRouter()
 @router.post("/run", response_model=BacktestResult)
 async def run_backtest(
     config: BacktestConfig,
-    csv_path: Optional[str] = Query(
+    csv_path: str | None = Query(
         None, description="Absolute path to a CSV file for HistoricalCSVData feed"
     ),
 ):
@@ -49,9 +48,7 @@ async def run_backtest(
         elif config.strategy_name == "ConsciousnessStrategy":
             strategy = ConsciousnessStrategy(engine.exchange)
         else:
-            raise HTTPException(
-                status_code=400, detail=f"Unknown strategy: {config.strategy_name}"
-            )
+            raise HTTPException(status_code=400, detail=f"Unknown strategy: {config.strategy_name}")
 
         # 4. Run Backtest
         result = await engine.run(strategy, config)

@@ -5,11 +5,10 @@ Analyseert marktdata en genereert technische en sentiment indicatoren.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import (MarketRegime, Observation,
-                                             Orientation)
+from backend.core.schemas.ooda_types import MarketRegime, Observation, Orientation
 from backend.governance.agent_gatekeeper import AgentRole
 
 logger = logging.getLogger(__name__)
@@ -28,8 +27,8 @@ class AnalystAgent(BaseAgent):
 
     def __init__(
         self,
-        llm_provider: Optional[Any] = None,
-        event_bus: Optional[Any] = None,
+        llm_provider: Any | None = None,
+        event_bus: Any | None = None,
         core_confidence_weight: float = 0.5,
     ):
         """
@@ -53,7 +52,7 @@ class AnalystAgent(BaseAgent):
         self,
         observation: Observation,
         core_sentiment: float,
-        rag_context: Optional[List[str]] = None,
+        rag_context: list[str] | None = None,
     ) -> Orientation:
         """
         Analyseer observation en genereer Orientation.
@@ -108,7 +107,7 @@ class AnalystAgent(BaseAgent):
             self.record_activity(success=False)
             raise
 
-    def _calculate_indicators(self, observation: Observation) -> Dict[str, float]:
+    def _calculate_indicators(self, observation: Observation) -> dict[str, float]:
         """
         Bereken technische indicatoren.
 
@@ -143,7 +142,7 @@ class AnalystAgent(BaseAgent):
         return indicators
 
     def _detect_regime(
-        self, indicators: Dict[str, float], observation: Observation
+        self, indicators: dict[str, float], observation: Observation
     ) -> MarketRegime:
         """
         Detecteer market regime op basis van indicatoren.
@@ -172,7 +171,7 @@ class AnalystAgent(BaseAgent):
         else:
             return MarketRegime.SIDEWAYS
 
-    def _calculate_technical_confidence(self, indicators: Dict[str, float]) -> float:
+    def _calculate_technical_confidence(self, indicators: dict[str, float]) -> float:
         """
         Bereken confidence score uit technische indicatoren.
 
@@ -191,18 +190,14 @@ class AnalystAgent(BaseAgent):
         rsi_confidence = abs(rsi - 50) / 50.0  # 0.0 bij RSI=50, 1.0 bij RSI=0/100
 
         # Lage spread geeft hogere confidence
-        spread_confidence = max(
-            0.0, 1.0 - (spread / 1.0)
-        )  # 1.0 bij spread=0, 0.0 bij spread=1%
+        spread_confidence = max(0.0, 1.0 - (spread / 1.0))  # 1.0 bij spread=0, 0.0 bij spread=1%
 
         # Average
         confidence = (rsi_confidence + spread_confidence) / 2.0
 
         return max(0.0, min(1.0, confidence))
 
-    async def analyze(
-        self, features: Dict[str, Any], context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """
         BaseAgent abstract method - gebruik orient() in plaats daarvan.
         """
@@ -212,7 +207,7 @@ class AnalystAgent(BaseAgent):
             "confidence": 0.0,
         }
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Krijg Analyst statistieken."""
         health = self.health_check()
         return {**health, "analyses_completed": self.analyses_completed}

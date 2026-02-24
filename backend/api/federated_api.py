@@ -6,8 +6,8 @@ which coordinates multiple AI agents through a council-based architecture.
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 # Pydantic Models - Matching Frontend Expectations
 # ============================================================================
 
+
 class CoherenceMetrics(BaseModel):
     total: float
     harmony: float
@@ -33,18 +34,19 @@ class CoherenceMetrics(BaseModel):
 
 class CouncilView(BaseModel):
     """Council view matching frontend expectations."""
+
     name: str
     type: str  # 'guna' | 'elemental' | 'graha' | 'mind' | 'body'
     perspective: str  # bullish, bearish, neutral
     confidence: float
-    insights: List[str]
-    contradictions: List[str] = []
+    insights: list[str]
+    contradictions: list[str] = []
     # Optional styling fields
-    icon: Optional[str] = None
-    color: Optional[str] = None
-    bgColor: Optional[str] = None
-    borderColor: Optional[str] = None
-    symbol: Optional[str] = None
+    icon: str | None = None
+    color: str | None = None
+    bgColor: str | None = None
+    borderColor: str | None = None
+    symbol: str | None = None
 
 
 class ChittaNode(BaseModel):
@@ -57,7 +59,7 @@ class ChittaNode(BaseModel):
 
 
 class ChittaState(BaseModel):
-    nodes: List[ChittaNode]
+    nodes: list[ChittaNode]
     total_nodes: int
     verified_nodes: int
 
@@ -66,8 +68,8 @@ class BuddhiDecision(BaseModel):
     action: str  # 'buy' | 'sell' | 'hold'
     confidence: float
     rationale: str
-    supporting: List[str]
-    opposing: List[str]
+    supporting: list[str]
+    opposing: list[str]
     contradictions: int
     timestamp: str
 
@@ -81,24 +83,20 @@ class DeliberationStep(BaseModel):
 
 class FederatedState(BaseModel):
     coherence: CoherenceMetrics
-    councils: List[CouncilView]
+    councils: list[CouncilView]
     chitta: ChittaState
-    latest_decision: Optional[BuddhiDecision]
-    deliberation_steps: List[DeliberationStep]
+    latest_decision: BuddhiDecision | None
+    deliberation_steps: list[DeliberationStep]
 
 
 # ============================================================================
 # Dependency
 # ============================================================================
 
+
 def get_orchestrator(request: Request) -> CognitiveOrchestrator:
-    if (
-        not hasattr(request.app.state, "orchestrator")
-        or not request.app.state.orchestrator
-    ):
-        raise HTTPException(
-            status_code=503, detail="Cognitive Orchestrator not initialized"
-        )
+    if not hasattr(request.app.state, "orchestrator") or not request.app.state.orchestrator:
+        raise HTTPException(status_code=503, detail="Cognitive Orchestrator not initialized")
     return request.app.state.orchestrator
 
 
@@ -118,69 +116,100 @@ ELEMENT_TO_TYPE = {
 
 # Council styling
 COUNCIL_STYLES = {
-    "ether": {"color": "text-purple-400", "bgColor": "bg-purple-500/10", "borderColor": "border-purple-500/20", "symbol": "☸"},
-    "air": {"color": "text-blue-400", "bgColor": "bg-blue-500/10", "borderColor": "border-blue-500/20", "symbol": "☁"},
-    "fire": {"color": "text-orange-400", "bgColor": "bg-orange-500/10", "borderColor": "border-orange-500/20", "symbol": "🔥"},
-    "water": {"color": "text-cyan-400", "bgColor": "bg-cyan-500/10", "borderColor": "border-cyan-500/20", "symbol": "💧"},
-    "earth": {"color": "text-emerald-400", "bgColor": "bg-emerald-500/10", "borderColor": "border-emerald-500/20", "symbol": "🌍"},
-    "aether": {"color": "text-pink-400", "bgColor": "bg-pink-500/10", "borderColor": "border-pink-500/20", "symbol": "✨"},
+    "ether": {
+        "color": "text-purple-400",
+        "bgColor": "bg-purple-500/10",
+        "borderColor": "border-purple-500/20",
+        "symbol": "☸",
+    },
+    "air": {
+        "color": "text-blue-400",
+        "bgColor": "bg-blue-500/10",
+        "borderColor": "border-blue-500/20",
+        "symbol": "☁",
+    },
+    "fire": {
+        "color": "text-orange-400",
+        "bgColor": "bg-orange-500/10",
+        "borderColor": "border-orange-500/20",
+        "symbol": "🔥",
+    },
+    "water": {
+        "color": "text-cyan-400",
+        "bgColor": "bg-cyan-500/10",
+        "borderColor": "border-cyan-500/20",
+        "symbol": "💧",
+    },
+    "earth": {
+        "color": "text-emerald-400",
+        "bgColor": "bg-emerald-500/10",
+        "borderColor": "border-emerald-500/20",
+        "symbol": "🌍",
+    },
+    "aether": {
+        "color": "text-pink-400",
+        "bgColor": "bg-pink-500/10",
+        "borderColor": "border-pink-500/20",
+        "symbol": "✨",
+    },
 }
 
 
 def _calculate_coherence(orchestrator: CognitiveOrchestrator) -> CoherenceMetrics:
     """Calculate comprehensive coherence metrics."""
     import hashlib
-    
+
     # Calculate harmony from agent prana levels
     prana_values = []
     for agent_id, agent in orchestrator.agents.items():
-        if hasattr(agent, 'prana'):
+        if hasattr(agent, "prana"):
             prana = agent.prana
         else:
-            prana = 50.0 + (
-                hashlib.md5(agent_id.encode(), usedforsecurity=False).digest()[0] % 50
-            )
+            prana = 50.0 + (hashlib.md5(agent_id.encode(), usedforsecurity=False).digest()[0] % 50)
         prana_values.append(prana)
-    
+
     harmony = sum(prana_values) / len(prana_values) if prana_values else 50.0
-    
+
     # Performance based on prana
     performance_values = [(p - 50) / 10 for p in prana_values]
     avg_performance = sum(performance_values) / len(performance_values) if performance_values else 0
     performance = max(0, min(100, 100 + avg_performance * 10))
-    
+
     # Get Federated Triad state
     federated_state = orchestrator.get_federated_state()
     chitta_stats = federated_state.get("chitta", {})
     chitta_health = 85.0 if chitta_stats.get("total_nodes", 0) > 0 else 60.0
-    
+
     # Deliberation quality
-    active_agents = sum(1 for a in orchestrator.agents.values() 
-                       if getattr(a, 'state', None) and getattr(a.state, 'is_active', False))
+    active_agents = sum(
+        1
+        for a in orchestrator.agents.values()
+        if getattr(a, "state", None) and getattr(a.state, "is_active", False)
+    )
     if active_agents == 0:
         active_agents = len(orchestrator.agents)
     deliberation_quality = (active_agents / max(len(orchestrator.agents), 1)) * 100
-    
+
     # Buddhi clarity
     buddhi_clarity = harmony * 0.9
-    
+
     # Total coherence
     total = harmony * 0.40 + performance * 0.60
-    
+
     return CoherenceMetrics(
         total=round(total, 1),
         harmony=round(harmony, 1),
         performance=round(performance, 1),
         chitta_health=round(chitta_health, 1),
         deliberation_quality=round(deliberation_quality, 1),
-        buddhi_clarity=round(buddhi_clarity, 1)
+        buddhi_clarity=round(buddhi_clarity, 1),
     )
 
 
-def _build_councils(orchestrator: CognitiveOrchestrator) -> List[CouncilView]:
+def _build_councils(orchestrator: CognitiveOrchestrator) -> list[CouncilView]:
     """Build council views from orchestrator agents."""
     import hashlib
-    
+
     # Group agents by element
     council_groups = {
         "ether": {"name": "Cosmic Council", "members": [], "insights": []},
@@ -190,7 +219,7 @@ def _build_councils(orchestrator: CognitiveOrchestrator) -> List[CouncilView]:
         "earth": {"name": "Foundation Council", "members": [], "insights": []},
         "aether": {"name": "Discovery Council", "members": [], "insights": []},
     }
-    
+
     # Map agents to councils
     for agent_id, agent in orchestrator.agents.items():
         # Determine element
@@ -207,13 +236,13 @@ def _build_councils(orchestrator: CognitiveOrchestrator) -> List[CouncilView]:
             element = "earth"
         elif "discovery" in agent_id.lower():
             element = "aether"
-        
+
         # Get prana
-        if hasattr(agent, 'prana'):
+        if hasattr(agent, "prana"):
             prana = agent.prana
         else:
             prana = 50.0 + hashlib.md5(agent_id.encode(), usedforsecurity=False).digest()[0] % 50
-        
+
         # Determine signal
         performance_val = (prana - 50) / 10
         if performance_val > 2:
@@ -222,62 +251,66 @@ def _build_councils(orchestrator: CognitiveOrchestrator) -> List[CouncilView]:
             signal = "bearish"
         else:
             signal = "neutral"
-        
+
         # Get name
         if agent_id == "orchestrator_v1":
             name = "Orchestrator"
         else:
             name = agent.__class__.__name__.replace("Agent", "")
-        
-        council_groups[element]["members"].append({
-            "id": agent_id,
-            "name": name,
-            "prana": round(prana, 1),
-            "signal": signal,
-        })
-        
+
+        council_groups[element]["members"].append(
+            {
+                "id": agent_id,
+                "name": name,
+                "prana": round(prana, 1),
+                "signal": signal,
+            }
+        )
+
         # Add insight
         council_groups[element]["insights"].append(f"{name}: {signal} signal (prana: {prana:.0f})")
-    
+
     # Build council views
     councils = []
     for element, group in council_groups.items():
         if not group["members"]:
             continue
-            
+
         # Calculate aggregate perspective
         signals = [m["signal"] for m in group["members"]]
         bullish = signals.count("bullish")
         bearish = signals.count("bearish")
         neutral = signals.count("neutral")
-        
+
         if bullish > bearish and bullish > neutral:
             perspective = "bullish"
         elif bearish > bullish and bearish > neutral:
             perspective = "bearish"
         else:
             perspective = "neutral"
-        
+
         # Calculate confidence
         avg_prana = sum(m["prana"] for m in group["members"]) / len(group["members"])
         confidence = round(avg_prana / 100, 2)
-        
+
         # Get styling
         styles = COUNCIL_STYLES.get(element, {})
-        
-        councils.append(CouncilView(
-            name=group["name"],
-            type=ELEMENT_TO_TYPE.get(element, "mind"),
-            perspective=perspective,
-            confidence=confidence,
-            insights=group["insights"],
-            contradictions=[],
-            color=styles.get("color"),
-            bgColor=styles.get("bgColor"),
-            borderColor=styles.get("borderColor"),
-            symbol=styles.get("symbol"),
-        ))
-    
+
+        councils.append(
+            CouncilView(
+                name=group["name"],
+                type=ELEMENT_TO_TYPE.get(element, "mind"),
+                perspective=perspective,
+                confidence=confidence,
+                insights=group["insights"],
+                contradictions=[],
+                color=styles.get("color"),
+                bgColor=styles.get("bgColor"),
+                borderColor=styles.get("borderColor"),
+                symbol=styles.get("symbol"),
+            )
+        )
+
     return councils
 
 
@@ -285,7 +318,7 @@ def _get_chitta_state(orchestrator: CognitiveOrchestrator) -> ChittaState:
     """Get Chitta state from Federated Triad."""
     federated_state = orchestrator.get_federated_state()
     chitta_stats = federated_state.get("chitta", {})
-    
+
     nodes = []
     if orchestrator.federated_triad and orchestrator.federated_triad.chitta:
         chitta_nodes = orchestrator.federated_triad.chitta.query(limit=10)
@@ -294,13 +327,17 @@ def _get_chitta_state(orchestrator: CognitiveOrchestrator) -> ChittaState:
                 id=n.id,
                 content=n.content[:100],
                 source=n.source,
-                timestamp=n.timestamp.isoformat() if hasattr(n.timestamp, 'isoformat') else str(n.timestamp),
+                timestamp=(
+                    n.timestamp.isoformat()
+                    if hasattr(n.timestamp, "isoformat")
+                    else str(n.timestamp)
+                ),
                 council=n.council,
                 verified=n.verified,
             )
             for n in chitta_nodes
         ]
-    
+
     return ChittaState(
         nodes=nodes,
         total_nodes=chitta_stats.get("total_nodes", 0),
@@ -308,7 +345,7 @@ def _get_chitta_state(orchestrator: CognitiveOrchestrator) -> ChittaState:
     )
 
 
-def _get_latest_decision(orchestrator: CognitiveOrchestrator) -> Optional[BuddhiDecision]:
+def _get_latest_decision(orchestrator: CognitiveOrchestrator) -> BuddhiDecision | None:
     """Get the latest decision from Federated Triad."""
     if orchestrator.last_federated_decision:
         decision = orchestrator.last_federated_decision.get("decision", {})
@@ -320,27 +357,30 @@ def _get_latest_decision(orchestrator: CognitiveOrchestrator) -> Optional[Buddhi
                 supporting=decision.get("supporting", []),
                 opposing=decision.get("opposing", []),
                 contradictions=decision.get("contradictions", 0),
-                timestamp=decision.get("timestamp", datetime.now(timezone.utc).isoformat()),
+                timestamp=decision.get("timestamp", datetime.now(UTC).isoformat()),
             )
     return None
 
 
-def _get_deliberation_steps(orchestrator: CognitiveOrchestrator) -> List[DeliberationStep]:
+def _get_deliberation_steps(orchestrator: CognitiveOrchestrator) -> list[DeliberationStep]:
     """Get deliberation steps from last cycle."""
     steps = []
     if orchestrator.last_federated_decision:
         raw_steps = orchestrator.last_federated_decision.get("deliberation_steps", [])
         for step in raw_steps:
-            steps.append(DeliberationStep(
-                iteration=step.get("iteration", 0),
-                council=step.get("council", "unknown"),
-                perspective=step.get("perspective", "neutral"),
-                confidence=step.get("confidence", 0.5),
-            ))
-    
+            steps.append(
+                DeliberationStep(
+                    iteration=step.get("iteration", 0),
+                    council=step.get("council", "unknown"),
+                    perspective=step.get("perspective", "neutral"),
+                    confidence=step.get("confidence", 0.5),
+                )
+            )
+
     # Fallback: create from agents
     if not steps:
         import hashlib
+
         element_map = {
             "orchestrator_v1": "ether",
             "research_v1": "air",
@@ -353,12 +393,14 @@ def _get_deliberation_steps(orchestrator: CognitiveOrchestrator) -> List[Deliber
             if i >= 5:
                 break
             element = element_map.get(agent_id, "earth")
-            
-            if hasattr(agent, 'prana'):
+
+            if hasattr(agent, "prana"):
                 prana = agent.prana if isinstance(agent.prana, (int, float)) else 50
             else:
-                prana = 50.0 + hashlib.md5(agent_id.encode(), usedforsecurity=False).digest()[0] % 50
-            
+                prana = (
+                    50.0 + hashlib.md5(agent_id.encode(), usedforsecurity=False).digest()[0] % 50
+                )
+
             performance_val = (prana - 50) / 10
             if performance_val > 2:
                 signal = "bullish"
@@ -366,14 +408,16 @@ def _get_deliberation_steps(orchestrator: CognitiveOrchestrator) -> List[Deliber
                 signal = "bearish"
             else:
                 signal = "neutral"
-            
-            steps.append(DeliberationStep(
-                iteration=(i // 2) + 1,
-                council=element,
-                perspective=f"{signal}_signal",
-                confidence=round(prana / 100, 2),
-            ))
-    
+
+            steps.append(
+                DeliberationStep(
+                    iteration=(i // 2) + 1,
+                    council=element,
+                    perspective=f"{signal}_signal",
+                    confidence=round(prana / 100, 2),
+                )
+            )
+
     return steps
 
 
@@ -381,13 +425,14 @@ def _get_deliberation_steps(orchestrator: CognitiveOrchestrator) -> List[Deliber
 # API Endpoints
 # ============================================================================
 
+
 @router.get("/state", response_model=FederatedState)
 async def get_federated_state(
     orchestrator: CognitiveOrchestrator = Depends(get_orchestrator),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get the complete Federated Triad state.
-    
+
     Returns coherence metrics, council views, Chitta knowledge state,
     latest decision, and deliberation history.
     """
@@ -397,7 +442,7 @@ async def get_federated_state(
         chitta = _get_chitta_state(orchestrator)
         latest_decision = _get_latest_decision(orchestrator)
         deliberation_steps = _get_deliberation_steps(orchestrator)
-        
+
         return FederatedState(
             coherence=coherence,
             councils=councils,
@@ -405,41 +450,45 @@ async def get_federated_state(
             latest_decision=latest_decision,
             deliberation_steps=deliberation_steps,
         )
-    
+
     except Exception as e:
         logger.error(f"Error generating federated state: {e}", exc_info=True)
         # Return safe fallback
         return FederatedState(
             coherence=CoherenceMetrics(
-                total=75.0, harmony=80.0, performance=100.0,
-                chitta_health=85.0, deliberation_quality=70.0, buddhi_clarity=75.0
+                total=75.0,
+                harmony=80.0,
+                performance=100.0,
+                chitta_health=85.0,
+                deliberation_quality=70.0,
+                buddhi_clarity=75.0,
             ),
             councils=[],
             chitta=ChittaState(nodes=[], total_nodes=0, verified_nodes=0),
             latest_decision=None,
-            deliberation_steps=[]
+            deliberation_steps=[],
         )
 
 
 @router.post("/cycle")
 async def run_federated_cycle(
     orchestrator: CognitiveOrchestrator = Depends(get_orchestrator),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Trigger a full Federated Triad deliberation cycle.
-    
+
     Runs all councils through deliberation and returns the decision.
     """
     try:
         # Run the actual federated cycle
         result = await orchestrator.run_federated_cycle()
-        
+
         if not result.get("success"):
             raise HTTPException(
                 status_code=500,
-                detail=f"Federated cycle failed: {result.get('error', 'Unknown error')}"
+                detail=f"Federated cycle failed: {result.get('error', 'Unknown error')}",
             )
-        
+
         return {
             "decision": result["decision"],
             "coherence": result.get("chitta_stats", {}),
@@ -447,12 +496,9 @@ async def run_federated_cycle(
             "cycle_id": result.get("cycle_id"),
             "latency_ms": result.get("latency_ms"),
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error running federated cycle: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to run federated cycle: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to run federated cycle: {str(e)}")

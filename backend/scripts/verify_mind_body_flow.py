@@ -51,9 +51,7 @@ async def verify_flow():
     # 1. Initialize Services
     soul = EternalSoulService()
     mind = CognitiveMindService(shm_name="verify_intents_v2")
-    body = ReflexExecutor(
-        shm_name="verify_intents_v2", market_shm_name="market_data_v2"
-    )
+    body = ReflexExecutor(shm_name="verify_intents_v2", market_shm_name="market_data_v2")
 
     # Define state classes before mocking
     class DummyGuna:
@@ -141,9 +139,7 @@ async def verify_flow():
         # For this test, let's artificially set the max_loss_tolerance_pct to 0.0 in the profile to force rejection.
         original_tolerance = mind.profile.max_loss_tolerance_pct
         mind.profile.max_loss_tolerance_pct = 0.0  # Zero tolerance
-        logger.info(
-            "  [TEST] Set ClientProfile.max_loss_tolerance_pct = 0.0 to force rejection."
-        )
+        logger.info("  [TEST] Set ClientProfile.max_loss_tolerance_pct = 0.0 to force rejection.")
 
         logger.info("Triggering Soul Cycle (Normal State + Zero Tolerance)...")
         if hasattr(soul, "process_cycle"):

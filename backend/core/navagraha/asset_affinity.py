@@ -3,16 +3,14 @@ Navagraha Asset Affinity System
 Maps planets to preferred assets based on Vedic principles
 """
 
-from typing import Dict, List, Optional
-
-from backend.config.asset_universe import (FULL_ASSET_UNIVERSE)
+from backend.config.asset_universe import FULL_ASSET_UNIVERSE
 
 # ============================================================================
 # PLANET ASSET AFFINITY MAPPING
 # Based on Vedic astrology principles for trading
 # ============================================================================
 
-PLANET_ASSET_AFFINITY: Dict[str, List[str]] = {
+PLANET_ASSET_AFFINITY: dict[str, list[str]] = {
     "SUN": [
         # Authority, core trends, gold, large cap indices
         "BTC/EUR",  # Digital gold, dominant crypto
@@ -128,7 +126,7 @@ PLANET_ASSET_AFFINITY: Dict[str, List[str]] = {
 # Planet Trading Characteristics
 # ============================================================================
 
-PLANET_TRADING_STYLE: Dict[str, Dict] = {
+PLANET_TRADING_STYLE: dict[str, dict] = {
     "SUN": {
         "style": "trend_following",
         "timeframe": "long_term",
@@ -191,7 +189,7 @@ PLANET_TRADING_STYLE: Dict[str, Dict] = {
 # ============================================================================
 
 
-def get_favored_assets_for_planet(planet: str) -> List[str]:
+def get_favored_assets_for_planet(planet: str) -> list[str]:
     """
     Get assets that resonate with a specific planet.
     Called before each trading cycle to prioritize assets.
@@ -199,7 +197,7 @@ def get_favored_assets_for_planet(planet: str) -> List[str]:
     return PLANET_ASSET_AFFINITY.get(planet.upper(), [])
 
 
-def get_planet_for_asset(symbol: str) -> Optional[str]:
+def get_planet_for_asset(symbol: str) -> str | None:
     """Find which planet has affinity with this asset"""
     for planet, symbols in PLANET_ASSET_AFFINITY.items():
         if symbol in symbols:
@@ -207,7 +205,7 @@ def get_planet_for_asset(symbol: str) -> Optional[str]:
     return None
 
 
-def get_trading_style_for_planet(planet: str) -> Dict:
+def get_trading_style_for_planet(planet: str) -> dict:
     """Get recommended trading style for current planetary influence"""
     return PLANET_TRADING_STYLE.get(
         planet.upper(),
@@ -258,9 +256,7 @@ def get_position_size_multiplier(planet: str) -> float:
     return multipliers.get(planet.upper(), 1.0)
 
 
-def get_asset_priority_list(
-    dominant_planet: str, secondary_planet: Optional[str] = None
-) -> List[str]:
+def get_asset_priority_list(dominant_planet: str, secondary_planet: str | None = None) -> list[str]:
     """
     Get prioritized list of assets for current planetary configuration.
     Primary planet assets first, then secondary.

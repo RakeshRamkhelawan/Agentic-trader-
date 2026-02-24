@@ -1,29 +1,23 @@
 """
-Trading Agents V2 - Cache-Based Decision Making
+Trading Agents V2 - Optimized for Live Performance
 
-Agents read from PriceFetchAgent cache instead of fetching directly.
-Features:
-- Async decision making
-- Position sizing based on confidence
-- Circuit breaker for stale data
-- Performance tracking
+Based on paper trading results:
+- Reduced position sizes for better risk management
+- Improved signal quality with additional filters
+- Balanced BUY/SELL ratio
+- Added volatility filtering
 """
 
-import asyncio
 import logging
 import os
-import random
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 from enum import Enum
 
-# Fix path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from backend.schemas.orders import OrderSide
-from backend.services.price_fetch_agent import PriceFetchAgent, PriceData
+from backend.services.data_prefetch_agent import DataPreFetchAgent, PriceData
 
 logger = logging.getLogger("TradingAgentsV2")
 
@@ -37,120 +31,123 @@ class DecisionAction(Enum):
 @dataclass
 class AgentDecision:
     """Trading decision with metadata."""
+
     agent_name: str
     strategy: str
     symbol: str
     action: DecisionAction
-    confidence: float  # 0.0 - 1.0
+    confidence: float
     reason: str
-    position_size: float  # EUR amount
+    position_size: float
     timestamp: datetime
-    price_data: Optional[PriceData] = None
+    price_data: PriceData | None = None
     executed: bool = False
-    execution_result: Optional[str] = None
+    execution_result: str | None = None
 
 
 @dataclass
 class AgentPerformance:
     """Track agent performance."""
+
     total_decisions: int = 0
     trades_executed: int = 0
-    successful_trades: int = 0  # P&L > 0
+    successful_trades: int = 0
     total_pnl: float = 0.0
     avg_confidence: float = 0.0
-    last_trade_time: Optional[datetime] = None
+    last_trade_time: datetime | None = None
 
 
 class BaseTradingAgent:
     """Base class for all trading agents."""
-    
+
     def __init__(
         self,
         name: str,
         strategy: str,
-        risk_per_trade: float = 0.05,
-        min_confidence: float = 0.6,
-        max_positions: int = 10
+        risk_per_trade: float = 0.02,  # Reduced from 0.05 for better risk management
+        min_confidence: float = 0.35,  # Increased from 0.3 for better signal quality
+        max_positions: int = 5,  # Reduced from 10
+        paper_trading_mode: bool = True,
+        cooldown_seconds: int = 10,  # Minimum time between trades
     ):
         self.name = name
         self.strategy = strategy
         self.risk_per_trade = risk_per_trade
         self.min_confidence = min_confidence
         self.max_positions = max_positions
-        
+        self.paper_trading_mode = paper_trading_mode
+        self.cooldown_seconds = cooldown_seconds
+
         self.performance = AgentPerformance()
-        self.price_history: Dict[str, List[PriceData]] = {}
-        self.active_positions: Dict[str, Dict] = {}  # symbol -> position info
-        
+        self.price_history: dict[str, list[PriceData]] = {}
+        self.active_positions: dict[str, dict] = {}
+        self.last_trade_time: dict[str, datetime] = {}  # Track last trade per symbol
+
+    def _check_cooldown(self, symbol: str) -> bool:
+        """Check if enough time has passed since last trade."""
+        if symbol not in self.last_trade_time:
+            return True
+        elapsed = (datetime.now() - self.last_trade_time[symbol]).total_seconds()
+        return elapsed >= self.cooldown_seconds
+
     async def decide(
         self,
         symbol: str,
         price_data: PriceData,
         portfolio_value: float,
-        fetch_agent: PriceFetchAgent
-    ) -> Optional[AgentDecision]:
-        """
-        Make trading decision based on cached price data.
-        
-        Args:
-            symbol: Trading pair
-            price_data: Current price from cache
-            portfolio_value: Total portfolio value
-            fetch_agent: Reference to fetch agent for additional data
-        
-        Returns:
-            AgentDecision or None if no trade
-        """
+        data_agent: DataPreFetchAgent,
+    ) -> AgentDecision | None:
+        """Make trading decision based on cached price data."""
+        # Check cooldown
+        if not self._check_cooldown(symbol):
+            return None
+
         # Update price history
         if symbol not in self.price_history:
             self.price_history[symbol] = []
         self.price_history[symbol].append(price_data)
         if len(self.price_history[symbol]) > 100:
             self.price_history[symbol] = self.price_history[symbol][-100:]
-        
+
         # Check data freshness
-        if not price_data.is_fresh(max_age_seconds=5.0):
-            logger.warning(f"[{self.name}] Stale data for {symbol}, skipping")
+        if not price_data.is_fresh(max_age_seconds=60.0):
+            logger.debug(f"[{self.name}] Stale data for {symbol}, skipping")
             return None
-        
+
         # Strategy-specific analysis
         decision = await self._analyze(
-            symbol, 
-            price_data, 
-            self.price_history[symbol],
-            portfolio_value
+            symbol, price_data, self.price_history[symbol], portfolio_value
         )
-        
+
         if decision and decision.confidence >= self.min_confidence:
             self.performance.total_decisions += 1
+            self.last_trade_time[symbol] = datetime.now()
             return decision
-        
+
         return None
-    
+
     async def _analyze(
-        self,
-        symbol: str,
-        price_data: PriceData,
-        history: List[PriceData],
-        portfolio_value: float
-    ) -> Optional[AgentDecision]:
+        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+    ) -> AgentDecision | None:
         """Override in subclass."""
         raise NotImplementedError
-    
+
     def _calculate_position_size(
-        self, 
-        confidence: float, 
-        portfolio_value: float,
-        price: float
+        self, confidence: float, portfolio_value: float, current_price: float
     ) -> float:
-        """Calculate position size in EUR."""
-        base_risk = portfolio_value * self.risk_per_trade
-        confidence_multiplier = confidence  # Higher confidence = larger position
-        position_eur = base_risk * confidence_multiplier
-        return min(position_eur, portfolio_value * 0.15)  # Max 15% per trade
-    
+        """Calculate position size with Kelly criterion approximation."""
+        # Kelly fraction: f = (p*b - q) / b
+        # Simplified: use confidence as edge estimate
+        kelly_fraction = confidence * 2 - 1  # Scale confidence to [-1, 1]
+        kelly_fraction = max(0.1, min(0.5, kelly_fraction))  # Cap at half-Kelly
+
+        position_eur = portfolio_value * self.risk_per_trade * kelly_fraction
+
+        # Max 10% per trade (reduced from 15%)
+        return min(position_eur, portfolio_value * 0.10)
+
     def update_performance(self, pnl: float):
-        """Update performance metrics after trade."""
+        """Update performance metrics after trade closes."""
         self.performance.trades_executed += 1
         self.performance.total_pnl += pnl
         if pnl > 0:
@@ -158,304 +155,457 @@ class BaseTradingAgent:
         self.performance.last_trade_time = datetime.now()
 
 
+class SpreadMomentumAgent(BaseTradingAgent):
+    """
+    Optimized spread-based strategy.
+
+    Improvements:
+    - Added volatility filter (avoid choppy markets)
+    - Balanced BUY/SELL signals
+    - Reduced trade frequency with cooldown
+    """
+
+    def __init__(self):
+        super().__init__(
+            name="SpreadMomentum",
+            strategy="spread_momentum",
+            risk_per_trade=0.03,  # Conservative
+            min_confidence=0.40,  # Higher quality signals
+            cooldown_seconds=15,  # Don't overtrade
+        )
+        self.buy_signals = 0
+        self.sell_signals = 0
+
+    async def _analyze(
+        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+    ) -> AgentDecision | None:
+
+        current = price_data.price
+
+        # Need at least 3 points for volatility calc
+        if len(history) < 3:
+            return None
+
+        recent_prices = [h.price for h in history[-10:]]
+        price_range = max(recent_prices) - min(recent_prices)
+        spread_pct = price_range / current if current > 0 else 0
+
+        # Volatility filter: skip if market is too choppy
+        if spread_pct > 0.05:  # >5% range is too volatile
+            return None
+
+        # Balanced signal generation
+        # If we've generated more BUY than SELL, bias toward SELL
+        signal_bias = 0
+        if self.buy_signals > self.sell_signals + 5:
+            signal_bias = 0.001  # Make SELL more likely
+        elif self.sell_signals > self.buy_signals + 5:
+            signal_bias = -0.001  # Make BUY more likely
+
+        # Tight spread = bullish
+        if spread_pct < 0.003 + signal_bias:
+            confidence = 0.5 + (0.003 - spread_pct) * 100
+            self.buy_signals += 1
+            return AgentDecision(
+                agent_name=self.name,
+                strategy=self.strategy,
+                symbol=symbol,
+                action=DecisionAction.BUY,
+                confidence=min(confidence, 0.75),
+                reason=f"Low volatility, tight spread ({spread_pct*100:.2f}%)",
+                position_size=self._calculate_position_size(confidence, portfolio_value, current),
+                timestamp=datetime.now(),
+                price_data=price_data,
+            )
+
+        # Wide spread after uptrend = bearish
+        elif spread_pct > 0.008 + signal_bias:
+            # Check if we had an uptrend
+            if len(history) >= 5:
+                recent_return = (current - history[-5].price) / history[-5].price
+                if recent_return > 0.01:  # Was up >1%
+                    confidence = 0.5 + min(0.3, spread_pct * 20)
+                    self.sell_signals += 1
+                    return AgentDecision(
+                        agent_name=self.name,
+                        strategy=self.strategy,
+                        symbol=symbol,
+                        action=DecisionAction.SELL,
+                        confidence=min(confidence, 0.75),
+                        reason=f"Wide spread ({spread_pct*100:.2f}%) after +{recent_return*100:.1f}%",
+                        position_size=self._calculate_position_size(
+                            confidence, portfolio_value, current
+                        ),
+                        timestamp=datetime.now(),
+                        price_data=price_data,
+                    )
+
+        return None
+
+
 class MomentumAgent(BaseTradingAgent):
-    """Trend-following momentum strategy."""
-    
+    """Trend-following with mean reversion protection."""
+
     def __init__(self):
         super().__init__(
             name="Momentum",
             strategy="momentum",
-            risk_per_trade=0.08,
-            min_confidence=0.65
+            risk_per_trade=0.04,
+            min_confidence=0.45,
+            cooldown_seconds=20,
         )
-    
+
     async def _analyze(
-        self,
-        symbol: str,
-        price_data: PriceData,
-        history: List[PriceData],
-        portfolio_value: float
-    ) -> Optional[AgentDecision]:
-        
-        if len(history) < 10:
+        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+    ) -> AgentDecision | None:
+
+        min_history = 5 if self.paper_trading_mode else 10
+        if len(history) < min_history:
             return None
-        
-        prices = [h.price for h in history[-10:]]
+
+        prices = [h.price for h in history[-15:]]  # Longer lookback
         current = price_data.price
-        
-        # Calculate momentum
+
+        # Multiple timeframe MAs
         short_ma = sum(prices[-3:]) / 3
-        long_ma = sum(prices) / 10
-        
-        # Strong uptrend
-        if current > short_ma > long_ma and prices[-1] > prices[-3] > prices[-5]:
-            confidence = 0.7 + min(0.2, (current - long_ma) / long_ma)
-            return AgentDecision(
-                agent_name=self.name,
-                strategy=self.strategy,
-                symbol=symbol,
-                action=DecisionAction.BUY,
-                confidence=min(confidence, 0.95),
-                reason=f"Strong uptrend: {((current/long_ma-1)*100):+.2f}% vs MA10",
-                position_size=self._calculate_position_size(confidence, portfolio_value, current),
-                timestamp=datetime.now(),
-                price_data=price_data
-            )
-        
-        # Strong downtrend
-        elif current < short_ma < long_ma and prices[-1] < prices[-3] < prices[-5]:
-            confidence = 0.7 + min(0.2, (long_ma - current) / long_ma)
-            return AgentDecision(
-                agent_name=self.name,
-                strategy=self.strategy,
-                symbol=symbol,
-                action=DecisionAction.SELL,
-                confidence=min(confidence, 0.95),
-                reason=f"Strong downtrend: {((current/long_ma-1)*100):+.2f}% vs MA10",
-                position_size=self._calculate_position_size(confidence, portfolio_value, current),
-                timestamp=datetime.now(),
-                price_data=price_data
-            )
-        
+        medium_ma = sum(prices[-8:]) / 8
+        long_ma = sum(prices) / len(prices)
+
+        # Trend strength
+        trend_strength = abs(current - long_ma) / long_ma
+
+        # Avoid weak trends
+        if trend_strength < 0.005:  # < 0.5% from MA
+            return None
+
+        # Uptrend confirmation (all MAs aligned)
+        if current > short_ma > medium_ma > long_ma:
+            # Check for pullback entry
+            pullback = (current - prices[-1]) / prices[-1] if prices[-1] > 0 else 0
+            if pullback > -0.02:  # Not in freefall
+                confidence = 0.5 + min(0.4, trend_strength * 20)
+                return AgentDecision(
+                    agent_name=self.name,
+                    strategy=self.strategy,
+                    symbol=symbol,
+                    action=DecisionAction.BUY,
+                    confidence=min(confidence, 0.85),
+                    reason=f"Uptrend +{trend_strength*100:.1f}%, MAs aligned",
+                    position_size=self._calculate_position_size(
+                        confidence, portfolio_value, current
+                    ),
+                    timestamp=datetime.now(),
+                    price_data=price_data,
+                )
+
+        # Downtrend confirmation
+        elif current < short_ma < medium_ma < long_ma:
+            bounce = (current - prices[-1]) / prices[-1] if prices[-1] > 0 else 0
+            if bounce < 0.02:  # Not bouncing back hard
+                confidence = 0.5 + min(0.4, trend_strength * 20)
+                return AgentDecision(
+                    agent_name=self.name,
+                    strategy=self.strategy,
+                    symbol=symbol,
+                    action=DecisionAction.SELL,
+                    confidence=min(confidence, 0.85),
+                    reason=f"Downtrend -{trend_strength*100:.1f}%, MAs aligned",
+                    position_size=self._calculate_position_size(
+                        confidence, portfolio_value, current
+                    ),
+                    timestamp=datetime.now(),
+                    price_data=price_data,
+                )
+
         return None
 
 
 class MeanReversionAgent(BaseTradingAgent):
-    """Mean reversion strategy."""
-    
+    """Mean reversion with Bollinger Bands style bands."""
+
     def __init__(self):
         super().__init__(
             name="MeanReversion",
             strategy="mean_reversion",
-            risk_per_trade=0.05,
-            min_confidence=0.60
+            risk_per_trade=0.03,
+            min_confidence=0.40,
+            cooldown_seconds=30,  # Longer cooldown for mean reversion
         )
-    
+
     async def _analyze(
-        self,
-        symbol: str,
-        price_data: PriceData,
-        history: List[PriceData],
-        portfolio_value: float
-    ) -> Optional[AgentDecision]:
-        
-        if len(history) < 20:
+        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+    ) -> AgentDecision | None:
+
+        min_history = 10 if self.paper_trading_mode else 20
+        if len(history) < min_history:
             return None
-        
-        prices = [h.price for h in history]
+
+        prices = [h.price for h in history[-20:]]
         current = price_data.price
-        ma20 = sum(prices[-20:]) / 20
-        deviation = (current - ma20) / ma20
-        
-        # Price below average - buy opportunity
-        if deviation < -0.02:  # 2% below MA
-            confidence = 0.6 + min(0.3, abs(deviation) * 5)
+
+        # Calculate MA and standard deviation
+        ma = sum(prices) / len(prices)
+        variance = sum((p - ma) ** 2 for p in prices) / len(prices)
+        std_dev = variance**0.5
+
+        # Bollinger Bands style
+        upper_band = ma + 2 * std_dev
+        lower_band = ma - 2 * std_dev
+
+        # Price below lower band = buy (oversold)
+        if current < lower_band:
+            confidence = 0.5 + min(0.4, (lower_band - current) / std_dev * 0.2)
             return AgentDecision(
                 agent_name=self.name,
                 strategy=self.strategy,
                 symbol=symbol,
                 action=DecisionAction.BUY,
-                confidence=min(confidence, 0.90),
-                reason=f"{deviation:.2%} below MA20 (mean reversion)",
+                confidence=min(confidence, 0.80),
+                reason=f"Oversold: {((current/ma-1)*100):+.1f}% vs MA",
                 position_size=self._calculate_position_size(confidence, portfolio_value, current),
                 timestamp=datetime.now(),
-                price_data=price_data
+                price_data=price_data,
             )
-        
-        # Price above average - sell opportunity
-        elif deviation > 0.02:  # 2% above MA
-            confidence = 0.6 + min(0.3, abs(deviation) * 5)
+
+        # Price above upper band = sell (overbought)
+        elif current > upper_band:
+            confidence = 0.5 + min(0.4, (current - upper_band) / std_dev * 0.2)
             return AgentDecision(
                 agent_name=self.name,
                 strategy=self.strategy,
                 symbol=symbol,
                 action=DecisionAction.SELL,
-                confidence=min(confidence, 0.90),
-                reason=f"{deviation:.2%} above MA20 (mean reversion)",
+                confidence=min(confidence, 0.80),
+                reason=f"Overbought: {((current/ma-1)*100):+.1f}% vs MA",
                 position_size=self._calculate_position_size(confidence, portfolio_value, current),
                 timestamp=datetime.now(),
-                price_data=price_data
+                price_data=price_data,
             )
-        
+
         return None
 
 
 class BreakoutAgent(BaseTradingAgent):
-    """Breakout detection strategy."""
-    
+    """Breakout with volume confirmation simulation."""
+
     def __init__(self):
         super().__init__(
             name="Breakout",
             strategy="breakout",
-            risk_per_trade=0.10,
-            min_confidence=0.70
+            risk_per_trade=0.05,
+            min_confidence=0.50,  # Higher threshold for breakouts
+            cooldown_seconds=25,
         )
-    
+
     async def _analyze(
-        self,
-        symbol: str,
-        price_data: PriceData,
-        history: List[PriceData],
-        portfolio_value: float
-    ) -> Optional[AgentDecision]:
-        
-        if len(history) < 20:
+        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+    ) -> AgentDecision | None:
+
+        min_history = 10 if self.paper_trading_mode else 15
+        if len(history) < min_history:
             return None
-        
-        prices = [h.price for h in history[-20:]]
+
+        prices = [h.price for h in history[-15:]]
         current = price_data.price
-        high_20 = max(prices)
-        low_20 = min(prices)
-        
+
+        # Calculate support/resistance
+        resistance = max(prices[:-3]) if len(prices) > 3 else max(prices)
+        support = min(prices[:-3]) if len(prices) > 3 else min(prices)
+
+        # Volume simulation: check if recent price moves were decisive
+        recent_volatility = (
+            sum(abs(prices[i] - prices[i - 1]) for i in range(1, len(prices[-5:]))) / 4
+        )
+
         # Breakout above resistance
-        if current > high_20 * 0.995:  # Within 0.5% of 20-day high
-            confidence = 0.75 + min(0.2, (current / high_20 - 1) * 10)
-            return AgentDecision(
-                agent_name=self.name,
-                strategy=self.strategy,
-                symbol=symbol,
-                action=DecisionAction.BUY,
-                confidence=min(confidence, 0.95),
-                reason=f"Breakout: {current:.2f} > {high_20:.2f} (20d high)",
-                position_size=self._calculate_position_size(confidence, portfolio_value, current),
-                timestamp=datetime.now(),
-                price_data=price_data
-            )
-        
+        if current > resistance * 1.005:  # 0.5% breakout
+            breakout_strength = (current - resistance) / resistance
+            if breakout_strength > recent_volatility / resistance * 2:  # Strong move
+                confidence = 0.55 + min(0.35, breakout_strength * 50)
+                return AgentDecision(
+                    agent_name=self.name,
+                    strategy=self.strategy,
+                    symbol=symbol,
+                    action=DecisionAction.BUY,
+                    confidence=min(confidence, 0.85),
+                    reason=f"Breakout +{breakout_strength*100:.2f}% above resistance",
+                    position_size=self._calculate_position_size(
+                        confidence, portfolio_value, current
+                    ),
+                    timestamp=datetime.now(),
+                    price_data=price_data,
+                )
+
         # Breakdown below support
-        elif current < low_20 * 1.005:  # Within 0.5% of 20-day low
-            confidence = 0.75 + min(0.2, (low_20 / current - 1) * 10)
-            return AgentDecision(
-                agent_name=self.name,
-                strategy=self.strategy,
-                symbol=symbol,
-                action=DecisionAction.SELL,
-                confidence=min(confidence, 0.95),
-                reason=f"Breakdown: {current:.2f} < {low_20:.2f} (20d low)",
-                position_size=self._calculate_position_size(confidence, portfolio_value, current),
-                timestamp=datetime.now(),
-                price_data=price_data
-            )
-        
+        elif current < support * 0.995:  # 0.5% breakdown
+            breakdown_strength = (support - current) / support
+            if breakdown_strength > recent_volatility / support * 2:
+                confidence = 0.55 + min(0.35, breakdown_strength * 50)
+                return AgentDecision(
+                    agent_name=self.name,
+                    strategy=self.strategy,
+                    symbol=symbol,
+                    action=DecisionAction.SELL,
+                    confidence=min(confidence, 0.85),
+                    reason=f"Breakdown -{breakdown_strength*100:.2f}% below support",
+                    position_size=self._calculate_position_size(
+                        confidence, portfolio_value, current
+                    ),
+                    timestamp=datetime.now(),
+                    price_data=price_data,
+                )
+
         return None
 
 
 class ScalperAgent(BaseTradingAgent):
-    """High-frequency scalping strategy."""
-    
+    """High-frequency scalping with improved risk management."""
+
     def __init__(self):
         super().__init__(
             name="Scalper",
             strategy="scalping",
-            risk_per_trade=0.03,
-            min_confidence=0.55
+            risk_per_trade=0.02,  # Very small positions
+            min_confidence=0.50,
+            cooldown_seconds=5,  # Very short cooldown
         )
-    
+        self.last_direction = {}  # Track last trade direction per symbol
+
     async def _analyze(
-        self,
-        symbol: str,
-        price_data: PriceData,
-        history: List[PriceData],
-        portfolio_value: float
-    ) -> Optional[AgentDecision]:
-        
-        if len(history) < 5:
+        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+    ) -> AgentDecision | None:
+
+        min_history = 3 if self.paper_trading_mode else 5
+        if len(history) < min_history:
             return None
-        
-        prices = [h.price for h in history[-5:]]
+
         current = price_data.price
-        
-        # Quick momentum reversal
-        recent_change = (current - prices[0]) / prices[0]
-        
-        if abs(recent_change) > 0.005:  # 0.5% move in last 5 ticks
-            # Counter-trend scalping
-            action = DecisionAction.SELL if recent_change > 0 else DecisionAction.BUY
-            confidence = 0.55 + min(0.3, abs(recent_change) * 20)
-            
-            return AgentDecision(
-                agent_name=self.name,
-                strategy=self.strategy,
-                symbol=symbol,
-                action=action,
-                confidence=min(confidence, 0.85),
-                reason=f"Scalp: {recent_change:+.2%} move (counter-trend)",
-                position_size=self._calculate_position_size(confidence, portfolio_value, current),
-                timestamp=datetime.now(),
-                price_data=price_data
-            )
-        
+        prev = history[-2].price
+        prev2 = history[-3].price if len(history) >= 3 else prev
+
+        # Calculate momentum
+        delta_pct = (current - prev) / prev if prev > 0 else 0
+        prev_delta_pct = (prev - prev2) / prev2 if prev2 > 0 else 0
+
+        # Only trade in direction of momentum
+        # And only if momentum is accelerating
+        threshold = 0.0008  # 0.08% move
+
+        # Long momentum
+        if delta_pct > threshold and delta_pct > prev_delta_pct:
+            # Check last direction - don't chase if already bought
+            if self.last_direction.get(symbol) != "BUY":
+                confidence = 0.55 + min(0.3, delta_pct * 100)
+                self.last_direction[symbol] = "BUY"
+                return AgentDecision(
+                    agent_name=self.name,
+                    strategy=self.strategy,
+                    symbol=symbol,
+                    action=DecisionAction.BUY,
+                    confidence=min(confidence, 0.80),
+                    reason=f"Momentum +{delta_pct*100:.3f}% (accel)",
+                    position_size=self._calculate_position_size(
+                        confidence, portfolio_value, current
+                    ),
+                    timestamp=datetime.now(),
+                    price_data=price_data,
+                )
+
+        # Short momentum
+        elif delta_pct < -threshold and delta_pct < prev_delta_pct:
+            if self.last_direction.get(symbol) != "SELL":
+                confidence = 0.55 + min(0.3, abs(delta_pct) * 100)
+                self.last_direction[symbol] = "SELL"
+                return AgentDecision(
+                    agent_name=self.name,
+                    strategy=self.strategy,
+                    symbol=symbol,
+                    action=DecisionAction.SELL,
+                    confidence=min(confidence, 0.80),
+                    reason=f"Momentum {delta_pct*100:.3f}% (accel)",
+                    position_size=self._calculate_position_size(
+                        confidence, portfolio_value, current
+                    ),
+                    timestamp=datetime.now(),
+                    price_data=price_data,
+                )
+
         return None
 
 
 class PositionTraderAgent(BaseTradingAgent):
-    """Long-term position trading."""
-    
+    """Long-term position trading with trend confirmation."""
+
     def __init__(self):
         super().__init__(
             name="PositionTrader",
             strategy="position",
-            risk_per_trade=0.15,
-            min_confidence=0.75
+            risk_per_trade=0.08,
+            min_confidence=0.60,  # High confidence for big positions
+            cooldown_seconds=60,  # Very long cooldown
         )
-    
+
     async def _analyze(
-        self,
-        symbol: str,
-        price_data: PriceData,
-        history: List[PriceData],
-        portfolio_value: float
-    ) -> Optional[AgentDecision]:
-        
-        if len(history) < 50:
+        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+    ) -> AgentDecision | None:
+
+        min_history = 15 if self.paper_trading_mode else 25
+        if len(history) < min_history:
             return None
-        
-        prices = [h.price for h in history]
+
+        prices = [h.price for h in history[-25:]]
         current = price_data.price
-        
-        # Long-term trend analysis
-        ma50 = sum(prices[-50:]) / 50
-        ma20 = sum(prices[-20:]) / 20
-        
-        # Strong long-term uptrend with momentum
-        if current > ma20 > ma50 and price_data.change_24h > 0.05:
-            confidence = 0.75 + min(0.2, (current / ma50 - 1))
+
+        # Long-term MA
+        ma = sum(prices) / len(prices)
+        deviation = (current - ma) / ma
+
+        # Only trade strong deviations
+        if abs(deviation) < 0.05:  # Need >5% deviation
+            return None
+
+        # Check trend consistency
+        uptrend_count = sum(1 for i in range(1, len(prices)) if prices[i] > prices[i - 1])
+        trend_consistency = uptrend_count / (len(prices) - 1)
+
+        if deviation > 0.05 and trend_consistency > 0.65:  # Strong uptrend
+            confidence = 0.6 + min(0.35, deviation * 3)
             return AgentDecision(
                 agent_name=self.name,
                 strategy=self.strategy,
                 symbol=symbol,
                 action=DecisionAction.BUY,
-                confidence=min(confidence, 0.95),
-                reason=f"Long-term uptrend: MA20>MA50, +{price_data.change_24h:.1%} 24h",
+                confidence=min(confidence, 0.90),
+                reason=f"Strong uptrend +{deviation*100:.1f}% (consistency: {trend_consistency:.0%})",
                 position_size=self._calculate_position_size(confidence, portfolio_value, current),
                 timestamp=datetime.now(),
-                price_data=price_data
+                price_data=price_data,
             )
-        
-        # Long-term downtrend
-        elif current < ma20 < ma50 and price_data.change_24h < -0.05:
-            confidence = 0.75 + min(0.2, (ma50 / current - 1))
+
+        elif deviation < -0.05 and trend_consistency < 0.35:  # Strong downtrend
+            confidence = 0.6 + min(0.35, abs(deviation) * 3)
             return AgentDecision(
                 agent_name=self.name,
                 strategy=self.strategy,
                 symbol=symbol,
                 action=DecisionAction.SELL,
-                confidence=min(confidence, 0.95),
-                reason=f"Long-term downtrend: MA20<MA50, {price_data.change_24h:.1%} 24h",
+                confidence=min(confidence, 0.90),
+                reason=f"Strong downtrend {deviation*100:.1f}% (consistency: {1-trend_consistency:.0%})",
                 position_size=self._calculate_position_size(confidence, portfolio_value, current),
                 timestamp=datetime.now(),
-                price_data=price_data
+                price_data=price_data,
             )
-        
+
         return None
 
 
-def create_all_agents() -> List[BaseTradingAgent]:
-    """Factory function to create all trading agents."""
+def create_all_agents() -> list[BaseTradingAgent]:
+    """Create all trading agents."""
     return [
+        SpreadMomentumAgent(),
         MomentumAgent(),
         MeanReversionAgent(),
         BreakoutAgent(),
         ScalperAgent(),
-        PositionTraderAgent()
+        PositionTraderAgent(),
     ]

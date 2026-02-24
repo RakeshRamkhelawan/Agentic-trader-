@@ -40,6 +40,6 @@ def test_agent_profile_validation():
             id="test",
             name="Test",
             element="invalid",
-            guna_composition={"sattva": 1.0, "rajas": 0.0, "tamas": 0.0}
+            guna_composition={"sattva": 1.0, "rajas": 0.0, "tamas": 0.0},
             # Missing system_directive and allowed_tools
         )

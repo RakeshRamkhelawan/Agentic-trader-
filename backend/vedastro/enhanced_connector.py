@@ -11,7 +11,7 @@ Extends the base connector with:
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import swisseph as swe
 
@@ -166,15 +166,15 @@ class EnhancedVedAstroConnector(VedAstroConnector):
         },
     }
 
-    def __init__(self, config: Optional[VedAstroConfig] = None):
+    def __init__(self, config: VedAstroConfig | None = None):
         super().__init__(config)
-        self._dasha_cache: Dict[str, Any] = {}
-        self._ashtaka_cache: Dict[str, Any] = {}
+        self._dasha_cache: dict[str, Any] = {}
+        self._ashtaka_cache: dict[str, Any] = {}
         logger.info("Enhanced VedAstro connector initialized")
 
     # ==================== ASHTAKAVARGA ====================
 
-    def calculate_ashtakavarga(self, kundli: Dict[str, Any]) -> Dict[str, Any]:
+    def calculate_ashtakavarga(self, kundli: dict[str, Any]) -> dict[str, Any]:
         """
         Calculate Ashtakavarga (bindu scoring) for all planets.
 
@@ -211,9 +211,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
 
             # Calculate from each sign's perspective
             for sign_idx, sign_name in enumerate(self.SIGNS):
-                benefic_positions = self.ASHTAKAVARGA_POINTS.get(planet_name, {}).get(
-                    sign_idx, []
-                )
+                benefic_positions = self.ASHTAKAVARGA_POINTS.get(planet_name, {}).get(sign_idx, [])
 
                 # Check each house position from this sign
                 for house_pos in range(1, 13):
@@ -248,7 +246,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
         return result
 
     def get_gochara_bindu(
-        self, birth_kundli: Dict[str, Any], current_date: datetime, planet: str
+        self, birth_kundli: dict[str, Any], current_date: datetime, planet: str
     ) -> int:
         """
         Get Ashtakavarga bindu for transit (Gochara).
@@ -275,7 +273,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
     # ==================== VIMSHOTTARI DASHA ====================
 
     def calculate_vimshottari_dasha(
-        self, kundli: Dict[str, Any], reference_date: Optional[datetime] = None
+        self, kundli: dict[str, Any], reference_date: datetime | None = None
     ) -> DashaInfo:
         """
         Calculate Vimshottari Dasha based on Moon's position at birth.
@@ -322,9 +320,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
 
         # Calculate reference date (default: now)
         ref_date = reference_date or datetime.now()
-        birth_date = datetime.fromisoformat(
-            kundli.get("timestamp", ref_date.isoformat())
-        )
+        birth_date = datetime.fromisoformat(kundli.get("timestamp", ref_date.isoformat()))
         years_elapsed = (ref_date - birth_date).days / 365.25
 
         # Find current Mahadasha
@@ -353,14 +349,10 @@ class EnhancedVedAstroConnector(VedAstroConnector):
             else:
                 mahadasha_lord = self.DASHA_SEQUENCE[current_maha_index]
                 maha_start = ref_date
-                maha_end = ref_date + timedelta(
-                    days=self.DASHA_YEARS[mahadasha_lord] * 365.25
-                )
+                maha_end = ref_date + timedelta(days=self.DASHA_YEARS[mahadasha_lord] * 365.25)
 
         # Calculate Antardasha (Bhukti)
-        antardasha = self._calculate_antardasha(
-            mahadasha_lord, maha_start, maha_end, ref_date
-        )
+        antardasha = self._calculate_antardasha(mahadasha_lord, maha_start, maha_end, ref_date)
 
         result = DashaInfo(
             mahadasha_lord=mahadasha_lord,
@@ -381,7 +373,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
         maha_start: datetime,
         maha_end: datetime,
         ref_date: datetime,
-    ) -> Tuple[str, datetime, datetime, str]:
+    ) -> tuple[str, datetime, datetime, str]:
         """Calculate Antardasha within Mahadasha."""
         maha_years = self.DASHA_YEARS[maha_lord]
         total_days = (maha_end - maha_start).days
@@ -400,9 +392,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
 
             if ant_start <= ref_date < ant_end:
                 # Calculate Pratyantardasha
-                praty_lord = self._calculate_pratyantardasha(
-                    lord, ant_start, ant_end, ref_date
-                )
+                praty_lord = self._calculate_pratyantardasha(lord, ant_start, ant_end, ref_date)
                 return (lord, ant_start, ant_end, praty_lord)
 
             days_accounted += antardasha_days
@@ -430,7 +420,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
 
     # ==================== SAHAMS ====================
 
-    def calculate_artha_saham(self, kundli: Dict[str, Any]) -> float:
+    def calculate_artha_saham(self, kundli: dict[str, Any]) -> float:
         """
         Calculate Artha Saham (financial prosperity point).
         Formula: Lagna + Saturn - Mars (at sunrise)
@@ -443,7 +433,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
         artha_saham = (lagna_long + saturn_long - mars_long) % 360
         return artha_saham
 
-    def calculate_all_sahams(self, kundli: Dict[str, Any]) -> Dict[str, float]:
+    def calculate_all_sahams(self, kundli: dict[str, Any]) -> dict[str, float]:
         """
         Calculate all important Sahams.
         """
@@ -468,8 +458,8 @@ class EnhancedVedAstroConnector(VedAstroConnector):
         }
 
     def is_saham_transit_favorable(
-        self, saham_name: str, saham_long: float, transits: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, saham_name: str, saham_long: float, transits: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Check if transit is favorable for a specific Saham.
         """
@@ -511,8 +501,8 @@ class EnhancedVedAstroConnector(VedAstroConnector):
     # ==================== ENHANCED TRANSIT ====================
 
     def calculate_gochara_with_obstructions(
-        self, birth_kundli: Dict[str, Any], current_date: datetime
-    ) -> Dict[str, Any]:
+        self, birth_kundli: dict[str, Any], current_date: datetime
+    ) -> dict[str, Any]:
         """
         Enhanced Gochara with Vedhanka (obstructions).
         """
@@ -575,11 +565,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
                 "house_from_moon": house_from_moon,
                 "is_favorable": is_favorable,
                 "bindu": bindu,
-                "strength": "strong"
-                if bindu >= 4
-                else "medium"
-                if bindu >= 2
-                else "weak",
+                "strength": "strong" if bindu >= 4 else "medium" if bindu >= 2 else "weak",
             }
 
             if is_favorable and bindu >= 3:
@@ -596,8 +582,8 @@ class EnhancedVedAstroConnector(VedAstroConnector):
     # ==================== TRADING SPECIFIC ====================
 
     def calculate_trading_strength(
-        self, kundli: Dict[str, Any], current_date: datetime
-    ) -> Dict[str, Any]:
+        self, kundli: dict[str, Any], current_date: datetime
+    ) -> dict[str, Any]:
         """
         Calculate overall trading strength based on multiple factors.
         """
@@ -615,9 +601,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
             longitude = self._get_sidereal_position(jd, planet_id)[0]
             transits["current_positions"][planet_name] = {"longitude": longitude}
 
-        artha_analysis = self.is_saham_transit_favorable(
-            "artha", sahams["artha"], transits
-        )
+        artha_analysis = self.is_saham_transit_favorable("artha", sahams["artha"], transits)
 
         # Scoring
         score = 0
@@ -643,13 +627,11 @@ class EnhancedVedAstroConnector(VedAstroConnector):
 
         return {
             "overall_score": score,
-            "rating": "excellent"
-            if score >= 80
-            else "good"
-            if score >= 60
-            else "moderate"
-            if score >= 40
-            else "weak",
+            "rating": (
+                "excellent"
+                if score >= 80
+                else "good" if score >= 60 else "moderate" if score >= 40 else "weak"
+            ),
             "dasha": {
                 "mahadasha": dasha.mahadasha_lord,
                 "antardasha": dasha.antardasha_lord,
@@ -657,11 +639,9 @@ class EnhancedVedAstroConnector(VedAstroConnector):
             },
             "artha_saham": artha_analysis,
             "ashtakavarga_avg": avg_bindu,
-            "recommendation": "strong_buy"
-            if score >= 75
-            else "buy"
-            if score >= 55
-            else "hold"
-            if score >= 40
-            else "avoid",
+            "recommendation": (
+                "strong_buy"
+                if score >= 75
+                else "buy" if score >= 55 else "hold" if score >= 40 else "avoid"
+            ),
         }

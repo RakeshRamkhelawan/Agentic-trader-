@@ -13,7 +13,7 @@ import json
 import logging
 import os
 import re
-from typing import Optional, Type, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel
 
@@ -37,9 +37,9 @@ class DeepSeekProvider(LLMProvider):
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         model_name: str = "deepseek-chat",
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
     ):
         if not openai:
             raise ImportError("openai package not installed. Run 'pip install openai'")
@@ -47,8 +47,7 @@ class DeepSeekProvider(LLMProvider):
         self.api_key = api_key or os.getenv("DEEPSEEK_API_KEY")
         if not self.api_key:
             raise ValueError(
-                "DeepSeek API key is missing. "
-                "Set DEEPSEEK_API_KEY in .env or pass api_key=."
+                "DeepSeek API key is missing. " "Set DEEPSEEK_API_KEY in .env or pass api_key=."
             )
 
         self.model_name = model_name or os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
@@ -59,14 +58,13 @@ class DeepSeekProvider(LLMProvider):
             base_url=self.base_url,
         )
         logger.info(
-            f"DeepSeekProvider initialized: model={self.model_name}, "
-            f"base_url={self.base_url}"
+            f"DeepSeekProvider initialized: model={self.model_name}, " f"base_url={self.base_url}"
         )
 
     async def generate_text(
         self,
         prompt: str,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
     ) -> str:
         """Generate raw text from a prompt."""
         messages = []
@@ -87,8 +85,8 @@ class DeepSeekProvider(LLMProvider):
     async def generate_structured(
         self,
         prompt: str,
-        schema: Type[T],
-        system_prompt: Optional[str] = None,
+        schema: type[T],
+        system_prompt: str | None = None,
     ) -> T:
         """Generate a Pydantic object based on the schema."""
         schema_json = schema.model_json_schema()

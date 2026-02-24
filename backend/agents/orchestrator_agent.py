@@ -7,12 +7,16 @@ signalen van andere agents en bewaakt de algehele systeemcoherentie.
 
 import logging
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import (Observation, Orientation,
-                                             ResearchHypothesis,
-                                             RiskAssessment, TradeProposal)
+from backend.core.schemas.ooda_types import (
+    Observation,
+    Orientation,
+    ResearchHypothesis,
+    RiskAssessment,
+    TradeProposal,
+)
 from backend.governance.agent_gatekeeper import AgentRole
 
 logger = logging.getLogger(__name__)
@@ -31,9 +35,7 @@ class OrchestratorAgent(BaseAgent):
     - Zorgen voor 'balance' en 'non-attachment' in de trading cycle.
     """
 
-    def __init__(
-        self, llm_provider: Optional[Any] = None, event_bus: Optional[Any] = None
-    ):
+    def __init__(self, llm_provider: Any | None = None, event_bus: Any | None = None):
         super().__init__(
             agent_name="Orchestrator",
             llm_provider=llm_provider,
@@ -47,11 +49,11 @@ class OrchestratorAgent(BaseAgent):
         self,
         observation: Observation,
         orientation: Orientation,
-        bull_hypothesis: Optional[ResearchHypothesis],
-        bear_hypothesis: Optional[ResearchHypothesis],
-        proposals: List[TradeProposal],
-        risk_assessments: List[RiskAssessment],
-    ) -> Dict[str, Any]:
+        bull_hypothesis: ResearchHypothesis | None,
+        bear_hypothesis: ResearchHypothesis | None,
+        proposals: list[TradeProposal],
+        risk_assessments: list[RiskAssessment],
+    ) -> dict[str, Any]:
         """
         Harmoniseert de outputs van de verschillende agents.
 
@@ -125,15 +127,11 @@ class OrchestratorAgent(BaseAgent):
         self.logger.info(f"Harmony check: {status} (score={self.harmony_score:.2f})")
 
         # Publish meta-thought
-        await self.publish_thought(
-            reasoning=rationale, confidence=self.harmony_score, data=result
-        )
+        await self.publish_thought(reasoning=rationale, confidence=self.harmony_score, data=result)
 
         return result
 
-    async def analyze(
-        self, features: Dict[str, Any], context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """BaseAgent abstract method override."""
         return await self.harmonize(
             observation=context.get("observation"),

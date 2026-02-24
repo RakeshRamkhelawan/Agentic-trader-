@@ -1,8 +1,8 @@
 import asyncio
 import uuid
+
 # Placeholder for OrderRequest until verified
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 from backend.execution.backtest_engine import BacktestEngine
 from backend.execution.broker_interface import ExecutionInterface
@@ -15,14 +15,14 @@ class OrderRequest:
     side: str
     qty: float
     type: str = "market"
-    price: Optional[float] = None
-    client_order_id: Optional[str] = None
+    price: float | None = None
+    client_order_id: str | None = None
 
 
 @dataclass
 class OrderResult:
     order_id: str
-    client_order_id: Optional[str]
+    client_order_id: str | None
     status: OrderStatus
     filled_qty: float
     avg_price: float
@@ -33,13 +33,11 @@ class PaperExchange(ExecutionInterface):
     Simulates a crypto exchange with slippage and latency.
     """
 
-    def __init__(
-        self, backtest_engine: BacktestEngine, initial_balance_eur: float = 10000.0
-    ):
+    def __init__(self, backtest_engine: BacktestEngine, initial_balance_eur: float = 10000.0):
         self.engine = backtest_engine
         self.balances = {"EUR": initial_balance_eur, "BTC": 0.0}
-        self.orders: Dict[str, OrderResult] = {}
-        self._last_tick: Dict[str, TickerUpdate] = {}
+        self.orders: dict[str, OrderResult] = {}
+        self._last_tick: dict[str, TickerUpdate] = {}
 
     async def submit_order(self, order: OrderRequest) -> OrderResult:
         # Simulate network latency

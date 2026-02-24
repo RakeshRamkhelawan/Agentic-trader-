@@ -17,7 +17,6 @@ Budha Graha activates analytical, high-speed strategies.
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +43,12 @@ class StrategyProfile:
     strategy_type: str
     time_horizon: str  # "scalping", "day", "swing", "long_term"
     risk_profile: str  # "conservative", "moderate", "aggressive"
-    indicators: List[str]
+    indicators: list[str]
     description: str
 
 
 # Strategy profiles for each Graha
-GRAHA_STRATEGIES: Dict[Graha, StrategyProfile] = {
+GRAHA_STRATEGIES: dict[Graha, StrategyProfile] = {
     Graha.SURYA: StrategyProfile(
         graha=Graha.SURYA,
         strategy_type="trend_following",
@@ -135,8 +134,8 @@ class DashaStrategySelector:
 
     def __init__(self):
         """Initialize Dasha strategy selector."""
-        self.active_graha: Optional[Graha] = None
-        self.dasha_weights: Dict[Graha, float] = {g: 0.0 for g in Graha}
+        self.active_graha: Graha | None = None
+        self.dasha_weights: dict[Graha, float] = {g: 0.0 for g in Graha}
 
     def update_dasha(
         self,
@@ -176,7 +175,7 @@ class DashaStrategySelector:
 
         return GRAHA_STRATEGIES[self.active_graha]
 
-    def get_strategy_blend(self) -> Dict[str, float]:
+    def get_strategy_blend(self) -> dict[str, float]:
         """
         Get weighted blend of strategies based on Dasha weights.
 
@@ -226,14 +225,14 @@ class TransitAnalyzer:
 
     def __init__(self):
         """Initialize transit analyzer."""
-        self.transit_aspects: List[Dict] = []
+        self.transit_aspects: list[dict] = []
 
     def analyze_transit(
         self,
         planet: Graha,
         position: float,  # Degrees
-        natal_positions: Dict[Graha, float],
-    ) -> Dict:
+        natal_positions: dict[Graha, float],
+    ) -> dict:
         """
         Analyze transit of a planet.
 
@@ -252,17 +251,11 @@ class TransitAnalyzer:
 
             # Check major aspects
             if angle < 10 or angle > 350:
-                aspects.append(
-                    {"planet": natal_planet, "aspect": "conjunction", "angle": angle}
-                )
+                aspects.append({"planet": natal_planet, "aspect": "conjunction", "angle": angle})
             elif 170 < angle < 190:
-                aspects.append(
-                    {"planet": natal_planet, "aspect": "opposition", "angle": angle}
-                )
+                aspects.append({"planet": natal_planet, "aspect": "opposition", "angle": angle})
             elif 110 < angle < 130:
-                aspects.append(
-                    {"planet": natal_planet, "aspect": "trine", "angle": angle}
-                )
+                aspects.append({"planet": natal_planet, "aspect": "trine", "angle": angle})
 
         return {
             "transiting_planet": planet,
@@ -270,7 +263,7 @@ class TransitAnalyzer:
             "trading_implication": self._get_implication(planet, aspects),
         }
 
-    def _get_implication(self, planet: Graha, aspects: List[Dict]) -> str:
+    def _get_implication(self, planet: Graha, aspects: list[dict]) -> str:
         """Get trading implication of transit."""
         if not aspects:
             return "neutral"
@@ -290,7 +283,7 @@ class TransitAnalyzer:
         return "neutral"
 
 
-def get_budha_arbitrage_config() -> Dict:
+def get_budha_arbitrage_config() -> dict:
     """
     Get arbitrage configuration optimized for Budha Graha.
 

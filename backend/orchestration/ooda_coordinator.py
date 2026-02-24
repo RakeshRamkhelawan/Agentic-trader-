@@ -13,8 +13,9 @@ Unified Consciousness Architecture - Geïntegreerd met:
 import logging
 import time
 import uuid
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, AsyncContextManager, Callable, Dict, Optional
+from typing import Any, AsyncContextManager
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,15 +26,20 @@ from backend.agents.risk_manager_agent import RiskManagerAgent
 from backend.agents.trader_agent import TraderAgent
 from backend.core.adapters.system_bridge import CognitiveBridge
 from backend.core.karma.karma_register import KarmaRegister, TradeOutcome
-from backend.core.schemas.ooda_types import (CapitalAllocation, ExecutionPlan,
-                                             Observation, Orientation,
-                                             PortfolioState, RiskAssessment,
-                                             RiskDecision, TradeProposal)
+from backend.core.schemas.ooda_types import (
+    CapitalAllocation,
+    ExecutionPlan,
+    Observation,
+    Orientation,
+    PortfolioState,
+    RiskAssessment,
+    RiskDecision,
+    TradeProposal,
+)
 from backend.core.system_identity import SystemIdentity
 from backend.execution.fast_config import FastConfig
 from backend.execution.order_executor import OrderExecutor
-from backend.governance.circuit_breaker import (CircuitBreaker,
-                                                CircuitBreakerTrippedError)
+from backend.governance.circuit_breaker import CircuitBreaker, CircuitBreakerTrippedError
 from backend.governance.decision_audit import AuditLogger
 from backend.risk.risk_orchestrator import RiskOrchestrator
 
@@ -69,20 +75,18 @@ class OODALoopCoordinator:
         bull_researcher: Any,  # Avoid circular import, type is BullResearcher
         bear_researcher: Any,  # Avoid circular import, type is BearResearcher
         cognitive_bridge: CognitiveBridge,
-        orchestrator: Optional[OrchestratorAgent] = None,
-        order_executor: Optional[OrderExecutor] = None,
-        circuit_breaker: Optional[CircuitBreaker] = None,
+        orchestrator: OrchestratorAgent | None = None,
+        order_executor: OrderExecutor | None = None,
+        circuit_breaker: CircuitBreaker | None = None,
         trading_mode: TradingMode = TradingMode.NOTIFY_ONLY,
-        rag_retriever: Optional[Any] = None,
-        audit_session_factory: Optional[
-            Callable[[], AsyncContextManager[AsyncSession]]
-        ] = None,
+        rag_retriever: Any | None = None,
+        audit_session_factory: Callable[[], AsyncContextManager[AsyncSession]] | None = None,
         # === UNIFIED CONSCIOUSNESS INTEGRATION (Phase A-E) ===
-        cognitive_orchestrator: Optional[Any] = None,  # CognitiveOrchestrator
-        navagraha_service: Optional[Any] = None,  # NavagrahaService
-        system_identity: Optional[SystemIdentity] = None,  # SystemIdentity (36-Tattva)
-        risk_orchestrator: Optional[RiskOrchestrator] = None,  # RiskOrchestrator
-        karma_register: Optional[KarmaRegister] = None,  # KarmaRegister
+        cognitive_orchestrator: Any | None = None,  # CognitiveOrchestrator
+        navagraha_service: Any | None = None,  # NavagrahaService
+        system_identity: SystemIdentity | None = None,  # SystemIdentity (36-Tattva)
+        risk_orchestrator: RiskOrchestrator | None = None,  # RiskOrchestrator
+        karma_register: KarmaRegister | None = None,  # KarmaRegister
     ):
         """
         Initialiseer OODA Coordinator.
@@ -153,7 +157,7 @@ class OODALoopCoordinator:
 
     async def run_cycle(
         self, symbol: str, current_price: float, strategy_id: str = "momentum_v1"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Voer één complete OODA cyclus uit.
 
@@ -236,17 +240,15 @@ class OODALoopCoordinator:
             except Exception as e:
                 logger.warning(f"CognitiveOrchestrator market tick failed: {e}")
 
-        return await self._execute_ooda_loop(
-            symbol, current_price, strategy_id, trace_id
-        )
+        return await self._execute_ooda_loop(symbol, current_price, strategy_id, trace_id)
 
     async def _execute_ooda_loop(
         self,
         symbol: str,
         current_price: float,
         strategy_id: str,
-        trace_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        trace_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Internal execution of the loop.
 
@@ -272,9 +274,7 @@ class OODALoopCoordinator:
             observation = await self._observe(symbol, trace_id)
 
             # ========== ORIENT ==========
-            orientation, bull_hypothesis, bear_hypothesis = await self._orient(
-                observation
-            )
+            orientation, bull_hypothesis, bear_hypothesis = await self._orient(observation)
 
             # ========== DECIDE ==========
             proposal, risk_assessment, capital_allocation = await self._decide(
@@ -310,9 +310,7 @@ class OODALoopCoordinator:
                                 proposal, capital_allocation, trace_id, current_price
                             )
                         else:
-                            logger.warning(
-                                "Auto mode active but no OrderExecutor configured!"
-                            )
+                            logger.warning("Auto mode active but no OrderExecutor configured!")
                             execution_result = {
                                 "status": "skipped",
                                 "reason": "No executor",
@@ -335,12 +333,8 @@ class OODALoopCoordinator:
                     outcome = TradeOutcome(
                         pnl_percent=execution_result.get("pnl_percent", 0.0),
                         drawdown_percent=execution_result.get("drawdown_percent", 0.0),
-                        execution_speed_ms=execution_result.get(
-                            "execution_time_ms", 0.0
-                        ),
-                        compliance_violation=execution_result.get(
-                            "compliance_error", False
-                        ),
+                        execution_speed_ms=execution_result.get("execution_time_ms", 0.0),
+                        compliance_violation=execution_result.get("compliance_error", False),
                     )
                     # Record action for learning
                     self.karma_register.register_feedback(
@@ -363,9 +357,7 @@ class OODALoopCoordinator:
                         action_id=hash(trace_id) % 10000,  # Simple ID generation
                         outcome=outcome_score,
                     )
-                    logger.debug(
-                        f"SystemIdentity updated with outcome for trace_id={trace_id}"
-                    )
+                    logger.debug(f"SystemIdentity updated with outcome for trace_id={trace_id}")
                 except Exception as e:
                     logger.warning(f"SystemIdentity update failed: {e}")
 
@@ -406,22 +398,14 @@ class OODALoopCoordinator:
                             trace_id=trace_id,
                             symbol=symbol,
                             observation=(
-                                observation.model_dump(mode="json")
-                                if observation
-                                else None
+                                observation.model_dump(mode="json") if observation else None
                             ),
                             orientation=(
-                                orientation.model_dump(mode="json")
-                                if orientation
-                                else None
+                                orientation.model_dump(mode="json") if orientation else None
                             ),
-                            proposal=(
-                                proposal.model_dump(mode="json") if proposal else None
-                            ),
+                            proposal=(proposal.model_dump(mode="json") if proposal else None),
                             risk_assessment=(
-                                risk_assessment.model_dump(mode="json")
-                                if risk_assessment
-                                else None
+                                risk_assessment.model_dump(mode="json") if risk_assessment else None
                             ),
                             execution=exec_data,
                             decision_summary=result["decision"],
@@ -512,9 +496,7 @@ class OODALoopCoordinator:
 
     async def _decide(
         self, orientation: Orientation, current_price: float, strategy_id: str
-    ) -> tuple[
-        Optional[TradeProposal], Optional[RiskAssessment], Optional[CapitalAllocation]
-    ]:
+    ) -> tuple[TradeProposal | None, RiskAssessment | None, CapitalAllocation | None]:
         """DECIDE fase."""
         logger.debug(f"[DECIDE] {orientation.symbol}")
 
@@ -618,13 +600,11 @@ class OODALoopCoordinator:
         allocation: CapitalAllocation,
         trace_id: str,
         current_price: float,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         ACT fase - Executes the trade via OrderExecutor.
         """
-        logger.info(
-            f"[ACT] Executing trade for {proposal.symbol} (trace_id={trace_id})"
-        )
+        logger.info(f"[ACT] Executing trade for {proposal.symbol} (trace_id={trace_id})")
 
         if not self.order_executor:
             return {"status": "failed", "error": "No OrderExecutor configured"}
@@ -634,11 +614,7 @@ class OODALoopCoordinator:
             trace_id=trace_id,
             symbol=proposal.symbol,
             side=proposal.side,
-            quantity=(
-                allocation.position_size_usd / current_price
-                if current_price > 0
-                else 0.0
-            ),
+            quantity=(allocation.position_size_usd / current_price if current_price > 0 else 0.0),
             order_type="market",  # Defaulting to market for OODA v1
             price=None,  # Proposal.entry_price could be used for limit
             expected_price=proposal.entry_price or current_price,
@@ -653,9 +629,7 @@ class OODALoopCoordinator:
         return {
             "status": "executed" if outcome.success else "failed",
             "outcome": (
-                outcome.model_dump(mode="json")
-                if hasattr(outcome, "model_dump")
-                else str(outcome)
+                outcome.model_dump(mode="json") if hasattr(outcome, "model_dump") else str(outcome)
             ),
             "message": (
                 outcome.error
@@ -678,8 +652,8 @@ class OODALoopCoordinator:
 
     def _get_decision_summary(
         self,
-        proposal: Optional[TradeProposal],
-        risk_assessment: Optional[RiskAssessment],
+        proposal: TradeProposal | None,
+        risk_assessment: RiskAssessment | None,
     ) -> str:
         """Creëer human-readable decision summary."""
         if proposal is None:
@@ -701,8 +675,8 @@ class OODALoopCoordinator:
         self,
         new_mode: TradingMode,
         user_id: str,
-        reason: Optional[str] = None,
-        permission_service: Optional[Any] = None,
+        reason: str | None = None,
+        permission_service: Any | None = None,
     ) -> bool:
         """
         Change trading mode met RBAC enforcement.
@@ -720,8 +694,7 @@ class OODALoopCoordinator:
             PermissionDeniedError: Als user geen permissie heeft
         """
         # Import here to avoid circular dependency
-        from backend.governance.trading_permissions import \
-            get_required_permission_for_mode
+        from backend.governance.trading_permissions import get_required_permission_for_mode
 
         # Permission check
         if permission_service:
@@ -756,7 +729,7 @@ class OODALoopCoordinator:
         """
         return self.trading_mode
 
-    def _get_tattva_risk_gate_state(self) -> Dict[str, Any]:
+    def _get_tattva_risk_gate_state(self) -> dict[str, Any]:
         """
         Evaluate Kanchuka Tattvas (layers 6-12) for risk gate state.
 
@@ -768,9 +741,7 @@ class OODALoopCoordinator:
 
         try:
             # Get current tattva coherence
-            tattva_coherence = self.system_identity.system_state.get(
-                "tattva_coherence", {}
-            )
+            tattva_coherence = self.system_identity.system_state.get("tattva_coherence", {})
 
             # Kanchuka layers: 6-12
             kanchuka_layers = range(6, 13)
@@ -778,9 +749,7 @@ class OODALoopCoordinator:
                 tattva_coherence.get(str(layer), 1.0) for layer in kanchuka_layers
             ]
             avg_kanchuka_coherence = (
-                sum(kanchuka_coherence) / len(kanchuka_coherence)
-                if kanchuka_coherence
-                else 1.0
+                sum(kanchuka_coherence) / len(kanchuka_coherence) if kanchuka_coherence else 1.0
             )
 
             # If Kanchuka coherence is low, block high-risk trades
@@ -799,13 +768,13 @@ class OODALoopCoordinator:
             return {"risk_gate_blocked": False, "confidence_multiplier": 1.0}
 
     @property
-    def current_guna_balance(self) -> Optional[Any]:
+    def current_guna_balance(self) -> Any | None:
         """Return current guna balance from CognitiveOrchestrator or Navagraha."""
         if self.cognitive_orchestrator:
             return self.cognitive_orchestrator.current_guna_balance
         return self._current_guna
 
-    def get_unified_consciousness_state(self) -> Dict[str, Any]:
+    def get_unified_consciousness_state(self) -> dict[str, Any]:
         """
         Get complete unified consciousness state.
 
@@ -821,9 +790,7 @@ class OODALoopCoordinator:
         if self.navagraha_service:
             state["components"]["navagraha"] = {
                 "enabled": True,
-                "current_guna": (
-                    self._current_guna.model_dump() if self._current_guna else None
-                ),
+                "current_guna": (self._current_guna.model_dump() if self._current_guna else None),
             }
 
         if self.system_identity:
@@ -837,9 +804,7 @@ class OODALoopCoordinator:
                 "enabled": True,
                 "guna_balance": (
                     self.cognitive_orchestrator.current_guna_balance.to_dict()
-                    if hasattr(
-                        self.cognitive_orchestrator.current_guna_balance, "to_dict"
-                    )
+                    if hasattr(self.cognitive_orchestrator.current_guna_balance, "to_dict")
                     else str(self.cognitive_orchestrator.current_guna_balance)
                 ),
             }
@@ -852,7 +817,7 @@ class OODALoopCoordinator:
 
         return state
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Krijg coordinator statistieken."""
         stats = {
             "cycles_completed": self.cycles_completed,

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from backend.core.cache.decorators import cached
 from backend.core.cache.multi_level_cache import MultiLevelCache
@@ -15,13 +15,13 @@ class NavagrahaCache:
     @cached(cache=None, namespace="navagraha:positions", ttls=[300, 900, 3600])
     async def get_planetary_positions(
         self, timestamp: datetime, location: tuple[float, float]
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         pass
 
     @cached(cache=None, namespace="navagraha:aspects", ttls=[900, 1800, 7200])
     async def get_planetary_aspects(
         self, timestamp: datetime, location: tuple[float, float]
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         pass
 
     @cached(
@@ -32,13 +32,13 @@ class NavagrahaCache:
     )
     async def get_rahu_kala_window(
         self, timestamp: datetime, location: tuple[float, float]
-    ) -> Dict[str, datetime]:
+    ) -> dict[str, datetime]:
         pass
 
     async def invalidate_positions(
         self,
-        timestamp: Optional[datetime] = None,
-        location: Optional[tuple[float, float]] = None,
+        timestamp: datetime | None = None,
+        location: tuple[float, float] | None = None,
     ):
         if timestamp and location:
             await self._cache.delete("navagraha:positions", timestamp, location)
@@ -48,9 +48,7 @@ class NavagrahaCache:
     async def invalidate_all(self):
         await self._cache.clear()
 
-    async def warm_cache(
-        self, timestamps: list[datetime], location: tuple[float, float]
-    ):
+    async def warm_cache(self, timestamps: list[datetime], location: tuple[float, float]):
         for ts in timestamps:
             await self.get_planetary_positions(ts, location)
             await self.get_planetary_aspects(ts, location)

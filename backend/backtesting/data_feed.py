@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -10,14 +10,12 @@ class DataFeed(ABC):
     """Abstract base class for data sources."""
 
     @abstractmethod
-    def load_data(
-        self, symbols: List[str], start_date: datetime, end_date: datetime
-    ) -> None:
+    def load_data(self, symbols: list[str], start_date: datetime, end_date: datetime) -> None:
         """Load data into memory."""
         pass
 
     @abstractmethod
-    def get_latest_bar(self, symbol: str) -> Optional[Dict[str, Any]]:
+    def get_latest_bar(self, symbol: str) -> dict[str, Any] | None:
         """Get the latest bar for the current timestamp in the event loop."""
         pass
 
@@ -36,13 +34,11 @@ class MockDataFeed(DataFeed):
     """Generates random walk data for testing."""
 
     def __init__(self):
-        self._data: Dict[str, pd.DataFrame] = {}
+        self._data: dict[str, pd.DataFrame] = {}
         self._current_index = 0
-        self._timestamps: List[datetime] = []
+        self._timestamps: list[datetime] = []
 
-    def load_data(
-        self, symbols: List[str], start_date: datetime, end_date: datetime
-    ) -> None:
+    def load_data(self, symbols: list[str], start_date: datetime, end_date: datetime) -> None:
         # Generate generic time range (daily)
         dates = pd.date_range(start=start_date, end=end_date, freq="D")
         self._timestamps = dates.to_pydatetime().tolist()
@@ -73,7 +69,7 @@ class MockDataFeed(DataFeed):
             return datetime.now()
         return self._timestamps[self._current_index]
 
-    def get_latest_bar(self, symbol: str) -> Optional[Dict[str, Any]]:
+    def get_latest_bar(self, symbol: str) -> dict[str, Any] | None:
         if symbol not in self._data:
             return None
 

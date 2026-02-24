@@ -3,7 +3,7 @@ AssetDiscoveryAgent - Autonome Asset Data Updates voor Research.
 
 Deze agent vervangt de handmatige scripts:
 - scripts/fetch_bitvavo_assets.py
-- scripts/fetch_revolut_assets.py  
+- scripts/fetch_revolut_assets.py
 - import_assets.py
 
 Rol in OODA: **OBSERVE** (Asset Discovery Layer)
@@ -19,7 +19,7 @@ import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import backoff
 import ccxt.async_support as ccxt
@@ -55,8 +55,8 @@ class AssetDiscoveryAgent(BaseAgent):
 
     def __init__(
         self,
-        llm_provider: Optional[Any] = None,
-        event_bus: Optional[Any] = None,
+        llm_provider: Any | None = None,
+        event_bus: Any | None = None,
         discovery_interval: int = 86400,  # 24 uur
         metadata_sync_interval: int = 3600,  # 1 uur
         batch_size: int = 50,
@@ -76,12 +76,12 @@ class AssetDiscoveryAgent(BaseAgent):
         # Stats
         self.assets_discovered = 0
         self.assets_updated = 0
-        self.last_discovery_run: Optional[datetime] = None
-        self.last_metadata_sync: Optional[datetime] = None
+        self.last_discovery_run: datetime | None = None
+        self.last_metadata_sync: datetime | None = None
 
         # Task refs
-        self._discovery_task: Optional[asyncio.Task] = None
-        self._metadata_sync_task: Optional[asyncio.Task] = None
+        self._discovery_task: asyncio.Task | None = None
+        self._metadata_sync_task: asyncio.Task | None = None
         self._running = False
 
         # Database
@@ -149,9 +149,7 @@ class AssetDiscoveryAgent(BaseAgent):
                 logger.info("[Discovery] Starting asset discovery cycle...")
                 await self.run_discovery_cycle()
                 self.last_discovery_run = datetime.now(UTC)
-                logger.info(
-                    f"[Discovery] Completed. Next run in {self.discovery_interval}s"
-                )
+                logger.info(f"[Discovery] Completed. Next run in {self.discovery_interval}s")
             except Exception as e:
                 logger.error(f"[Discovery] Error in discovery cycle: {e}")
                 self.record_activity(success=False)
@@ -165,9 +163,7 @@ class AssetDiscoveryAgent(BaseAgent):
                 logger.info("[Metadata] Starting metadata sync cycle...")
                 await self.run_metadata_sync()
                 self.last_metadata_sync = datetime.now(UTC)
-                logger.info(
-                    f"[Metadata] Completed. Next run in {self.metadata_sync_interval}s"
-                )
+                logger.info(f"[Metadata] Completed. Next run in {self.metadata_sync_interval}s")
             except Exception as e:
                 logger.error(f"[Metadata] Error in metadata sync: {e}")
                 self.record_activity(success=False)
@@ -181,7 +177,7 @@ class AssetDiscoveryAgent(BaseAgent):
         self.think("Starting asset discovery cycle for all exchanges")
 
         exchanges = ["bitvavo", "revolut"]
-        all_assets: Dict[str, Dict[str, Any]] = {}
+        all_assets: dict[str, dict[str, Any]] = {}
 
         for exchange_id in exchanges:
             try:
@@ -191,9 +187,7 @@ class AssetDiscoveryAgent(BaseAgent):
                     if symbol:
                         all_assets[symbol] = asset
 
-                logger.info(
-                    f"[Discovery] Found {len(assets)} assets from {exchange_id}"
-                )
+                logger.info(f"[Discovery] Found {len(assets)} assets from {exchange_id}")
 
             except Exception as e:
                 logger.error(f"[Discovery] Failed to fetch from {exchange_id}: {e}")
@@ -245,7 +239,7 @@ class AssetDiscoveryAgent(BaseAgent):
             logger.error(f"[Metadata] Sync failed: {e}")
             raise
 
-    async def _discover_from_exchange(self, exchange_id: str) -> List[Dict[str, Any]]:
+    async def _discover_from_exchange(self, exchange_id: str) -> list[dict[str, Any]]:
         """
         Discover assets van een specifieke exchange.
         """
@@ -258,7 +252,7 @@ class AssetDiscoveryAgent(BaseAgent):
             return []
 
     @backoff.on_exception(backoff.expo, Exception, max_tries=3)
-    async def _fetch_bitvavo_assets(self) -> List[Dict[str, Any]]:
+    async def _fetch_bitvavo_assets(self) -> list[dict[str, Any]]:
         """
         Fetch alle assets van Bitvavo via CCXT.
         """
@@ -277,21 +271,13 @@ class AssetDiscoveryAgent(BaseAgent):
                         "name": market.get(
                             "base", ""
                         ),  # Bitvavo doesn't provide full names in markets
-                        "status": "active"
-                        if market.get("active", True)
-                        else "inactive",
+                        "status": "active" if market.get("active", True) else "inactive",
                         "type": market.get("type", "spot"),
                         "exchange": "bitvavo",
                         "precision_price": market.get("precision", {}).get("price", 8),
-                        "precision_amount": market.get("precision", {}).get(
-                            "amount", 8
-                        ),
-                        "limits_min": market.get("limits", {})
-                        .get("amount", {})
-                        .get("min", 0),
-                        "limits_max": market.get("limits", {})
-                        .get("amount", {})
-                        .get("max", None),
+                        "precision_amount": market.get("precision", {}).get("amount", 8),
+                        "limits_min": market.get("limits", {}).get("amount", {}).get("min", 0),
+                        "limits_max": market.get("limits", {}).get("amount", {}).get("max", None),
                     }
                 )
 
@@ -301,7 +287,7 @@ class AssetDiscoveryAgent(BaseAgent):
         finally:
             await exchange.close()
 
-    async def _fetch_revolut_assets(self) -> List[Dict[str, Any]]:
+    async def _fetch_revolut_assets(self) -> list[dict[str, Any]]:
         """
         Fetch assets van Revolut X via hun API.
         """
@@ -329,9 +315,7 @@ class AssetDiscoveryAgent(BaseAgent):
                                         "symbol": symbol,
                                         "baseAsset": item.get(
                                             "baseAsset",
-                                            symbol.split("-")[0]
-                                            if "-" in symbol
-                                            else "",
+                                            symbol.split("-")[0] if "-" in symbol else "",
                                         ),
                                         "quoteAsset": item.get("quoteAsset", ""),
                                         "name": item.get("name", ""),
@@ -367,7 +351,7 @@ class AssetDiscoveryAgent(BaseAgent):
 
         return assets
 
-    def _get_revolut_fallback_assets(self) -> List[Dict[str, Any]]:
+    def _get_revolut_fallback_assets(self) -> list[dict[str, Any]]:
         """Fallback assets voor Revolut als API niet beschikbaar is."""
         fallback = [
             {
@@ -464,7 +448,7 @@ class AssetDiscoveryAgent(BaseAgent):
         logger.info("[Revolut] Using fallback asset list")
         return fallback
 
-    async def _sync_asset_metadata(self, symbols: List[str]) -> int:
+    async def _sync_asset_metadata(self, symbols: list[str]) -> int:
         """
         Sync metadata (prijzen, volumes) voor een lijst van symbols.
         """
@@ -484,14 +468,12 @@ class AssetDiscoveryAgent(BaseAgent):
                     async with self._async_session() as session:
                         for symbol, ticker in tickers.items():
                             await session.execute(
-                                text(
-                                    """
-                                    UPDATE assets 
+                                text("""
+                                    UPDATE assets
                                     SET metadata_info = metadata_info || :metadata,
                                         last_updated = NOW()
                                     WHERE symbol = :symbol
-                                """
-                                ),
+                                """),
                                 {
                                     "symbol": symbol,
                                     "metadata": json.dumps(
@@ -501,9 +483,7 @@ class AssetDiscoveryAgent(BaseAgent):
                                             "high_24h": ticker.get("high"),
                                             "low_24h": ticker.get("low"),
                                             "change_24h": ticker.get("change"),
-                                            "change_percent_24h": ticker.get(
-                                                "percentage"
-                                            ),
+                                            "change_percent_24h": ticker.get("percentage"),
                                         }
                                     ),
                                 },
@@ -521,7 +501,7 @@ class AssetDiscoveryAgent(BaseAgent):
 
         return updated
 
-    async def _import_to_database(self, assets: List[Dict[str, Any]]) -> int:
+    async def _import_to_database(self, assets: list[dict[str, Any]]) -> int:
         """
         Import assets naar database met UPSERT (insert or update).
         """
@@ -587,7 +567,7 @@ class AssetDiscoveryAgent(BaseAgent):
 
         return imported
 
-    async def _save_to_files(self, assets: Dict[str, Dict[str, Any]]):
+    async def _save_to_files(self, assets: dict[str, dict[str, Any]]):
         """
         Sla assets op naar CSV/JSON voor debugging/backup.
         """
@@ -633,9 +613,7 @@ class AssetDiscoveryAgent(BaseAgent):
         except Exception as e:
             logger.warning(f"[Event] Failed to publish: {e}")
 
-    async def analyze(
-        self, features: Dict[str, Any], context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """
         BaseAgent abstract method - niet gebruikt voor deze agent.
         """
@@ -644,7 +622,7 @@ class AssetDiscoveryAgent(BaseAgent):
             "confidence": 0.0,
         }
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Krijg agent statistieken.
         """
@@ -653,12 +631,12 @@ class AssetDiscoveryAgent(BaseAgent):
             **health,
             "assets_discovered": self.assets_discovered,
             "assets_updated": self.assets_updated,
-            "last_discovery_run": self.last_discovery_run.isoformat()
-            if self.last_discovery_run
-            else None,
-            "last_metadata_sync": self.last_metadata_sync.isoformat()
-            if self.last_metadata_sync
-            else None,
+            "last_discovery_run": (
+                self.last_discovery_run.isoformat() if self.last_discovery_run else None
+            ),
+            "last_metadata_sync": (
+                self.last_metadata_sync.isoformat() if self.last_metadata_sync else None
+            ),
             "discovery_interval": self.discovery_interval,
             "metadata_sync_interval": self.metadata_sync_interval,
         }

@@ -1,8 +1,8 @@
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import lru_cache
-from typing import Any, Dict, List
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -37,7 +37,7 @@ class ChatHistoryEntry(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
-    history: List[ChatHistoryEntry] = []
+    history: list[ChatHistoryEntry] = []
 
 
 class ChatResponse(BaseModel):
@@ -46,20 +46,15 @@ class ChatResponse(BaseModel):
 
 # Dependency to get Orchestrator from App State
 def get_orchestrator(request: Request) -> CognitiveOrchestrator:
-    if (
-        not hasattr(request.app.state, "orchestrator")
-        or not request.app.state.orchestrator
-    ):
-        raise HTTPException(
-            status_code=503, detail="Cognitive Orchestrator not initialized"
-        )
+    if not hasattr(request.app.state, "orchestrator") or not request.app.state.orchestrator:
+        raise HTTPException(status_code=503, detail="Cognitive Orchestrator not initialized")
     return request.app.state.orchestrator
 
 
 @router.get("/status")
 async def get_agents_status(
     orchestrator: CognitiveOrchestrator = Depends(get_orchestrator),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get the status of all agents managed by the Cognitive Orchestrator.
 
@@ -84,9 +79,7 @@ async def get_agents_status(
         status = {
             "id": agent_id,
             "name": (
-                "Orchestrator"
-                if is_orchestrator
-                else agent.__class__.__name__.replace("Agent", "")
+                "Orchestrator" if is_orchestrator else agent.__class__.__name__.replace("Agent", "")
             ),
             "type": agent.__class__.__name__,
             "status": "running" if getattr(agent, "is_active", True) else "paused",
@@ -100,18 +93,14 @@ async def get_agents_status(
         else:
             import hashlib
 
-            prana = 50.0 + (
-                hashlib.md5(agent_id.encode(), usedforsecurity=False).digest()[0] % 50
-            )
+            prana = 50.0 + (hashlib.md5(agent_id.encode(), usedforsecurity=False).digest()[0] % 50)
             status["prana"] = round(prana, 1)
             total_prana += prana
 
         # Try to get trades count
         trades = 0
         if hasattr(agent, "trades"):
-            trades = (
-                len(agent.trades) if isinstance(agent.trades, list) else agent.trades
-            )
+            trades = len(agent.trades) if isinstance(agent.trades, list) else agent.trades
         elif hasattr(agent, "trade_count"):
             trades = agent.trade_count
         status["trades"] = trades
@@ -189,7 +178,7 @@ async def get_agents_status(
 async def run_agent_cycle(
     request: Request,
     orchestrator: CognitiveOrchestrator = Depends(get_orchestrator),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Manually trigger an agent analysis cycle.
     Fetches current market data and returns AI-generated insights.
@@ -204,9 +193,7 @@ async def run_agent_cycle(
         raise HTTPException(status_code=503, detail="No market data available")
 
     # Sort by change for analysis
-    sorted_markets = sorted(
-        market_data, key=lambda x: x.get("change_24h", 0), reverse=True
-    )
+    sorted_markets = sorted(market_data, key=lambda x: x.get("change_24h", 0), reverse=True)
     top_gainers = sorted_markets[:3]
     top_losers = sorted_markets[-3:]
 
@@ -215,15 +202,11 @@ async def run_agent_cycle(
 
     market_summary = "Top Gainers:\n"
     for m in top_gainers:
-        market_summary += (
-            f"- {m['symbol']}: ${m['price']:.2f} (+{m['change_24h']:.2f}%)\n"
-        )
+        market_summary += f"- {m['symbol']}: ${m['price']:.2f} (+{m['change_24h']:.2f}%)\n"
 
     market_summary += "\nTop Losers:\n"
     for m in top_losers:
-        market_summary += (
-            f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:.2f}%)\n"
-        )
+        market_summary += f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:.2f}%)\n"
 
     prompt = f"""Analyze this market data and provide trading insights:
 
@@ -281,7 +264,7 @@ Keep it concise and specific."""
                 "side": "buy",
                 "amount": round(100.0 / best_gainer["price"], 6),  # Buy ~100 EUR worth
                 "price": best_gainer["price"],
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "agent": "research_v1",
                 "reason": f"Momentum play on top gainer (+{best_gainer['change_24h']:.2f}%)",
             }
@@ -290,9 +273,7 @@ Keep it concise and specific."""
             # Store in cache for activity log
             existing_trades = await cache.get("agent:trades") or []
             existing_trades.insert(0, trade)
-            await cache.set(
-                "agent:trades", existing_trades[:50], ttl=3600
-            )  # Keep last 50
+            await cache.set("agent:trades", existing_trades[:50], ttl=3600)  # Keep last 50
 
         return {
             "insights": response,
@@ -323,7 +304,7 @@ Keep it concise and specific."""
 
 
 @router.get("/trades")
-async def get_agent_trades(limit: int = 10) -> Dict[str, Any]:
+async def get_agent_trades(limit: int = 10) -> dict[str, Any]:
     """
     Get recent agent trades from cache.
     """
@@ -357,23 +338,17 @@ async def chat_with_agent(body: ChatRequest) -> ChatResponse:
     market_context = ""
     if market_data:
         # Sort by change to get gainers/losers
-        sorted_markets = sorted(
-            market_data, key=lambda x: x.get("change_24h", 0), reverse=True
-        )
+        sorted_markets = sorted(market_data, key=lambda x: x.get("change_24h", 0), reverse=True)
         top_gainers = sorted_markets[:3]
         top_losers = sorted_markets[-3:]
 
         market_context = "\n\nLIVE MARKET DATA:\n"
         market_context += "Top Gainers:\n"
         for m in top_gainers:
-            market_context += (
-                f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:+.2f}%)\n"
-            )
+            market_context += f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:+.2f}%)\n"
         market_context += "\nTop Losers:\n"
         for m in top_losers:
-            market_context += (
-                f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:+.2f}%)\n"
-            )
+            market_context += f"- {m['symbol']}: ${m['price']:.2f} ({m['change_24h']:+.2f}%)\n"
         market_context += f"\nTotal assets tracked: {len(market_data)}\n"
 
     system_prompt = (

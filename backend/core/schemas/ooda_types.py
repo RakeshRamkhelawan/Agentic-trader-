@@ -7,7 +7,7 @@ These types ensure type safety and validation across the multi-agent system.
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -45,12 +45,10 @@ class Observation(BaseModel):
     symbol: str = Field(..., description="Trading pair symbol (e.g., 'BTC/USDT')")
     price: float = Field(..., gt=0, description="Current market price")
     volume: float = Field(..., ge=0, description="Trading volume")
-    orderbook: Dict[str, Any] = Field(
+    orderbook: dict[str, Any] = Field(
         default_factory=dict, description="Orderbook snapshot with bids/asks"
     )
-    funding_rate: Optional[float] = Field(
-        None, description="Funding rate for perpetual futures"
-    )
+    funding_rate: float | None = Field(None, description="Funding rate for perpetual futures")
     social_sentiment: float = Field(
         default=0.0,
         ge=-1.0,
@@ -61,7 +59,7 @@ class Observation(BaseModel):
         default_factory=lambda: datetime.now(UTC).timestamp(),
         description="Unix timestamp of observation",
     )
-    raw_ticker: Dict[str, Any] = Field(
+    raw_ticker: dict[str, Any] = Field(
         default_factory=dict, description="Raw ticker data from exchange"
     )
     prediction_signals: list = Field(
@@ -82,7 +80,7 @@ class Orientation(BaseModel):
 
     symbol: str = Field(..., description="Trading pair symbol")
     regime: MarketRegime = Field(..., description="Detected market regime")
-    indicators: Dict[str, float] = Field(
+    indicators: dict[str, float] = Field(
         default_factory=dict,
         description="Technical indicators (RSI, MACD, Bollinger, etc.)",
     )
@@ -92,13 +90,11 @@ class Orientation(BaseModel):
         le=1.0,
         description="Confidence score from SystemIdentity (Ahamkara core)",
     )
-    rag_context: List[str] = Field(
+    rag_context: list[str] = Field(
         default_factory=list,
         description="Relevant historical scenarios from VectorMemory",
     )
-    confidence: float = Field(
-        ..., ge=0.0, le=1.0, description="Overall orientation confidence"
-    )
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Overall orientation confidence")
     timestamp: float = Field(default_factory=lambda: datetime.now(UTC).timestamp())
 
 
@@ -118,20 +114,16 @@ class TradeProposal(BaseModel):
     symbol: str = Field(..., description="Trading pair symbol")
     side: str = Field(..., pattern="^(buy|sell)$", description="Order side")
     size: float = Field(..., gt=0, description="Position size")
-    entry_price: Optional[float] = Field(
+    entry_price: float | None = Field(
         None, gt=0, description="Target entry price (None for market orders)"
     )
     stop_loss: float = Field(..., gt=0, description="Stop loss price")
     take_profit: float = Field(..., gt=0, description="Take profit price")
-    leverage: Optional[float] = Field(
+    leverage: float | None = Field(
         None, gt=0, description="Leverage multiplier (None for spot trading)"
     )
-    time_in_force: str = Field(
-        default="GTC", description="Time in force (GTC, IOC, FOK)"
-    )
-    rationale: str = Field(
-        ..., min_length=10, description="Human-readable reasoning for the trade"
-    )
+    time_in_force: str = Field(default="GTC", description="Time in force (GTC, IOC, FOK)")
+    rationale: str = Field(..., min_length=10, description="Human-readable reasoning for the trade")
     strategy_id: str = Field(..., description="Strategy identifier for audit trail")
     confidence: float = Field(
         ..., ge=0.0, le=1.0, description="Confidence score for this trade proposal"
@@ -149,17 +141,13 @@ class RiskAssessment(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     trade_id: str = Field(..., description="ID of evaluated trade proposal")
-    decision: RiskDecision = Field(
-        ..., description="Risk decision (approve/reject/reduce)"
-    )
+    decision: RiskDecision = Field(..., description="Risk decision (approve/reject/reduce)")
     rationale: str = Field(..., min_length=5, description="Explanation of decision")
     risk_score: float = Field(
         ..., ge=0.0, le=1.0, description="Overall risk score [0=safe, 1=dangerous]"
     )
-    win_probability: float = Field(
-        ..., ge=0.0, le=1.0, description="Estimated win probability"
-    )
-    modified_size: Optional[float] = Field(
+    win_probability: float = Field(..., ge=0.0, le=1.0, description="Estimated win probability")
+    modified_size: float | None = Field(
         None, gt=0, description="Risk-adjusted position size (if decision=REDUCESIZE)"
     )
     timestamp: float = Field(default_factory=lambda: datetime.now(UTC).timestamp())
@@ -177,16 +165,12 @@ class ExecutionPlan(BaseModel):
     symbol: str = Field(..., description="Trading pair symbol")
     side: str = Field(..., pattern="^(buy|sell)$", description="Order side")
     quantity: float = Field(..., gt=0, description="Final allocated quantity")
-    order_type: str = Field(
-        default="LIMIT", description="Order type (LIMIT, MARKET, STOP_LIMIT)"
-    )
-    price: Optional[float] = Field(
-        None, gt=0, description="Limit price (None for market orders)"
-    )
+    order_type: str = Field(default="LIMIT", description="Order type (LIMIT, MARKET, STOP_LIMIT)")
+    price: float | None = Field(None, gt=0, description="Limit price (None for market orders)")
     expected_price: float = Field(
         ..., gt=0, description="Expected fill price for slippage calculation"
     )
-    params: Dict[str, Any] = Field(
+    params: dict[str, Any] = Field(
         default_factory=dict, description="Additional exchange-specific parameters"
     )
     trace_id: str = Field(..., description="Unique trace ID for audit logging")
@@ -210,15 +194,13 @@ class ExecutionOutcome(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     success: bool = Field(..., description="Whether execution succeeded")
-    trace_id: Optional[str] = Field(None, description="Trace ID from ExecutionPlan")
-    order_id: Optional[str] = Field(
-        None, description="Exchange order ID (if successful)"
-    )
+    trace_id: str | None = Field(None, description="Trace ID from ExecutionPlan")
+    order_id: str | None = Field(None, description="Exchange order ID (if successful)")
     filled_qty: float = Field(default=0.0, ge=0.0, description="Quantity filled")
     avg_price: float = Field(default=0.0, ge=0.0, description="Average fill price")
     fee: float = Field(default=0.0, ge=0.0, description="Trading fee paid")
-    error: Optional[str] = Field(None, description="Error message (if failed)")
-    execution_latency_ms: Optional[float] = Field(
+    error: str | None = Field(None, description="Error message (if failed)")
+    execution_latency_ms: float | None = Field(
         None, ge=0.0, description="Execution latency in milliseconds"
     )
     timestamp: float = Field(default_factory=lambda: datetime.now(UTC).timestamp())
@@ -232,9 +214,7 @@ class PortfolioState(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     total_equity: float = Field(..., gt=0, description="Total account equity")
-    available_capital: float = Field(
-        ..., ge=0, description="Available capital for trading"
-    )
+    available_capital: float = Field(..., ge=0, description="Available capital for trading")
     total_exposure_pct: float = Field(
         ..., ge=0, le=1.0, description="Total exposure as % of equity"
     )
@@ -250,12 +230,8 @@ class CapitalAllocation(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     position_size_usd: float = Field(..., ge=0, description="Position size in USD")
-    position_fraction: float = Field(
-        ..., ge=0, le=1.0, description="Position as % of equity"
-    )
-    kelly_fraction: float = Field(
-        ..., ge=0, description="Kelly Criterion optimal fraction"
-    )
+    position_fraction: float = Field(..., ge=0, le=1.0, description="Position as % of equity")
+    kelly_fraction: float = Field(..., ge=0, description="Kelly Criterion optimal fraction")
     approved: bool = Field(..., description="Whether allocation approved")
     reasoning: str = Field(..., min_length=10, description="Allocation reasoning")
     timestamp: float = Field(default_factory=lambda: datetime.now(UTC).timestamp())
@@ -268,16 +244,10 @@ class ResearchHypothesis(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    stance: str = Field(
-        ..., pattern="^(bullish|bearish)$", description="Bullish or bearish stance"
-    )
-    confidence: float = Field(
-        ..., ge=0.0, le=1.0, description="Confidence in hypothesis"
-    )
-    arguments: List[str] = Field(..., min_length=1, description="List of arguments")
-    contrarian_score: float = Field(
-        ..., ge=0.0, le=1.0, description="How contrarian vs analyst"
-    )
+    stance: str = Field(..., pattern="^(bullish|bearish)$", description="Bullish or bearish stance")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence in hypothesis")
+    arguments: list[str] = Field(..., min_length=1, description="List of arguments")
+    contrarian_score: float = Field(..., ge=0.0, le=1.0, description="How contrarian vs analyst")
     generated_at: float = Field(default_factory=lambda: datetime.now(UTC).timestamp())
 
 
@@ -296,14 +266,12 @@ class Order(BaseModel):
     side: str = Field(..., pattern="^(buy|sell)$", description="Order side")
     order_type: str = Field(..., pattern="^(market|limit)$", description="Order type")
     quantity: float = Field(..., gt=0, description="Order quantity")
-    price: Optional[float] = Field(
-        None, gt=0, description="Limit price (None for market)"
-    )
+    price: float | None = Field(None, gt=0, description="Limit price (None for market)")
     status: str = Field(
         default="pending",
         pattern="^(pending|filled|cancelled|rejected)$",
         description="Order status",
     )
     filled_quantity: float = Field(default=0.0, ge=0, description="Filled quantity")
-    avg_fill_price: Optional[float] = Field(None, description="Average fill price")
+    avg_fill_price: float | None = Field(None, description="Average fill price")
     created_at: float = Field(default_factory=lambda: datetime.now(UTC).timestamp())

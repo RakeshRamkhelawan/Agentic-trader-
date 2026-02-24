@@ -5,7 +5,7 @@ Equivalent to Manas (mind's sensory processing function).
 """
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -24,7 +24,7 @@ class SensoryProcessor:
     def __init__(self):
         self.vibration_analyzer = VibrationalAnalyzer()
         self.input_channels = 5  # Five data streams
-        self.perception_buffer: List[Dict[str, Any]] = []
+        self.perception_buffer: list[dict[str, Any]] = []
         self.buffer_size = 144  # 12² for harmonic analysis
 
     def process_input(
@@ -34,8 +34,8 @@ class SensoryProcessor:
         orderbook_imbalance: float,
         funding_rate: float,
         social_sentiment: float,
-        navagraha_state: Optional[NavagrahaState] = None,
-    ) -> Dict[str, Any]:
+        navagraha_state: NavagrahaState | None = None,
+    ) -> dict[str, Any]:
         """
         Process 5 input streams into unified perception.
 
@@ -104,9 +104,7 @@ class SensoryProcessor:
             "price_amplitude": float(price_freq.amplitude),
             "volume_amplitude": float(volume_freq.amplitude),
             "guna_context": guna_context,
-            "rahu_kala_active": (
-                navagraha_state.rahu_kala_active if navagraha_state else False
-            ),
+            "rahu_kala_active": (navagraha_state.rahu_kala_active if navagraha_state else False),
         }
 
         # 6. Buffer for temporal analysis
@@ -148,7 +146,7 @@ class SensoryProcessor:
 
         return float(np.clip(alignment, 0, 1))
 
-    def get_perception_history(self, lookback: int = 10) -> List[Dict[str, Any]]:
+    def get_perception_history(self, lookback: int = 10) -> list[dict[str, Any]]:
         """
         Get perception history for temporal analysis.
 

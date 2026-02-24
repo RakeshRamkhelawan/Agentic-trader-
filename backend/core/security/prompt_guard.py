@@ -44,9 +44,7 @@ class PromptGuard:
         sanitized = text
         for pattern in PromptGuard.INJECTION_PATTERNS:
             if re.search(pattern, sanitized):
-                logger.warning(
-                    f"Detection: Potential prompt injection pattern found: {pattern}"
-                )
+                logger.warning(f"Detection: Potential prompt injection pattern found: {pattern}")
                 # We replace with a placeholder instead of just removing to maintain context
                 # but neutralize the command.
                 sanitized = re.sub(pattern, "[CLEANED_INJECTION_ATTEMPT]", sanitized)

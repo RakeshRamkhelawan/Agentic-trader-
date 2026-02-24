@@ -2,14 +2,13 @@
 Trading API - Endpoints for market data, portfolio, and history.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps import get_current_tenant_id, get_current_user, get_db
-from backend.services.trading_service import (TradingService,
-                                              get_trading_service)
+from backend.services.trading_service import TradingService, get_trading_service
 
 router = APIRouter(prefix="/api/v1/trading", tags=["trading"])
 
@@ -88,11 +87,11 @@ async def get_history(
 
 @router.post("/orders")
 async def create_order(
-    order: Dict[str, Any],
+    order: dict[str, Any],
     tenant_id: str = Depends(get_current_tenant_id),
     service: TradingService = Depends(get_service),
     db: AsyncSession = Depends(get_db),
-    user: Dict = Depends(get_current_user),
+    user: dict = Depends(get_current_user),
 ):
     """
     Create and execute a new order.

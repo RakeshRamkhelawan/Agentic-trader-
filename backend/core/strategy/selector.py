@@ -1,10 +1,10 @@
-from typing import Dict
-
 from backend.core.regime_detector import MarketRegime
 from backend.core.risk.guna_sizing import GunaType
-from backend.core.strategy.implementations import (DefensiveStrategy,
-                                                   MeanReversionStrategy,
-                                                   TrendFollowingStrategy)
+from backend.core.strategy.implementations import (
+    DefensiveStrategy,
+    MeanReversionStrategy,
+    TrendFollowingStrategy,
+)
 from backend.core.strategy.interface import TradingStrategy
 
 
@@ -14,7 +14,7 @@ class StrategySelector:
     """
 
     def __init__(self):
-        self.strategies: Dict[str, TradingStrategy] = {
+        self.strategies: dict[str, TradingStrategy] = {
             "trend": TrendFollowingStrategy(),
             "mean_reversion": MeanReversionStrategy(),
             "defensive": DefensiveStrategy(),

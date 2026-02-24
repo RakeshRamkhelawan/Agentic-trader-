@@ -2,7 +2,6 @@ import logging
 import time
 from dataclasses import dataclass
 from multiprocessing import shared_memory
-from typing import Dict, Optional
 
 import numpy as np
 
@@ -74,10 +73,8 @@ class ZeroCopyBridge:
         self.max_symbols = max_symbols
         self.shm_name = shm_name
         self.dtype_name = dtype_name
-        self.shm: Optional[shared_memory.SharedMemory] = None
-        self.data_array: Optional[
-            np.ndarray
-        ] = None  # Renamed from intents to generic data_array
+        self.shm: shared_memory.SharedMemory | None = None
+        self.data_array: np.ndarray | None = None  # Renamed from intents to generic data_array
         self._is_creator = create
 
         # Select DTYPE based on name
@@ -108,9 +105,7 @@ class ZeroCopyBridge:
                     self.shm.buf[: self.shm.size] = bytes(self.shm.size)
 
                 except FileExistsError:
-                    logger.warning(
-                        f"Shared memory '{self.shm_name}' already exists. Attaching..."
-                    )
+                    logger.warning(f"Shared memory '{self.shm_name}' already exists. Attaching...")
                     self.shm = shared_memory.SharedMemory(name=self.shm_name)
                     self._is_creator = False
             else:
@@ -118,9 +113,7 @@ class ZeroCopyBridge:
                 logger.info(f"Attached to shared memory '{self.shm_name}'")
 
             if self.data_array is None:
-                self.data_array = np.ndarray(
-                    (max_symbols,), dtype=self.dtype, buffer=self.shm.buf
-                )
+                self.data_array = np.ndarray((max_symbols,), dtype=self.dtype, buffer=self.shm.buf)
 
         except Exception as e:
             logger.error(f"Failed to initialize ZeroCopyBridge: {e}")
@@ -163,7 +156,7 @@ class ZeroCopyBridge:
         self.data_array[idx]["entry_price"] = intent.entry_price
         self.data_array[idx]["timestamp_ns"] = time.time_ns()
 
-    def read_intent(self, symbol: str) -> Optional[TradingIntent]:
+    def read_intent(self, symbol: str) -> TradingIntent | None:
         """
         Read trading intent from shared memory.
         """
@@ -211,7 +204,7 @@ class ZeroCopyBridge:
         self.data_array[idx]["last_price"] = last
         self.data_array[idx]["timestamp_ns"] = time.time_ns()
 
-    def read_market_data(self, symbol: str) -> Optional[Dict[str, float]]:
+    def read_market_data(self, symbol: str) -> dict[str, float] | None:
         """
         Read market data from shared memory.
         """

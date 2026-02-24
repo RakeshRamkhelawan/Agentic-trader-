@@ -5,8 +5,7 @@ Database Models for User Settings.
 import uuid
 from datetime import datetime
 
-from sqlalchemy import (JSON, Boolean, Column, DateTime, ForeignKey, String,
-                        Text)
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 
 from backend.core.database import Base
@@ -47,9 +46,7 @@ class User(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
-    api_keys = relationship(
-        "APIKey", back_populates="user", cascade="all, delete-orphan"
-    )
+    api_keys = relationship("APIKey", back_populates="user", cascade="all, delete-orphan")
 
 
 class UserProfile(Base):

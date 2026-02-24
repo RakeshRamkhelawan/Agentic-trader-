@@ -8,8 +8,7 @@ Decides whether to trade based on cosmic and philosophical alignment.
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-
+from typing import Any
 
 from .connector import VedAstroConfig, VedAstroConnector
 from .features import FeatureEngine
@@ -61,8 +60,8 @@ class TattvaOrchestrator:
         self,
         system_identity=None,
         guna_quantifier=None,
-        vedastro_config: Optional[VedAstroConfig] = None,
-        model_path: Optional[str] = None,
+        vedastro_config: VedAstroConfig | None = None,
+        model_path: str | None = None,
         min_coherence: float = 0.6,
         tamas_threshold: float = 0.5,
         sade_sati_protection: bool = True,
@@ -91,8 +90,8 @@ class TattvaOrchestrator:
         self.oracle = XGBoostOracle(model_path)
 
         # Cache for Kundli data
-        self.kundli_cache: Dict[str, Dict] = {}
-        self.active_assets: List[str] = []
+        self.kundli_cache: dict[str, dict] = {}
+        self.active_assets: list[str] = []
 
         # Statistics
         self.stats = {
@@ -102,7 +101,7 @@ class TattvaOrchestrator:
             "block_reasons": {},
         }
 
-    async def initialize(self, assets: Optional[List[str]] = None):
+    async def initialize(self, assets: list[str] | None = None):
         """
         Pre-calculate Kundli's for active assets.
 
@@ -118,18 +117,14 @@ class TattvaOrchestrator:
                 continue
 
             try:
-                self.kundli_cache[symbol] = await self.vedastro.calculate_kundli(
-                    symbol, birth_date
-                )
+                self.kundli_cache[symbol] = await self.vedastro.calculate_kundli(symbol, birth_date)
                 logger.info(f"Pre-calculated Kundli for {symbol}")
             except Exception as e:
                 logger.error(f"Failed to calculate Kundli for {symbol}: {e}")
 
         logger.info(f"Orchestrator initialized with {len(self.kundli_cache)} assets")
 
-    async def process_market_tick(
-        self, symbol: str, tick_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def process_market_tick(self, symbol: str, tick_data: dict[str, Any]) -> dict[str, Any]:
         """
         Main entry point for market tick processing.
 
@@ -200,7 +195,7 @@ class TattvaOrchestrator:
             "features": self.feature_engine.explain_features(features),
         }
 
-    async def _update_tattvas(self, tick_data: Dict, transits: Dict) -> Dict[str, Any]:
+    async def _update_tattvas(self, tick_data: dict, transits: dict) -> dict[str, Any]:
         """
         Update 36 Tattvas system with astro input.
 
@@ -222,18 +217,10 @@ class TattvaOrchestrator:
             "astro_coherence": self._calculate_astro_coherence(transits),
             "retrograde_stress": transits.get("retrograde_count", 0) / 9.0,
             "exalted_benefics": len(
-                [
-                    p
-                    for p in transits.get("exalted_planets", [])
-                    if p in ["Jupiter", "Venus"]
-                ]
+                [p for p in transits.get("exalted_planets", []) if p in ["Jupiter", "Venus"]]
             ),
             "malefic_pressure": len(
-                [
-                    p
-                    for p in transits.get("debilitated_planets", [])
-                    if p in ["Saturn", "Mars"]
-                ]
+                [p for p in transits.get("debilitated_planets", []) if p in ["Saturn", "Mars"]]
             ),
         }
 
@@ -265,7 +252,7 @@ class TattvaOrchestrator:
             logger.error(f"Error updating Tattvas: {e}")
             return self._default_tattva_state(transits)
 
-    def _default_tattva_state(self, transits: Dict) -> Dict[str, Any]:
+    def _default_tattva_state(self, transits: dict) -> dict[str, Any]:
         """Generate default Tattva state from transits."""
         coherence = self._calculate_astro_coherence(transits)
         gunas = self._derive_gunas_from_transits(transits)
@@ -277,7 +264,7 @@ class TattvaOrchestrator:
             "ascending": coherence > 0.6,
         }
 
-    def _derive_gunas_from_transits(self, transits: Dict) -> Dict[str, float]:
+    def _derive_gunas_from_transits(self, transits: dict) -> dict[str, float]:
         """Derive Guna balance from planetary transits."""
         sattva = 0.33
         rajas = 0.33
@@ -307,7 +294,7 @@ class TattvaOrchestrator:
             "tamas": tamas / total,
         }
 
-    def _calculate_astro_coherence(self, transits: Dict) -> float:
+    def _calculate_astro_coherence(self, transits: dict) -> float:
         """
         Calculate cosmic coherence (0-1).
 
@@ -322,7 +309,7 @@ class TattvaOrchestrator:
         return max(0.0, min(1.0, coherence))
 
     def _apply_tattva_filter(
-        self, ml_signal: Dict, tattva_state: Dict, transits: Dict
+        self, ml_signal: dict, tattva_state: dict, transits: dict
     ) -> TradingDecision:
         """
         Apply philosophical filters to ML signal.
@@ -332,9 +319,7 @@ class TattvaOrchestrator:
         - Coherence < minimum (unclear consciousness)
         - Sade Sati active (Saturn around Moon)
         """
-        gunas = tattva_state.get(
-            "gunas", {"sattva": 0.33, "rajas": 0.33, "tamas": 0.33}
-        )
+        gunas = tattva_state.get("gunas", {"sattva": 0.33, "rajas": 0.33, "tamas": 0.33})
         action = ml_signal["direction"]
         confidence = ml_signal["confidence"]
         coherence = tattva_state.get("coherence", 0.5)
@@ -379,9 +364,7 @@ class TattvaOrchestrator:
         # RULE 4: Size scaling based on Guna balance
         # Sattva = full size, Rajas = reduced, Tamas = minimal
         size_multiplier = (
-            gunas.get("sattva", 0) * 1.0
-            + gunas.get("rajas", 0) * 0.5
-            + gunas.get("tamas", 0) * 0.0
+            gunas.get("sattva", 0) * 1.0 + gunas.get("rajas", 0) * 0.5 + gunas.get("tamas", 0) * 0.0
         )
 
         # RULE 5: Retrograde stress reduction
@@ -406,7 +389,7 @@ class TattvaOrchestrator:
             alignment_score=self._calculate_alignment(ml_signal, tattva_state),
         )
 
-    def _is_sade_sati(self, transits: Dict) -> bool:
+    def _is_sade_sati(self, transits: dict) -> bool:
         """
         Check if Sade Sati is active.
 
@@ -424,7 +407,7 @@ class TattvaOrchestrator:
 
         return saturn_debilitated and saturn_retrograde
 
-    def _calculate_alignment(self, ml_signal: Dict, tattva_state: Dict) -> float:
+    def _calculate_alignment(self, ml_signal: dict, tattva_state: dict) -> float:
         """
         Calculate alignment score between ML and philosophy.
 
@@ -446,7 +429,7 @@ class TattvaOrchestrator:
 
         return max(0.0, alignment)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get orchestrator statistics."""
         return {
             **self.stats,

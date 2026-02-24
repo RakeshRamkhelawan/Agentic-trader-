@@ -1,8 +1,8 @@
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import redis.asyncio as redis
 
@@ -27,17 +27,17 @@ class EternalSoulService:
     """
 
     def __init__(self):
-        self.redis_client: Optional[redis.Redis] = None
+        self.redis_client: redis.Redis | None = None
         self.navagraha = NavagrahaService()
         self.regime_detector = RegimeDetector()
         self.episode_memory = EpisodeMemory()
 
         # State
-        self.price_history: List[float] = []
+        self.price_history: list[float] = []
         self.max_history = 250  # Need 200 for SMA200
 
         self.running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
 
     async def start(self):
         """Start the Eternal Soul service loop."""
@@ -48,9 +48,7 @@ class EternalSoulService:
 
         # Connect to Redis
         try:
-            self.redis_client = redis.from_url(
-                settings.REDIS_URL, decode_responses=True
-            )
+            self.redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
             await self.redis_client.ping()
             logger.info("Eternal Soul connected to Redis.")
         except Exception as e:
@@ -93,7 +91,7 @@ class EternalSoulService:
         """
         Execute a single cosmic cycle step.
         """
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         # 1. Calculate Navagraha State (Cosmic Time)
         # We use default lat/lon from settings
@@ -112,9 +110,7 @@ class EternalSoulService:
             self.price_history.pop(0)
 
         # Calculate Indicators & Detect Regime
-        sma_50, sma_200, vol = self.regime_detector.calculate_indicators(
-            self.price_history
-        )
+        sma_50, sma_200, vol = self.regime_detector.calculate_indicators(self.price_history)
         regime = self.regime_detector.detect(current_price, sma_50, sma_200, vol)
 
         # 3. Check Karma patterns (Phase 6)
@@ -179,7 +175,7 @@ class EternalSoulService:
         )
         return soul_context
 
-    async def _fetch_market_context(self) -> Dict[str, Any]:
+    async def _fetch_market_context(self) -> dict[str, Any]:
         """
         Fetch necessary market data for regime detection.
         Current implementation is a placeholder with Random Walk.

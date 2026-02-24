@@ -27,9 +27,7 @@ def test_base_agent_accepts_llm_provider():
     mock_provider = MagicMock(spec=LLMProvider)
     mock_bus = MagicMock(spec=EventBus)
 
-    agent = ConcreteAgent(
-        agent_name="TestAgent", llm_provider=mock_provider, event_bus=mock_bus
-    )
+    agent = ConcreteAgent(agent_name="TestAgent", llm_provider=mock_provider, event_bus=mock_bus)
 
     assert agent.llm_provider is mock_provider
     assert agent.event_bus is mock_bus
@@ -55,9 +53,7 @@ async def test_base_agent_publishes_thoughts():
     agent = ConcreteAgent(agent_name="TestAgent", event_bus=mock_bus)
 
     # Agent should publish thought
-    await agent.publish_thought(
-        reasoning="Test reasoning", confidence=0.85, data={"key": "value"}
-    )
+    await agent.publish_thought(reasoning="Test reasoning", confidence=0.85, data={"key": "value"})
 
     # Verify publish was called
     mock_bus.publish.assert_called_once()
@@ -128,9 +124,7 @@ async def test_base_agent_health_check():
     mock_provider = MagicMock(spec=LLMProvider)
     mock_bus = MagicMock(spec=EventBus)
 
-    agent = ConcreteAgent(
-        agent_name="TestAgent", llm_provider=mock_provider, event_bus=mock_bus
-    )
+    agent = ConcreteAgent(agent_name="TestAgent", llm_provider=mock_provider, event_bus=mock_bus)
 
     agent.heartbeat()
     health = agent.health_check()

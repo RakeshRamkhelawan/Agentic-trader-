@@ -5,7 +5,6 @@ import sys
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
 
 try:
     import httpx
@@ -15,9 +14,7 @@ except ImportError:
     print("Installing required dependencies...")
     import subprocess
 
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "redis", "psycopg", "httpx"]
-    )
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "redis", "psycopg", "httpx"])
     import httpx
     import psycopg
     import redis.asyncio as aioredis
@@ -50,7 +47,7 @@ class ServiceCheck:
 class InfrastructureVerifier:
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
-        self.results: List[ServiceCheck] = []
+        self.results: list[ServiceCheck] = []
 
         self.config = {
             "redis_url": os.getenv("REDIS_URL", "redis://localhost:6379/0"),
@@ -319,9 +316,7 @@ class InfrastructureVerifier:
 
 async def main():
     parser = argparse.ArgumentParser(description="Infrastructure health verification")
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Show detailed information"
-    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed information")
     parser.add_argument("--json", action="store_true", help="Output results as JSON")
     args = parser.parse_args()
 

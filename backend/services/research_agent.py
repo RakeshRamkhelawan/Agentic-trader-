@@ -9,7 +9,7 @@ Responsibility:
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
@@ -18,7 +18,7 @@ from backend.core.memory_agent import MemoryAgent
 from backend.schemas.agent_messages import AgentMessage
 
 
-async def analyze_text_with_llm(text: str) -> Dict[str, Any]:
+async def analyze_text_with_llm(text: str) -> dict[str, Any]:
     """
     Analyze text using DeepSeek LLM via LLMService.
     Returns sentiment analysis, impact score, and summary.
@@ -64,7 +64,7 @@ Respond ONLY with valid JSON."""
         return _fallback_analysis(text)
 
 
-def _fallback_analysis(text: str) -> Dict[str, Any]:
+def _fallback_analysis(text: str) -> dict[str, Any]:
     """Fallback keyword-based analysis if LLM fails."""
     text_lower = text.lower()
     sentiment = 0.0
@@ -103,9 +103,7 @@ def _fallback_analysis(text: str) -> Dict[str, Any]:
 
 
 class ResearchAgent:
-    def __init__(
-        self, memory_agent: MemoryAgent = None, message_bus=None, strategy=None
-    ):
+    def __init__(self, memory_agent: MemoryAgent = None, message_bus=None, strategy=None):
         self.sources = [
             "https://finance.yahoo.com/crypto",
             "https://cointelegraph.com",
@@ -129,9 +127,7 @@ class ResearchAgent:
 
     async def handle_message(self, message: AgentMessage):
         """Handle incoming messages from the orchestrator."""
-        self.logger.info(
-            f"Research Agent received message: {message.type} from {message.source}"
-        )
+        self.logger.info(f"Research Agent received message: {message.type} from {message.source}")
         if message.type == "TIMER_TICK_1MIN":
             await self.run_cycle()
         elif message.type == "TICK_DATA":
@@ -140,20 +136,17 @@ class ResearchAgent:
             if hasattr(payload, "to_dict"):
                 payload = payload.to_dict()
             await self.process_tick(payload)
-        elif (
-            message.type == "SIGNAL" and message.payload.get("signal") == "RUN_RESEARCH"
-        ):
+        elif message.type == "SIGNAL" and message.payload.get("signal") == "RUN_RESEARCH":
             await self.run_cycle()
 
-    async def process_tick(self, tick_data: Dict[str, Any]):
+    async def process_tick(self, tick_data: dict[str, Any]):
         """
         Phase 11: Delegate to Strategy Strategy.
         """
         # Convert dict to UnifiedMarketEvent if needed, or Strategy handles dict?
         # BaseStrategy expects UnifiedMarketEvent. Use helper or robust casting.
 
-        from backend.core.market_data.models import (EventType,
-                                                     UnifiedMarketEvent)
+        from backend.core.market_data.models import EventType, UnifiedMarketEvent
 
         # Try to construct event from dict
         try:
@@ -181,7 +174,7 @@ class ResearchAgent:
         if signal_payload:
             await self._emit_signal_payload(signal_payload)
 
-    async def _emit_signal_payload(self, payload: Dict[str, Any]):
+    async def _emit_signal_payload(self, payload: dict[str, Any]):
         """Emit formatted signal to orchestrator."""
         direction = "BULLISH" if "BULLISH" in payload.get("signal", "") else "BEARISH"
         symbol = payload.get("symbol")
@@ -233,7 +226,7 @@ class ResearchAgent:
             except Exception as e:
                 self.logger.error(f"Error scraping {url}: {e}")
 
-    async def fetch_and_parse(self, url: str) -> Optional[Dict[str, str]]:
+    async def fetch_and_parse(self, url: str) -> dict[str, str] | None:
         """Fetch URL and extract readable text."""
         try:
             # Fake User Agent is often needed
@@ -249,9 +242,7 @@ class ResearchAgent:
             # Simple heuristic: Get all paragraph text
             # In production: Use specific selectors per domain
             paragraphs = soup.find_all("p")
-            text_content = "\n".join(
-                [p.get_text() for p in paragraphs if len(p.get_text()) > 50]
-            )
+            text_content = "\n".join([p.get_text() for p in paragraphs if len(p.get_text()) > 50])
 
             if not text_content:
                 return None
@@ -267,7 +258,7 @@ class ResearchAgent:
             self.logger.error(f"Scrape error: {e}")
             return None
 
-    async def publish_signal(self, analysis: Dict[str, Any]):
+    async def publish_signal(self, analysis: dict[str, Any]):
         """Publish high-impact news to Kafka."""
         msg = AgentMessage(
             source="research_v1",  # Use agent ID from profile
@@ -280,9 +271,7 @@ class ResearchAgent:
                 "summary": analysis["summary"],
             },
         )
-        self.logger.info(
-            f"🚨 NEWS SIGNAL: {analysis['summary']} (Sent: {analysis['sentiment']})"
-        )
+        self.logger.info(f"🚨 NEWS SIGNAL: {analysis['summary']} (Sent: {analysis['sentiment']})")
 
         if self.message_bus:
             if asyncio.iscoroutinefunction(self.message_bus):

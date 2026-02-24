@@ -46,9 +46,7 @@ class MiFIDGuard:
                 return ComplianceStatus.BLOCK
         return ComplianceStatus.PASS
 
-    def check_loss_limits(
-        self, profile: ClientProfile, trade: TradeRequest
-    ) -> ComplianceStatus:
+    def check_loss_limits(self, profile: ClientProfile, trade: TradeRequest) -> ComplianceStatus:
         # If current drawdown exceeds tolerance, block new risk
         if profile.current_drawdown_pct >= profile.max_loss_tolerance_pct:
             return ComplianceStatus.BLOCK

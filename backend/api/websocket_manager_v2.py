@@ -18,7 +18,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Optional, Set
+from typing import Any
 
 from fastapi import WebSocket
 
@@ -42,10 +42,10 @@ class ConnectionState:
     connection_id: str
     tenant_id: str
     account_id: str
-    user_id: Optional[str] = None
+    user_id: str | None = None
 
     # Subscriptions
-    subscriptions: Set[str] = field(default_factory=set)
+    subscriptions: set[str] = field(default_factory=set)
 
     # Timing
     connected_at: datetime = field(default_factory=datetime.utcnow)
@@ -54,12 +54,10 @@ class ConnectionState:
 
     # Backpressure: bounded queue per connection
     # (priority, message) - high priority = 0, low priority = 1
-    message_queue: asyncio.Queue = field(
-        default_factory=lambda: asyncio.Queue(maxsize=1000)
-    )
+    message_queue: asyncio.Queue = field(default_factory=lambda: asyncio.Queue(maxsize=1000))
 
     # Sequence tracking per stream
-    stream_sequences: Dict[str, int] = field(default_factory=dict)
+    stream_sequences: dict[str, int] = field(default_factory=dict)
 
     # Metrics
     messages_sent: int = 0
@@ -90,8 +88,8 @@ class WebSocketManagerV2:
     """
 
     def __init__(self, heartbeat_interval: float = 30.0, stale_timeout: float = 90.0):
-        self.connections: Dict[str, ConnectionState] = {}
-        self.channel_subscribers: Dict[str, Set[str]] = {}
+        self.connections: dict[str, ConnectionState] = {}
+        self.channel_subscribers: dict[str, set[str]] = {}
         self._lock = asyncio.Lock()
 
         # Configuration
@@ -100,11 +98,11 @@ class WebSocketManagerV2:
         self.max_queue_size = 1000
 
         # Tasks
-        self._heartbeat_task: Optional[asyncio.Task] = None
-        self._processor_tasks: Set[asyncio.Task] = set()
+        self._heartbeat_task: asyncio.Task | None = None
+        self._processor_tasks: set[asyncio.Task] = set()
 
         # Global sequence counters per stream
-        self._stream_sequences: Dict[str, int] = {}
+        self._stream_sequences: dict[str, int] = {}
 
         # Metrics
         self._metrics_enabled = METRICS_AVAILABLE and ws_metrics is not None
@@ -118,7 +116,7 @@ class WebSocketManagerV2:
         websocket: WebSocket,
         tenant_id: str = "default",
         account_id: str = "default",
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> str:
         """
         Accept a new WebSocket connection with full initialization.
@@ -178,9 +176,7 @@ class WebSocketManagerV2:
 
         return connection_id
 
-    async def disconnect(
-        self, connection_id: str, reason: str = "client_disconnect"
-    ) -> None:
+    async def disconnect(self, connection_id: str, reason: str = "client_disconnect") -> None:
         """Disconnect a connection with cleanup."""
         async with self._lock:
             if connection_id not in self.connections:
@@ -267,10 +263,10 @@ class WebSocketManagerV2:
     async def broadcast(
         self,
         stream: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         priority: str = "low",
         message_type: str = "update",
-    ) -> Dict[str, int]:
+    ) -> dict[str, int]:
         """
         Broadcast a message to all subscribers of a stream.
 
@@ -316,16 +312,12 @@ class WebSocketManagerV2:
 
         # Record metrics
         if self._metrics_enabled:
-            ws_metrics.messages_sent.labels(stream=stream, priority=priority).inc(
-                stats["queued"]
-            )
+            ws_metrics.messages_sent.labels(stream=stream, priority=priority).inc(stats["queued"])
             ws_metrics.messages_dropped.labels(stream=stream).inc(stats["dropped"])
 
         return stats
 
-    async def _queue_message(
-        self, connection_id: str, priority: int, message: Dict
-    ) -> bool:
+    async def _queue_message(self, connection_id: str, priority: int, message: dict) -> bool:
         """Queue a message for a connection (with backpressure)."""
         if connection_id not in self.connections:
             return False
@@ -357,7 +349,7 @@ class WebSocketManagerV2:
                     priority, message = await asyncio.wait_for(
                         conn.message_queue.get(), timeout=1.0
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     continue
 
                 # Send message
@@ -374,9 +366,7 @@ class WebSocketManagerV2:
                 logger.error(f"Message processor error for {connection_id}: {e}")
                 break
 
-    async def _send_immediate(
-        self, connection_id: str, message: Dict[str, Any]
-    ) -> bool:
+    async def _send_immediate(self, connection_id: str, message: dict[str, Any]) -> bool:
         """Send a message immediately (bypass queue for control messages)."""
         if connection_id not in self.connections:
             return False
@@ -388,9 +378,7 @@ class WebSocketManagerV2:
             logger.warning(f"Failed to send immediate message to {connection_id}: {e}")
             return False
 
-    async def handle_client_message(
-        self, connection_id: str, message: Dict[str, Any]
-    ) -> None:
+    async def handle_client_message(self, connection_id: str, message: dict[str, Any]) -> None:
         """Handle incoming message from client."""
         if connection_id not in self.connections:
             return
@@ -435,9 +423,7 @@ class WebSocketManagerV2:
                 await self._send_pings()
                 await self._check_stale_connections()
 
-        self._heartbeat_task = asyncio.create_task(
-            heartbeat_loop(), name="ws_heartbeat"
-        )
+        self._heartbeat_task = asyncio.create_task(heartbeat_loop(), name="ws_heartbeat")
         logger.info(f"Heartbeat started (interval={self.heartbeat_interval}s)")
 
     async def stop_heartbeat(self) -> None:
@@ -487,7 +473,7 @@ class WebSocketManagerV2:
         self._stream_sequences[stream] = seq
         return seq
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get comprehensive statistics."""
         total_queued = sum(conn.queue_depth for conn in self.connections.values())
         total_dropped = sum(conn.messages_dropped for conn in self.connections.values())

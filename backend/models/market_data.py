@@ -42,9 +42,7 @@ class MarketTick(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     symbol = Column(String, nullable=False, index=True)
-    timestamp = Column(
-        DateTime(timezone=True), primary_key=True, nullable=False, index=True
-    )
+    timestamp = Column(DateTime(timezone=True), primary_key=True, nullable=False, index=True)
     price = Column(Float, nullable=False)
     volume = Column(Float, nullable=False)
     side = Column(String, nullable=True)  # "buy" or "sell"

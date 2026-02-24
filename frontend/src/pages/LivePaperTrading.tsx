@@ -4,14 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Play, Square, Info } from 'lucide-react';
 import { useState } from 'react';
+import { API_URL } from '@/lib/config';
 
 export default function LivePaperTradingPage() {
   const [isRunning, setIsRunning] = useState(false);
 
   const startTrading = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/v1/paper-trading/start`, {
+      const response = await fetch(`${API_URL}/api/v1/paper-trading/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ duration: 8, capital: 10000 })
@@ -31,7 +31,7 @@ export default function LivePaperTradingPage() {
 
   const stopTrading = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiUrl = API_URL;
       await fetch(`${apiUrl}/api/v1/paper-trading/stop`, { method: 'POST' });
       setIsRunning(false);
     } catch (error) {

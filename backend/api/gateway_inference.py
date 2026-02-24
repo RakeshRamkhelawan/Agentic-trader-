@@ -34,9 +34,7 @@ def load_agent():
     if DEVICE == "cuda":
         from transformers import BitsAndBytesConfig
 
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16
-        )
+        bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)
         base = AutoModelForCausalLM.from_pretrained(
             BASE_MODEL, quantization_config=bnb_config, device_map="auto"
         )
@@ -64,9 +62,7 @@ async def startup_event():
 @app.post("/v1/agent/predict")
 async def predict(query: Query):
     if model is None:
-        return {
-            "error": "Model not loaded. Ensure weights are placed in ./model/artifacts/"
-        }
+        return {"error": "Model not loaded. Ensure weights are placed in ./model/artifacts/"}
 
     start_time = time.time()
     inputs = tokenizer(query.prompt, return_tensors="pt").to(DEVICE)

@@ -94,9 +94,7 @@ def verify_system():
                 "last_name": "User",
                 "email": "admin@example.com",
             }
-            r = requests.put(
-                f"{BASE_URL}/settings/profile", headers=headers, json=profile_data
-            )
+            r = requests.put(f"{BASE_URL}/settings/profile", headers=headers, json=profile_data)
             if r.status_code == 200:
                 print_result("Create Profile", True)
                 # Verify it exists now

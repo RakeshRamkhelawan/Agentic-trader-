@@ -3,16 +3,14 @@ import json
 import logging
 import uuid
 from collections import deque
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class AuditLogger:
-    def __init__(
-        self, clickhouse_client=None, batch_size: int = 50, flush_interval: int = 5
-    ):
+    def __init__(self, clickhouse_client=None, batch_size: int = 50, flush_interval: int = 5):
         self.clickhouse = clickhouse_client
         self.buffer = deque(maxlen=5000)
         self.batch_size = batch_size
@@ -45,7 +43,7 @@ class AuditLogger:
         resource_type: str,
         resource_id: str,
         actor_id: str = "system",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         status: str = "SUCCESS",
         ip_address: str = "",
         user_agent: str = "",
@@ -53,7 +51,7 @@ class AuditLogger:
         entry = {
             "tenant_id": tenant_id,
             "audit_id": str(uuid.uuid4()),
-            "timestamp": datetime.now(timezone.utc),
+            "timestamp": datetime.now(UTC),
             "actor_id": actor_id,
             "action": action,
             "resource_type": resource_type,

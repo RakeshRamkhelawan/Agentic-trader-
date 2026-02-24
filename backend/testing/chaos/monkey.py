@@ -8,9 +8,9 @@ Implements controlled chaos injection for resilience testing:
 
 Usage:
     Only active when ENV=testing or CHAOS_MODE=1
-    
+
     from backend.testing.chaos.monkey import ChaosMonkey
-    
+
     monkey = ChaosMonkey()
     await monkey.inject_latency("exchange_api", delay_ms=100)
     await monkey.simulate_service_failure("redis")
@@ -21,8 +21,8 @@ import asyncio
 import logging
 import os
 import random
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, Dict, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ class ChaosMonkey:
     # Services that can be targeted
     TARGET_SERVICES = {"redis", "faiss", "postgres", "exchange_api", "llm"}
 
-    def __init__(self, mode: Optional[ChaosMode] = None):
+    def __init__(self, mode: ChaosMode | None = None):
         """
         Initialize ChaosMonkey.
 
@@ -64,14 +64,13 @@ class ChaosMonkey:
         """
         self._mode = mode or self._detect_mode()
         self._enabled = self._mode != ChaosMode.DISABLED
-        self._injected_failures: Set[str] = set()
+        self._injected_failures: set[str] = set()
         self._latency_config = {"min_ms": 50, "max_ms": 2000}
         self._failure_probability = 0.1  # 10% failure rate
 
         if self._enabled:
             logger.warning(
-                f"🐵 CHAOS MODE ENABLED: {self._mode.value} "
-                f"(This should only be in testing!)"
+                f"🐵 CHAOS MODE ENABLED: {self._mode.value} " f"(This should only be in testing!)"
             )
 
     def _detect_mode(self) -> ChaosMode:
@@ -102,7 +101,7 @@ class ChaosMonkey:
     async def inject_latency(
         self,
         target: str,
-        delay_ms: Optional[int] = None,
+        delay_ms: int | None = None,
         probability: float = 1.0,
     ) -> None:
         """
@@ -127,9 +126,7 @@ class ChaosMonkey:
         logger.info(f"🐵 Chaos: Injecting {delay}ms latency into {target}")
         await asyncio.sleep(delay / 1000.0)
 
-    def should_fail_service(
-        self, service: str, probability: Optional[float] = None
-    ) -> bool:
+    def should_fail_service(self, service: str, probability: float | None = None) -> bool:
         """
         Determine if a service call should fail.
 
@@ -159,7 +156,7 @@ class ChaosMonkey:
     def simulate_service_failure(
         self,
         service: str,
-        exception_type: Optional[type] = None,
+        exception_type: type | None = None,
     ) -> None:
         """
         Simulate a service failure by raising exception.
@@ -184,7 +181,7 @@ class ChaosMonkey:
     def disrupt_tattva_coherence(
         self,
         current_coherence: float,
-        target_coherence: Optional[float] = None,
+        target_coherence: float | None = None,
     ) -> float:
         """
         Disrupt Tattva coherence for testing system response.
@@ -205,8 +202,7 @@ class ChaosMonkey:
         disrupted = min(current_coherence, target)
 
         logger.warning(
-            f"🐵 Chaos: Tattva coherence disrupted: "
-            f"{current_coherence:.3f} -> {disrupted:.3f}"
+            f"🐵 Chaos: Tattva coherence disrupted: " f"{current_coherence:.3f} -> {disrupted:.3f}"
         )
 
         return disrupted
@@ -216,7 +212,7 @@ class ChaosMonkey:
         func: Callable,
         target: str,
         latency_probability: float = 0.5,
-        failure_probability: Optional[float] = None,
+        failure_probability: float | None = None,
     ) -> Callable:
         """
         Wrap an async function with chaos injection.
@@ -249,7 +245,7 @@ class ChaosMonkey:
         self._injected_failures.clear()
         logger.info("🐵 Chaos: State reset")
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get chaos injection statistics."""
         return {
             "enabled": self._enabled,
@@ -260,7 +256,7 @@ class ChaosMonkey:
 
 
 # Global instance for easy access
-_chaos_monkey: Optional[ChaosMonkey] = None
+_chaos_monkey: ChaosMonkey | None = None
 
 
 def get_chaos_monkey() -> ChaosMonkey:
@@ -278,7 +274,7 @@ def reset_chaos_monkey() -> None:
 
 
 # Convenience decorators
-def with_latency(target: str, delay_ms: Optional[int] = None, probability: float = 0.5):
+def with_latency(target: str, delay_ms: int | None = None, probability: float = 0.5):
     """Decorator to inject latency into async function."""
 
     def decorator(func):
@@ -292,7 +288,7 @@ def with_latency(target: str, delay_ms: Optional[int] = None, probability: float
     return decorator
 
 
-def with_possible_failure(target: str, probability: Optional[float] = None):
+def with_possible_failure(target: str, probability: float | None = None):
     """Decorator to possibly fail function call."""
 
     def decorator(func):

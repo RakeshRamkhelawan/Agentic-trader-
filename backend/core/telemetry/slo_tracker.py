@@ -10,9 +10,9 @@ Date: 2026-02-20
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Dict, Optional
 
 from prometheus_client import Counter, Gauge, Histogram
 
@@ -39,7 +39,7 @@ class SLOConfig:
 
 
 # SLO Definitions from ADR-001
-SLO_DEFINITIONS: Dict[FlowType, SLOConfig] = {
+SLO_DEFINITIONS: dict[FlowType, SLOConfig] = {
     FlowType.MARKET_DATA_STREAMING: SLOConfig(
         target=0.999,
         latency_p99_ms=100,
@@ -110,19 +110,13 @@ class SLITracker:
         )
 
         # Current SLO compliance ratio
-        self.compliance = Gauge(
-            "slo_compliance_ratio", "Current SLO compliance (0-1)", ["flow"]
-        )
+        self.compliance = Gauge("slo_compliance_ratio", "Current SLO compliance (0-1)", ["flow"])
 
         # Throughput
-        self.throughput = Counter(
-            "slo_throughput_total", "Request throughput", ["flow"]
-        )
+        self.throughput = Counter("slo_throughput_total", "Request throughput", ["flow"])
 
         # In-flight requests
-        self.in_flight = Gauge(
-            "slo_in_flight", "Currently processing requests", ["flow"]
-        )
+        self.in_flight = Gauge("slo_in_flight", "Currently processing requests", ["flow"])
 
         # Initialize error budgets
         self._init_error_budgets()
@@ -134,9 +128,7 @@ class SLITracker:
             self.error_budget_remaining.labels(flow=flow.value).set(slo.error_budget)
             self.compliance.labels(flow=flow.value).set(1.0)
 
-    def track_latency(
-        self, flow: FlowType, latency_seconds: float, stage: str = "total"
-    ) -> None:
+    def track_latency(self, flow: FlowType, latency_seconds: float, stage: str = "total") -> None:
         """
         Record latency for a flow.
 
@@ -147,9 +139,7 @@ class SLITracker:
         """
         self.latency.labels(flow=flow.value, stage=stage).observe(latency_seconds)
 
-    def track_request(
-        self, flow: FlowType, success: bool, timeout: bool = False
-    ) -> None:
+    def track_request(self, flow: FlowType, success: bool, timeout: bool = False) -> None:
         """
         Record request outcome.
 
@@ -182,13 +172,11 @@ class SLITracker:
             latency_ms: Delivery latency in milliseconds
             delivered: Whether message was delivered
         """
-        self.track_latency(
-            FlowType.MARKET_DATA_STREAMING, latency_ms / 1000, "delivery"
-        )
+        self.track_latency(FlowType.MARKET_DATA_STREAMING, latency_ms / 1000, "delivery")
         self.track_request(FlowType.MARKET_DATA_STREAMING, delivered)
 
     def record_order_execution(
-        self, latency_ms: float, success: bool, stage: Optional[str] = None
+        self, latency_ms: float, success: bool, stage: str | None = None
     ) -> None:
         """
         Track order execution SLI.
@@ -198,9 +186,7 @@ class SLITracker:
             success: Whether execution succeeded
             stage: Specific stage ("risk_check", "routing", "execution")
         """
-        self.track_latency(
-            FlowType.ORDER_EXECUTION, latency_ms / 1000, stage or "total"
-        )
+        self.track_latency(FlowType.ORDER_EXECUTION, latency_ms / 1000, stage or "total")
         self.track_request(FlowType.ORDER_EXECUTION, success)
 
     def record_agent_decision(
@@ -220,7 +206,7 @@ class SLITracker:
         quality_ok = quality_score >= 0.9 and llm_success
         self.track_request(FlowType.AGENT_DECISION, quality_ok)
 
-    def check_slo_breach(self, flow: FlowType) -> Optional[str]:
+    def check_slo_breach(self, flow: FlowType) -> str | None:
         """
         Check if SLO is currently breached.
 
@@ -234,7 +220,7 @@ class SLITracker:
 
         return None
 
-    def get_slo_summary(self) -> Dict[str, Dict]:
+    def get_slo_summary(self) -> dict[str, dict]:
         """Get summary of all SLOs and current status."""
         return {
             flow.value: {
@@ -262,7 +248,7 @@ class SLITimer:
         self.flow = flow
         self.stage = stage
         self.success_on_exit = success_on_exit
-        self.start_time: Optional[float] = None
+        self.start_time: float | None = None
         self.success = True
 
     def __enter__(self):

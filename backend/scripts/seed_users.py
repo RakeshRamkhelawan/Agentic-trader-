@@ -70,9 +70,7 @@ async def seed_users():
 
         for user_data in SEED_USERS:
             # Check if exists
-            result = await db.execute(
-                select(User).where(User.email == user_data["email"])
-            )
+            result = await db.execute(select(User).where(User.email == user_data["email"]))
             existing_user = result.scalar_one_or_none()
 
             if existing_user:

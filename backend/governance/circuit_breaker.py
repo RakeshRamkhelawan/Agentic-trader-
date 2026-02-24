@@ -7,7 +7,7 @@ Automatische stopzetting van trading bij gevaarlijke condities.
 import logging
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -111,7 +111,7 @@ class CircuitBreaker:
         self.max_consecutive_losses = max_consecutive_losses
         self.max_exposure_pct = max_exposure_pct
 
-        self._state: Optional[CircuitBreakerState] = None
+        self._state: CircuitBreakerState | None = None
 
     async def _load_state(self) -> CircuitBreakerState:
         """Load or create breaker state."""
@@ -119,9 +119,7 @@ class CircuitBreaker:
             return self._state
 
         result = await self.db_session.execute(
-            select(CircuitBreakerState).where(
-                CircuitBreakerState.breaker_name == self.breaker_name
-            )
+            select(CircuitBreakerState).where(CircuitBreakerState.breaker_name == self.breaker_name)
         )
         state = result.scalar_one_or_none()
 
@@ -149,7 +147,7 @@ class CircuitBreaker:
         state = await self._load_state()
         return state.state == BreakerState.OPEN.value
 
-    async def get_trip_reason(self) -> Optional[str]:
+    async def get_trip_reason(self) -> str | None:
         """Get reason for trip."""
         state = await self._load_state()
         return state.trip_reason
@@ -296,7 +294,7 @@ class CircuitBreaker:
         await self.db_session.commit()
         await self.db_session.refresh(state)
 
-    async def get_status(self) -> Dict[str, Any]:
+    async def get_status(self) -> dict[str, Any]:
         """Get current breaker status."""
         state = await self._load_state()
 
@@ -317,7 +315,5 @@ class CircuitBreaker:
                 "max_exposure_pct": self.max_exposure_pct,
             },
             "emergency_shutdown": state.emergency_shutdown,
-            "last_reset_at": (
-                state.last_reset_at.isoformat() if state.last_reset_at else None
-            ),
+            "last_reset_at": (state.last_reset_at.isoformat() if state.last_reset_at else None),
         }

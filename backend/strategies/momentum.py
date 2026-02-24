@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pandas as pd
 
@@ -20,7 +20,7 @@ class MomentumStrategy(BaseStrategy):
         max_history (int): Max ticks to keep in memory. Default 200.
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         super().__init__(config)
         self.rsi_period = config.get("rsi_period", 14)
         self.overbought = config.get("overbought", 70)
@@ -28,11 +28,11 @@ class MomentumStrategy(BaseStrategy):
         self.max_history = config.get("max_history", 200)
 
         # In-memory state: {symbol: [price1, price2, ...]}
-        self._price_history: Dict[str, List[float]] = {}
+        self._price_history: dict[str, list[float]] = {}
         # To avoid spamming signals, we can track last signal state or cool-down
         # For MVP, we'll just emit on every tick in the zone (Orchestrator can filter)
 
-    async def on_tick(self, tick: UnifiedMarketEvent) -> Optional[Dict[str, Any]]:
+    async def on_tick(self, tick: UnifiedMarketEvent) -> dict[str, Any] | None:
         if not tick.price or tick.price <= 0:
             return None
 
@@ -77,9 +77,7 @@ class MomentumStrategy(BaseStrategy):
                     "strategy": "momentum_rsi",
                     "metadata": {
                         "period": self.rsi_period,
-                        "threshold": (
-                            self.oversold if direction == "BULLISH" else self.overbought
-                        ),
+                        "threshold": (self.oversold if direction == "BULLISH" else self.overbought),
                     },
                 }
 
@@ -89,7 +87,7 @@ class MomentumStrategy(BaseStrategy):
 
         return None
 
-    def _calculate_rsi(self, prices: List[float]) -> Optional[float]:
+    def _calculate_rsi(self, prices: list[float]) -> float | None:
         """
         Calculate RSI using pandas.
         """
@@ -107,12 +105,8 @@ class MomentumStrategy(BaseStrategy):
         # Here we use Simple MA (Rolling) for speed/simplicity effectively "RSI-SMA"
         # Standard RSI usually uses EWMA (com=period-1)
 
-        avg_gain = gain.rolling(
-            window=self.rsi_period, min_periods=self.rsi_period
-        ).mean()
-        avg_loss = loss.rolling(
-            window=self.rsi_period, min_periods=self.rsi_period
-        ).mean()
+        avg_gain = gain.rolling(window=self.rsi_period, min_periods=self.rsi_period).mean()
+        avg_loss = loss.rolling(window=self.rsi_period, min_periods=self.rsi_period).mean()
 
         # Get last values
         curr_gain = avg_gain.iloc[-1]

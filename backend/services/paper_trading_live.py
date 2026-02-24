@@ -6,7 +6,7 @@ Broadcasts real-time paper trading events to connected frontend clients.
 
 import logging
 from datetime import UTC, datetime
-from typing import Any, Dict
+from typing import Any
 
 from backend.api.websocket_manager import ws_manager
 
@@ -22,7 +22,7 @@ class PaperTradingLiveBroadcaster:
         self.agents_channel = "paper_trading.agents"
         self.vedic_channel = "paper_trading.vedic"  # NIEUW: Vedic context channel
 
-    async def broadcast_trade(self, trade_data: Dict[str, Any]):
+    async def broadcast_trade(self, trade_data: dict[str, Any]):
         """Broadcast a new trade execution."""
         message = {
             "type": "trade_executed",
@@ -47,7 +47,7 @@ class PaperTradingLiveBroadcaster:
         }
         await ws_manager.broadcast_to_channel(self.channel, message, "price")
 
-    async def broadcast_portfolio_update(self, portfolio_data: Dict[str, Any]):
+    async def broadcast_portfolio_update(self, portfolio_data: dict[str, Any]):
         """Broadcast portfolio value update."""
         message = {
             "type": "portfolio_update",
@@ -58,7 +58,7 @@ class PaperTradingLiveBroadcaster:
         }
         await ws_manager.broadcast_to_channel(self.channel, message, "portfolio")
 
-    async def broadcast_agent_decision(self, agent_name: str, decision: Dict[str, Any]):
+    async def broadcast_agent_decision(self, agent_name: str, decision: dict[str, Any]):
         """Broadcast agent trading decision."""
         message = {
             "type": "agent_decision",
@@ -70,7 +70,7 @@ class PaperTradingLiveBroadcaster:
         }
         await ws_manager.broadcast_to_channel(self.agents_channel, message, "decision")
 
-    async def broadcast_stats(self, stats: Dict[str, Any]):
+    async def broadcast_stats(self, stats: dict[str, Any]):
         """Broadcast trading statistics."""
         message = {
             "type": "stats_update",
@@ -81,7 +81,7 @@ class PaperTradingLiveBroadcaster:
         }
         await ws_manager.broadcast_to_channel(self.stats_channel, message, "stats")
 
-    async def broadcast_session_start(self, session_info: Dict[str, Any]):
+    async def broadcast_session_start(self, session_info: dict[str, Any]):
         """Broadcast session start event."""
         message = {
             "type": "session_start",
@@ -93,7 +93,7 @@ class PaperTradingLiveBroadcaster:
         await ws_manager.broadcast_to_channel(self.channel, message, "session")
         logger.info("Broadcasted session start")
 
-    async def broadcast_session_end(self, final_stats: Dict[str, Any]):
+    async def broadcast_session_end(self, final_stats: dict[str, Any]):
         """Broadcast session end event."""
         message = {
             "type": "session_end",
@@ -107,7 +107,7 @@ class PaperTradingLiveBroadcaster:
 
     # ========== VEDIC CONTEXT CHANNEL (paper_trading.vedic) ==========
 
-    async def broadcast_soul_update(self, soul_context: Dict[str, Any]):
+    async def broadcast_soul_update(self, soul_context: dict[str, Any]):
         """Broadcast Soul context update (Rahu Kala, Market Regime, etc.)."""
         message = {
             "channel": "paper_trading.vedic",
@@ -123,11 +123,9 @@ class PaperTradingLiveBroadcaster:
             },
         }
         await ws_manager.broadcast_to_channel(self.vedic_channel, message, "soul")
-        logger.debug(
-            f"Broadcasted soul update: regime={soul_context.get('market_regime')}"
-        )
+        logger.debug(f"Broadcasted soul update: regime={soul_context.get('market_regime')}")
 
-    async def broadcast_prana_update(self, prana_levels: Dict[str, float]):
+    async def broadcast_prana_update(self, prana_levels: dict[str, float]):
         """Broadcast Prana levels for all elemental agents."""
         message = {
             "channel": "paper_trading.vedic",
@@ -140,9 +138,7 @@ class PaperTradingLiveBroadcaster:
         await ws_manager.broadcast_to_channel(self.vedic_channel, message, "prana")
         logger.debug(f"Broadcasted prana update: {prana_levels}")
 
-    async def broadcast_harmony_update(
-        self, harmony_score: float, synthesis: Dict[str, Any]
-    ):
+    async def broadcast_harmony_update(self, harmony_score: float, synthesis: dict[str, Any]):
         """Broadcast Harmony score from Ether Orchestrator."""
         message = {
             "channel": "paper_trading.vedic",
@@ -158,9 +154,7 @@ class PaperTradingLiveBroadcaster:
         await ws_manager.broadcast_to_channel(self.vedic_channel, message, "harmony")
         logger.debug(f"Broadcasted harmony update: score={harmony_score:.2f}")
 
-    async def broadcast_cosmic_block(
-        self, reason: str, blocked_at: str, resumes_at: str
-    ):
+    async def broadcast_cosmic_block(self, reason: str, blocked_at: str, resumes_at: str):
         """Broadcast cosmic block event (Rahu Kala, etc.)."""
         message = {
             "channel": "paper_trading.vedic",

@@ -52,9 +52,7 @@ class BacktestEngine:
         await strategy.on_stop()
 
         # Calculate Metrics
-        metrics = MetricsCalculator.calculate(
-            self.equity_curve, self.exchange.initial_capital
-        )
+        metrics = MetricsCalculator.calculate(self.equity_curve, self.exchange.initial_capital)
         metrics.total_trades = len(self.exchange.trades)
 
         # Calculate Win Rate

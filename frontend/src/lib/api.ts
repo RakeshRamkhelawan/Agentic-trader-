@@ -12,10 +12,27 @@
  */
 
 import axios from 'axios';
-import type { AxiosError, AxiosInstance } from 'axios';
+import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 
-// API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { API_URL as API_BASE_URL } from './config';
+
+// Token storage (in-memory, not localStorage for security)
+let accessToken: string | null = null;
+
+/**
+ * Set the access token for API requests.
+ * Called by AuthContext when user authenticates.
+ */
+export function setApiToken(token: string | null) {
+  accessToken = token;
+}
+
+/**
+ * Get the current access token.
+ */
+export function getApiToken(): string | null {
+  return accessToken;
+}
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -28,10 +45,9 @@ const api: AxiosInstance = axios.create({
 
 // Request interceptor - add auth token
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  (config: InternalAxiosRequestConfig) => {
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
   },
@@ -43,7 +59,8 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
+      // Clear token and redirect to login
+      accessToken = null;
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -89,7 +106,7 @@ export const authApi = {
   },
 
   logout: async (): Promise<void> => {
-    localStorage.removeItem('access_token');
+    accessToken = null;
   },
 
   getMe: async () => {
@@ -174,6 +191,17 @@ export interface Asset {
   volume24h: number;
   marketCap?: number;
   sparkline?: number[];
+  exchange?: string;
+}
+
+/** Market asset data for gainers/losers */
+export interface MarketAsset {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  volume: number;
 }
 
 export interface TickerData {
@@ -188,8 +216,30 @@ export interface TickerData {
   low24h: number;
 }
 
+/** Raw market data from backend */
+interface RawMarketData {
+  symbol?: string;
+  id?: string;
+  name?: string;
+  base_currency?: string;
+  base?: string;
+  price?: number;
+  last?: number;
+  mark_price?: number;
+  change?: number;
+  change_24h?: number;
+  price_change_percent?: number;
+  change_value?: number;
+  price_change?: number;
+  volume?: number;
+  volume_24h?: number;
+  base_volume?: number;
+  market_cap?: number;
+  sparkline?: number[];
+}
+
 /** Normalize raw market entry from the backend into a frontend Asset */
-function normalizeAsset(m: any): Asset {
+function normalizeAsset(m: RawMarketData): Asset {
   return {
     symbol: m.symbol || m.id || '',
     name: m.name || m.base_currency || m.base || m.symbol || '',
@@ -223,7 +273,7 @@ export const marketsApi = {
         ? response.data.markets
         : [];
     const m = raw.find(
-      (r: any) => (r.symbol || r.id || '').toLowerCase() === symbol.toLowerCase()
+      (r: RawMarketData) => (r.symbol || r.id || '').toLowerCase() === symbol.toLowerCase()
     );
     if (!m) return null;
     return {
@@ -254,7 +304,20 @@ export const marketsApi = {
       : Array.isArray(response.data?.candles)
         ? response.data.candles
         : [];
-    return raw.map((c: any) => ({
+    interface RawCandle {
+      time?: number;
+      timestamp?: number;
+      t?: number;
+      open?: number;
+      o?: number;
+      high?: number;
+      h?: number;
+      low?: number;
+      l?: number;
+      close?: number;
+      c?: number;
+    }
+    return raw.map((c: RawCandle) => ({
       time: c.time ?? c.timestamp ?? c.t ?? 0,
       open: Number(c.open ?? c.o ?? 0),
       high: Number(c.high ?? c.h ?? 0),
@@ -288,12 +351,35 @@ export interface CreateOrderRequest {
   price?: number;
 }
 
-function normalizeOrder(o: any): Order {
+interface RawOrder {
+  id?: string | number;
+  order_id?: string | number;
+  symbol?: string;
+  instrument?: string;
+  type?: string;
+  order_type?: string;
+  side?: string;
+  direction?: string;
+  price?: number;
+  limit_price?: number;
+  amount?: number;
+  quantity?: number;
+  size?: number;
+  filled?: number;
+  filled_quantity?: number;
+  executed_quantity?: number;
+  status?: string;
+  state?: string;
+  created_at?: string;
+  createdAt?: string;
+}
+
+function normalizeOrder(o: RawOrder): Order {
   return {
     id: String(o.id ?? o.order_id ?? ''),
     symbol: o.symbol ?? o.instrument ?? '',
-    type: (o.type ?? o.order_type ?? 'market').toLowerCase(),
-    side: (o.side ?? o.direction ?? 'buy').toLowerCase(),
+    type: (o.type ?? o.order_type ?? 'market').toLowerCase() as Order['type'],
+    side: (o.side ?? o.direction ?? 'buy').toLowerCase() as Order['side'],
     price: Number(o.price ?? o.limit_price ?? 0),
     amount: Number(o.amount ?? o.quantity ?? o.size ?? 0),
     filled: Number(o.filled ?? o.filled_quantity ?? o.executed_quantity ?? 0),
@@ -381,7 +467,30 @@ export interface PortfolioPerformance {
   availableBalance: number;
 }
 
-function normalizeHolding(h: any): Holding {
+interface RawHolding {
+  amount?: number;
+  quantity?: number;
+  balance?: number;
+  avg_price?: number;
+  average_price?: number;
+  avg_cost?: number;
+  current_price?: number;
+  price?: number;
+  mark_price?: number;
+  value?: number;
+  market_value?: number;
+  pnl?: number;
+  unrealized_pnl?: number;
+  profit_loss?: number;
+  pnl_percent?: number;
+  pnl_percentage?: number;
+  symbol?: string;
+  instrument?: string;
+  name?: string;
+  asset_name?: string;
+}
+
+function normalizeHolding(h: RawHolding): Holding {
   const amount = Number(h.amount ?? h.quantity ?? h.balance ?? 0);
   const avgPrice = Number(h.avg_price ?? h.average_price ?? h.avg_cost ?? 0);
   const currentPrice = Number(h.current_price ?? h.price ?? h.mark_price ?? 0);
@@ -400,7 +509,28 @@ function normalizeHolding(h: any): Holding {
   };
 }
 
-function normalizeTradeHistory(t: any): TradeHistory {
+interface RawTradeHistory {
+  id?: string | number;
+  trade_id?: string | number;
+  amount?: number;
+  quantity?: number;
+  size?: number;
+  price?: number;
+  executed_price?: number;
+  symbol?: string;
+  instrument?: string;
+  side?: string;
+  direction?: string;
+  total?: number;
+  notional?: number;
+  timestamp?: string;
+  executed_at?: string;
+  created_at?: string;
+  type?: string;
+  order_type?: string;
+}
+
+function normalizeTradeHistory(t: RawTradeHistory): TradeHistory {
   const amount = Number(t.amount ?? t.quantity ?? t.size ?? 0);
   const price = Number(t.price ?? t.executed_price ?? 0);
   return {
@@ -474,8 +604,38 @@ export interface AgentStrategy {
   prana?: number;
 }
 
+export interface AgentInfo {
+  id?: string;
+  name?: string;
+  type?: string;
+  status?: string;
+  strategy?: string;
+  performance?: number;
+  trades?: number;
+  prana?: number;
+  is_active?: boolean;
+  state?: {
+    total_trades?: number;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+/** Agent trade data */
+export interface AgentTrade {
+  id: string;
+  agent_id: string;
+  symbol: string;
+  side: 'buy' | 'sell';
+  amount: number;
+  price: number;
+  timestamp: string;
+  status: 'open' | 'closed' | 'cancelled';
+  pnl?: number;
+}
+
 export interface AgentsStatusResponse {
-  agents: Record<string, any>;
+  agents: Record<string, AgentInfo>;
   count: number;
   orchestrator_state?: {
     guna_balance?: Record<string, number>;
@@ -489,21 +649,26 @@ export const agentsApi = {
     const response = await api.get<AgentsStatusResponse>('/agents/status');
     return response.data;
   },
-  
+
   /** POST /api/v1/agents/chat - Get advice from AI advisor */
   chat: async (message: string, history: ChatHistoryEntry[] = []): Promise<{ response: string }> => {
     const response = await api.post<{ response: string }>('/agents/chat', { message, history });
     return response.data;
   },
-  
+
   /** POST /api/v1/agents/run-cycle - Trigger agent analysis */
-  runCycle: async (): Promise<{ insights: string; market_data: { gainers: any[]; losers: any[] }; agents_triggered: number; trades_generated?: number }> => {
+  runCycle: async (): Promise<{ 
+    insights: string; 
+    market_data: { gainers: MarketAsset[]; losers: MarketAsset[] }; 
+    agents_triggered: number; 
+    trades_generated?: number 
+  }> => {
     const response = await api.post('/agents/run-cycle', {});
     return response.data;
   },
-  
+
   /** GET /api/v1/agents/trades - Get agent trade history */
-  getTrades: async (): Promise<{ trades: any[]; count: number }> => {
+  getTrades: async (): Promise<{ trades: AgentTrade[]; count: number }> => {
     const response = await api.get('/agents/trades');
     return response.data;
   },
@@ -629,7 +794,7 @@ export const federatedApi = {
     try {
       const response = await api.get<FederatedState>('/federated/state');
       return response.data;
-    } catch (error) {
+    } catch {
       // Return mock data if endpoint doesn't exist yet
       console.warn('Federated API not available, using mock data');
       return {
@@ -648,17 +813,17 @@ export const federatedApi = {
       };
     }
   },
-  
+
   /** POST /api/v1/federated/cycle - Trigger a full Federated Triad cycle */
-  runCycle: async (): Promise<{ 
-    decision: BuddhiDecision; 
+  runCycle: async (): Promise<{
+    decision: BuddhiDecision;
     coherence: FederatedState['coherence'];
     insights: string;
   }> => {
     try {
       const response = await api.post('/federated/cycle', {});
       return response.data;
-    } catch (error) {
+    } catch {
       console.warn('Federated cycle API not available, falling back to agents API');
       // Fallback to regular agents API
       const result = await agentsApi.runCycle();
@@ -687,125 +852,6 @@ export const federatedApi = {
 };
 
 // ============================================================================
-// WEBSOCKET CLIENT
-// Backend protocol:
-//   subscribe:   { type: "subscribe",   channel: "ticker.BTC-EUR" }
-//   unsubscribe: { type: "unsubscribe", channel: "ticker.BTC-EUR" }
-//   ping:        { type: "ping" }
-// ============================================================================
-
-export class WebSocketClient {
-  private ws: WebSocket | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
-  private pendingChannels: Set<string> = new Set();
-  private listeners: Set<(data: any) => void> = new Set();
-  private onConnectCb?: () => void;
-  private onDisconnectCb?: () => void;
-
-  constructor(private url: string) {}
-
-  /**
-   * Add a message listener. Returns a cleanup function to remove it.
-   * Multiple components can each call addListener without stepping on each other.
-   */
-  addListener(fn: (data: any) => void): () => void {
-    this.listeners.add(fn);
-    return () => this.listeners.delete(fn);
-  }
-
-  /**
-   * Connect (idempotent).
-   * If a socket is already OPEN or CONNECTING this is a no-op.
-   */
-  connect(onConnect?: () => void, onDisconnect?: () => void) {
-    if (onConnect) this.onConnectCb = onConnect;
-    if (onDisconnect) this.onDisconnectCb = onDisconnect;
-
-    if (
-      this.ws &&
-      (this.ws.readyState === WebSocket.OPEN ||
-        this.ws.readyState === WebSocket.CONNECTING)
-    ) {
-      return;
-    }
-
-    this._openSocket();
-  }
-
-  private _openSocket() {
-    const token = localStorage.getItem('access_token');
-    const wsUrl = token ? `${this.url}?token=${token}` : this.url;
-
-    this.ws = new WebSocket(wsUrl);
-
-    this.ws.onopen = () => {
-      console.log('WebSocket connected');
-      this.reconnectAttempts = 0;
-      this.onConnectCb?.();
-      // Re-subscribe to all tracked channels after (re)connect
-      this.pendingChannels.forEach((ch) => this._send({ type: 'subscribe', channel: ch }));
-    };
-
-    this.ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        this.listeners.forEach((fn) => fn(data));
-      } catch (error) {
-        console.error('WebSocket message parse error:', error);
-      }
-    };
-
-    this.ws.onclose = () => {
-      console.log('WebSocket disconnected');
-      this.onDisconnectCb?.();
-      this._attemptReconnect();
-    };
-
-    this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-  }
-
-  private _attemptReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
-      console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`);
-      setTimeout(() => this._openSocket(), this.reconnectDelay * this.reconnectAttempts);
-    }
-  }
-
-  private _send(msg: object) {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(msg));
-    }
-  }
-
-  disconnect() {
-    this.pendingChannels.clear();
-    this.ws?.close();
-    this.ws = null;
-  }
-
-  /** Subscribe to a channel – backend expects { type: "subscribe", channel: "..." } */
-  subscribe(channel: string) {
-    this.pendingChannels.add(channel);
-    this._send({ type: 'subscribe', channel });
-  }
-
-  /** Unsubscribe from a channel */
-  unsubscribe(channel: string) {
-    this.pendingChannels.delete(channel);
-    this._send({ type: 'unsubscribe', channel });
-  }
-}
-
-export const wsClient = new WebSocketClient(
-  API_BASE_URL.replace(/^http/, 'ws') + '/ws'
-);
-
-// ============================================================================
 // ERROR HANDLING
 // ============================================================================
 
@@ -815,9 +861,15 @@ export interface ApiError {
   status: number;
 }
 
+interface ErrorResponseData {
+  detail?: string;
+  message?: string;
+  code?: string;
+}
+
 export const handleApiError = (error: AxiosError): ApiError => {
   if (error.response) {
-    const data = error.response.data as any;
+    const data = error.response.data as ErrorResponseData;
     return {
       message: data.detail || data.message || 'An error occurred',
       code: data.code || 'UNKNOWN_ERROR',
@@ -831,10 +883,35 @@ export const handleApiError = (error: AxiosError): ApiError => {
     };
   }
   return {
-    message: (error as any).message || 'An unexpected error occurred',
+    message: error.message || 'An unexpected error occurred',
     code: 'UNKNOWN_ERROR',
     status: 0,
   };
+};
+
+// ============================================================================
+// WEBSOCKET CLIENT (Stub - use WebSocketContext instead)
+// ============================================================================
+
+export const wsClient = {
+  connect: () => { console.warn('wsClient deprecated, use WebSocketContext'); },
+  disconnect: () => {
+    // Deprecated - use WebSocketContext instead
+  },
+  subscribe: (channel: string) => { 
+    console.warn('Subscribe to', channel, '- use WebSocketContext'); 
+  },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  unsubscribe: (_channel: string) => {
+    // Deprecated - use WebSocketContext instead
+  },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  addListener: (_callback: (msg: unknown) => void) => {
+    console.warn('wsClient deprecated, use WebSocketContext');
+    return () => {
+      // Cleanup function
+    };
+  },
 };
 
 export default api;

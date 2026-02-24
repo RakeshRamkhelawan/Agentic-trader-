@@ -2,8 +2,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from backend.execution.smart_order_router import (NoRouteFoundError,
-                                                  SmartOrderRouter)
+from backend.execution.smart_order_router import NoRouteFoundError, SmartOrderRouter
 from backend.schemas.orders import OrderRequest, OrderSide, OrderType
 
 
@@ -29,9 +28,7 @@ async def test_route_crypto_to_revolut(revolut_adapter, ibkr_adapter):
     sor.register_adapter("revolut", revolut_adapter, ["BTC-EUR", "ETH-EUR"])
     sor.register_adapter("ibkr", ibkr_adapter, ["AAPL", "TSLA"])
 
-    order = OrderRequest(
-        symbol="BTC-EUR", qty=1.0, side=OrderSide.BUY, order_type=OrderType.MARKET
-    )
+    order = OrderRequest(symbol="BTC-EUR", qty=1.0, side=OrderSide.BUY, order_type=OrderType.MARKET)
 
     # Act
     result = await sor.route_and_execute(order)
@@ -49,9 +46,7 @@ async def test_route_stock_to_ibkr(revolut_adapter, ibkr_adapter):
     sor.register_adapter("revolut", revolut_adapter, ["BTC-EUR"])
     sor.register_adapter("ibkr", ibkr_adapter, ["AAPL"])
 
-    order = OrderRequest(
-        symbol="AAPL", qty=10, side=OrderSide.BUY, order_type=OrderType.MARKET
-    )
+    order = OrderRequest(symbol="AAPL", qty=10, side=OrderSide.BUY, order_type=OrderType.MARKET)
 
     await sor.route_and_execute(order)
 
@@ -64,9 +59,7 @@ async def test_no_route_found():
     sor = SmartOrderRouter()
     # Geen adapters
 
-    order = OrderRequest(
-        symbol="UNKNOWN", qty=1, side=OrderSide.BUY, order_type=OrderType.MARKET
-    )
+    order = OrderRequest(symbol="UNKNOWN", qty=1, side=OrderSide.BUY, order_type=OrderType.MARKET)
 
     with pytest.raises(NoRouteFoundError):
         await sor.route_and_execute(order)

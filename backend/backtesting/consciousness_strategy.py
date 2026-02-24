@@ -12,12 +12,11 @@ as KarmaEpisodes for regime-weighted causal learning.
 
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from backend.backtesting.exchange import SimulatedExchange
 from backend.backtesting.models import OrderSide, Trade
-from backend.backtesting.position_sizing import (KellyCriterionSizer,
-                                                 PositionSizer)
+from backend.backtesting.position_sizing import KellyCriterionSizer, PositionSizer
 from backend.backtesting.strategy import Strategy
 from backend.core.karma.episode_memory import EpisodeMemory, KarmaEpisode
 from backend.core.regime_detector import RegimeDetector
@@ -39,22 +38,20 @@ class ConsciousnessStrategy(Strategy):
         self,
         exchange: SimulatedExchange,
         force_rahu: bool = False,
-        position_sizer: Optional[PositionSizer] = None,
+        position_sizer: PositionSizer | None = None,
         **kwargs,
     ):
         super().__init__(
             exchange,
             position_sizer=position_sizer
-            or KellyCriterionSizer(
-                win_rate=0.55, avg_win=1.5, avg_loss=1.0, fractional_kelly=0.25
-            ),
+            or KellyCriterionSizer(win_rate=0.55, avg_win=1.5, avg_loss=1.0, fractional_kelly=0.25),
             **kwargs,
         )
         self.regime_detector = RegimeDetector()
         self.episode_memory = EpisodeMemory()
-        self.price_history: List[float] = []
+        self.price_history: list[float] = []
         self.force_rahu = force_rahu
-        self._last_trade_price: Optional[float] = None
+        self._last_trade_price: float | None = None
         self._current_regime = MarketRegime.SIDEWAYS
 
     # ------------------------------------------------------------------
@@ -69,7 +66,7 @@ class ConsciousnessStrategy(Strategy):
         """Called once after the backtest loop ends."""
         pass
 
-    async def on_bar(self, symbol: str, bar: Dict[str, Any]):
+    async def on_bar(self, symbol: str, bar: dict[str, Any]):
         """Process a single OHLCV bar."""
         close = bar.get("close", 0.0)
         if close <= 0:
@@ -83,9 +80,7 @@ class ConsciousnessStrategy(Strategy):
         self.price_history.append(close)
 
         # -- Soul Layer: Regime Detection --
-        sma_50, sma_200, vol = self.regime_detector.calculate_indicators(
-            self.price_history
-        )
+        sma_50, sma_200, vol = self.regime_detector.calculate_indicators(self.price_history)
         self._current_regime = self.regime_detector.detect(close, sma_50, sma_200, vol)
 
         # -- Rahu Kala defense --

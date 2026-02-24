@@ -5,15 +5,19 @@ Contrarian perspective generators voor bias detection.
 """
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from backend.events.event_bus import EventBus
     from backend.llm.provider_interface import LLMProvider
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import (MarketRegime, Observation,
-                                             Orientation, ResearchHypothesis)
+from backend.core.schemas.ooda_types import (
+    MarketRegime,
+    Observation,
+    Orientation,
+    ResearchHypothesis,
+)
 from backend.core.security.prompt_guard import PromptGuard
 from backend.governance.agent_gatekeeper import AgentRole
 
@@ -42,7 +46,7 @@ class BullResearcher(BaseAgent):
         """BaseAgent abstract method - use generate_hypothesis instead."""
         raise NotImplementedError("BullResearcher uses generate_hypothesis()")
 
-    async def _generate_text(self, prompt: str, context: Optional[dict] = None) -> str:
+    async def _generate_text(self, prompt: str, context: dict | None = None) -> str:
         """Wrapper for ask_llm to match expected interface."""
         # We can optionally use context for logging or specialized prompting
         return await self.ask_llm(prompt)
@@ -92,9 +96,7 @@ class BullResearcher(BaseAgent):
         self, symbol: str, observation: Observation, analyst_view: Orientation
     ) -> str:
         """Build bullish prompt."""
-        market_data = PromptGuard.wrap_data(
-            "MARKET_DATA", observation.model_dump_json(indent=2)
-        )
+        market_data = PromptGuard.wrap_data("MARKET_DATA", observation.model_dump_json(indent=2))
         analyst_context = PromptGuard.wrap_data(
             "ANALYST_VIEW", analyst_view.model_dump_json(indent=2)
         )
@@ -124,7 +126,7 @@ ARGUMENTS:
 3. [Argument 3]
 """
 
-    def _extract_arguments(self, response: str) -> List[str]:
+    def _extract_arguments(self, response: str) -> list[str]:
         """Extract arguments from LLM response."""
         arguments = []
         lines = response.split("\n")
@@ -206,7 +208,7 @@ class BearResearcher(BaseAgent):
         """BaseAgent abstract method - use generate_hypothesis instead."""
         raise NotImplementedError("BearResearcher uses generate_hypothesis()")
 
-    async def _generate_text(self, prompt: str, context: Optional[dict] = None) -> str:
+    async def _generate_text(self, prompt: str, context: dict | None = None) -> str:
         """Wrapper for ask_llm to match expected interface."""
         return await self.ask_llm(prompt)
 
@@ -252,9 +254,7 @@ class BearResearcher(BaseAgent):
         self, symbol: str, observation: Observation, analyst_view: Orientation
     ) -> str:
         """Build bearish prompt."""
-        market_data = PromptGuard.wrap_data(
-            "MARKET_DATA", observation.model_dump_json(indent=2)
-        )
+        market_data = PromptGuard.wrap_data("MARKET_DATA", observation.model_dump_json(indent=2))
         analyst_context = PromptGuard.wrap_data(
             "ANALYST_VIEW", analyst_view.model_dump_json(indent=2)
         )
@@ -284,7 +284,7 @@ ARGUMENTS:
 3. [Argument 3]
 """
 
-    def _extract_arguments(self, response: str) -> List[str]:
+    def _extract_arguments(self, response: str) -> list[str]:
         """Extract arguments from LLM response."""
         arguments = []
         lines = response.split("\n")

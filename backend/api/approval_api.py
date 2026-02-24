@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy import select
@@ -7,13 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps import get_current_tenant_id, get_current_user, get_db
 from backend.models.orders import Order, OrderStatus
-from backend.services.trading_service import (TradingService,
-                                              get_trading_service)
+from backend.services.trading_service import TradingService, get_trading_service
 
 router = APIRouter()
 
 
-@router.get("/pending", response_model=List[Dict[str, Any]])
+@router.get("/pending", response_model=list[dict[str, Any]])
 async def get_pending_approvals(
     tenant_id: str = Depends(get_current_tenant_id), db: AsyncSession = Depends(get_db)
 ):
@@ -36,7 +35,7 @@ async def get_pending_approvals(
 async def approve_order(
     order_id: str = Path(..., title="The ID of the order to approve"),
     tenant_id: str = Depends(get_current_tenant_id),
-    user: Dict = Depends(get_current_user),
+    user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     trading_service: TradingService = Depends(get_trading_service),
 ):
@@ -126,10 +125,7 @@ async def approve_order(
             db, tenant_id, order_payload, bypass_risk=True
         )
 
-        if (
-            exec_result.get("status") == "filled"
-            or exec_result.get("status") == "submitted"
-        ):
+        if exec_result.get("status") == "filled" or exec_result.get("status") == "submitted":
             order.status = OrderStatus.SUBMITTED.value
             order.exchange_order_id = exec_result.get("order_id")
         else:

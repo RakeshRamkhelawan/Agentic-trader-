@@ -14,8 +14,8 @@ Function:
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from backend.agents.elemental_base import ElementalBase
 from backend.governance.agent_gatekeeper import AgentRole
@@ -32,9 +32,9 @@ class ElementalOrchestrator(ElementalBase):
     def __init__(
         self,
         agent_name: str = "Orchestrator_Ether",
-        llm_provider: Optional[Any] = None,
-        event_bus: Optional[Any] = None,
-        system_identity: Optional[Any] = None,
+        llm_provider: Any | None = None,
+        event_bus: Any | None = None,
+        system_identity: Any | None = None,
         agent_role: AgentRole = AgentRole.STRATEGIST,
     ):
         super().__init__(
@@ -53,9 +53,9 @@ class ElementalOrchestrator(ElementalBase):
             max_prana=100.0,
             prana_decay_rate=15.0,  # High cognitive load
         )
-        self.harmony_history: List[float] = []
+        self.harmony_history: list[float] = []
 
-    async def process_signal(self, signal: Dict[str, Any]) -> Dict[str, Any]:
+    async def process_signal(self, signal: dict[str, Any]) -> dict[str, Any]:
         """
         Harmonize input signals into a coherent system state.
 
@@ -67,9 +67,7 @@ class ElementalOrchestrator(ElementalBase):
         """
         # 1. Prana Check
         if not await self.consume_prana():
-            return self._degraded_response(
-                signal, "Insufficient Prana for Harmonization"
-            )
+            return self._degraded_response(signal, "Insufficient Prana for Harmonization")
 
         try:
             inputs = signal.get("inputs", {})
@@ -87,7 +85,7 @@ class ElementalOrchestrator(ElementalBase):
                 "element": self.element,
                 "harmony_score": harmony_score,
                 "synthesis": synthesis,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "prana_remaining": self.prana,
             }
 
@@ -108,7 +106,7 @@ class ElementalOrchestrator(ElementalBase):
             logger.error(f"Error in Ether processing: {e}", exc_info=True)
             return {"agent": self.agent_name, "error": str(e), "status": "error"}
 
-    def _calculate_harmony(self, inputs: Dict[str, Any]) -> float:
+    def _calculate_harmony(self, inputs: dict[str, Any]) -> float:
         """
         Calculate harmony score (0.0 - 1.0).
         High harmony: Agents agree or complementary.
@@ -143,9 +141,7 @@ class ElementalOrchestrator(ElementalBase):
 
         return max(0.0, min(1.0, score))
 
-    async def _synthesize_strategy(
-        self, inputs: Dict[str, Any], harmony: float
-    ) -> Dict[str, Any]:
+    async def _synthesize_strategy(self, inputs: dict[str, Any], harmony: float) -> dict[str, Any]:
         """Generate high-level strategic direction."""
         # In a real implementation, this would use LLM to synthesize narrative
         # For now, deterministic logic for reliability
@@ -169,13 +165,13 @@ class ElementalOrchestrator(ElementalBase):
             "focus_element": self._determine_focus_element(inputs),
         }
 
-    def _determine_focus_element(self, inputs: Dict[str, Any]) -> str:
+    def _determine_focus_element(self, inputs: dict[str, Any]) -> str:
         """Identify which element needs attention."""
         if not inputs.get("fire", {}).get("approved", True):
             return "fire"  # Risk needs attention
         return "earth"  # Default to execution focus
 
-    def _degraded_response(self, signal: Dict, reason: str) -> Dict:
+    def _degraded_response(self, signal: dict, reason: str) -> dict:
         """Low Prana fallback."""
         return {
             "agent": self.agent_name,

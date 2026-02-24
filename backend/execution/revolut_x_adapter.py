@@ -4,7 +4,6 @@ Wraps RevolutXClient for integration with OrderExecutor
 """
 
 import logging
-from typing import Optional
 
 from backend.core.schemas.ooda_types import Order
 from backend.integrations.revolut_x_client import Order as RevolutOrder
@@ -22,9 +21,7 @@ class RevolutXAdapter:
     Bridges OODA Order schema with Revolut X API.
     """
 
-    def __init__(
-        self, api_key: Optional[str] = None, private_key_path: Optional[str] = None
-    ):
+    def __init__(self, api_key: str | None = None, private_key_path: str | None = None):
         """
         Initialize Revolut X adapter.
 
@@ -125,7 +122,7 @@ class RevolutXAdapter:
         side: str,
         order_type: str,
         quantity: float,
-        price: Optional[float] = None,
+        price: float | None = None,
     ) -> Order:
         """
         Place order on Revolut X.
@@ -170,8 +167,7 @@ class RevolutXAdapter:
         ooda_order = self._revolut_to_ooda_order(revolut_order)
 
         logger.info(
-            f"✅ Order placed on Revolut X: {ooda_order.order_id} "
-            f"(status: {ooda_order.status})"
+            f"✅ Order placed on Revolut X: {ooda_order.order_id} " f"(status: {ooda_order.status})"
         )
 
         return ooda_order

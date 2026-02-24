@@ -1,9 +1,7 @@
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
 
-from pydantic import (BaseModel, ConfigDict, Field, computed_field,
-                      field_validator)
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 
 class PlanetName(str, Enum):
@@ -36,7 +34,7 @@ class PlanetState(BaseModel):
     is_retrograde: bool = Field(
         ..., description="True if planet is in retrograde motion (speed < 0)"
     )
-    distance_au: Optional[float] = Field(
+    distance_au: float | None = Field(
         None, ge=0.0, description="Distance from Earth in Astronomical Units"
     )
     calculated_at: datetime = Field(..., description="UTC timestamp of calculation")
@@ -159,9 +157,7 @@ class GunaDistribution(BaseModel):
     @property
     def balance_score(self) -> float:
         ideal = 1.0 / 3.0
-        deviation = (
-            abs(self.sattva - ideal) + abs(self.rajas - ideal) + abs(self.tamas - ideal)
-        )
+        deviation = abs(self.sattva - ideal) + abs(self.rajas - ideal) + abs(self.tamas - ideal)
         return 1.0 - (deviation / 2.0)
 
     model_config = ConfigDict(frozen=True)
@@ -179,54 +175,36 @@ class PlanetaryAspect(BaseModel):
     planet1: PlanetName = Field(..., description="First planet in aspect")
     planet2: PlanetName = Field(..., description="Second planet in aspect")
     aspect_type: AspectType = Field(..., description="Type of aspect")
-    angle: float = Field(
-        ..., ge=0.0, lt=360.0, description="Actual angle between planets"
-    )
-    orb: float = Field(
-        ..., ge=0.0, description="Deviation from exact aspect in degrees"
-    )
-    is_applying: bool = Field(
-        ..., description="True if planets are moving toward exact aspect"
-    )
-    strength: float = Field(
-        ..., ge=0.0, le=1.0, description="Aspect strength [0, 1] based on orb"
-    )
+    angle: float = Field(..., ge=0.0, lt=360.0, description="Actual angle between planets")
+    orb: float = Field(..., ge=0.0, description="Deviation from exact aspect in degrees")
+    is_applying: bool = Field(..., description="True if planets are moving toward exact aspect")
+    strength: float = Field(..., ge=0.0, le=1.0, description="Aspect strength [0, 1] based on orb")
 
     model_config = ConfigDict(frozen=True)
 
 
 class NavagrahaState(BaseModel):
-    planets: Dict[PlanetName, PlanetState] = Field(
+    planets: dict[PlanetName, PlanetState] = Field(
         ...,
         description="State of all 9 Grahas at calculation time",
         min_length=9,
         max_length=9,
     )
-    guna_distribution: GunaDistribution = Field(
-        ..., description="Current Guna modulation"
-    )
-    aspects: List[PlanetaryAspect] = Field(
+    guna_distribution: GunaDistribution = Field(..., description="Current Guna modulation")
+    aspects: list[PlanetaryAspect] = Field(
         default_factory=list, description="Active planetary aspects"
     )
-    rahu_kala_active: bool = Field(
-        ..., description="True if currently in Rahu Kala period"
-    )
-    current_dasha: Optional[PlanetName] = Field(
-        None, description="Current Mahadasha period lord"
-    )
-    calculated_at: datetime = Field(
-        ..., description="UTC timestamp of state calculation"
-    )
+    rahu_kala_active: bool = Field(..., description="True if currently in Rahu Kala period")
+    current_dasha: PlanetName | None = Field(None, description="Current Mahadasha period lord")
+    calculated_at: datetime = Field(..., description="UTC timestamp of state calculation")
     location_lat: float = Field(..., ge=-90.0, le=90.0, description="Observer latitude")
-    location_lon: float = Field(
-        ..., ge=-180.0, le=180.0, description="Observer longitude"
-    )
+    location_lon: float = Field(..., ge=-180.0, le=180.0, description="Observer longitude")
 
     @field_validator("planets")
     @classmethod
     def validate_nine_planets(
-        cls, v: Dict[PlanetName, PlanetState]
-    ) -> Dict[PlanetName, PlanetState]:
+        cls, v: dict[PlanetName, PlanetState]
+    ) -> dict[PlanetName, PlanetState]:
         if len(v) != 9:
             raise ValueError(f"Must have exactly 9 planets, got {len(v)}")
 

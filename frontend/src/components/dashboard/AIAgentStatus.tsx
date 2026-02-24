@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
-  Activity, Brain, 
-  Loader2, Sparkles, Info, Layers, Eye, 
+  Brain, 
+  Sparkles, Info, Layers, Eye, 
   Scale, CircleDot, GitMerge, History, CheckCircle2, 
-  AlertTriangle, Lightbulb, Flame, 
-  Orbit, Target, Shield, Zap, Wind, Droplets, Mountain, 
-  Sun, Moon, Users, Workflow, GitBranch, Microscope, 
-  Radio, Sparkle, Telescope, Compass, Cpu, Gauge, Crown,
-  Triangle, Hexagon, Pentagon, Octagon, Square, Diamond,
-  TrendingUp, Network
+  AlertTriangle, Flame, 
+  Target, Shield, Zap, 
+  Users, Workflow, GitBranch, Microscope, 
+  Radio, Sparkle, Telescope, Cpu, Gauge, Crown,
+  Triangle, Hexagon, Pentagon,
+  TrendingUp, Network,
+  Loader2
 } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,9 +19,10 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { agentsApi, federatedApi, type CouncilView as ApiCouncilView } from '@/lib/api';
+import { isDemoMode } from '@/lib/config';
 
 // Federated Triad Types
 interface CouncilView {
@@ -186,6 +189,7 @@ const getDefaultDecision = (): BuddhiDecision => ({
 });
 
 export function AIAgentStatus() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_expanded, _setExpanded] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastAnalysis, setLastAnalysis] = useState<string | null>(null);
@@ -212,6 +216,7 @@ export function AIAgentStatus() {
       fetchFederatedData();
     }, 30000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchAgentsStatus, fetchAgentTrades]);
 
   // Fetch Federated Triad specific data
@@ -219,17 +224,18 @@ export function AIAgentStatus() {
     try {
       const state = await federatedApi.getState();
       
-      // Map API data to component format
-      const mappedCouncils: CouncilView[] = state.councils.map((c: ApiCouncilView) => ({
+      // Map API data to component format (defensive: handle undefined councils)
+      const mappedCouncils: CouncilView[] = (state.councils || []).map((c: ApiCouncilView) => ({
         ...c,
         icon: getCouncilIcon(c.type),
         color: getCouncilColor(c.type)
       }));
       
-      setCouncilViews(mappedCouncils.length > 0 ? mappedCouncils : getDefaultCouncilViews());
-      setChittaNodes(state.chitta?.nodes || getDefaultChittaNodes());
-      setDeliberationSteps(state.deliberation_steps || getDefaultDeliberation());
-      setLatestDecision(state.latest_decision || getDefaultDecision());
+      // Only use demo data in Demo Mode
+      setCouncilViews(mappedCouncils.length > 0 ? mappedCouncils : (isDemoMode ? getDefaultCouncilViews() : []));
+      setChittaNodes(state.chitta?.nodes || (isDemoMode ? getDefaultChittaNodes() : []));
+      setDeliberationSteps(state.deliberation_steps || (isDemoMode ? getDefaultDeliberation() : []));
+      setLatestDecision(state.latest_decision || (isDemoMode ? getDefaultDecision() : null));
       
       // Use API coherence or calculate from agents
       setCoherence({
@@ -243,11 +249,13 @@ export function AIAgentStatus() {
 
     } catch (error) {
       console.error('Failed to fetch federated data:', error);
-      // Use defaults on error
-      setCouncilViews(getDefaultCouncilViews());
-      setChittaNodes(getDefaultChittaNodes());
-      setDeliberationSteps(getDefaultDeliberation());
-      setLatestDecision(getDefaultDecision());
+      // Only use demo data in Demo Mode, otherwise show empty states
+      if (isDemoMode) {
+        setCouncilViews(getDefaultCouncilViews());
+        setChittaNodes(getDefaultChittaNodes());
+        setDeliberationSteps(getDefaultDeliberation());
+        setLatestDecision(getDefaultDecision());
+      }
     }
   }, [agentsCoherence]);
 
@@ -299,7 +307,9 @@ export function AIAgentStatus() {
   };
 
   // Get Guna distribution from agent status
-  const gunaDistribution = (agentsStatus.find(a => a.id === 'orchestrator_v1') as any)?.guna_balance || {
+  const orchestrator = agentsStatus.find(a => a.id === 'orchestrator_v1');
+  const gunaBalance = (orchestrator as unknown as Record<string, unknown>)?.guna_balance as Record<string, number> | undefined;
+  const gunaDistribution = gunaBalance || {
     sattva: 0.5, rajas: 0.3, tamas: 0.2
   };
 
@@ -348,6 +358,11 @@ export function AIAgentStatus() {
                 >
                   {activeCount > 0 ? 'Coherent' : 'Idle'}
                 </span>
+                {isDemoMode && (
+                  <span className='text-xs px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-400 border-amber-500/20'>
+                    DEMO
+                  </span>
+                )}
                 <span className='text-xs text-muted-foreground'>5 Councils Active</span>
               </div>
             </div>

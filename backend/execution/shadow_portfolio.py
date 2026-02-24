@@ -1,5 +1,4 @@
 import uuid
-from typing import Dict
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
 from backend.schemas.orders import OrderRequest, OrderSide, OrderStatus
@@ -13,8 +12,8 @@ class ShadowPortfolioManager(ExecutionInterface):
 
     def __init__(self, initial_cash: float = 100000.0):
         self.cash_balance = initial_cash
-        self.positions: Dict[str, float] = {}  # Symbol -> Qty
-        self.market_prices: Dict[str, float] = {}  # Symbol -> Last Price
+        self.positions: dict[str, float] = {}  # Symbol -> Qty
+        self.market_prices: dict[str, float] = {}  # Symbol -> Last Price
 
     def update_price(self, symbol: str, price: float):
         """Update internal price book for simulation."""
@@ -44,9 +43,7 @@ class ShadowPortfolioManager(ExecutionInterface):
                 )
             # Execute Buy
             self.cash_balance -= cost
-            self.positions[order.symbol] = (
-                self.positions.get(order.symbol, 0.0) + order.qty
-            )
+            self.positions[order.symbol] = self.positions.get(order.symbol, 0.0) + order.qty
 
         elif order.side == OrderSide.SELL:
             current_qty = self.positions.get(order.symbol, 0.0)
@@ -72,14 +69,12 @@ class ShadowPortfolioManager(ExecutionInterface):
 
     async def get_order_status(self, order_id: str) -> OrderResult:
         # TODO: Implement simulation tracking if needed
-        return OrderResult(
-            order_id=order_id, status=OrderStatus.FILLED, client_order_id="mock"
-        )
+        return OrderResult(order_id=order_id, status=OrderStatus.FILLED, client_order_id="mock")
 
-    async def get_balance(self) -> Dict[str, float]:
+    async def get_balance(self) -> dict[str, float]:
         return {"EUR": self.cash_balance, **self.positions}
 
-    async def get_ticker(self, symbol: str) -> Dict[str, float]:
+    async def get_ticker(self, symbol: str) -> dict[str, float]:
         price = self.market_prices.get(symbol, 0.0)
         return {"last_price": price}
 

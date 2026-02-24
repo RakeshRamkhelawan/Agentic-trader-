@@ -38,8 +38,7 @@ async def graceful_shutdown(signal_name: str, logger):
 
     # 3. Save any active paper trading session
     try:
-        from backend.services.paper_trading_live import \
-            paper_trading_broadcaster
+        from backend.services.paper_trading_live import paper_trading_broadcaster
 
         await paper_trading_broadcaster.broadcast_session_end(
             {
@@ -117,8 +116,7 @@ async def start_services():
 
     from backend.core.compliance.audit_logger import AuditLogger
     from backend.core.compliance.decorators import set_global_audit_logger
-    from backend.storage.tenant_aware_clickhouse import \
-        TenantAwareClickHouseClient
+    from backend.storage.tenant_aware_clickhouse import TenantAwareClickHouseClient
 
     clickhouse_client = TenantAwareClickHouseClient(
         host=os.getenv("CLICKHOUSE_HOST", "localhost"),
@@ -141,9 +139,7 @@ async def start_services():
     logger.info(f"FastConfig initialized at {config_path}")
 
     # Start the Cognitive Orchestrator
-    orchestrator = CognitiveOrchestrator(
-        usage_tracker=usage_tracker, audit_logger=audit_logger
-    )
+    orchestrator = CognitiveOrchestrator(usage_tracker=usage_tracker, audit_logger=audit_logger)
 
     # Initialize Multi-Frequency Consciousness Architecture (Phase 1-3)
     from backend.core.cognitive_mind_service import CognitiveMindService
@@ -208,12 +204,10 @@ async def start_services():
 
                 payload = {
                     "top_gainers": [
-                        {"symbol": m["symbol"], "change": m["change_24h"]}
-                        for m in top_gainers
+                        {"symbol": m["symbol"], "change": m["change_24h"]} for m in top_gainers
                     ],
                     "top_losers": [
-                        {"symbol": m["symbol"], "change": m["change_24h"]}
-                        for m in top_losers
+                        {"symbol": m["symbol"], "change": m["change_24h"]} for m in top_losers
                     ],
                     "market_count": len(market_data),
                     "timestamp": datetime.now().isoformat(),
@@ -236,9 +230,7 @@ async def start_services():
                     except Exception as e:
                         logger.warning(f"Failed to send timer tick to {agent_id}: {e}")
 
-            logger.debug(
-                f"TIMER_TICK_1MIN sent to {len(orchestrator.agents) - 1} agents"
-            )
+            logger.debug(f"TIMER_TICK_1MIN sent to {len(orchestrator.agents) - 1} agents")
 
     # Start timer loop as background task
     timer_task = asyncio.create_task(timer_loop())

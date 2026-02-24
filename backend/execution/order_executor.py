@@ -18,10 +18,9 @@ Usage with Revolut X:
 import asyncio
 import logging
 from datetime import UTC, datetime
-from typing import Dict, Optional, Protocol
+from typing import Protocol
 
-from backend.core.schemas.ooda_types import (ExecutionOutcome, ExecutionPlan,
-                                             Order)
+from backend.core.schemas.ooda_types import ExecutionOutcome, ExecutionPlan, Order
 from backend.core.security.audit_logger import AuditLogger
 from backend.governance.agent_gatekeeper import AgentGatekeeper, ToolPermission
 
@@ -46,7 +45,7 @@ class ExchangeAdapterProtocol(Protocol):
         side: str,
         order_type: str,
         quantity: float,
-        price: Optional[float] = None,
+        price: float | None = None,
     ) -> Order:
         """Place order on exchange"""
         ...
@@ -74,7 +73,7 @@ class ExchangeAdapter:
         side: str,
         order_type: str,
         quantity: float,
-        price: Optional[float] = None,
+        price: float | None = None,
     ) -> Order:
         """
         Place order on exchange.
@@ -169,10 +168,10 @@ class OrderExecutor:
 
     def __init__(
         self,
-        exchange_adapter: Optional[ExchangeAdapterProtocol] = None,
+        exchange_adapter: ExchangeAdapterProtocol | None = None,
         max_slippage_bps: int = 50,  # 0.5% max slippage
         order_timeout: int = 30,  # 30 seconds
-        gatekeeper: Optional[AgentGatekeeper] = None,
+        gatekeeper: AgentGatekeeper | None = None,
     ):
         """
         Initialize OrderExecutor.
@@ -189,7 +188,7 @@ class OrderExecutor:
         self.order_timeout = order_timeout
         self.gatekeeper = gatekeeper or AgentGatekeeper()
         self.audit_logger = AuditLogger(service_name="order_executor")
-        self.active_orders: Dict[str, Order] = {}
+        self.active_orders: dict[str, Order] = {}
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # Log which adapter is being used
@@ -325,8 +324,7 @@ class OrderExecutor:
 
         if slippage_bps > self.max_slippage_bps:
             self.logger.warning(
-                f"High slippage: {slippage_bps:.1f} bps "
-                f"(max: {self.max_slippage_bps} bps)"
+                f"High slippage: {slippage_bps:.1f} bps " f"(max: {self.max_slippage_bps} bps)"
             )
 
         # 5. Return outcome
@@ -444,14 +442,12 @@ class OrderExecutor:
 
         return slippage_bps
 
-    def get_active_orders(self) -> Dict[str, Order]:
+    def get_active_orders(self) -> dict[str, Order]:
         """Get all active orders."""
         return self.active_orders.copy()
 
     def clear_completed_orders(self):
         """Clear completed orders from tracking."""
         self.active_orders = {
-            oid: order
-            for oid, order in self.active_orders.items()
-            if order.status == "pending"
+            oid: order for oid, order in self.active_orders.items() if order.status == "pending"
         }

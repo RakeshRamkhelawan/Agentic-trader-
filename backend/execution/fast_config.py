@@ -20,7 +20,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Configuration schema
 CONFIG_SCHEMA = {
@@ -81,7 +81,7 @@ class ConfigSerializer:
     SIZE = struct.calcsize(FORMAT)
 
     @staticmethod
-    def serialize(config: Dict[str, Any], version: int = 0) -> bytes:
+    def serialize(config: dict[str, Any], version: int = 0) -> bytes:
         """
         Serialize config to binary format.
 
@@ -119,7 +119,7 @@ class ConfigSerializer:
         return binary
 
     @staticmethod
-    def deserialize(data: bytes) -> tuple[Dict[str, Any], int]:
+    def deserialize(data: bytes) -> tuple[dict[str, Any], int]:
         """
         Deserialize binary config.
 
@@ -133,9 +133,7 @@ class ConfigSerializer:
             struct.error: If data is invalid/incomplete
         """
         if len(data) != ConfigSerializer.SIZE:
-            raise struct.error(
-                f"Invalid data size: {len(data)} != {ConfigSerializer.SIZE}"
-            )
+            raise struct.error(f"Invalid data size: {len(data)} != {ConfigSerializer.SIZE}")
 
         version, action, confidence, exploration_rate, quantity = struct.unpack(
             ConfigSerializer.FORMAT, data
@@ -155,7 +153,7 @@ class ConfigValidator:
     """Validate configuration schema."""
 
     @staticmethod
-    def validate(config: Dict[str, Any]) -> None:
+    def validate(config: dict[str, Any]) -> None:
         """
         Validate config against schema.
 
@@ -196,8 +194,7 @@ class ConfigValidator:
                 min_val, max_val = schema["range"]
                 if not (min_val <= value <= max_val):
                     raise ValueError(
-                        f"Field '{field}' out of range: "
-                        f"{value} not in [{min_val}, {max_val}]"
+                        f"Field '{field}' out of range: " f"{value} not in [{min_val}, {max_val}]"
                     )
 
 
@@ -232,7 +229,7 @@ class FastConfigManager:
         if not self.config_path.exists():
             self.write_atomic(FALLBACK_CONFIG)
 
-    def write_atomic(self, config: Dict[str, Any]) -> None:
+    def write_atomic(self, config: dict[str, Any]) -> None:
         """
         Write config atomically (all-or-nothing).
 
@@ -273,7 +270,7 @@ class FastConfigManager:
                     os.unlink(tmp_path)
                 raise
 
-    def read_fast(self) -> tuple[Dict[str, Any], int]:
+    def read_fast(self) -> tuple[dict[str, Any], int]:
         """
         Read config with minimal latency.
 
@@ -300,7 +297,7 @@ class FastConfigManager:
             ConfigValidator.validate(config)
 
             return config, version
-        except (IOError, struct.error, KeyError, ValueError, TypeError):
+        except (OSError, struct.error, KeyError, ValueError, TypeError):
             # Fallback on error (robust)
             return FALLBACK_CONFIG.copy(), 0
 
@@ -313,7 +310,7 @@ class FastConfigManager:
         """
         return self.version.version
 
-    def get_fallback_config(self) -> Dict[str, Any]:
+    def get_fallback_config(self) -> dict[str, Any]:
         """
         Get fallback configuration (fail-safe default).
 
@@ -322,7 +319,7 @@ class FastConfigManager:
         """
         return FALLBACK_CONFIG.copy()
 
-    def get_config_with_version(self) -> tuple[Dict[str, Any], int]:
+    def get_config_with_version(self) -> tuple[dict[str, Any], int]:
         """
         Read config with version number.
 
@@ -341,7 +338,7 @@ class FastConfig:
     Provides convenient global access to configuration.
     """
 
-    _instance: Optional[FastConfigManager] = None
+    _instance: FastConfigManager | None = None
 
     @classmethod
     def initialize(cls, config_path: str) -> FastConfigManager:
@@ -376,7 +373,7 @@ class FastConfig:
         return cls._instance
 
     @classmethod
-    def read(cls) -> Dict[str, Any]:
+    def read(cls) -> dict[str, Any]:
         """
         Read current config.
 
@@ -386,7 +383,7 @@ class FastConfig:
         return cls.get_manager().read_fast()[0]
 
     @classmethod
-    def write(cls, config: Dict[str, Any]) -> None:
+    def write(cls, config: dict[str, Any]) -> None:
         """
         Write config atomically.
 
