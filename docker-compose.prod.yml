@@ -4,20 +4,21 @@
 #   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
 # This adds production-specific settings:
-# - SSL/TLS certificates
-# - Nginx reverse proxy
-# - Resource limits
-# - Production logging
+# - SSL/TLS certificates via Nginx
+# - Nginx reverse proxy for API and frontend
+# - Resource limits for all services
+# - Production logging configuration
+# - Frontend production build
 
 version: '3.8'
 
 services:
+  # ============================================================================
+  # BACKEND API - Production Settings
+  # ============================================================================
+
   api:
     restart: always
-    environment:
-      - LOG_LEVEL=INFO
-      - UVICORN_RELOAD=false
-      - UVICORN_WORKERS=4
     deploy:
       resources:
         limits:
@@ -25,6 +26,53 @@ services:
           memory: 2G
         reservations:
           cpus: '1.0'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service_name,environment"
+    environment:
+      - LOG_LEVEL=WARNING
+      - UVICORN_RELOAD=false
+      - UVICORN_WORKERS=4
+      - DEBUG=false
+
+  # ============================================================================
+  # DATABASE SERVICES - Production Settings
+  # ============================================================================
+
+  postgres:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  clickhouse:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
           memory: 512M
     logging:
       driver: "json-file"
@@ -39,13 +87,89 @@ services:
         limits:
           cpus: '0.5'
           memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
-  # Nginx reverse proxy for production
+  chromadb:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redpanda:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================================
+  # FRONTEND - Production Build
+  # ============================================================================
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../infrastructure/docker/Dockerfile.frontend.prod
+    container_name: trader-frontend
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=/api
+      - VITE_WS_URL=/ws
+    depends_on:
+      - api
+    networks:
+      - trader-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================================
+  # NGINX - Reverse Proxy (SSL/Load Balancing)
+  # ============================================================================
+
   nginx:
     image: nginx:alpine
     container_name: trader-nginx
@@ -58,11 +182,38 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./nginx/logs:/var/log/nginx
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     networks:
       - trader-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ============================================================================
+# NETWORKS (must be defined here for production override)
+# ============================================================================
+networks:
+  trader-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

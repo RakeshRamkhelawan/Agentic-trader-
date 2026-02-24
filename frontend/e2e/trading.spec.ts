@@ -69,6 +69,7 @@ test.describe('Trading Flow', () => {
 
     // Get initial price
     const priceElement = page.getByText(/\$[\d,]+\.?\d*/).first();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const initialPrice = await priceElement.textContent();
 
     // Wait for potential update

@@ -1,5 +1,4 @@
-from prometheus_client import (CollectorRegistry, Counter, Gauge, Histogram,
-                               generate_latest)
+from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, generate_latest
 
 
 class PrometheusMetrics:
@@ -46,6 +45,26 @@ class PrometheusMetrics:
         self.errors_total = Counter(
             f"{service_name}_errors_total",
             "Total number of errors.",
+            registry=self._registry,
+        )
+
+        # --- Routing Metrics (Added for Task 6.1) ---
+        self.routing_request_latency = Histogram(
+            f"{service_name}_routing_request_latency_seconds",
+            "Latency of routing requests per exchange.",
+            ["exchange_id"],
+            registry=self._registry,
+        )
+        self.routing_requests_total = Counter(
+            f"{service_name}_routing_requests_total",
+            "Total number of routing requests per exchange.",
+            ["exchange_id", "status"],
+            registry=self._registry,
+        )
+        self.routing_errors_total = Counter(
+            f"{service_name}_routing_errors_total",
+            "Total number of routing errors per exchange.",
+            ["exchange_id", "error_type"],
             registry=self._registry,
         )
 
@@ -121,9 +140,7 @@ class PrometheusMetrics:
             )
         except ValueError:
             # Already registered
-            self.global_guna_sattva = self._registry._names_to_collectors.get(
-                "global_guna_sattva"
-            )
+            self.global_guna_sattva = self._registry._names_to_collectors.get("global_guna_sattva")
 
         try:
             self.global_guna_rajas = Gauge(
@@ -132,9 +149,7 @@ class PrometheusMetrics:
                 registry=self._registry,
             )
         except ValueError:
-            self.global_guna_rajas = self._registry._names_to_collectors.get(
-                "global_guna_rajas"
-            )
+            self.global_guna_rajas = self._registry._names_to_collectors.get("global_guna_rajas")
 
         try:
             self.global_guna_tamas = Gauge(
@@ -143,9 +158,7 @@ class PrometheusMetrics:
                 registry=self._registry,
             )
         except ValueError:
-            self.global_guna_tamas = self._registry._names_to_collectors.get(
-                "global_guna_tamas"
-            )
+            self.global_guna_tamas = self._registry._names_to_collectors.get("global_guna_tamas")
 
         try:
             self.guna_deviation_score = Gauge(

@@ -4,7 +4,7 @@
  * Handles all backtesting-related API calls.
  */
 
-import { api } from '@/lib/api';
+import api from '@/lib/api';
 import type { BacktestConfig, BacktestResult } from '@/types';
 
 /**
@@ -93,7 +93,7 @@ export function createBacktestProgressStream(
         // Estimate progress based on trades vs expected
         onProgress(50); // Placeholder
       }
-    } catch (error) {
+    } catch {
       clearInterval(interval);
     }
   }, 1000);

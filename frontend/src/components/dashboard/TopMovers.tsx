@@ -134,7 +134,7 @@ export function TopMovers() {
               name={asset.name}
               price={asset.price}
               change24h={asset.change24h}
-              exchange={(asset as any).exchange}
+              exchange={asset.exchange}
               onSelect={handleSelect}
             />
           ))}
@@ -158,7 +158,7 @@ export function TopMovers() {
               name={asset.name}
               price={asset.price}
               change24h={asset.change24h}
-              exchange={(asset as any).exchange}
+              exchange={asset.exchange}
               onSelect={handleSelect}
             />
           ))}

@@ -55,6 +55,7 @@ test.describe('Authentication', () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   test('should show configuration error when env vars are missing', async ({ page, context }) => {
     // This test verifies the error screen shows when env vars are missing
     // We can test this by checking if the error message exists in the DOM

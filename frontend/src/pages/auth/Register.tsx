@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, Zap, ArrowRight, ArrowLeft, Loader2, Check } from 'lucide-react';
-import { useUserStore } from '@/store';
+import { useAuth0 } from '@auth0/auth0-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,8 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 
 export function Register() {
-  const navigate = useNavigate();
-  const { register, isLoading, error, clearError } = useUserStore();
+  const { loginWithRedirect, isLoading: isAuth0Loading } = useAuth0();
+  const [error, setError] = useState<string | null>(null);
   
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +32,7 @@ export function Register() {
 
   const updateField = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    clearError();
+    setError(null);
   };
 
   const validateStep = () => {
@@ -62,13 +62,16 @@ export function Register() {
 
   const handleSubmit = async () => {
     if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
       return;
     }
     
-    const success = await register(formData.email, formData.password, formData.firstName, formData.lastName);
-    if (success) {
-      navigate('/kyc');
-    }
+    // Use Auth0 signup with redirect
+    await loginWithRedirect({
+      authorizationParams: {
+        screen_hint: 'signup',
+      },
+    });
   };
 
   const renderStep = () => {
@@ -304,10 +307,10 @@ export function Register() {
                 <Button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={!validateStep() || isLoading || formData.password !== formData.confirmPassword}
+                  disabled={!validateStep() || isAuth0Loading || formData.password !== formData.confirmPassword}
                   className="flex-1 bg-trade-green hover:bg-trade-green/90 text-white py-6 font-semibold shadow-glow-green disabled:opacity-50"
                 >
-                  {isLoading ? (
+                  {isAuth0Loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Creating...

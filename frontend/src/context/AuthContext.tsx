@@ -12,9 +12,12 @@
  * - Authentication state synchronization
  */
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import { useAuth0, User as Auth0User } from '@auth0/auth0-react';
+/* eslint-disable react-refresh/only-export-components, react-hooks/set-state-in-effect */
+
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 import { setApiToken } from '@/lib/api';
+import { AUTH0_DOMAIN, AUTH0_AUDIENCE } from '@/lib/config';
 
 interface User {
   id: string;
@@ -26,7 +29,7 @@ interface User {
   roles: string[];
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   /** Whether user is authenticated */
   isAuthenticated: boolean;
   /** Whether auth is still loading */
@@ -87,7 +90,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
           const token = await getAccessTokenSilently({
             authorizationParams: {
-              audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+              audience: AUTH0_AUDIENCE,
               scope: 'openid profile email',
             },
           });
@@ -108,7 +111,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = useCallback(() => {
     loginWithRedirect({
       authorizationParams: {
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        audience: AUTH0_AUDIENCE,
         scope: 'openid profile email',
       },
     });
@@ -153,13 +156,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 }
 
+// Check if we're in development mode without Auth0
+const isDevMode = !AUTH0_DOMAIN;
+
+// Dev mode fallback value
+const devAuthValue: AuthContextType = {
+  isAuthenticated: true,
+  isLoading: false,
+  user: {
+    id: 'dev-user-001',
+    email: 'dev@localhost',
+    name: 'Developer',
+    roles: ['admin'],
+  },
+  accessToken: 'dev-token',
+  login: () => {},
+  logout: () => window.location.reload(),
+  getAccessToken: async () => 'dev-token',
+};
+
 /**
  * Hook to access authentication state and methods.
  * Must be used within an AuthProvider.
+ * In development mode without Auth0, returns mock auth data.
  */
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
+    if (isDevMode) {
+      return devAuthValue;
+    }
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

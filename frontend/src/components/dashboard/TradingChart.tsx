@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Maximize2, Minimize2, Settings, Download, Loader2, ChevronDown } from 'lucide-react';
+
+import { Maximize2, Minimize2, Settings, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
-import { marketsApi, wsClient } from '@/lib/api';
+import { marketsApi } from '@/lib/api';
+import { useChannel } from '@/context/WebSocketContext';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -118,7 +120,7 @@ export function TradingChart() {
   
   // Group assets by provider
   const assetsByProvider = assets.reduce((acc, asset) => {
-    const provider = (asset as any).exchange || 'Unknown';
+    const provider = asset.exchange || 'Unknown';
     if (!acc[provider]) acc[provider] = [];
     acc[provider].push(asset);
     return acc;
@@ -145,38 +147,30 @@ export function TradingChart() {
     loadCandles();
   }, [loadCandles]);
 
-  // Subscribe to WebSocket for real-time price updates
-  useEffect(() => {
-    const channel = `ticker.${selectedSymbol.replace('/', '-')}`;
+  // Subscribe to WebSocket for real-time price updates using WebSocketContext
+  const channel = `ticker.${selectedSymbol.replace('/', '-')}`;
+  
+  const handleWebSocketMessage = useCallback((msg: { channel?: string; data?: unknown }) => {
+    if (msg.channel === channel && msg.data) {
+      const data = msg.data as { price?: number };
+      const price = Number(data.price ?? 0);
+      if (price <= 0) return;
 
-    const handleMessage = (msg: any) => {
-      if (msg.channel === channel && msg.data) {
-        const price = Number(msg.data.price ?? 0);
-        if (price <= 0) return;
+      setCandleData((prev) => {
+        if (prev.length === 0) return prev;
+        const last = prev[prev.length - 1];
+        const updated: Candle = {
+          ...last,
+          high: Math.max(last.high, price),
+          low: Math.min(last.low, price),
+          close: price,
+        };
+        return [...prev.slice(0, -1), updated];
+      });
+    }
+  }, [channel]);
 
-        setCandleData((prev) => {
-          if (prev.length === 0) return prev;
-          const last = prev[prev.length - 1];
-          const updated: Candle = {
-            ...last,
-            high: Math.max(last.high, price),
-            low: Math.min(last.low, price),
-            close: price,
-          };
-          return [...prev.slice(0, -1), updated];
-        });
-      }
-    };
-
-    // connect() is idempotent — only opens a socket if not already open
-    wsClient.connect();
-    const removeListener = wsClient.addListener(handleMessage);
-    wsClient.subscribe(channel);
-    return () => {
-      removeListener();
-      wsClient.unsubscribe(channel);
-    };
-  }, [selectedSymbol]);
+  useChannel(channel, handleWebSocketMessage);
 
   // Redraw chart whenever candle data changes
   useEffect(() => {

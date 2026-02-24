@@ -13,15 +13,15 @@ Dual-interface architecture:
 - Internal: Use direct Python imports
 """
 
-import sys
 import logging
+import sys
 from contextlib import asynccontextmanager
 
 # CRITICAL: All logging to stderr (MCP compatibility)
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stderr
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    stream=sys.stderr,
 )
 logger = logging.getLogger(__name__)
 
@@ -29,8 +29,22 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.api.routers import backtest, trading, health, agents, navagraha, ooda
+from backend.api.metrics_middleware import MetricsMiddleware
+from backend.api.paper_trading_api import router as paper_trading_router
+from backend.api.paper_trading_ws_simple import router as paper_trading_ws_router
+from backend.api.routers import (
+    agents,
+    backtest,
+    federated,
+    health,
+    navagraha,
+    ooda,
+    routing,
+    trading,
+)
 from backend.api.websocket_endpoints import router as websocket_router
+from backend.core.config.settings import settings
+from backend.observability.metrics import metrics_endpoint
 
 
 @asynccontextmanager
@@ -55,8 +69,12 @@ app = FastAPI(
     title="Agentic Trader API",
     description="SaaS-ready trading platform API with VedAstro integration",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
+
+# Prometheus Metrics & Middleware
+app.add_middleware(MetricsMiddleware)
+app.get("/metrics")(metrics_endpoint)
 
 # CORS middleware for React frontend
 # Note: WebSocket CORS is handled at the endpoint level, not here
@@ -85,14 +103,19 @@ async def websocket_logging_middleware(request, call_next):
     response = await call_next(request)
     return response
 
+
 # Include routers
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(backtest.router, prefix="/api/v1")
 app.include_router(trading.router, prefix="/api/v1")
+app.include_router(routing.router, prefix="/api/v1")
+app.include_router(paper_trading_router)
 app.include_router(agents.router, prefix="/api/v1")
 app.include_router(navagraha.router, prefix="/api/v1")
 app.include_router(ooda.router, prefix="/api/v1")
+app.include_router(federated.router, prefix="/api/v1")
 app.include_router(websocket_router)
+app.include_router(paper_trading_ws_router)
 
 
 @app.get("/")
@@ -107,8 +130,8 @@ async def root():
             "health": "/api/v1/health",
             "backtest": "/api/v1/backtest/run",
             "vedastro": "/api/v1/tools/vedastro",
-            "consensus": "/api/v1/tools/consensus"
-        }
+            "consensus": "/api/v1/tools/consensus",
+        },
     }
 
 
@@ -122,8 +145,32 @@ async def api_info():
             "backtest_execution",
             "vedastro_signals",
             "elemental_consensus",
-            "portfolio_optimization"
-        ]
+            "portfolio_optimization",
+        ],
+    }
+
+
+@app.get("/api/v1/config")
+async def get_config():
+    """
+    Get public configuration for frontend.
+
+    Returns non-sensitive configuration that the frontend needs
+    to initialize properly.
+    """
+    return {
+        "auth": {
+            "enabled": not settings.AUTH_DISABLED,
+            "domain": settings.AUTH0_DOMAIN if settings.AUTH0_DOMAIN else None,
+            "audience": settings.AUTH0_API_AUDIENCE if settings.AUTH0_API_AUDIENCE else None,
+        },
+        "features": {
+            "websocket_public": True,
+            "realtime_updates": True,
+            "backtest": True,
+            "vedastro": True,
+        },
+        "environment": "development" if settings.AUTH_DISABLED else "production",
     }
 
 
@@ -136,8 +183,10 @@ async def global_exception_handler(request, exc):
         status_code=500,
         content={
             "error": "Internal server error",
-            "detail": str(exc) if isinstance(exc, HTTPException) else "An unexpected error occurred"
-        }
+            "detail": (
+                str(exc) if isinstance(exc, HTTPException) else "An unexpected error occurred"
+            ),
+        },
     )
 
 
@@ -145,10 +194,4 @@ if __name__ == "__main__":
     import uvicorn
 
     logger.info("Starting Uvicorn server...")
-    uvicorn.run(
-        "backend.api.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+    uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

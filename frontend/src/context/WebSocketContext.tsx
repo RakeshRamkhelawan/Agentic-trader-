@@ -16,9 +16,11 @@
  * ```
  */
 
-import { createContext, useContext, useCallback, ReactNode, useState, useEffect } from 'react';
-import { useWebSocket, WebSocketMessage } from '@/hooks/useWebSocket';
-import { useAuth } from '@/context/AuthContext';
+/* eslint-disable react-refresh/only-export-components */
+
+import { createContext, useContext, useCallback, useState, useEffect, type ReactNode } from 'react';
+import { useWebSocket, type WebSocketMessage } from '@/hooks/useWebSocket';
+import { WS_URL } from '@/lib/config';
 
 interface WebSocketContextType {
   /** Whether the WebSocket is connected */
@@ -46,7 +48,6 @@ interface WebSocketProviderProps {
 }
 
 export function WebSocketProvider({ children, defaultChannels = [] }: WebSocketProviderProps) {
-  const { accessToken, isAuthenticated } = useAuth();
   const [subscribedChannels, setSubscribedChannels] = useState<Set<string>>(new Set());
   const [connectionId, setConnectionId] = useState<string | null>(null);
 
@@ -59,7 +60,7 @@ export function WebSocketProvider({ children, defaultChannels = [] }: WebSocketP
 
   // Use public WebSocket endpoint for development (no auth required)
   // In production, use the authenticated endpoint with token
-  const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws/public';
+  const wsUrl = WS_URL;
   
   const ws = useWebSocket({
     url: wsUrl,
@@ -81,6 +82,7 @@ export function WebSocketProvider({ children, defaultChannels = [] }: WebSocketP
         }
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ws.isConnected, defaultChannels, ws.subscribe, subscribedChannels]);
 
   const subscribe = useCallback((channel: string) => {

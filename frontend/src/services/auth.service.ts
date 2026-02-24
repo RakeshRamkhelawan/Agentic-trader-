@@ -5,7 +5,7 @@
  * Manages tokens securely via httpOnly cookies or in-memory storage.
  */
 
-import { api } from '@/lib/api';
+import api from '@/lib/api';
 import type { 
   User, 
   LoginCredentials, 

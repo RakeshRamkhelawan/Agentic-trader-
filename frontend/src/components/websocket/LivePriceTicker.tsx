@@ -53,7 +53,7 @@ export function LivePriceTicker({
   // Use global WebSocket context with automatic subscription management
   const { isConnected: isTickerConnected } = useChannel(
     `ticker.${symbol}`,
-    useCallback((message) => {
+    useCallback((message: { data?: unknown }) => {
       if (message.data) {
         setTicker(message.data as TickerData);
         setLastUpdate(new Date());
@@ -63,7 +63,7 @@ export function LivePriceTicker({
 
   const { isConnected: isOrderbookConnected } = useChannel(
     `orderbook.${symbol}`,
-    useCallback((message) => {
+    useCallback((message: { data?: unknown }) => {
       if (message.data) {
         setOrderbook(message.data as OrderbookData);
       }
@@ -73,22 +73,8 @@ export function LivePriceTicker({
   // Connection is ready when ticker is connected (orderbook is optional)
   const isConnected = isTickerConnected && (!showOrderbook || isOrderbookConnected);
 
-  // Resubscribe when symbol changes
-  useEffect(() => {
-    if (isConnected) {
-      subscribe(`ticker.${symbol}`);
-      if (showOrderbook) {
-        subscribe(`orderbook.${symbol}`);
-      }
-    }
-
-    return () => {
-      if (isConnected) {
-        unsubscribe(`ticker.${symbol}`);
-        unsubscribe(`orderbook.${symbol}`);
-      }
-    };
-  }, [symbol, isConnected, showOrderbook, subscribe, unsubscribe]);
+  // Note: useChannel handles automatic subscription/unsubscription
+  // No manual subscribe/unsubscribe needed
 
   const formatPrice = (price: number | undefined) => {
     if (!price) return '---';
