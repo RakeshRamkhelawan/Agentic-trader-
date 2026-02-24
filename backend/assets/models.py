@@ -1,9 +1,13 @@
-from enum import Enum
 import uuid
-from sqlalchemy import Column, String, DateTime, Enum as SQLEnum
+from datetime import UTC, datetime
+from enum import Enum
+
+from sqlalchemy import Column, DateTime, String
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime, UTC
+
 from backend.core.database import Base
+
 
 class AssetStatus(str, Enum):
     DISCOVERED = "DISCOVERED"
@@ -11,6 +15,7 @@ class AssetStatus(str, Enum):
     POOLED = "POOLED"
     WATCHED = "WATCHED"
     INACTIVE = "INACTIVE"
+
 
 class Asset(Base):
     __tablename__ = "assets"
@@ -20,9 +25,13 @@ class Asset(Base):
     exchange = Column(String, nullable=False, index=True)
     status = Column(SQLEnum(AssetStatus), default=AssetStatus.DISCOVERED, nullable=False)
     category = Column(String, default="other", nullable=False)
-    
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     __table_args__ = (
         # Unique constraint for symbol + exchange could be added here

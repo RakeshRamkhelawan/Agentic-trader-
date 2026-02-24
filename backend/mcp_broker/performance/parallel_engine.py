@@ -9,19 +9,21 @@ Provides:
 """
 
 import asyncio
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Tuple
-import time
+from typing import Any
 
 from backend.mcp_broker.client import MCPClientWrapper
-from backend.mcp_broker.performance.cache import BacktestCache
 from backend.mcp_broker.performance.batch_processor import BatchProcessor
+from backend.mcp_broker.performance.cache import BacktestCache
 
 
 @dataclass
 class ParallelConfig:
     """Configuration for parallel execution."""
+
     max_workers: int = 4  # Number of parallel workers
     symbols_per_worker: int = 10  # Symbols assigned to each worker
     chunk_size_days: int = 30  # Days to process per chunk
@@ -33,11 +35,12 @@ class ParallelConfig:
 @dataclass
 class WorkerResult:
     """Result from a single worker."""
+
     worker_id: int
-    symbols: List[str]
-    trades: List[Dict[str, Any]] = field(default_factory=list)
-    metrics: Dict[str, Any] = field(default_factory=dict)
-    errors: List[str] = field(default_factory=list)
+    symbols: list[str]
+    trades: list[dict[str, Any]] = field(default_factory=list)
+    metrics: dict[str, Any] = field(default_factory=dict)
+    errors: list[str] = field(default_factory=list)
     processing_time_seconds: float = 0.0
 
 
@@ -52,7 +55,7 @@ class SymbolPartitioner:
     """
 
     @staticmethod
-    def round_robin(symbols: List[str], num_partitions: int) -> List[List[str]]:
+    def round_robin(symbols: list[str], num_partitions: int) -> list[list[str]]:
         """Distribute symbols evenly across partitions."""
         partitions = [[] for _ in range(num_partitions)]
         for i, symbol in enumerate(symbols):
@@ -61,36 +64,32 @@ class SymbolPartitioner:
 
     @staticmethod
     def by_volatility(
-        symbols: List[str],
-        volatility_data: Dict[str, float],
-        num_partitions: int
-    ) -> List[List[str]]:
+        symbols: list[str], volatility_data: dict[str, float], num_partitions: int
+    ) -> list[list[str]]:
         """Partition by volatility to balance computational load."""
         # Sort by volatility
-        sorted_symbols = sorted(
-            symbols,
-            key=lambda s: volatility_data.get(s, 0.5),
-            reverse=True
-        )
+        sorted_symbols = sorted(symbols, key=lambda s: volatility_data.get(s, 0.5), reverse=True)
 
         # Distribute high/low volatility evenly
         partitions = [[] for _ in range(num_partitions)]
         for i, symbol in enumerate(sorted_symbols):
             # Alternate direction for better balance
-            partition_idx = i % num_partitions if (i // num_partitions) % 2 == 0 else (num_partitions - 1 - i % num_partitions)
+            partition_idx = (
+                i % num_partitions
+                if (i // num_partitions) % 2 == 0
+                else (num_partitions - 1 - i % num_partitions)
+            )
             partitions[partition_idx].append(symbol)
 
         return partitions
 
     @staticmethod
     def by_sector(
-        symbols: List[str],
-        sector_data: Dict[str, str],
-        num_partitions: int
-    ) -> List[List[str]]:
+        symbols: list[str], sector_data: dict[str, str], num_partitions: int
+    ) -> list[list[str]]:
         """Partition by sector to keep related symbols together."""
         # Group by sector
-        sectors: Dict[str, List[str]] = {}
+        sectors: dict[str, list[str]] = {}
         for symbol in symbols:
             sector = sector_data.get(symbol, "unknown")
             if sector not in sectors:
@@ -109,10 +108,8 @@ class SymbolPartitioner:
 
     @staticmethod
     def adaptive(
-        symbols: List[str],
-        historical_performance: Dict[str, float],
-        num_partitions: int
-    ) -> List[List[str]]:
+        symbols: list[str], historical_performance: dict[str, float], num_partitions: int
+    ) -> list[list[str]]:
         """
         Adaptive partitioning based on historical processing times.
 
@@ -120,13 +117,11 @@ class SymbolPartitioner:
         """
         # Sort by expected processing time (descending)
         sorted_symbols = sorted(
-            symbols,
-            key=lambda s: historical_performance.get(s, 1.0),
-            reverse=True
+            symbols, key=lambda s: historical_performance.get(s, 1.0), reverse=True
         )
 
         # Greedy assignment to least-loaded partition
-        partitions: List[List[str]] = [[] for _ in range(num_partitions)]
+        partitions: list[list[str]] = [[] for _ in range(num_partitions)]
         partition_loads = [0.0] * num_partitions
 
         for symbol in sorted_symbols:
@@ -150,26 +145,21 @@ class ParallelBacktestEngine:
     def __init__(
         self,
         mcp_client: MCPClientWrapper,
-        cache: Optional[BacktestCache] = None,
-        config: Optional[ParallelConfig] = None
+        cache: BacktestCache | None = None,
+        config: ParallelConfig | None = None,
     ):
         self.client = mcp_client
         self.cache = cache
         self.config = config or ParallelConfig()
         self.batch_processor = BatchProcessor(mcp_client)
-        self._workers: List[asyncio.Task] = []
-        self._progress_callbacks: List[Callable] = []
+        self._workers: list[asyncio.Task] = []
+        self._progress_callbacks: list[Callable] = []
 
-    def on_progress(self, callback: Callable[[int, int, Dict], None]) -> None:
+    def on_progress(self, callback: Callable[[int, int, dict], None]) -> None:
         """Register a progress callback."""
         self._progress_callbacks.append(callback)
 
-    async def _notify_progress(
-        self,
-        completed: int,
-        total: int,
-        details: Dict
-    ) -> None:
+    async def _notify_progress(self, completed: int, total: int, details: dict) -> None:
         """Notify all progress callbacks."""
         for callback in self._progress_callbacks:
             try:
@@ -183,20 +173,17 @@ class ParallelBacktestEngine:
     async def _worker_loop(
         self,
         worker_id: int,
-        symbols: List[str],
+        symbols: list[str],
         start_date: datetime,
         end_date: datetime,
         initial_capital: float,
-        result_queue: asyncio.Queue
+        result_queue: asyncio.Queue,
     ) -> None:
         """
         Worker process for a subset of symbols.
         """
         start_time = time.time()
-        worker_result = WorkerResult(
-            worker_id=worker_id,
-            symbols=symbols
-        )
+        worker_result = WorkerResult(worker_id=worker_id, symbols=symbols)
 
         try:
             # Process each symbol
@@ -221,12 +208,8 @@ class ParallelBacktestEngine:
             await result_queue.put(worker_result)
 
     async def _run_symbol_backtest(
-        self,
-        symbol: str,
-        start_date: datetime,
-        end_date: datetime,
-        allocated_capital: float
-    ) -> Dict[str, Any]:
+        self, symbol: str, start_date: datetime, end_date: datetime, allocated_capital: float
+    ) -> dict[str, Any]:
         """Run backtest for a single symbol."""
         trades = []
         current_date = start_date
@@ -241,8 +224,8 @@ class ParallelBacktestEngine:
                     {
                         "symbol": symbol,
                         "start_date": current_date.isoformat(),
-                        "end_date": current_date.isoformat()
-                    }
+                        "end_date": current_date.isoformat(),
+                    },
                 )
 
                 if not market_data or "error" in market_data:
@@ -253,8 +236,7 @@ class ParallelBacktestEngine:
 
                 # Get VedAstro signal
                 signal = await self.client.call_tool(
-                    "vedastro__generate_signal",
-                    {"symbol": symbol, "current_price": price}
+                    "vedastro__generate_signal", {"symbol": symbol, "current_price": price}
                 )
 
                 vedastro_score = signal.get("score", 50)
@@ -267,8 +249,8 @@ class ParallelBacktestEngine:
                         "earth_vote": signal.get("earth", 0.5),
                         "water_vote": signal.get("water", 0.5),
                         "air_vote": signal.get("air", 0.5),
-                        "symbol": symbol
-                    }
+                        "symbol": symbol,
+                    },
                 )
 
                 if consensus.get("should_enter") and capital > 1000:
@@ -279,8 +261,8 @@ class ParallelBacktestEngine:
                             "symbol": symbol,
                             "portfolio_value": capital,
                             "vedastro_score": vedastro_score,
-                            "price_history": market_data.get("prices", [price] * 20)
-                        }
+                            "price_history": market_data.get("prices", [price] * 20),
+                        },
                     )
 
                     position_size = position.get("position_size_eur", 1000)
@@ -293,22 +275,24 @@ class ParallelBacktestEngine:
                                 "symbol": symbol,
                                 "action": "buy",
                                 "quantity": position_size / price,
-                                "current_price": price
-                            }
+                                "current_price": price,
+                            },
                         )
 
                         if "error" not in trade_result:
-                            trades.append({
-                                "date": current_date.isoformat(),
-                                "symbol": symbol,
-                                "action": "buy",
-                                "price": price,
-                                "size": position_size,
-                                "pnl": trade_result.get("pnl", 0)
-                            })
+                            trades.append(
+                                {
+                                    "date": current_date.isoformat(),
+                                    "symbol": symbol,
+                                    "action": "buy",
+                                    "price": price,
+                                    "size": position_size,
+                                    "pnl": trade_result.get("pnl", 0),
+                                }
+                            )
                             capital -= position_size
 
-            except Exception as e:
+            except Exception:
                 pass  # Continue to next date
 
             current_date += timedelta(days=1)
@@ -318,18 +302,18 @@ class ParallelBacktestEngine:
             "metrics": {
                 "total_trades": len(trades),
                 "final_capital": capital,
-                "allocated_capital": allocated_capital
-            }
+                "allocated_capital": allocated_capital,
+            },
         }
 
     async def run_parallel_backtest(
         self,
-        symbols: List[str],
+        symbols: list[str],
         start_date: datetime,
         end_date: datetime,
         initial_capital: float = 100000.0,
-        partition_strategy: str = "round_robin"
-    ) -> Dict[str, Any]:
+        partition_strategy: str = "round_robin",
+    ) -> dict[str, Any]:
         """
         Run parallel backtest across multiple symbols.
 
@@ -347,14 +331,10 @@ class ParallelBacktestEngine:
 
         # Partition symbols
         if partition_strategy == "round_robin":
-            partitions = SymbolPartitioner.round_robin(
-                symbols, self.config.max_workers
-            )
+            partitions = SymbolPartitioner.round_robin(symbols, self.config.max_workers)
         else:
             # Default to round-robin for other strategies
-            partitions = SymbolPartitioner.round_robin(
-                symbols, self.config.max_workers
-            )
+            partitions = SymbolPartitioner.round_robin(symbols, self.config.max_workers)
 
         # Remove empty partitions
         partitions = [p for p in partitions if p]
@@ -367,12 +347,7 @@ class ParallelBacktestEngine:
         for worker_id, partition in enumerate(partitions):
             worker = asyncio.create_task(
                 self._worker_loop(
-                    worker_id,
-                    partition,
-                    start_date,
-                    end_date,
-                    initial_capital,
-                    result_queue
+                    worker_id, partition, start_date, end_date, initial_capital, result_queue
                 )
             )
             workers.append(worker)
@@ -385,8 +360,7 @@ class ParallelBacktestEngine:
             try:
                 # Wait for next result with timeout for progress updates
                 result = await asyncio.wait_for(
-                    result_queue.get(),
-                    timeout=self.config.progress_interval_seconds
+                    result_queue.get(), timeout=self.config.progress_interval_seconds
                 )
                 completed_workers += 1
 
@@ -398,16 +372,14 @@ class ParallelBacktestEngine:
                         "symbols_processed": len(result.symbols),
                         "trades": len(result.trades),
                         "errors": len(result.errors),
-                        "time": result.processing_time_seconds
-                    }
+                        "time": result.processing_time_seconds,
+                    },
                 )
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Progress update
                 await self._notify_progress(
-                    completed_workers,
-                    total_workers,
-                    {"status": "in_progress"}
+                    completed_workers, total_workers, {"status": "in_progress"}
                 )
 
         # Collect all results
@@ -432,10 +404,7 @@ class ParallelBacktestEngine:
         return {
             "status": "completed",
             "symbols": symbols,
-            "date_range": {
-                "start": start_date.isoformat(),
-                "end": end_date.isoformat()
-            },
+            "date_range": {"start": start_date.isoformat(), "end": end_date.isoformat()},
             "initial_capital": initial_capital,
             "total_trades": len(all_trades),
             "trades": all_trades,
@@ -446,17 +415,17 @@ class ParallelBacktestEngine:
                 "worker_time_seconds": total_worker_time,
                 "parallel_efficiency": total_worker_time / total_time if total_time > 0 else 0,
                 "symbols_per_second": len(symbols) / total_time if total_time > 0 else 0,
-                "trades_per_second": len(all_trades) / total_time if total_time > 0 else 0
-            }
+                "trades_per_second": len(all_trades) / total_time if total_time > 0 else 0,
+            },
         }
 
     async def run_chunked_backtest(
         self,
-        symbols: List[str],
+        symbols: list[str],
         start_date: datetime,
         end_date: datetime,
-        initial_capital: float = 100000.0
-    ) -> Dict[str, Any]:
+        initial_capital: float = 100000.0,
+    ) -> dict[str, Any]:
         """
         Run backtest in time chunks for memory efficiency.
 
@@ -466,10 +435,7 @@ class ParallelBacktestEngine:
         current_start = start_date
 
         while current_start < end_date:
-            current_end = min(
-                current_start + timedelta(days=self.config.chunk_size_days),
-                end_date
-            )
+            current_end = min(current_start + timedelta(days=self.config.chunk_size_days), end_date)
 
             # Run backtest for this chunk
             chunk_result = await self.run_parallel_backtest(
@@ -477,7 +443,7 @@ class ParallelBacktestEngine:
                 current_start,
                 current_end,
                 initial_capital / ((end_date - start_date).days / self.config.chunk_size_days),
-                "round_robin"
+                "round_robin",
             )
 
             chunk_results.append(chunk_result)
@@ -493,5 +459,5 @@ class ParallelBacktestEngine:
             "chunks_processed": len(chunk_results),
             "total_trades": len(all_trades),
             "trades": all_trades,
-            "chunk_details": chunk_results
+            "chunk_details": chunk_results,
         }

@@ -27,9 +27,7 @@ def calculator():
 
 def test_calculate_var_95_percent_confidence(calculator, mock_portfolio_data):
     """Happy Path: Bereken VaR met 95% betrouwbaarheid."""
-    var_95 = calculator.calculate_historical_var(
-        mock_portfolio_data, confidence_level=0.95
-    )
+    var_95 = calculator.calculate_historical_var(mock_portfolio_data, confidence_level=0.95)
 
     # Met een 10% verliesdag in 100 dagen, zal 95% VaR ergens tussen 0% en -10% liggen
     # We checken of het negatief is (verlies)
@@ -39,9 +37,7 @@ def test_calculate_var_95_percent_confidence(calculator, mock_portfolio_data):
 
 def test_calculate_var_99_percent_confidence(calculator, mock_portfolio_data):
     """Happy Path: Bereken VaR met 99% betrouwbaarheid."""
-    var_99 = calculator.calculate_historical_var(
-        mock_portfolio_data, confidence_level=0.99
-    )
+    var_99 = calculator.calculate_historical_var(mock_portfolio_data, confidence_level=0.99)
 
     # Met 100 datapoints, zal 99% VaR veel negatiever zijn dan 95%
     assert var_99 < 0
@@ -58,7 +54,5 @@ def test_insufficient_data_for_var(calculator):
 
 def test_invalid_confidence_level(calculator, mock_portfolio_data):
     """Unhappy Path: Ongeldige betrouwbaarheidsniveau."""
-    with pytest.raises(
-        VaRCalculationError, match="Confidence level must be between 0 and 1"
-    ):
+    with pytest.raises(VaRCalculationError, match="Confidence level must be between 0 and 1"):
         calculator.calculate_historical_var(mock_portfolio_data, confidence_level=1.5)

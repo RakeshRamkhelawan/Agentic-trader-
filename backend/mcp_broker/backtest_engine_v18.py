@@ -7,9 +7,9 @@ This provides resilience, LLM orchestration, and better error isolation.
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
-from typing import AsyncGenerator, Dict, Any, List, Optional
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import Any
 
 from backend.mcp_broker.client import MCPClientWrapper
 from backend.mcp_broker.elemental_manager_v18 import ElementalAgentManagerV18
@@ -20,9 +20,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BacktestConfig:
     """Configuration for backtest."""
+
     start_date: datetime
     end_date: datetime
-    symbols: List[str]
+    symbols: list[str]
     initial_cash: float = 100000.0
     account_id: str = "backtest_v18"
 
@@ -38,10 +39,11 @@ class BacktestConfig:
 @dataclass
 class BacktestState:
     """Current state of backtest."""
+
     cash: float
     total_value: float
-    open_positions: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-    trades: List[Dict[str, Any]] = field(default_factory=list)
+    open_positions: dict[str, dict[str, Any]] = field(default_factory=dict)
+    trades: list[dict[str, Any]] = field(default_factory=list)
     daily_pnl: float = 0.0
     total_pnl: float = 0.0
     day_count: int = 0
@@ -66,15 +68,12 @@ class BacktestEngineV18:
             config: Backtest configuration
         """
         self.config = config
-        self.state = BacktestState(
-            cash=config.initial_cash,
-            total_value=config.initial_cash
-        )
+        self.state = BacktestState(cash=config.initial_cash, total_value=config.initial_cash)
 
-        self.mcp_client: Optional[MCPClientWrapper] = None
-        self.elemental_manager: Optional[ElementalAgentManagerV18] = None
+        self.mcp_client: MCPClientWrapper | None = None
+        self.elemental_manager: ElementalAgentManagerV18 | None = None
 
-        logger.info(f"BacktestEngineV18 initialized")
+        logger.info("BacktestEngineV18 initialized")
         logger.info(f"  Period: {config.start_date.date()} to {config.end_date.date()}")
         logger.info(f"  Symbols: {', '.join(config.symbols)}")
         logger.info(f"  Initial cash: €{config.initial_cash:,.2f}")
@@ -98,7 +97,7 @@ class BacktestEngineV18:
             await self.mcp_client.close()
             logger.info("BacktestEngineV18 closed")
 
-    async def run_backtest(self) -> Dict[str, Any]:
+    async def run_backtest(self) -> dict[str, Any]:
         """
         Run complete backtest.
 
@@ -118,7 +117,9 @@ class BacktestEngineV18:
 
             # Log progress every 30 days
             if self.state.day_count % 30 == 0:
-                logger.info(f"Day {self.state.day_count}: Portfolio value: €{self.state.total_value:,.2f}")
+                logger.info(
+                    f"Day {self.state.day_count}: Portfolio value: €{self.state.total_value:,.2f}"
+                )
 
         # Generate results
         results = self._generate_results()
@@ -127,7 +128,9 @@ class BacktestEngineV18:
         logger.info("BACKTEST COMPLETE")
         logger.info("=" * 60)
         logger.info(f"Final portfolio value: €{self.state.total_value:,.2f}")
-        logger.info(f"Total return: {(self.state.total_value / self.config.initial_cash - 1) * 100:.2f}%")
+        logger.info(
+            f"Total return: {(self.state.total_value / self.config.initial_cash - 1) * 100:.2f}%"
+        )
         logger.info(f"Total trades: {len(self.state.trades)}")
 
         return results
@@ -156,11 +159,7 @@ class BacktestEngineV18:
 
             # Get VedAstro signal
             vedastro_result = await self.mcp_client.call_tool(
-                "vedastro__generate_signal",
-                {
-                    "symbol": symbol,
-                    "current_price": current_price
-                }
+                "vedastro__generate_signal", {"symbol": symbol, "current_price": current_price}
             )
 
             # Check VedAstro confidence
@@ -193,7 +192,7 @@ class BacktestEngineV18:
                 portfolio_value=self.state.total_value,
                 vedastro_score=strength_score,
                 dominant_planet=dominant_planet,
-                price_history=price_history
+                price_history=price_history,
             )
 
             if entry:
@@ -213,9 +212,7 @@ class BacktestEngineV18:
                 return
 
             should_exit, reason = await self.elemental_manager.evaluate_exit(
-                symbol=symbol,
-                current_price=current_price,
-                current_date=date.isoformat()
+                symbol=symbol, current_price=current_price, current_date=date.isoformat()
             )
 
             if should_exit:
@@ -224,7 +221,7 @@ class BacktestEngineV18:
         except Exception as e:
             logger.error(f"Error evaluating exit for {symbol}: {e}")
 
-    async def _execute_entry(self, entry: Dict[str, Any], date: datetime):
+    async def _execute_entry(self, entry: dict[str, Any], date: datetime):
         """Execute entry trade."""
         symbol = entry["symbol"]
         quantity = entry["quantity"]
@@ -239,8 +236,8 @@ class BacktestEngineV18:
                     "action": "BUY",
                     "quantity": quantity,
                     "current_price": price,
-                    "account_id": self.config.account_id
-                }
+                    "account_id": self.config.account_id,
+                },
             )
 
             # Update state
@@ -253,31 +250,27 @@ class BacktestEngineV18:
                 "entry_date": date.isoformat(),
                 "entry_price": price,
                 "quantity": quantity,
-                "cost_basis": total_cost
+                "cost_basis": total_cost,
             }
 
-            self.state.trades.append({
-                "date": date.isoformat(),
-                "symbol": symbol,
-                "action": "BUY",
-                "quantity": quantity,
-                "price": price,
-                "commission": commission,
-                "type": "entry"
-            })
+            self.state.trades.append(
+                {
+                    "date": date.isoformat(),
+                    "symbol": symbol,
+                    "action": "BUY",
+                    "quantity": quantity,
+                    "price": price,
+                    "commission": commission,
+                    "type": "entry",
+                }
+            )
 
             logger.info(f"ENTRY: {symbol} {quantity:.2f} @ ${price:.2f}")
 
         except Exception as e:
             logger.error(f"Failed to execute entry for {symbol}: {e}")
 
-    async def _execute_exit(
-        self,
-        symbol: str,
-        price: float,
-        reason: str,
-        date: datetime
-    ):
+    async def _execute_exit(self, symbol: str, price: float, reason: str, date: datetime):
         """Execute exit trade."""
         position = self.state.open_positions.get(symbol)
         if not position:
@@ -294,8 +287,8 @@ class BacktestEngineV18:
                     "action": "SELL",
                     "quantity": quantity,
                     "current_price": price,
-                    "account_id": self.config.account_id
-                }
+                    "account_id": self.config.account_id,
+                },
             )
 
             # Update state
@@ -311,33 +304,38 @@ class BacktestEngineV18:
             self.state.cash += net_proceeds
             del self.state.open_positions[symbol]
 
-            self.state.trades.append({
-                "date": date.isoformat(),
-                "symbol": symbol,
-                "action": "SELL",
-                "quantity": quantity,
-                "price": price,
-                "commission": commission,
-                "pnl": pnl,
-                "pnl_pct": pnl_pct,
-                "reason": reason,
-                "type": "exit"
-            })
+            self.state.trades.append(
+                {
+                    "date": date.isoformat(),
+                    "symbol": symbol,
+                    "action": "SELL",
+                    "quantity": quantity,
+                    "price": price,
+                    "commission": commission,
+                    "pnl": pnl,
+                    "pnl_pct": pnl_pct,
+                    "reason": reason,
+                    "type": "exit",
+                }
+            )
 
-            logger.info(f"EXIT: {symbol} {quantity:.2f} @ ${price:.2f} (P&L: {pnl_pct*100:+.2f}%) [{reason}]")
+            logger.info(
+                f"EXIT: {symbol} {quantity:.2f} @ ${price:.2f} (P&L: {pnl_pct*100:+.2f}%) [{reason}]"
+            )
 
         except Exception as e:
             logger.error(f"Failed to execute exit for {symbol}: {e}")
 
-    async def _get_price(self, symbol: str, date: datetime) -> Optional[float]:
+    async def _get_price(self, symbol: str, date: datetime) -> float | None:
         """Get price for symbol on date (mock implementation)."""
         # In production, this would fetch from data source
         # For now, return mock price based on symbol hash
         import hashlib
+
         hash_val = int(hashlib.md5(f"{symbol}{date.date()}".encode()).hexdigest(), 16)
         return 100.0 + (hash_val % 100)
 
-    async def _get_price_history(self, symbol: str, date: datetime) -> List[float]:
+    async def _get_price_history(self, symbol: str, date: datetime) -> list[float]:
         """Get price history for symbol (mock implementation)."""
         # Generate 30 days of mock prices
         prices = []
@@ -355,14 +353,14 @@ class BacktestEngineV18:
         planets = ["SUN", "MOON", "MARS", "MERCURY", "JUPITER", "VENUS", "SATURN"]
         return planets[date.day % 7]
 
-    def _generate_results(self) -> Dict[str, Any]:
+    def _generate_results(self) -> dict[str, Any]:
         """Generate backtest results summary."""
         # Calculate metrics
         total_trades = len([t for t in self.state.trades if t["type"] == "exit"])
         winning_trades = len([t for t in self.state.trades if t.get("pnl", 0) > 0])
         losing_trades = total_trades - winning_trades
 
-        total_return = (self.state.total_value / self.config.initial_cash - 1)
+        total_return = self.state.total_value / self.config.initial_cash - 1
 
         gross_pnl = sum(t.get("pnl", 0) for t in self.state.trades if t["type"] == "exit")
         total_commission = sum(t.get("commission", 0) for t in self.state.trades)
@@ -372,7 +370,7 @@ class BacktestEngineV18:
                 "start_date": self.config.start_date.isoformat(),
                 "end_date": self.config.end_date.isoformat(),
                 "symbols": self.config.symbols,
-                "initial_cash": self.config.initial_cash
+                "initial_cash": self.config.initial_cash,
             },
             "results": {
                 "final_value": self.state.total_value,
@@ -384,19 +382,16 @@ class BacktestEngineV18:
                 "gross_pnl": gross_pnl,
                 "total_commission": total_commission,
                 "net_pnl": gross_pnl - total_commission,
-                "day_count": self.state.day_count
+                "day_count": self.state.day_count,
             },
             "trades": self.state.trades,
-            "engine_version": "V18_MCP"
+            "engine_version": "V18_MCP",
         }
 
 
 async def run_backtest_v18(
-    symbols: List[str],
-    start_date: datetime,
-    end_date: datetime,
-    initial_cash: float = 100000.0
-) -> Dict[str, Any]:
+    symbols: list[str], start_date: datetime, end_date: datetime, initial_cash: float = 100000.0
+) -> dict[str, Any]:
     """
     Convenience function to run a backtest.
 
@@ -410,10 +405,7 @@ async def run_backtest_v18(
         Backtest results
     """
     config = BacktestConfig(
-        start_date=start_date,
-        end_date=end_date,
-        symbols=symbols,
-        initial_cash=initial_cash
+        start_date=start_date, end_date=end_date, symbols=symbols, initial_cash=initial_cash
     )
 
     engine = BacktestEngineV18(config)
@@ -428,11 +420,9 @@ async def run_backtest_v18(
 
 # For testing
 if __name__ == "__main__":
-    import sys
 
     logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
     # Run a quick test

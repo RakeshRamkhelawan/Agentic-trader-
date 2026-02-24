@@ -22,15 +22,11 @@ PAPER_TRADE_VALUE = Histogram(
     buckets=[10, 50, 100, 500, 1000, 5000, 10000],
 )
 
-PAPER_PORTFOLIO_VALUE = Gauge(
-    "paper_portfolio_value_eur", "Actuele portfolio waarde in EUR"
-)
+PAPER_PORTFOLIO_VALUE = Gauge("paper_portfolio_value_eur", "Actuele portfolio waarde in EUR")
 
 PAPER_PNL = Gauge("paper_pnl_eur", "Gerealiseerde P&L in EUR")
 
-PAPER_PNL_PERCENTAGE = Gauge(
-    "paper_pnl_percentage", "P&L als percentage van startkapitaal"
-)
+PAPER_PNL_PERCENTAGE = Gauge("paper_pnl_percentage", "P&L als percentage van startkapitaal")
 
 PAPER_CASH_BALANCE = Gauge("paper_cash_balance_eur", "Beschikbaar cash in EUR")
 
@@ -45,17 +41,11 @@ VEDIC_HARMONY_SCORE = Gauge(
     "Actuele harmony score (0-1)",
 )
 
-VEDIC_HARMONY_STATUS = Gauge(
-    "vedic_harmony_status", "Harmony status: 0=low, 1=medium, 2=high"
-)
+VEDIC_HARMONY_STATUS = Gauge("vedic_harmony_status", "Harmony status: 0=low, 1=medium, 2=high")
 
-VEDIC_PRANA_LEVELS = Gauge(
-    "vedic_prana_level", "Prana level per elementaire agent", ["element"]
-)
+VEDIC_PRANA_LEVELS = Gauge("vedic_prana_level", "Prana level per elementaire agent", ["element"])
 
-VEDIC_PRANA_STATUS = Gauge(
-    "vedic_prana_status", "Prana status: 0=depleted, 1=nominal", ["element"]
-)
+VEDIC_PRANA_STATUS = Gauge("vedic_prana_status", "Prana status: 0=depleted, 1=nominal", ["element"])
 
 RAHU_KALA_ACTIVE = Gauge("rahu_kala_active", "1 als Rahu Kala actief is, 0 anders")
 
@@ -101,9 +91,7 @@ WS_MESSAGES_SENT = Counter(
     ["channel", "message_type"],
 )
 
-WS_CONNECTION_ERRORS = Counter(
-    "ws_connection_errors_total", "Aantal WebSocket connectie errors"
-)
+WS_CONNECTION_ERRORS = Counter("ws_connection_errors_total", "Aantal WebSocket connectie errors")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Performance Metrics
@@ -170,8 +158,6 @@ def update_prana_metrics(element: str, prana: float):
 
 def record_trade(symbol: str, side: str, agent: str, element: str, value: float):
     """Record een trade metric."""
-    PAPER_TRADES_TOTAL.labels(
-        symbol=symbol, side=side, agent=agent, element=element
-    ).inc()
+    PAPER_TRADES_TOTAL.labels(symbol=symbol, side=side, agent=agent, element=element).inc()
 
     PAPER_TRADE_VALUE.observe(value)

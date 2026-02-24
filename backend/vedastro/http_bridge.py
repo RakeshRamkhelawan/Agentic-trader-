@@ -11,7 +11,7 @@ and called via HTTP from the main application.
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
@@ -46,18 +46,18 @@ class TransitRequest(BaseModel):
     """Request for transit calculation."""
 
     datetime: str = Field(..., description="Current ISO format datetime")
-    kundli: Dict[str, Any] = Field(..., description="Birth chart (Kundli)")
+    kundli: dict[str, Any] = Field(..., description="Birth chart (Kundli)")
 
 
 class KundliResponse(BaseModel):
     """Response with Kundli data."""
 
-    planets: Dict[str, Any]
+    planets: dict[str, Any]
     lagna: str
     lagna_lord: str
-    vargas: Dict[str, Any]
+    vargas: dict[str, Any]
     timestamp: str
-    location: Dict[str, float]
+    location: dict[str, float]
 
 
 class TransitResponse(BaseModel):
@@ -67,7 +67,7 @@ class TransitResponse(BaseModel):
     retrograde_count: int
     exalted_planets: list
     debilitated_planets: list
-    current_positions: Dict[str, Any]
+    current_positions: dict[str, Any]
 
 
 class HealthResponse(BaseModel):
@@ -75,7 +75,7 @@ class HealthResponse(BaseModel):
 
     status: str
     vedastro_available: bool
-    cache_stats: Dict[str, int]
+    cache_stats: dict[str, int]
 
 
 # ============================================================================
@@ -83,7 +83,7 @@ class HealthResponse(BaseModel):
 # ============================================================================
 
 # Global connector instance
-connector: Optional[VedAstroConnector] = None
+connector: VedAstroConnector | None = None
 
 
 @asynccontextmanager
@@ -193,9 +193,7 @@ async def calculate_transits(request: TransitRequest):
         )
 
     try:
-        result = await connector.calculate_transits(
-            date=current_date, kundli=request.kundli
-        )
+        result = await connector.calculate_transits(date=current_date, kundli=request.kundli)
 
         return TransitResponse(**result)
 
@@ -281,8 +279,7 @@ async def mock_kundli(request: KundliRequest):
         lagna_lord={"Aries": "Mars", "Taurus": "Venus"}.get(lagna, "Unknown"),
         vargas={
             "D9": {
-                p: {"sign": random.choice(signs), "house": random.randint(1, 12)}
-                for p in planets
+                p: {"sign": random.choice(signs), "house": random.randint(1, 12)} for p in planets
             }
         },
         timestamp=request.datetime,

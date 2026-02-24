@@ -14,10 +14,8 @@ Endpoints:
 import os
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
-from fastapi import (APIRouter, Depends, File, HTTPException, Request,
-                     UploadFile, status)
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,9 +62,7 @@ class KYCData(BaseModel):
     employment_status: str = Field(
         ..., pattern=r"^(employed|self_employed|unemployed|retired|student)$"
     )
-    annual_income: str = Field(
-        ..., pattern=r"^(0-25k|25k-50k|50k-100k|100k-250k|250k+)$"
-    )
+    annual_income: str = Field(..., pattern=r"^(0-25k|25k-50k|50k-100k|100k-250k|250k+)$")
     source_of_funds: str = Field(..., min_length=2, max_length=200)
 
 
@@ -74,9 +70,9 @@ class KYCResponse(BaseModel):
     """KYC response schema"""
 
     status: KYCStatus
-    submitted_at: Optional[datetime] = None
-    reviewed_at: Optional[datetime] = None
-    rejection_reason: Optional[str] = None
+    submitted_at: datetime | None = None
+    reviewed_at: datetime | None = None
+    rejection_reason: str | None = None
     required: bool = True
     enabled: bool = ENABLE_KYC
 
@@ -103,9 +99,7 @@ def get_kyc_disabled_response() -> KYCResponse:
 
 
 @router.get("/status", response_model=KYCResponse)
-async def get_kyc_status(
-    request: Request, db: AsyncSession = Depends(get_admin_db)
-) -> KYCResponse:
+async def get_kyc_status(request: Request, db: AsyncSession = Depends(get_admin_db)) -> KYCResponse:
     """
     Get current KYC status for authenticated user.
 
@@ -168,9 +162,7 @@ async def submit_kyc(
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     # Store KYC data
     _kyc_store[user_id] = {
@@ -191,9 +183,9 @@ async def submit_kyc(
 @router.post("/documents")
 async def upload_kyc_documents(
     request: Request,
-    id_front: Optional[UploadFile] = File(None),
-    id_back: Optional[UploadFile] = File(None),
-    selfie: Optional[UploadFile] = File(None),
+    id_front: UploadFile | None = File(None),
+    id_back: UploadFile | None = File(None),
+    selfie: UploadFile | None = File(None),
     db: AsyncSession = Depends(get_admin_db),
 ):
     """
@@ -212,9 +204,7 @@ async def upload_kyc_documents(
         return {
             "success": True,
             "message": "Documents received (KYC verification is disabled)",
-            "files_received": sum(
-                [1 for f in [id_front, id_back, selfie] if f is not None]
-            ),
+            "files_received": sum([1 for f in [id_front, id_back, selfie] if f is not None]),
         }
 
     # Get user from request
@@ -255,9 +245,7 @@ async def upload_kyc_documents(
 
 
 @router.get("/required")
-async def is_kyc_required(
-    request: Request, db: AsyncSession = Depends(get_admin_db)
-) -> dict:
+async def is_kyc_required(request: Request, db: AsyncSession = Depends(get_admin_db)) -> dict:
     """
     Check if KYC is required for the current user.
 
@@ -289,7 +277,7 @@ if ENABLE_KYC:
     async def review_kyc(
         user_id: str,
         status: KYCStatus,
-        rejection_reason: Optional[str] = None,
+        rejection_reason: str | None = None,
         db: AsyncSession = Depends(get_admin_db),
     ):
         """

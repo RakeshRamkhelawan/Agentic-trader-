@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from backend.core.memory_agent import MemoryAgent  # GEWIJZIGD
 from backend.schemas.agent_messages import AgentMessage  # GEWIJZIGD
@@ -19,19 +19,17 @@ class ValuationAgent:
 
     async def handle_message(self, message: AgentMessage):
         """Handle incoming messages from the orchestrator."""
-        self.logger.info(
-            f"Valuation Agent received message: {message.type} from {message.source}"
-        )
+        self.logger.info(f"Valuation Agent received message: {message.type} from {message.source}")
         if (
             message.type == "MARKET_UPDATE"
         ):  # Let op, dit type is nu gedefinieerd in schemas/agent_messages
             await self.run_cycle()
 
-    async def fetch_market_data(self) -> Dict[str, float]:
+    async def fetch_market_data(self) -> dict[str, float]:
         """Mock data fetcher."""
         return {"price": 45000.0, "sma_200": 42000.0, "nvt_ratio": 50.0}
 
-    async def analyze_value(self, data: Dict[str, float]) -> Dict[str, Any]:
+    async def analyze_value(self, data: dict[str, float]) -> dict[str, Any]:
         price = data["price"]
         sma = data["sma_200"]
         nvt = data["nvt_ratio"]

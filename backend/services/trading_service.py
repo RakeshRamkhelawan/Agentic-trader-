@@ -10,7 +10,7 @@ Supports:
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,7 +27,7 @@ class TradingService:
 
     def __init__(self):
         self.settings_service = get_settings_service()
-        self._exchange_instances: Dict[str, CCXTAdapter] = {}
+        self._exchange_instances: dict[str, CCXTAdapter] = {}
 
         # Determine if we should force mock data (for dev/demo)
         # In a real app, this would be False by default
@@ -35,7 +35,7 @@ class TradingService:
 
     async def _get_exchange_adapter(
         self, db: AsyncSession, tenant_id: str, exchange_id: str
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Get or create an exchange adapter for the user.
         """
@@ -43,16 +43,12 @@ class TradingService:
 
         # 1. Get API keys
         keys_list = await self.settings_service.get_api_keys(db, tenant_id)
-        target_key = next(
-            (k for k in keys_list if k.exchange == exchange_id and k.is_valid), None
-        )
+        target_key = next((k for k in keys_list if k.exchange == exchange_id and k.is_valid), None)
 
         creds = {}
         if target_key:
             # 2. Decrypt user credentials
-            creds = await self.settings_service.get_decrypted_api_key(
-                db, tenant_id, target_key.id
-            )
+            creds = await self.settings_service.get_decrypted_api_key(db, tenant_id, target_key.id)
         elif exchange_id == "revolut":
             # 2b. Fallback to System Credentials (defined in .env/settings)
 
@@ -91,7 +87,7 @@ class TradingService:
                 )
             else:
                 # Check if this is Revolut to pass specific options (legacy check removed)
-                options: Dict[str, Any] = {}
+                options: dict[str, Any] = {}
 
                 adapter = CCXTAdapter(  # type: ignore[assignment]
                     exchange_id=exchange_id,
@@ -109,9 +105,7 @@ class TradingService:
             logger.error(f"Failed to initialize exchange {exchange_id}: {e}")
             return None
 
-    async def get_markets(
-        self, db: AsyncSession, tenant_id: str
-    ) -> List[Dict[str, Any]]:
+    async def get_markets(self, db: AsyncSession, tenant_id: str) -> list[dict[str, Any]]:
         """Get available markets data from cache (populated by MarketDataSync)."""
         cache = get_cache()
 
@@ -141,9 +135,7 @@ class TradingService:
         logger.warning("Cache empty, falling back to direct fetch")
         return await self._fetch_markets_direct(db, tenant_id)
 
-    async def _fetch_markets_direct(
-        self, db: AsyncSession, tenant_id: str
-    ) -> List[Dict[str, Any]]:
+    async def _fetch_markets_direct(self, db: AsyncSession, tenant_id: str) -> list[dict[str, Any]]:
         """Direct market fetch fallback (legacy method)."""
         import ccxt.async_support as ccxt
 
@@ -168,9 +160,7 @@ class TradingService:
         if "kraken" not in active_exchanges:
             active_exchanges.append("kraken")
 
-        logger.info(
-            f"[DEBUG] Aggregating markets for tenant {tenant_id} from: {active_exchanges}"
-        )
+        logger.info(f"[DEBUG] Aggregating markets for tenant {tenant_id} from: {active_exchanges}")
 
         all_markets = []
         seen_symbols = set()
@@ -235,10 +225,7 @@ class TradingService:
                     for sym, detail in items:
                         if not sym:
                             continue
-                        if any(
-                            x in sym.upper()
-                            for x in ["/EUR", "-EUR", "BTCEUR", "ETHEUR"]
-                        ):
+                        if any(x in sym.upper() for x in ["/EUR", "-EUR", "BTCEUR", "ETHEUR"]):
                             available_symbols.append(sym)
 
                 if not available_symbols and exchange_id == "kraken":
@@ -269,9 +256,7 @@ class TradingService:
                         logger.warning(f"fetch_tickers failed for {exchange_id}: {e}")
                         for symbol in target_symbols:
                             try:
-                                tickers[symbol] = await exchange_instance.fetch_ticker(
-                                    symbol
-                                )
+                                tickers[symbol] = await exchange_instance.fetch_ticker(symbol)
                             except Exception:
                                 continue
                 elif adapter and hasattr(adapter, "get_tickers"):
@@ -320,9 +305,7 @@ class TradingService:
                     await cache.set(cache_key, exchange_markets, ttl=30)
 
                 # Close temporary instance
-                if exchange_instance and (
-                    not adapter or not hasattr(adapter, "exchange")
-                ):
+                if exchange_instance and (not adapter or not hasattr(adapter, "exchange")):
                     await exchange_instance.close()
 
             except Exception as e:
@@ -350,9 +333,8 @@ class TradingService:
         symbol: str,
         timeframe: str = "1m",
         limit: int = 100,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get OHLCV candles data."""
-        import asyncio
 
         import ccxt.async_support as ccxt_async
 
@@ -363,9 +345,7 @@ class TradingService:
         if keys_list:
             valid_key = next((k for k in keys_list if k.is_valid), None)
             if valid_key:
-                adapter = await self._get_exchange_adapter(
-                    db, tenant_id, valid_key.exchange
-                )
+                adapter = await self._get_exchange_adapter(db, tenant_id, valid_key.exchange)
 
         # 2. Use adapter if available and has get_candles method
         if adapter and hasattr(adapter, "get_candles"):
@@ -393,15 +373,12 @@ class TradingService:
 
             # Fetch OHLCV
             # CCXT returns list of lists: [timestamp, open, high, low, close, volume]
-            ohlcv = await exchange_instance.fetch_ohlcv(
-                exchange_symbol, timeframe, limit=limit
-            )
+            ohlcv = await exchange_instance.fetch_ohlcv(exchange_symbol, timeframe, limit=limit)
 
             for candle in ohlcv:
                 candles.append(
                     {
-                        "time": candle[0]
-                        / 1000,  # Convert ms to seconds for lightweight-charts
+                        "time": candle[0] / 1000,  # Convert ms to seconds for lightweight-charts
                         "open": candle[1],
                         "high": candle[2],
                         "low": candle[3],
@@ -427,7 +404,7 @@ class TradingService:
     # Portfolio Data
     # ========================================================================
 
-    async def get_portfolio(self, db: AsyncSession, tenant_id: str) -> Dict[str, Any]:
+    async def get_portfolio(self, db: AsyncSession, tenant_id: str) -> dict[str, Any]:
         """Get portfolio holdings and stats from DB (Local Tracking) and/or Exchange."""
         from sqlalchemy import select
 
@@ -448,9 +425,7 @@ class TradingService:
 
         for order in filled_orders:
             # parse symbol (BTC-EUR -> BTC)
-            base_asset = (
-                order.symbol.split("-")[0] if "-" in order.symbol else order.symbol
-            )
+            base_asset = order.symbol.split("-")[0] if "-" in order.symbol else order.symbol
 
             if base_asset not in holdings_map:
                 holdings_map[base_asset] = 0.0
@@ -562,19 +537,13 @@ class TradingService:
     # History Data
     # ========================================================================
 
-    async def get_history(
-        self, db: AsyncSession, tenant_id: str
-    ) -> List[Dict[str, Any]]:
+    async def get_history(self, db: AsyncSession, tenant_id: str) -> list[dict[str, Any]]:
         """Get trade history from DB."""
         from sqlalchemy import select
 
         from backend.models.orders import Order
 
-        query = (
-            select(Order)
-            .where(Order.tenant_id == tenant_id)
-            .order_by(Order.created_at.desc())
-        )
+        query = select(Order).where(Order.tenant_id == tenant_id).order_by(Order.created_at.desc())
 
         result = await db.execute(query)
         orders = result.scalars().all()
@@ -601,10 +570,10 @@ class TradingService:
         self,
         db: AsyncSession,
         tenant_id: str,
-        order_request: Dict[str, Any],
-        user_prefs: Optional[Dict[str, Any]] = None,
+        order_request: dict[str, Any],
+        user_prefs: dict[str, Any] | None = None,
         bypass_risk: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Execute an order with strict HITL and Risk checks.
         Last Line of Defense.
@@ -613,19 +582,17 @@ class TradingService:
             bypass_risk (bool): If True, skips RiskGuardian check (Use ONLY for Manual Approvals).
         """
         # Audit Log is handled by decorator
-        return await self._execute_order_impl(
-            db, tenant_id, order_request, user_prefs, bypass_risk
-        )
+        return await self._execute_order_impl(db, tenant_id, order_request, user_prefs, bypass_risk)
 
     @audit_decision(action="EXECUTE_ORDER", resource_type="order")
     async def _execute_order_impl(
         self,
         db: AsyncSession,
         tenant_id: str,
-        order_request: Dict[str, Any],
-        user_prefs: Optional[Dict[str, Any]] = None,
+        order_request: dict[str, Any],
+        user_prefs: dict[str, Any] | None = None,
         bypass_risk: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Internal implementation of execute order.
         """
@@ -644,14 +611,10 @@ class TradingService:
             guardian = RiskGuardianAgent(settings_service=self.settings_service)
 
             # Construct risk payload
-            validation = await guardian.validate_order(
-                tenant_id, order_request, user_prefs
-            )
+            validation = await guardian.validate_order(tenant_id, order_request, user_prefs)
 
             if not validation["allowed"]:
-                logger.warning(
-                    f"🚫 Order BLOCKED by TradingService Guard: {validation['reason']}"
-                )
+                logger.warning(f"🚫 Order BLOCKED by TradingService Guard: {validation['reason']}")
                 return {
                     "status": "rejected",
                     "reason": validation["reason"],
@@ -684,9 +647,7 @@ class TradingService:
             logger.error(f"Execution failed: {e}")
             return {"status": "failed", "reason": str(e)}
 
-    async def get_active_orders(
-        self, db: AsyncSession, tenant_id: str
-    ) -> List[Dict[str, Any]]:
+    async def get_active_orders(self, db: AsyncSession, tenant_id: str) -> list[dict[str, Any]]:
         """Fetch all active orders (SUBMITTED, PENDING_APPROVAL, APPROVED, PARTIALLY_FILLED)."""
         from sqlalchemy import or_, select
 
@@ -700,8 +661,7 @@ class TradingService:
                     Order.status == OrderStatus.SUBMITTED,
                     Order.status == OrderStatus.PENDING_APPROVAL,
                     Order.status == OrderStatus.APPROVED,
-                    Order.status
-                    == "PARTIALLY_FILLED",  # Enum might not have this, check model
+                    Order.status == "PARTIALLY_FILLED",  # Enum might not have this, check model
                 ),
             )
             .order_by(Order.created_at.desc())
@@ -725,7 +685,7 @@ class TradingService:
 
     async def cancel_order(
         self, db: AsyncSession, tenant_id: str, order_id: str
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Cancel a specific order by ID.
         Returns None when the order is not found (caller raises 404).
@@ -752,9 +712,7 @@ class TradingService:
         current_status = order.status
         if current_status not in cancellable:
             status_str = (
-                current_status.value
-                if hasattr(current_status, "value")
-                else str(current_status)
+                current_status.value if hasattr(current_status, "value") else str(current_status)
             )
             return {
                 "status": "error",
@@ -771,9 +729,7 @@ class TradingService:
             "message": "Order successfully cancelled",
         }
 
-    async def cancel_all_orders(
-        self, db: AsyncSession, tenant_id: str
-    ) -> Dict[str, Any]:
+    async def cancel_all_orders(self, db: AsyncSession, tenant_id: str) -> dict[str, Any]:
         """
         Emergency: Cancel all open orders.
         Returns summary of cancelled orders.
@@ -782,9 +738,7 @@ class TradingService:
         return await self._cancel_all_orders_impl(db, tenant_id)
 
     @audit_decision(action="CANCEL_ALL_ORDERS", resource_type="order_batch")
-    async def _cancel_all_orders_impl(
-        self, db: AsyncSession, tenant_id: str
-    ) -> Dict[str, Any]:
+    async def _cancel_all_orders_impl(self, db: AsyncSession, tenant_id: str) -> dict[str, Any]:
         """
         Internal implementation of cancel all.
         """
@@ -831,9 +785,7 @@ class TradingService:
                     try:
                         await adapter.cancel_order(order.id, order.symbol)
                     except Exception as e:
-                        logger.error(
-                            f"Failed to cancel order {order.id} on exchange: {e}"
-                        )
+                        logger.error(f"Failed to cancel order {order.id} on exchange: {e}")
                         # We might still want to mark it as CANCELED in DB if we trust the intent?
                         # No, keep it open if exchange fail.
                         errors.append(f"Order {order.id}: {str(e)}")
@@ -856,7 +808,7 @@ class TradingService:
 
     async def get_order_history(
         self, db: AsyncSession, tenant_id: str, limit: int = 50
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Fetch historical orders (FILLED, FAILED, CANCELLED, REJECTED).
         """
@@ -897,7 +849,7 @@ class TradingService:
             for o in orders
         ]
 
-    async def store_market_tick(self, tick_data: Dict[str, Any]):
+    async def store_market_tick(self, tick_data: dict[str, Any]):
         """
         Store real-time tick data to TimescaleDB hypertable.
 
@@ -923,7 +875,7 @@ class TradingService:
             session.add(tick)
             await session.commit()
 
-    async def store_market_ticks_bulk(self, ticks_data: List[Dict[str, Any]]):
+    async def store_market_ticks_bulk(self, ticks_data: list[dict[str, Any]]):
         """
         Bulk store market ticks.
         """
@@ -948,7 +900,7 @@ class TradingService:
             session.add_all(ticks)
             await session.commit()
 
-    async def get_24h_reference_prices(self, symbols: List[str]) -> Dict[str, float]:
+    async def get_24h_reference_prices(self, symbols: list[str]) -> dict[str, float]:
         """
         Get the closing price for symbols from roughly 24 hours ago.
         Used to calculate change% when API doesn't provide it.
@@ -976,15 +928,13 @@ class TradingService:
             # Use a window function approach or Postgres DISTINCT ON
 
             sym_list_str = "', '".join(symbols)
-            sql = text(
-                f"""
-                SELECT DISTINCT ON (symbol) symbol, price 
-                FROM market_ticks 
-                WHERE symbol IN ('{sym_list_str}') 
-                  AND timestamp <= :target_time 
+            sql = text(f"""
+                SELECT DISTINCT ON (symbol) symbol, price
+                FROM market_ticks
+                WHERE symbol IN ('{sym_list_str}')
+                  AND timestamp <= :target_time
                 ORDER BY symbol, timestamp DESC
-            """
-            )
+            """)
 
             try:
                 result = await session.execute(sql, {"target_time": target_time})
@@ -994,7 +944,7 @@ class TradingService:
                 logger.error(f"Failed to fetch 24h reference prices: {e}")
                 return {}
 
-    async def store_market_candle(self, candle_data: Dict[str, Any]):
+    async def store_market_candle(self, candle_data: dict[str, Any]):
         """
         Store OHLCV candle to TimescaleDB hypertable.
         """
@@ -1022,7 +972,7 @@ class TradingService:
 
 
 # Singleton
-_trading_service: Optional[TradingService] = None
+_trading_service: TradingService | None = None
 
 
 def get_trading_service() -> TradingService:

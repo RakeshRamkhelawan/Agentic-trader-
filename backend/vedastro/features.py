@@ -6,7 +6,7 @@ for XGBoost consumption. All operations are vectorized for O(1) performance.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -100,11 +100,11 @@ class FeatureEngine:
 
     def extract(
         self,
-        kundli: Dict[str, Any],
-        transits: Dict[str, Any],
+        kundli: dict[str, Any],
+        transits: dict[str, Any],
         current_price: float,
-        tattva_state: Dict[str, Any],
-        technical_indicators: Optional[Dict] = None,
+        tattva_state: dict[str, Any],
+        technical_indicators: dict | None = None,
     ) -> np.ndarray:
         """
         Extract features from astrological and market data.
@@ -125,9 +125,7 @@ class FeatureEngine:
         planets = kundli.get("planets", {})
 
         if "Sun" in planets and "Moon" in planets:
-            features.sun_moon_angle = (
-                self._calculate_angle(planets["Sun"], planets["Moon"]) / 360.0
-            )
+            features.sun_moon_angle = self._calculate_angle(planets["Sun"], planets["Moon"]) / 360.0
 
         if "Sun" in planets and "Jupiter" in planets:
             features.sun_jupiter_angle = (
@@ -200,9 +198,7 @@ class FeatureEngine:
             # Cardinal points: 0°, 90°, 180°, 270°
             angle_deg = features.price_angle * 360
             features.price_at_cardinal = (
-                1
-                if any(abs(angle_deg - cardinal) < 5 for cardinal in [0, 90, 180, 270])
-                else 0
+                1 if any(abs(angle_deg - cardinal) < 5 for cardinal in [0, 90, 180, 270]) else 0
             )
 
         # 6. Tattva integration
@@ -262,15 +258,13 @@ class FeatureEngine:
 
         return feature_vector
 
-    def _calculate_angle(self, planet1: Dict, planet2: Dict) -> float:
+    def _calculate_angle(self, planet1: dict, planet2: dict) -> float:
         """Calculate angle between two planets."""
         lon1 = planet1.get("longitude", 0)
         lon2 = planet2.get("longitude", 0)
         return abs(lon1 - lon2) % 360.0
 
-    def _calculate_bullish_score(
-        self, features: AstroFeatures, transits: Dict
-    ) -> float:
+    def _calculate_bullish_score(self, features: AstroFeatures, transits: dict) -> float:
         """
         Calculate composite bullish astrological score.
 
@@ -304,9 +298,7 @@ class FeatureEngine:
 
         return max(0.0, min(1.0, score))
 
-    def _calculate_bearish_score(
-        self, features: AstroFeatures, transits: Dict
-    ) -> float:
+    def _calculate_bearish_score(self, features: AstroFeatures, transits: dict) -> float:
         """
         Calculate composite bearish astrological score.
 
@@ -344,13 +336,13 @@ class FeatureEngine:
 
         return max(0.0, min(1.0, score))
 
-    def get_feature_names(self) -> List[str]:
+    def get_feature_names(self) -> list[str]:
         """Get list of feature names."""
         return self.FEATURE_NAMES.copy()
 
-    def explain_features(self, feature_vector: np.ndarray) -> Dict[str, float]:
+    def explain_features(self, feature_vector: np.ndarray) -> dict[str, float]:
         """Create human-readable feature explanation."""
         return {
             name: float(value)
-            for name, value in zip(self.FEATURE_NAMES, feature_vector)
+            for name, value in zip(self.FEATURE_NAMES, feature_vector, strict=False)
         }

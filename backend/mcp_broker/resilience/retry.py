@@ -12,7 +12,8 @@ import asyncio
 import functools
 import logging
 import random
-from typing import Any, Callable, Optional, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
@@ -26,7 +27,7 @@ class RetryConfig:
         max_delay_ms: int = 10000,
         backoff_factor: float = 2.0,
         jitter_enabled: bool = True,
-        retryable_exceptions: tuple = (Exception,)
+        retryable_exceptions: tuple = (Exception,),
     ):
         self.max_attempts = max_attempts
         self.initial_delay_ms = initial_delay_ms
@@ -42,7 +43,7 @@ def retry(
     max_delay_ms: int = 10000,
     backoff_factor: float = 2.0,
     jitter_enabled: bool = True,
-    retryable_exceptions: tuple = (Exception,)
+    retryable_exceptions: tuple = (Exception,),
 ):
     """
     Decorator for adding retry logic to MCP tools.
@@ -59,13 +60,13 @@ def retry(
         max_delay_ms=max_delay_ms,
         backoff_factor=backoff_factor,
         jitter_enabled=jitter_enabled,
-        retryable_exceptions=retryable_exceptions
+        retryable_exceptions=retryable_exceptions,
     )
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs) -> T:
-            last_exception: Optional[Exception] = None
+            last_exception: Exception | None = None
 
             for attempt in range(config.max_attempts):
                 try:
@@ -81,8 +82,8 @@ def retry(
 
                     # Calculate delay
                     delay_ms = min(
-                        config.initial_delay_ms * (config.backoff_factor ** attempt),
-                        config.max_delay_ms
+                        config.initial_delay_ms * (config.backoff_factor**attempt),
+                        config.max_delay_ms,
                     )
 
                     # Add jitter
@@ -100,6 +101,7 @@ def retry(
             raise RuntimeError("Retry loop exited unexpectedly")
 
         return wrapper
+
     return decorator
 
 
@@ -110,15 +112,12 @@ def vedastro_retry(func: Callable[..., T]) -> Callable[..., T]:
         max_attempts=3,
         initial_delay_ms=100,
         backoff_factor=2.0,
-        retryable_exceptions=(ConnectionError, TimeoutError, Exception)
+        retryable_exceptions=(ConnectionError, TimeoutError, Exception),
     )(func)
 
 
 def elemental_retry(func: Callable[..., T]) -> Callable[..., T]:
     """Retry decorator optimized for Elemental calculations."""
     return retry(
-        max_attempts=2,
-        initial_delay_ms=50,
-        backoff_factor=1.5,
-        retryable_exceptions=(Exception,)
+        max_attempts=2, initial_delay_ms=50, backoff_factor=1.5, retryable_exceptions=(Exception,)
     )(func)

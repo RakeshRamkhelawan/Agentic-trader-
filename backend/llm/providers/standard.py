@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 import aiohttp
 
@@ -22,20 +22,20 @@ logger = logging.getLogger(__name__)
 
 class MockProvider(LLMProvider):
     async def generate_text(
-        self, prompt: str, system_prompt: Optional[str] = None, **kwargs: Any
+        self, prompt: str, system_prompt: str | None = None, **kwargs: Any
     ) -> str:
         return f"Mock response to: {prompt[:20]}..."
 
     async def generate_json(
-        self, prompt: str, schema: Optional[Dict] = None, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self, prompt: str, schema: dict | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
         return {"mock": "data", "prompt_preview": prompt[:20]}
 
     async def generate_structured(
         self,
         prompt: str,
-        schema: Type[Any],
-        system_prompt: Optional[str] = None,
+        schema: type[Any],
+        system_prompt: str | None = None,
         **kwargs: Any,
     ) -> Any:
         """Generate a Pydantic object based on the schema (mock implementation)."""
@@ -46,14 +46,12 @@ class MockProvider(LLMProvider):
 class GeminiProvider(LLMProvider):
     def __init__(self, api_key: str, model_name: str = "gemini-2.0-flash"):
         if not genai:
-            raise ImportError(
-                "google-genai package not installed. Run 'pip install google-genai'"
-            )
+            raise ImportError("google-genai package not installed. Run 'pip install google-genai'")
         self.client = genai.Client(api_key=api_key)
         self.model = model_name
 
     async def generate_text(
-        self, prompt: str, system_prompt: Optional[str] = None, **kwargs: Any
+        self, prompt: str, system_prompt: str | None = None, **kwargs: Any
     ) -> str:
         try:
             config = {}
@@ -71,8 +69,8 @@ class GeminiProvider(LLMProvider):
             return f"Error: {e}"
 
     async def generate_json(
-        self, prompt: str, schema: Optional[Dict] = None, **kwargs
-    ) -> Dict[str, Any]:
+        self, prompt: str, schema: dict | None = None, **kwargs
+    ) -> dict[str, Any]:
         try:
             config = {"response_mime_type": "application/json"}
             if schema:
@@ -97,7 +95,7 @@ class OpenAIProvider(LLMProvider):
         self.model = model_name
 
     async def generate_text(
-        self, prompt: str, system_prompt: Optional[str] = None, **kwargs: Any
+        self, prompt: str, system_prompt: str | None = None, **kwargs: Any
     ) -> str:
         messages = []
         if system_prompt:
@@ -114,8 +112,8 @@ class OpenAIProvider(LLMProvider):
             return f"Error: {e}"
 
     async def generate_json(
-        self, prompt: str, schema: Optional[Dict] = None, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self, prompt: str, schema: dict | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
         # Force JSON mode
         kwargs["response_format"] = {"type": "json_object"}
         text = await self.generate_text(prompt, **kwargs)
@@ -126,14 +124,12 @@ class OpenAIProvider(LLMProvider):
 
 
 class OllamaProvider(LLMProvider):
-    def __init__(
-        self, base_url: str = "http://localhost:11434", model_name: str = "llama3"
-    ):
+    def __init__(self, base_url: str = "http://localhost:11434", model_name: str = "llama3"):
         self.base_url = base_url
         self.model = model_name
 
     async def generate_text(
-        self, prompt: str, system_prompt: Optional[str] = None, **kwargs: Any
+        self, prompt: str, system_prompt: str | None = None, **kwargs: Any
     ) -> str:
         url = f"{self.base_url}/api/generate"
 
@@ -157,8 +153,8 @@ class OllamaProvider(LLMProvider):
             return f"Error: {e}"
 
     async def generate_json(
-        self, prompt: str, schema: Optional[Dict] = None, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self, prompt: str, schema: dict | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
         url = f"{self.base_url}/api/generate"
         payload = {
             "model": self.model,

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -9,10 +9,7 @@ router = APIRouter()
 
 # Dependency to get SystemIdentity from App State
 def get_system_identity(request: Request) -> SystemIdentity:
-    if (
-        not hasattr(request.app.state, "system_identity")
-        or not request.app.state.system_identity
-    ):
+    if not hasattr(request.app.state, "system_identity") or not request.app.state.system_identity:
         raise HTTPException(status_code=503, detail="System Identity not initialized")
     return request.app.state.system_identity
 
@@ -20,7 +17,7 @@ def get_system_identity(request: Request) -> SystemIdentity:
 @router.get("/current-cycle")
 async def get_current_ooda_cycle(
     system: SystemIdentity = Depends(get_system_identity),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get the current OODA Loop Cycle state from the System Identity.
     Includes Phase (Orient/Decide/etc.), Coherence, and Tattva Metrics.

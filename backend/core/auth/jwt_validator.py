@@ -9,7 +9,7 @@ Provides:
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 try:
     from jose import JWTError, jwt  # type: ignore[import-untyped]
@@ -73,7 +73,7 @@ class JWTValidator:
         jwks_url: str,
         issuer: str,
         audience: str,
-        algorithms: Optional[List[str]] = None,
+        algorithms: list[str] | None = None,
     ):
         """
         Initialize JWTValidator.
@@ -88,7 +88,7 @@ class JWTValidator:
         self.issuer = issuer
         self.audience = audience
         self.algorithms = algorithms or ["RS256"]
-        self._jwks_cache: Optional[Dict[str, Any]] = None
+        self._jwks_cache: dict[str, Any] | None = None
         self._jwks_cache_time: float = 0
 
     async def refresh_jwks(self) -> None:
@@ -118,7 +118,7 @@ class JWTValidator:
             return False
         return (time.time() - self._jwks_cache_time) < self.JWKS_CACHE_TTL
 
-    async def _get_signing_key(self, token: str) -> Optional[Dict]:
+    async def _get_signing_key(self, token: str) -> dict | None:
         """Get the signing key for a token from JWKS."""
         if not self._is_cache_valid():
             await self.refresh_jwks()
@@ -207,16 +207,14 @@ class JWTValidator:
         except Exception as e:
             raise JWTValidationError(f"Failed to decode token: {e}")
 
-    def _extract_payload(self, claims: Dict[str, Any]) -> TokenPayload:
+    def _extract_payload(self, claims: dict[str, Any]) -> TokenPayload:
         """Extract TokenPayload from JWT claims."""
         # Check required claims
         if "sub" not in claims:
             raise MissingClaimError("Missing 'sub' claim")
 
         tenant_id = (
-            claims.get("tenant_id")
-            or claims.get("https://agentic-trader/tenant_id")
-            or "default"
+            claims.get("tenant_id") or claims.get("https://agentic-trader/tenant_id") or "default"
         )
         # if not tenant_id:
         #     raise MissingClaimError("Missing 'tenant_id' claim")

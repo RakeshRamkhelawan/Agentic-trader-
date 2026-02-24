@@ -10,7 +10,7 @@ Provides monitoring endpoints for:
 import logging
 import time
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -23,17 +23,19 @@ router = APIRouter(prefix="/health", tags=["Health"])
 
 class HealthResponse(BaseModel):
     """Health check response schema."""
+
     status: str
     timestamp: str
     version: str
-    components: Dict[str, Any]
+    components: dict[str, Any]
 
 
 class ComponentStatus(BaseModel):
     """Individual component status."""
+
     status: str
     latency_ms: float
-    details: Dict[str, Any] = {}
+    details: dict[str, Any] = {}
 
 
 @router.get("", response_model=HealthResponse)
@@ -56,7 +58,7 @@ async def health_check():
             "vedastro_generate_signal",
             "elemental_fire_position_size",
             "elemental_ether_consensus",
-            "execution_execute_paper_trade"
+            "execution_execute_paper_trade",
         ]
 
         circuit_states = {}
@@ -70,7 +72,7 @@ async def health_check():
         components["circuit_breakers"] = {
             "status": "healthy" if all_closed else "degraded",
             "latency_ms": (time.time() - cb_start) * 1000,
-            "details": circuit_states
+            "details": circuit_states,
         }
     except Exception as e:
         logger.error(f"Circuit breaker check failed: {e}")
@@ -78,7 +80,7 @@ async def health_check():
         components["circuit_breakers"] = {
             "status": "error",
             "latency_ms": 0,
-            "details": {"error": str(e)}
+            "details": {"error": str(e)},
         }
 
     # Check cache (if Redis available)
@@ -94,15 +96,15 @@ async def health_check():
             "latency_ms": (time.time() - cache_start) * 1000,
             "details": {
                 "redis_connected": cache_connected,
-                "type": "redis" if cache_connected else "memory_only"
-            }
+                "type": "redis" if cache_connected else "memory_only",
+            },
         }
     except Exception as e:
         logger.warning(f"Cache check failed: {e}")
         components["cache"] = {
             "status": "degraded",
             "latency_ms": 0,
-            "details": {"error": str(e), "type": "memory_only"}
+            "details": {"error": str(e), "type": "memory_only"},
         }
 
     # Check performance capabilities
@@ -116,7 +118,7 @@ async def health_check():
         components["performance"] = {
             "status": "healthy",
             "latency_ms": (time.time() - perf_start) * 1000,
-            "details": caps
+            "details": caps,
         }
     except Exception as e:
         logger.error(f"Performance check failed: {e}")
@@ -124,7 +126,7 @@ async def health_check():
         components["performance"] = {
             "status": "error",
             "latency_ms": 0,
-            "details": {"error": str(e)}
+            "details": {"error": str(e)},
         }
 
     total_latency = (time.time() - start_time) * 1000
@@ -133,7 +135,7 @@ async def health_check():
         status="healthy" if all_healthy else "degraded",
         timestamp=datetime.utcnow().isoformat(),
         version="1.0.0",
-        components=components
+        components=components,
     )
 
 
@@ -148,25 +150,16 @@ async def readiness_check():
     """Kubernetes-style readiness check."""
     try:
         # Quick check that critical components are available
-        from backend.mcp_broker.tools.vedastro_tools import vedastro_generate_signal
-        from backend.mcp_broker.tools.elemental_tools import elemental_ether_consensus
 
-        return {
-            "ready": True,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        return {"ready": True, "timestamp": datetime.utcnow().isoformat()}
     except Exception as e:
         logger.error(f"Readiness check failed: {e}")
-        raise HTTPException(
-            status_code=503,
-            detail={"ready": False, "error": str(e)}
-        )
+        raise HTTPException(status_code=503, detail={"ready": False, "error": str(e)})
 
 
 @router.get("/metrics")
 async def metrics():
     """Prometheus-style metrics endpoint."""
-    from backend.mcp_broker.performance.metrics import PerformanceMetricsCollector
 
     # This would collect actual metrics in production
     return {
@@ -175,6 +168,6 @@ async def metrics():
             "requests_total": 0,  # Would be tracked in middleware
             "request_duration_seconds": 0.0,
             "cache_hit_rate": 0.0,
-            "circuit_breaker_states": {}
-        }
+            "circuit_breaker_states": {},
+        },
     }

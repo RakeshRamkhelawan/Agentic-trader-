@@ -5,7 +5,7 @@ Provides async connection pooling and query execution for ClickHouse.
 """
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import clickhouse_connect
 
@@ -17,12 +17,12 @@ class ClickHouseClient:
 
     def __init__(
         self,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
+        host: str | None = None,
+        port: int | None = None,
         database: str = "agentic_trading",
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        url: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
+        url: str | None = None,
     ):
         """
         Initialize ClickHouse client.
@@ -47,7 +47,7 @@ class ClickHouseClient:
         else:
             self.url = f"http://{self.host}:{self.port}"
 
-        self.client: Optional[Any] = None
+        self.client: Any | None = None
 
     async def connect(self) -> None:
         """Establish connection to ClickHouse."""
@@ -73,9 +73,7 @@ class ClickHouseClient:
             await self.client.close()
             self.client = None
 
-    async def execute(
-        self, query: str, parameters: Optional[Dict[str, Any]] = None
-    ) -> Any:
+    async def execute(self, query: str, parameters: dict[str, Any] | None = None) -> Any:
         """
         Execute SQL query.
 
@@ -102,8 +100,8 @@ class ClickHouseClient:
     async def insert(
         self,
         table: str,
-        data: List[Dict[str, Any]],
-        column_names: Optional[List[str]] = None,
+        data: list[dict[str, Any]],
+        column_names: list[str] | None = None,
     ) -> None:
         """
         Insert data into table.

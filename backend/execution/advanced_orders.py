@@ -12,10 +12,10 @@ All order types are async and non-blocking to the main router.
 import asyncio
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Callable, Dict, List, Optional
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
 from backend.schemas.orders import OrderRequest, OrderSide, OrderType
@@ -40,7 +40,7 @@ class IcebergConfig:
 
     total_quantity: float
     visible_quantity: float
-    min_fill_quantity: Optional[float] = None
+    min_fill_quantity: float | None = None
 
 
 @dataclass
@@ -60,7 +60,7 @@ class StopLimitConfig:
     stop_price: float
     limit_price: float
     quantity: float
-    trailing_amount: Optional[float] = None  # For trailing stop
+    trailing_amount: float | None = None  # For trailing stop
 
 
 class AdvancedOrderExecutor(ABC):
@@ -69,16 +69,16 @@ class AdvancedOrderExecutor(ABC):
     def __init__(
         self,
         adapter: ExecutionInterface,
-        callback: Optional[Callable[[OrderResult], None]] = None,
+        callback: Callable[[OrderResult], None] | None = None,
     ):
         self.adapter = adapter
         self.callback = callback
         self.status = AdvancedOrderStatus.PENDING
         self.filled_quantity = 0.0
-        self.results: List[OrderResult] = []
+        self.results: list[OrderResult] = []
 
     @abstractmethod
-    async def execute(self) -> List[OrderResult]:
+    async def execute(self) -> list[OrderResult]:
         """Execute the advanced order strategy."""
         pass
 
@@ -110,7 +110,7 @@ class IcebergExecutor(AdvancedOrderExecutor):
         side: OrderSide,
         config: IcebergConfig,
         adapter: ExecutionInterface,
-        callback: Optional[Callable[[OrderResult], None]] = None,
+        callback: Callable[[OrderResult], None] | None = None,
     ):
         super().__init__(adapter, callback)
         self.symbol = symbol
@@ -118,7 +118,7 @@ class IcebergExecutor(AdvancedOrderExecutor):
         self.config = config
         self._cancelled = False
 
-    async def execute(self) -> List[OrderResult]:
+    async def execute(self) -> list[OrderResult]:
         """
         Execute iceberg order.
 
@@ -129,8 +129,7 @@ class IcebergExecutor(AdvancedOrderExecutor):
         visible = self.config.visible_quantity
 
         logger.info(
-            f"Starting Iceberg execution: {self.config.total_quantity} "
-            f"in chunks of {visible}"
+            f"Starting Iceberg execution: {self.config.total_quantity} " f"in chunks of {visible}"
         )
 
         while remaining > 0 and not self._cancelled:
@@ -192,23 +191,23 @@ class TWAPExecutor(AdvancedOrderExecutor):
         side: OrderSide,
         config: TWAPConfig,
         adapter: ExecutionInterface,
-        callback: Optional[Callable[[OrderResult], None]] = None,
+        callback: Callable[[OrderResult], None] | None = None,
     ):
         super().__init__(adapter, callback)
         self.symbol = symbol
         self.side = side
         self.config = config
         self._cancelled = False
-        self._start_time: Optional[datetime] = None
+        self._start_time: datetime | None = None
 
-    async def execute(self) -> List[OrderResult]:
+    async def execute(self) -> list[OrderResult]:
         """
         Execute TWAP order.
 
         Divides order into time slices and executes at regular intervals.
         """
         self.status = AdvancedOrderStatus.ACTIVE
-        self._start_time = datetime.now(timezone.utc)
+        self._start_time = datetime.now(UTC)
 
         slice_quantity = self.config.total_quantity / self.config.num_slices
         interval = self.config.duration_seconds / self.config.num_slices
@@ -285,7 +284,7 @@ class StopLimitExecutor(AdvancedOrderExecutor):
         side: OrderSide,
         config: StopLimitConfig,
         adapter: ExecutionInterface,
-        callback: Optional[Callable[[OrderResult], None]] = None,
+        callback: Callable[[OrderResult], None] | None = None,
     ):
         super().__init__(adapter, callback)
         self.symbol = symbol
@@ -293,9 +292,9 @@ class StopLimitExecutor(AdvancedOrderExecutor):
         self.config = config
         self._cancelled = False
         self._triggered = False
-        self._highest_price: Optional[float] = None  # For trailing stop
+        self._highest_price: float | None = None  # For trailing stop
 
-    async def execute(self) -> List[OrderResult]:
+    async def execute(self) -> list[OrderResult]:
         """
         Execute stop-limit order.
 
@@ -399,13 +398,13 @@ class AdvancedOrderManager:
     """
 
     def __init__(self):
-        self._active_orders: Dict[str, AdvancedOrderExecutor] = {}
+        self._active_orders: dict[str, AdvancedOrderExecutor] = {}
         self._order_counter = 0
 
     def _generate_order_id(self) -> str:
         """Generate unique order ID."""
         self._order_counter += 1
-        return f"adv_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{self._order_counter}"
+        return f"adv_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{self._order_counter}"
 
     async def submit_iceberg(
         self,
@@ -413,7 +412,7 @@ class AdvancedOrderManager:
         side: OrderSide,
         config: IcebergConfig,
         adapter: ExecutionInterface,
-        callback: Optional[Callable[[OrderResult], None]] = None,
+        callback: Callable[[OrderResult], None] | None = None,
     ) -> str:
         """Submit iceberg order."""
         order_id = self._generate_order_id()
@@ -431,7 +430,7 @@ class AdvancedOrderManager:
         side: OrderSide,
         config: TWAPConfig,
         adapter: ExecutionInterface,
-        callback: Optional[Callable[[OrderResult], None]] = None,
+        callback: Callable[[OrderResult], None] | None = None,
     ) -> str:
         """Submit TWAP order."""
         order_id = self._generate_order_id()
@@ -448,7 +447,7 @@ class AdvancedOrderManager:
         side: OrderSide,
         config: StopLimitConfig,
         adapter: ExecutionInterface,
-        callback: Optional[Callable[[OrderResult], None]] = None,
+        callback: Callable[[OrderResult], None] | None = None,
     ) -> str:
         """Submit stop-limit order."""
         order_id = self._generate_order_id()
@@ -481,16 +480,13 @@ class AdvancedOrderManager:
             return await executor.cancel()
         return False
 
-    def get_order_status(self, order_id: str) -> Optional[AdvancedOrderStatus]:
+    def get_order_status(self, order_id: str) -> AdvancedOrderStatus | None:
         """Get status of an order."""
         executor = self._active_orders.get(order_id)
         if executor:
             return executor.status
         return None
 
-    def get_active_orders(self) -> Dict[str, AdvancedOrderStatus]:
+    def get_active_orders(self) -> dict[str, AdvancedOrderStatus]:
         """Get all active orders and their statuses."""
-        return {
-            order_id: executor.status
-            for order_id, executor in self._active_orders.items()
-        }
+        return {order_id: executor.status for order_id, executor in self._active_orders.items()}

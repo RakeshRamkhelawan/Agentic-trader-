@@ -67,9 +67,7 @@ async def activate_kill_switch(req: KillSwitchRequest):
     global _kill_switch_active
 
     if not req.confirm:
-        raise HTTPException(
-            status_code=400, detail="Confirmation required: set confirm=true"
-        )
+        raise HTTPException(status_code=400, detail="Confirmation required: set confirm=true")
 
     _kill_switch_active = True
     logger.warning("KILL SWITCH ACTIVATED")

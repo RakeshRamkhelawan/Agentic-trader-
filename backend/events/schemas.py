@@ -4,8 +4,8 @@ Event Schemas for Event-Driven Architecture.
 Pydantic models for type-safe event passing between agents.
 """
 
-from datetime import datetime, timezone
-from typing import Any, Dict, Literal, Optional
+from datetime import UTC, datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, field_validator
 class EventBase(BaseModel):
     """Base event schema with common fields."""
 
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class MarketTick(EventBase):
@@ -37,9 +37,7 @@ class AgentThought(EventBase):
     agent_name: str = Field(..., description="Name of the agent")
     reasoning: str = Field(..., description="Natural language explanation")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score 0-1")
-    data: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional structured data"
-    )
+    data: dict[str, Any] = Field(default_factory=dict, description="Additional structured data")
 
     @field_validator("confidence")
     @classmethod
@@ -56,9 +54,9 @@ class TradeProposal(EventBase):
     symbol: str = Field(..., description="Trading pair")
     action: Literal["buy", "sell", "hold"] = Field(..., description="Trade action")
     quantity: float = Field(..., gt=0, description="Amount to trade")
-    target_price: Optional[float] = Field(None, description="Target entry price")
-    stop_loss: Optional[float] = Field(None, description="Stop loss price")
-    take_profit: Optional[float] = Field(None, description="Take profit price")
+    target_price: float | None = Field(None, description="Target entry price")
+    stop_loss: float | None = Field(None, description="Stop loss price")
+    take_profit: float | None = Field(None, description="Take profit price")
     rationale: str = Field(..., description="Reasoning for the trade")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence 0-1")
 

@@ -8,7 +8,7 @@ import hashlib
 import time
 from collections import OrderedDict, deque
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -47,7 +47,7 @@ class MemoryCluster:
     """
 
     centroid: np.ndarray  # Average pattern (cluster center)
-    members: List[MemoryTrace] = field(default_factory=list)
+    members: list[MemoryTrace] = field(default_factory=list)
     activation_count: int = 0
     average_outcome: float = 0.0
 
@@ -102,7 +102,7 @@ class VasanaCache:
             return 0.0
         return float(np.dot(a, b) / (norm_a * norm_b))
 
-    def get(self, pattern: np.ndarray) -> Optional[Tuple[int, float]]:
+    def get(self, pattern: np.ndarray) -> tuple[int, float] | None:
         """
         Query cache for similar pattern.
 
@@ -175,7 +175,7 @@ class VasanaCache:
             self._cache[pattern_hash] = entry
             self._stats["insertions"] += 1
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         total = self._stats["hits"] + self._stats["misses"]
         hit_rate = self._stats["hits"] / total if total > 0 else 0.0
@@ -213,7 +213,7 @@ class MemorySystem:
         """
         self.capacity = capacity
         self.memory_buffer: deque[MemoryTrace] = deque(maxlen=capacity)
-        self.clusters: List[MemoryCluster] = []
+        self.clusters: list[MemoryCluster] = []
         self.cluster_threshold = 0.7
 
         # Vasana LRU Cache for O(1) pattern lookup
@@ -262,7 +262,7 @@ class MemorySystem:
 
     async def store(
         self,
-        perception: Dict[str, Any],
+        perception: dict[str, Any],
         action: int,
         outcome: float,
         agent_id: str = "system",
@@ -302,9 +302,7 @@ class MemorySystem:
             session.add(experience_obj)
             await session.commit()
 
-    def recall(
-        self, current_perception: Dict[str, Any], k: int = 5
-    ) -> List[MemoryTrace]:
+    def recall(self, current_perception: dict[str, Any], k: int = 5) -> list[MemoryTrace]:
         """
         Recall similar past experiences (From In-Memory Buffer).
         Fast cosine similarity scan.
@@ -338,7 +336,7 @@ class MemorySystem:
 
         return [self.memory_buffer[i] for i in top_indices]
 
-    def get_tendency(self, current_perception: Dict[str, Any]) -> Optional[int]:
+    def get_tendency(self, current_perception: dict[str, Any]) -> int | None:
         """
         Get habitual tendency (Vasana) for current situation.
 
@@ -382,7 +380,7 @@ class MemorySystem:
         quality = 0.4 * size_score + 0.3 * outcome_score + 0.3 * coherence_score
         return float(np.clip(quality, 0, 1))
 
-    def _extract_pattern(self, perception: Dict[str, Any]) -> np.ndarray:
+    def _extract_pattern(self, perception: dict[str, Any]) -> np.ndarray:
         state_vec = perception.get("state_vector", np.zeros(5))
         coherence = np.array([perception.get("coherence", 0.5)])
         phase = np.array([perception.get("phase_alignment", 0.5)])
@@ -390,9 +388,7 @@ class MemorySystem:
         pattern = np.concatenate([state_vec, coherence, phase, harmonics])
         return pattern.astype(np.float32)
 
-    def _calculate_similarity(
-        self, pattern1: np.ndarray, pattern2: np.ndarray
-    ) -> float:
+    def _calculate_similarity(self, pattern1: np.ndarray, pattern2: np.ndarray) -> float:
         dot = np.dot(pattern1, pattern2)
         norm1 = np.linalg.norm(pattern1)
         norm2 = np.linalg.norm(pattern2)
@@ -400,7 +396,7 @@ class MemorySystem:
             return 0.0
         return float(np.clip(dot / (norm1 * norm2), 0, 1))
 
-    def _find_closest_cluster(self, pattern: np.ndarray) -> Optional[MemoryCluster]:
+    def _find_closest_cluster(self, pattern: np.ndarray) -> MemoryCluster | None:
         if not self.clusters:
             return None
         max_sim: float = -1.0
@@ -419,9 +415,7 @@ class MemorySystem:
             closest.activation_count += 1
             alpha = 0.1
             closest.centroid = alpha * trace.pattern + (1 - alpha) * closest.centroid
-            closest.average_outcome = (
-                alpha * trace.outcome + (1 - alpha) * closest.average_outcome
-            )
+            closest.average_outcome = alpha * trace.outcome + (1 - alpha) * closest.average_outcome
         else:
             self.clusters.append(
                 MemoryCluster(
@@ -432,7 +426,7 @@ class MemorySystem:
                 )
             )
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         if not self.memory_buffer:
             base_stats = {
                 "total_memories": 0,

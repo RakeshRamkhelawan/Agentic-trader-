@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import ccxt.async_support as ccxt
 from ccxt.base.errors import ExchangeError, NetworkError, RequestTimeout
@@ -21,9 +21,7 @@ class ExchangeInterface:
     - binance (Global, via CCXT)
     """
 
-    def __init__(
-        self, exchange_override: Optional[Any] = None, exchange_id: Optional[str] = None
-    ):
+    def __init__(self, exchange_override: Any | None = None, exchange_id: str | None = None):
         self.exchange_id = exchange_id or settings.EXCHANGE_ID
         self.api_key = settings.EXCHANGE_API_KEY
         self.secret = settings.EXCHANGE_SECRET
@@ -86,7 +84,7 @@ class ExchangeInterface:
             await self.circuit_breaker.record_failure()
             return None
 
-    async def fetch_ticker(self, symbol: str) -> Optional[Dict[str, Any]]:
+    async def fetch_ticker(self, symbol: str) -> dict[str, Any] | None:
         if not self.exchange:
             await self.initialize()
         if not self.exchange:
@@ -95,7 +93,7 @@ class ExchangeInterface:
 
     async def fetch_ohlcv(
         self, symbol: str, timeframe: str = "1m", limit: int = 100
-    ) -> Optional[List[Any]]:
+    ) -> list[Any] | None:
         if not self.exchange:
             await self.initialize()
         if not self.exchange:
@@ -104,18 +102,14 @@ class ExchangeInterface:
             self.exchange.fetch_ohlcv, symbol, timeframe, limit=limit
         )
 
-    async def fetch_order_book(
-        self, symbol: str, limit: int = 25
-    ) -> Optional[Dict[str, Any]]:
+    async def fetch_order_book(self, symbol: str, limit: int = 25) -> dict[str, Any] | None:
         if not self.exchange:
             await self.initialize()
         if not self.exchange:
             return None
-        return await self._execute_with_breaker(
-            self.exchange.fetch_order_book, symbol, limit=limit
-        )
+        return await self._execute_with_breaker(self.exchange.fetch_order_book, symbol, limit=limit)
 
-    async def fetch_balance(self) -> Optional[Dict[str, Any]]:
+    async def fetch_balance(self) -> dict[str, Any] | None:
         if not self.exchange:
             await self.initialize()
         if not self.exchange:

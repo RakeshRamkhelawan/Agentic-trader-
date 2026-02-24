@@ -5,7 +5,7 @@ Market Data Sync Service with Tiered Intervals, Rate Limiting, and Backoff.
 import asyncio
 import logging
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import backoff
 from aiolimiter import AsyncLimiter
@@ -28,7 +28,7 @@ class MarketDataSync:
     def __init__(self, sync_interval: int = 1):
         self.sync_interval = sync_interval
         self._running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
         self.cache = get_cache()
 
         # Internal limiters for exchange APIs
@@ -120,9 +120,7 @@ class MarketDataSync:
                                 all_markets.append(m)
                                 seen_symbols.add(symbol)
 
-                        logger.debug(
-                            f"Fetched {len(markets)} markets from {exchange_id}"
-                        )
+                        logger.debug(f"Fetched {len(markets)} markets from {exchange_id}")
 
                 except Exception as e:
                     logger.warning(f"Failed to fetch from {exchange_id}: {e}")
@@ -136,7 +134,7 @@ class MarketDataSync:
             logger.warning(f"Tier {tier} sync: no markets fetched")
 
     @backoff.on_exception(backoff.expo, Exception, max_tries=3)
-    async def _fetch_bitvavo(self) -> List[Dict[str, Any]]:
+    async def _fetch_bitvavo(self) -> list[dict[str, Any]]:
         """Fetch markets from Bitvavo."""
         import ccxt.async_support as ccxt
 
@@ -153,7 +151,7 @@ class MarketDataSync:
         finally:
             await exchange.close()
 
-    async def _fetch_revolut(self) -> List[Dict[str, Any]]:
+    async def _fetch_revolut(self) -> list[dict[str, Any]]:
         """Fetch markets from Revolut X using the exchange adapter."""
         try:
             from backend.execution.exchange_adapter import ExchangeAdapter
@@ -192,16 +190,12 @@ class MarketDataSync:
                             markets.append(
                                 {
                                     "symbol": symbol,
-                                    "price": float(
-                                        ticker.get("last", ticker.get("price", 0))
-                                    ),
+                                    "price": float(ticker.get("last", ticker.get("price", 0))),
                                     "bid": float(ticker.get("bid", 0)),
                                     "ask": float(ticker.get("ask", 0)),
                                     "volume": float(ticker.get("volume", 0)),
                                     "change_24h": float(
-                                        ticker.get(
-                                            "change", ticker.get("change_24h", 0)
-                                        )
+                                        ticker.get("change", ticker.get("change_24h", 0))
                                     ),
                                     "exchange": "revolut",
                                     "timestamp": datetime.now(UTC).isoformat(),
@@ -217,7 +211,7 @@ class MarketDataSync:
             logger.warning(f"Revolut fetch failed: {e}")
             return []
 
-    async def _fetch_kraken(self) -> List[Dict[str, Any]]:
+    async def _fetch_kraken(self) -> list[dict[str, Any]]:
         """Fetch markets from Kraken (public API - no key needed)."""
         import ccxt.async_support as ccxt
 
@@ -247,7 +241,7 @@ class MarketDataSync:
             logger.warning(f"Kraken fetch failed: {e}")
             return []
 
-    def _format_tickers(self, tickers: Dict, exchange_id: str) -> List[Dict[str, Any]]:
+    def _format_tickers(self, tickers: dict, exchange_id: str) -> list[dict[str, Any]]:
         """Format CCXT tickers to our market format."""
         markets = []
         for symbol, ticker in tickers.items():
@@ -269,7 +263,7 @@ class MarketDataSync:
 
 
 # Global instance for module-level functions
-_market_data_sync_instance: Optional[MarketDataSync] = None
+_market_data_sync_instance: MarketDataSync | None = None
 
 
 async def start_market_sync() -> None:

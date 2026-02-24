@@ -11,7 +11,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 from pydantic import BaseModel
@@ -44,10 +44,10 @@ class PredictionSignal(BaseModel):
     category: str
     signal_type: str
     confidence: float
-    symbol: Optional[str]
-    indicators: Dict[str, float]
+    symbol: str | None
+    indicators: dict[str, float]
     timestamp: datetime
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class PredictionMarketClient:
@@ -67,10 +67,10 @@ class PredictionMarketClient:
 
     def __init__(
         self,
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
         timeout: float = 30.0,
         max_retries: int = 3,
-        circuit_config: Optional[CircuitBreakerConfig] = None,
+        circuit_config: CircuitBreakerConfig | None = None,
     ):
         """
         Initialize client.
@@ -92,15 +92,13 @@ class PredictionMarketClient:
         self._circuit_config = circuit_config or CircuitBreakerConfig()
         self._circuit_state = CircuitState.CLOSED
         self._failure_count = 0
-        self._last_failure_time: Optional[datetime] = None
+        self._last_failure_time: datetime | None = None
         self._half_open_calls = 0
 
         # HTTP client with connection pooling
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
-        logger.info(
-            f"PredictionMarketClient initialized: {self.base_url}, enabled={self.enabled}"
-        )
+        logger.info(f"PredictionMarketClient initialized: {self.base_url}, enabled={self.enabled}")
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Get or create HTTP client."""
@@ -162,16 +160,14 @@ class PredictionMarketClient:
             logger.warning("Circuit breaker: HALF_OPEN -> OPEN (failure)")
             self._circuit_state = CircuitState.OPEN
         elif self._failure_count >= self._circuit_config.failure_threshold:
-            logger.warning(
-                f"Circuit breaker: CLOSED -> OPEN (failures={self._failure_count})"
-            )
+            logger.warning(f"Circuit breaker: CLOSED -> OPEN (failures={self._failure_count})")
             self._circuit_state = CircuitState.OPEN
 
     # =========================================================================
     # API METHODS
     # =========================================================================
 
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """
         Check prediction service health.
 
@@ -192,13 +188,13 @@ class PredictionMarketClient:
 
     async def get_signals(
         self,
-        market: Optional[str] = None,
-        category: Optional[str] = None,
-        signal_type: Optional[str] = None,
+        market: str | None = None,
+        category: str | None = None,
+        signal_type: str | None = None,
         min_confidence: float = 0.0,
-        symbol: Optional[str] = None,
+        symbol: str | None = None,
         limit: int = 10,
-    ) -> List[PredictionSignal]:
+    ) -> list[PredictionSignal]:
         """
         Get market signals from prediction service.
 
@@ -232,9 +228,7 @@ class PredictionMarketClient:
             params["symbol"] = symbol
 
         try:
-            response = await self._request_with_retry(
-                "GET", "/api/v1/signals", params=params
-            )
+            response = await self._request_with_retry("GET", "/api/v1/signals", params=params)
             self._record_success()
 
             data = response.json()
@@ -245,15 +239,13 @@ class PredictionMarketClient:
             logger.error(f"Failed to get signals: {e}")
             return []
 
-    async def get_signal_by_id(self, signal_id: str) -> Optional[PredictionSignal]:
+    async def get_signal_by_id(self, signal_id: str) -> PredictionSignal | None:
         """Get specific signal by ID."""
         if not self.enabled or not self._check_circuit():
             return None
 
         try:
-            response = await self._request_with_retry(
-                "GET", f"/api/v1/signals/{signal_id}"
-            )
+            response = await self._request_with_retry("GET", f"/api/v1/signals/{signal_id}")
             self._record_success()
             return PredictionSignal(**response.json())
         except Exception as e:
@@ -262,8 +254,8 @@ class PredictionMarketClient:
             return None
 
     async def run_analysis(
-        self, analysis_type: str, market: str = "kalshi", category: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, analysis_type: str, market: str = "kalshi", category: str | None = None
+    ) -> dict[str, Any]:
         """
         Trigger analysis job.
 
@@ -283,9 +275,7 @@ class PredictionMarketClient:
             payload["category"] = category
 
         try:
-            response = await self._request_with_retry(
-                "POST", "/api/v1/analysis/run", json=payload
-            )
+            response = await self._request_with_retry("POST", "/api/v1/analysis/run", json=payload)
             self._record_success()
             return response.json()
         except Exception as e:
@@ -293,15 +283,13 @@ class PredictionMarketClient:
             logger.error(f"Failed to run analysis: {e}")
             return {"status": "error", "error": str(e)}
 
-    async def get_analysis_status(self, analysis_id: str) -> Dict[str, Any]:
+    async def get_analysis_status(self, analysis_id: str) -> dict[str, Any]:
         """Get status of an analysis job."""
         if not self.enabled or not self._check_circuit():
             return {"status": "disabled"}
 
         try:
-            response = await self._request_with_retry(
-                "GET", f"/api/v1/analysis/{analysis_id}"
-            )
+            response = await self._request_with_retry("GET", f"/api/v1/analysis/{analysis_id}")
             self._record_success()
             return response.json()
         except Exception as e:
@@ -309,7 +297,7 @@ class PredictionMarketClient:
             logger.error(f"Failed to get analysis status: {e}")
             return {"status": "error", "error": str(e)}
 
-    async def get_market_summary(self, market: str = "kalshi") -> Dict[str, Any]:
+    async def get_market_summary(self, market: str = "kalshi") -> dict[str, Any]:
         """Get market summary statistics."""
         if not self.enabled or not self._check_circuit():
             return {"status": "disabled"}
@@ -333,8 +321,8 @@ class PredictionMarketClient:
         self,
         method: str,
         path: str,
-        params: Optional[Dict] = None,
-        json: Optional[Dict] = None,
+        params: dict | None = None,
+        json: dict | None = None,
     ) -> httpx.Response:
         """Execute request with retry logic."""
         client = await self._get_client()
@@ -342,9 +330,7 @@ class PredictionMarketClient:
 
         for attempt in range(self.max_retries):
             try:
-                response = await client.request(
-                    method=method, url=path, params=params, json=json
-                )
+                response = await client.request(method=method, url=path, params=params, json=json)
                 response.raise_for_status()
                 return response
 
@@ -360,16 +346,14 @@ class PredictionMarketClient:
             # Exponential backoff
             if attempt < self.max_retries - 1:
                 delay = 2**attempt
-                logger.warning(
-                    f"Request failed, retrying in {delay}s (attempt {attempt + 1})"
-                )
+                logger.warning(f"Request failed, retrying in {delay}s (attempt {attempt + 1})")
                 await asyncio.sleep(delay)
 
         raise last_exception or Exception("Max retries exceeded")
 
 
 # Global client instance
-_prediction_client: Optional[PredictionMarketClient] = None
+_prediction_client: PredictionMarketClient | None = None
 
 
 def get_prediction_client() -> PredictionMarketClient:

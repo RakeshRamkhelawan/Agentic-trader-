@@ -20,9 +20,7 @@ class WSMetrics:
 
     def __init__(self):
         # Connection metrics
-        self.connections = Gauge(
-            "ws_connections_current", "Number of active WebSocket connections"
-        )
+        self.connections = Gauge("ws_connections_current", "Number of active WebSocket connections")
 
         self.connect_rate = Counter(
             "ws_connect_total",
@@ -33,9 +31,7 @@ class WSMetrics:
         self.disconnect_reason = Counter(
             "ws_disconnect_total",
             "WebSocket disconnections by reason",
-            [
-                "reason"
-            ],  # client_disconnect, heartbeat_timeout, send_error, auth_failure
+            ["reason"],  # client_disconnect, heartbeat_timeout, send_error, auth_failure
         )
 
         # Message metrics
@@ -62,9 +58,7 @@ class WSMetrics:
             ["connection_id", "tenant_id"],
         )
 
-        self.queue_high_watermark = Gauge(
-            "ws_queue_high_watermark", "Maximum queue depth observed"
-        )
+        self.queue_high_watermark = Gauge("ws_queue_high_watermark", "Maximum queue depth observed")
 
         # Latency metrics
         self.latency = Histogram(

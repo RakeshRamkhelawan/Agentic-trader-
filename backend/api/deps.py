@@ -4,7 +4,8 @@ Shares common logic like Tenant ID extraction and Database Session setup with RL
 """
 
 import os
-from typing import Any, AsyncGenerator, Dict
+from collections.abc import AsyncGenerator
+from typing import Any
 
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,15 +55,13 @@ async def get_current_tenant_id(request: Request) -> str:
         return "tenant-dev"
 
     try:
-        payload = jwt.decode(
-            token, SECRET_KEY, algorithms=["HS256"], options={"verify_aud": False}
-        )
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"], options={"verify_aud": False})
         return payload.get("tenant_id", "tenant-dev")
     except Exception:
         return "tenant-dev"
 
 
-async def get_current_user(request: Request) -> Dict[str, Any]:
+async def get_current_user(request: Request) -> dict[str, Any]:
     """
     Dependency to get the current authenticated user from request.
 
@@ -94,7 +93,7 @@ async def get_current_user(request: Request) -> Dict[str, Any]:
     }
 
 
-async def get_db(request: Request) -> AsyncGenerator[AsyncSession, None]:
+async def get_db(request: Request) -> AsyncGenerator[AsyncSession]:
     """
     Dependency to get a Database Session with RLS context set for the current Tenant.
     Extracts tenant_id from request to set RLS context.
@@ -106,7 +105,7 @@ async def get_db(request: Request) -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-async def get_admin_db() -> AsyncGenerator[AsyncSession, None]:
+async def get_admin_db() -> AsyncGenerator[AsyncSession]:
     """
     Dependency to get a Database Session with System Admin privileges.
     Bypasses RLS. Use ONLY for Auth/Registration/Background tasks.

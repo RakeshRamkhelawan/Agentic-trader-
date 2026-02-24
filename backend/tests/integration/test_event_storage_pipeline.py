@@ -5,7 +5,7 @@ Tests EventBus → ClickHouse data persistence flow.
 """
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -56,7 +56,7 @@ async def test_clickhouse_client_stores_market_tick():
             symbol="BTC/USD",
             price=50000.0,
             volume=1.5,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         # Insert into ClickHouse
@@ -86,7 +86,7 @@ async def test_clickhouse_client_stores_agent_thought():
             reasoning="Market shows bullish signals",
             confidence=0.88,
             data={"sentiment": "bullish"},
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         # Insert into ClickHouse
@@ -124,7 +124,7 @@ async def test_event_bus_to_clickhouse_pipeline():
                 "symbol": "BTC/USD",
                 "price": "50000.0",
                 "volume": "1.5",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             msg_id = await bus.publish("market_ticks", event_data)
 
@@ -160,9 +160,7 @@ async def test_agent_thought_to_storage_pipeline():
             await ch_client.connect()
 
             llm = MockLLMProvider()
-            agent = SentimentAgent(
-                agent_name="test_agent", llm_provider=llm, event_bus=bus
-            )
+            agent = SentimentAgent(agent_name="test_agent", llm_provider=llm, event_bus=bus)
 
             # Agent analyzes and publishes
             features = {"price": 52000.0, "volume": 2.0}
@@ -228,7 +226,7 @@ async def test_bulk_event_storage():
                 "symbol": "BTC/USD",
                 "price": 50000.0 + i * 100,
                 "volume": 1.0 + i * 0.1,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             for i in range(100)
         ]
@@ -254,8 +252,8 @@ async def test_clickhouse_query_stored_events():
     mock_client.command.return_value = None
     mock_query_result = AsyncMock()
     mock_query_result.result_rows = [
-        ("BTC/USD", 50000.0, 1.5, datetime.now(timezone.utc)),
-        ("ETH/USD", 3000.0, 5.0, datetime.now(timezone.utc)),
+        ("BTC/USD", 50000.0, 1.5, datetime.now(UTC)),
+        ("ETH/USD", 3000.0, 5.0, datetime.now(UTC)),
     ]
     mock_client.query.return_value = mock_query_result
 
@@ -311,8 +309,7 @@ async def test_concurrent_event_storage():
 
         # Concurrent inserts
         events_batch = [
-            [{"symbol": f"PAIR{i}", "price": 1000.0 * i} for _ in range(10)]
-            for i in range(5)
+            [{"symbol": f"PAIR{i}", "price": 1000.0 * i} for _ in range(10)] for i in range(5)
         ]
 
         tasks = [ch_client.insert("market_ticks", batch) for batch in events_batch]
@@ -331,7 +328,7 @@ async def test_event_schema_compatibility_with_storage():
         symbol="BTC/USD",
         price=50000.0,
         volume=1.5,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
     thought = AgentThought(
@@ -339,7 +336,7 @@ async def test_event_schema_compatibility_with_storage():
         reasoning="Test reasoning",
         confidence=0.9,
         data={"key": "value"},
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
     # Serialize for storage

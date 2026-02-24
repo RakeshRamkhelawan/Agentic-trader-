@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 sys.path.append(os.getcwd())
 
 from backend.core.config.settings import settings
+
 # Import models
 # Import consolidated models
 from backend.data.models import Base

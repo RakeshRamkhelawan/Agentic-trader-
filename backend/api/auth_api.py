@@ -9,10 +9,10 @@ Endpoints:
 """
 
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+
 # JWT
 from jose import jwt
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -78,9 +78,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
             # Fallback check
             import hashlib
 
-            return (
-                hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
-            )
+            return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
     else:
         import hashlib
 
@@ -89,7 +87,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_jwt_token(user: User) -> str:
     """Create JWT token for user."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": user.id,
         "email": user.email,
@@ -133,7 +131,7 @@ class UserResponse(BaseModel):
     email: str
     tenant_id: str
     role: str
-    full_name: Optional[str] = None
+    full_name: str | None = None
 
 
 class AuthResponse(BaseModel):
@@ -158,9 +156,7 @@ class TokenResponse(BaseModel):
 # ============================================================================
 
 
-@router.post(
-    "/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(request: RegisterRequest, db: AsyncSession = Depends(get_admin_db)):
     """
     Register a new user.
@@ -189,9 +185,7 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_admi
     db.add(user)
 
     # Create profile
-    profile = UserProfile(
-        id=str(uuid.uuid4()), user_id=user_id, full_name=request.full_name
-    )
+    profile = UserProfile(id=str(uuid.uuid4()), user_id=user_id, full_name=request.full_name)
     db.add(profile)
 
     # Create preferences with defaults
@@ -231,9 +225,7 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_admin_db))
     """
     # Find user by email with profile
     result = await db.execute(
-        select(User)
-        .options(selectinload(User.profile))
-        .where(User.email == request.email)
+        select(User).options(selectinload(User.profile)).where(User.email == request.email)
     )
     user = result.scalar_one_or_none()
 
@@ -243,18 +235,14 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_admin_db))
         )
 
     # Verify password
-    if not user.password_hash or not verify_password(
-        request.password, user.password_hash
-    ):
+    if not user.password_hash or not verify_password(request.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
         )
 
     # Check if user is active
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is disabled"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is disabled")
 
     # Get profile for full_name
     full_name = user.profile.full_name if user.profile else None
@@ -297,15 +285,11 @@ async def get_me(request: Request, db: AsyncSession = Depends(get_admin_db)):
     # Try to get from Authorization header
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
     token = auth_header[7:]
     try:
-        payload = jwt.decode(
-            token, SECRET_KEY, algorithms=["HS256"], options={"verify_aud": False}
-        )
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"], options={"verify_aud": False})
         user_id = payload.get("sub")
 
         result = await db.execute(select(User).where(User.id == user_id))
@@ -336,7 +320,7 @@ async def get_token(request: TokenRequest):
     Legacy token endpoint using tenant_id/account_id.
     Kept for backward compatibility.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": request.account_id,
         "tenant_id": request.tenant_id,

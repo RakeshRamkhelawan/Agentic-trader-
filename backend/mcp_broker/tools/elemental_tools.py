@@ -7,7 +7,7 @@ Behoudt alle financiële constraints (€2k cap, 60-day failsafe, etc.)
 
 import logging
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 from mcp.server.fastmcp import Context
 
@@ -19,13 +19,19 @@ logger = logging.getLogger(__name__)
 MAX_POSITION_EUR = 2000.0
 MAX_HOLD_DAYS = 60
 TRAILING_STOP_THRESHOLD = 0.40  # +40%
-TRAILING_STOP_DISTANCE = 0.15   # -15% from peak
+TRAILING_STOP_DISTANCE = 0.15  # -15% from peak
 
 # Planet multipliers from V17
 PLANET_RISK_MULTIPLIERS = {
-    "SUN": 1.00, "MOON": 0.80, "MARS": 1.40,
-    "MERCURY": 0.90, "JUPITER": 1.20, "VENUS": 1.10,
-    "SATURN": 0.60, "RAHU": 0.70, "KETU": 0.75,
+    "SUN": 1.00,
+    "MOON": 0.80,
+    "MARS": 1.40,
+    "MERCURY": 0.90,
+    "JUPITER": 1.20,
+    "VENUS": 1.10,
+    "SATURN": 0.60,
+    "RAHU": 0.70,
+    "KETU": 0.75,
 }
 
 
@@ -36,9 +42,9 @@ async def elemental_fire_position_size(
     portfolio_value: float,
     vedastro_score: float,
     dominant_planet: str,
-    price_history: List[float],
-    ctx: Context = None
-) -> Dict[str, Any]:
+    price_history: list[float],
+    ctx: Context = None,
+) -> dict[str, Any]:
     """
     Calculate position size based on VedAstro score and volatility.
 
@@ -65,11 +71,13 @@ async def elemental_fire_position_size(
         vol_factor = 1.0
     else:
         # Simple volatility calculation
-        returns = [(price_history[i] - price_history[i-1]) / price_history[i-1]
-                   for i in range(1, len(price_history))]
+        returns = [
+            (price_history[i] - price_history[i - 1]) / price_history[i - 1]
+            for i in range(1, len(price_history))
+        ]
         avg_return = sum(returns) / len(returns)
         variance = sum((r - avg_return) ** 2 for r in returns) / len(returns)
-        volatility = variance ** 0.5
+        volatility = variance**0.5
 
         vol_factor = max(0.5, min(2.0, 0.03 / (volatility + 0.001)))
 
@@ -79,7 +87,7 @@ async def elemental_fire_position_size(
     # Streak factor
     streak = 0
     for i in range(1, min(6, len(price_history))):
-        if price_history[-i] > price_history[-i-1]:
+        if price_history[-i] > price_history[-i - 1]:
             streak += 1
         else:
             break
@@ -107,18 +115,16 @@ async def elemental_fire_position_size(
             "volatility": vol_factor,
             "harmony": harmony_factor,
             "streak": streak_factor,
-            "planet": planet_mult
+            "planet": planet_mult,
         },
-        "constraints_applied": ["max_2000_eur", "max_2pct_portfolio"]
+        "constraints_applied": ["max_2000_eur", "max_2pct_portfolio"],
     }
 
 
 @circuit_breaker(failure_threshold=3, timeout_seconds=5)
 async def elemental_earth_entry_check(
-    symbol: str,
-    trade_history: List[Dict[str, Any]],
-    ctx: Context = None
-) -> Dict[str, Any]:
+    symbol: str, trade_history: list[dict[str, Any]], ctx: Context = None
+) -> dict[str, Any]:
     """
     Check if entry is allowed (3-loss rule).
 
@@ -137,12 +143,12 @@ async def elemental_earth_entry_check(
         ctx.info(f"Checking Earth entry for {symbol}")
 
     # Get recent trades for this symbol
-    recent = [t for t in trade_history if t.get('symbol') == symbol][-20:]
+    recent = [t for t in trade_history if t.get("symbol") == symbol][-20:]
 
     # Check 3 consecutive losses
     consecutive_losses = 0
     for trade in reversed(recent):
-        if not trade.get('win', True):
+        if not trade.get("win", True):
             consecutive_losses += 1
         else:
             break
@@ -155,8 +161,8 @@ async def elemental_earth_entry_check(
     return {
         "can_enter": can_enter,
         "blocking_reason": "3_consecutive_losses" if not can_enter else None,
-        "recent_loss_count": sum(1 for t in recent if not t.get('win', True)),
-        "consecutive_losses": consecutive_losses
+        "recent_loss_count": sum(1 for t in recent if not t.get("win", True)),
+        "consecutive_losses": consecutive_losses,
     }
 
 
@@ -168,8 +174,8 @@ async def elemental_earth_exit_check(
     entry_price: float,
     current_price: float,
     peak_price: float,
-    ctx: Context = None
-) -> Dict[str, Any]:
+    ctx: Context = None,
+) -> dict[str, Any]:
     """
     Check if position should be exited.
 
@@ -194,8 +200,8 @@ async def elemental_earth_exit_check(
         ctx.info(f"Checking Earth exit for {symbol}")
 
     # Parse dates
-    entry = datetime.fromisoformat(entry_date.replace('Z', '+00:00'))
-    current = datetime.fromisoformat(current_date.replace('Z', '+00:00'))
+    entry = datetime.fromisoformat(entry_date.replace("Z", "+00:00"))
+    current = datetime.fromisoformat(current_date.replace("Z", "+00:00"))
     days_held = (current - entry).days
 
     # Calculate P&L
@@ -229,16 +235,14 @@ async def elemental_earth_exit_check(
         "days_held": days_held,
         "pnl_pct": pnl_pct,
         "peak_pnl_pct": peak_pnl_pct,
-        "trailing_stop_active": trailing_stop_active
+        "trailing_stop_active": trailing_stop_active,
     }
 
 
 @circuit_breaker(failure_threshold=5, timeout_seconds=10)
 async def elemental_water_regime_check(
-    symbol: str,
-    prices: List[float],
-    ctx: Context = None
-) -> Dict[str, Any]:
+    symbol: str, prices: list[float], ctx: Context = None
+) -> dict[str, Any]:
     """
     Check macro regime and hedge signals.
 
@@ -259,12 +263,12 @@ async def elemental_water_regime_check(
             "risk_on_score": 0.5,
             "hedge_symbol": None,
             "hedge_confidence": 0.0,
-            "reason": "insufficient_data"
+            "reason": "insufficient_data",
         }
 
     # Calculate metrics
     price_change_30d = (prices[-1] - prices[-min(30, len(prices))]) / prices[-min(30, len(prices))]
-    advancing = sum(1 for i in range(1, min(20, len(prices))) if prices[-i] > prices[-i-1])
+    advancing = sum(1 for i in range(1, min(20, len(prices))) if prices[-i] > prices[-i - 1])
     total = min(19, len(prices) - 1)
     advance_ratio = advancing / total if total > 0 else 0.5
 
@@ -300,18 +304,14 @@ async def elemental_water_regime_check(
         "hedge_symbol": hedge_sym if hedge_conf > 0 else None,
         "hedge_confidence": hedge_conf,
         "advance_ratio": advance_ratio,
-        "price_change_30d": price_change_30d
+        "price_change_30d": price_change_30d,
     }
 
 
 @circuit_breaker(failure_threshold=3, timeout_seconds=5)
 async def elemental_ether_consensus(
-    fire_vote: float,
-    earth_vote: float,
-    water_vote: float,
-    air_vote: float,
-    ctx: Context = None
-) -> Dict[str, Any]:
+    fire_vote: float, earth_vote: float, water_vote: float, air_vote: float, ctx: Context = None
+) -> dict[str, Any]:
     """
     Synthesize elemental consensus.
 
@@ -331,22 +331,17 @@ async def elemental_ether_consensus(
     # Calculate harmony (weighted average)
     weights = {"fire": 0.25, "earth": 0.30, "water": 0.25, "air": 0.20}
     harmony = (
-        fire_vote * weights["fire"] +
-        earth_vote * weights["earth"] +
-        water_vote * weights["water"] +
-        air_vote * weights["air"]
+        fire_vote * weights["fire"]
+        + earth_vote * weights["earth"]
+        + water_vote * weights["water"]
+        + air_vote * weights["air"]
     )
 
     # V17 threshold: harmony > 0.45 = approved
     approved = harmony > 0.45
 
     # Determine dominant element
-    votes = {
-        "fire": fire_vote,
-        "earth": earth_vote,
-        "water": water_vote,
-        "air": air_vote
-    }
+    votes = {"fire": fire_vote, "earth": earth_vote, "water": water_vote, "air": air_vote}
     dominant = max(votes, key=votes.get)
 
     if ctx:
@@ -357,5 +352,5 @@ async def elemental_ether_consensus(
         "approved": approved,
         "threshold": 0.45,
         "elemental_breakdown": votes,
-        "dominant_element": dominant
+        "dominant_element": dominant,
     }

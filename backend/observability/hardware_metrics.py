@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import psutil  # type: ignore[import-untyped]
 
@@ -247,7 +247,7 @@ class MetricsAggregator:
             self.storage_history.append(metrics.storage)
             self.dataflow_history.append(metrics.dataflow)
 
-    def _percentile(self, data: List[float], p: float) -> float:
+    def _percentile(self, data: list[float], p: float) -> float:
         """Calculate percentile."""
         if not data:
             return 0.0
@@ -255,7 +255,7 @@ class MetricsAggregator:
         index = int(len(sorted_data) * p / 100)
         return sorted_data[min(index, len(sorted_data) - 1)]
 
-    def get_network_stats(self) -> Dict[str, float]:
+    def get_network_stats(self) -> dict[str, float]:
         """Get network statistics."""
         with self._lock:
             if not self.network_history:
@@ -273,7 +273,7 @@ class MetricsAggregator:
                 "avg_bandwidth": sum(bandwidths) / len(bandwidths),
             }
 
-    def get_compute_stats(self) -> Dict[str, float]:
+    def get_compute_stats(self) -> dict[str, float]:
         """Get compute statistics."""
         with self._lock:
             if not self.compute_history:
@@ -290,7 +290,7 @@ class MetricsAggregator:
                 "peak_memory": max(mems),
             }
 
-    def get_storage_stats(self) -> Dict[str, float]:
+    def get_storage_stats(self) -> dict[str, float]:
         """Get storage statistics."""
         with self._lock:
             if not self.storage_history:
@@ -306,7 +306,7 @@ class MetricsAggregator:
                 "min_disk_free": min(spaces) if spaces else 0,
             }
 
-    def get_dataflow_stats(self) -> Dict[str, float]:
+    def get_dataflow_stats(self) -> dict[str, float]:
         """Get dataflow statistics."""
         with self._lock:
             if not self.dataflow_history:
@@ -336,12 +336,12 @@ class MetricsAggregator:
 
             # Get first metric attribute
             first_attr = list(recent[0].__dataclass_fields__.keys())[0]
-            first_half_avg = sum(
-                [getattr(m, first_attr) for m in recent[: len(recent) // 2]]
-            ) / (len(recent) // 2)
-            second_half_avg = sum(
-                [getattr(m, first_attr) for m in recent[len(recent) // 2 :]]
-            ) / (len(recent) - len(recent) // 2)
+            first_half_avg = sum([getattr(m, first_attr) for m in recent[: len(recent) // 2]]) / (
+                len(recent) // 2
+            )
+            second_half_avg = sum([getattr(m, first_attr) for m in recent[len(recent) // 2 :]]) / (
+                len(recent) - len(recent) // 2
+            )
 
             if second_half_avg > first_half_avg * 1.1:
                 return "degrading"
@@ -377,7 +377,7 @@ class AdaptiveCoherenceCalculator:
 
         return self.apply_damping(32, coherence)
 
-    def calculate_vayu_coherence(self, config_state: Dict[str, Any]) -> float:
+    def calculate_vayu_coherence(self, config_state: dict[str, Any]) -> float:
         """Calculate Layer 33 (Vayu/Config) coherence."""
         return self.apply_damping(33, 1.0)
 
@@ -439,9 +439,9 @@ class MetricsMonitor:
 
     def __init__(self, baseline_samples: int = 100):
         self.baseline_samples = baseline_samples
-        self.baseline: Dict[str, Any] = {}
+        self.baseline: dict[str, Any] = {}
         self.sample_count = 0
-        self.alerts: List[str] = []
+        self.alerts: list[str] = []
 
     def update_baseline(self, metrics: AggregatedMetrics) -> None:
         """Update baseline statistics."""
@@ -459,13 +459,13 @@ class MetricsMonitor:
                 self.baseline["cpu_mean"] = sum(self.baseline["cpu_values"]) / len(
                     self.baseline["cpu_values"]
                 )
-                self.baseline["memory_mean"] = sum(
+                self.baseline["memory_mean"] = sum(self.baseline["memory_values"]) / len(
                     self.baseline["memory_values"]
-                ) / len(self.baseline["memory_values"])
+                )
 
-    def check_for_anomalies(self, metrics: AggregatedMetrics) -> List[str]:
+    def check_for_anomalies(self, metrics: AggregatedMetrics) -> list[str]:
         """Check for anomalies."""
-        alerts: List[str] = []
+        alerts: list[str] = []
 
         if not self.baseline:
             return alerts
@@ -479,8 +479,8 @@ class MetricsMonitor:
         return alerts
 
     def generate_alerts(
-        self, metrics: AggregatedMetrics, coherence_values: Dict[int, float]
-    ) -> List[str]:
+        self, metrics: AggregatedMetrics, coherence_values: dict[int, float]
+    ) -> list[str]:
         """Generate alerts."""
         alerts = []
 
@@ -496,9 +496,7 @@ class MetricsMonitor:
                 alerts.append(f"⚠️ {element} coherence low: {coherence:.2f}")
 
         if metrics.network.latency_ms > 2000:
-            alerts.append(
-                f"⚠️ Network latency critical: {metrics.network.latency_ms:.0f}ms"
-            )
+            alerts.append(f"⚠️ Network latency critical: {metrics.network.latency_ms:.0f}ms")
 
         if metrics.storage.disk_free_gb < 50:
             alerts.append(f"⚠️ Low disk space: {metrics.storage.disk_free_gb:.1f}GB")
@@ -514,13 +512,13 @@ class MetricsMonitor:
 class Phase15MetricsIntegration:
     """High-level integration helper for SystemIdentity."""
 
-    def __init__(self, collector: Optional[HardwareMetricsCollector] = None):
+    def __init__(self, collector: HardwareMetricsCollector | None = None):
         self.collector = collector or RealHardwareMetricsCollector()
         self.aggregator = MetricsAggregator()
         self.coherence_calc = AdaptiveCoherenceCalculator()
         self.monitor = MetricsMonitor()
 
-    def get_adaptive_coherence(self) -> Dict[int, float]:
+    def get_adaptive_coherence(self) -> dict[int, float]:
         """Get adaptive coherence for all layers."""
         metrics = self.collector.collect_all_metrics()
         self.aggregator.add_metrics(metrics)
@@ -536,7 +534,7 @@ class Phase15MetricsIntegration:
 
         return coherence_values
 
-    def get_system_health_report(self) -> Dict[str, Any]:
+    def get_system_health_report(self) -> dict[str, Any]:
         """Get comprehensive health report."""
         metrics = self.collector.collect_all_metrics()
         coherence = self.get_adaptive_coherence()

@@ -7,10 +7,10 @@ Gebruikt Anthropic's officiële MCP SDK.
 ⚠️  BELANGRIJK: Alles naar stderr loggen om JSON-RPC stream niet te corrumperen!
 """
 
-import sys
 import logging
+import sys
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
@@ -18,36 +18,36 @@ from mcp.server.fastmcp import FastMCP
 # stdout is gereserveerd voor MCP JSON-RPC communicatie
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stderr  # ALTIJD naar stderr voor MCP compatibiliteit
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    stream=sys.stderr,  # ALTIJD naar stderr voor MCP compatibiliteit
 )
 logger = logging.getLogger(__name__)
 
 # Import tools
+from backend.mcp_broker.resilience import get_circuit_state
+from backend.mcp_broker.tools.data_tools import (
+    data_get_historical_prices,
+    data_get_market_regime,
+    data_get_portfolio_status,
+)
+from backend.mcp_broker.tools.elemental_tools import (
+    elemental_earth_entry_check,
+    elemental_earth_exit_check,
+    elemental_ether_consensus,
+    elemental_fire_position_size,
+    elemental_water_regime_check,
+)
+from backend.mcp_broker.tools.execution_tools import (
+    execution_close_position,
+    execution_execute_paper_trade,
+    execution_get_open_positions,
+    execution_get_trade_history,
+)
 from backend.mcp_broker.tools.vedastro_tools import (
     vedastro_generate_signal,
     vedastro_get_dasha,
     vedastro_get_transits,
 )
-from backend.mcp_broker.tools.elemental_tools import (
-    elemental_fire_position_size,
-    elemental_earth_entry_check,
-    elemental_earth_exit_check,
-    elemental_water_regime_check,
-    elemental_ether_consensus,
-)
-from backend.mcp_broker.tools.data_tools import (
-    data_get_historical_prices,
-    data_get_portfolio_status,
-    data_get_market_regime,
-)
-from backend.mcp_broker.tools.execution_tools import (
-    execution_execute_paper_trade,
-    execution_get_open_positions,
-    execution_close_position,
-    execution_get_trade_history,
-)
-from backend.mcp_broker.resilience import get_circuit_state
 
 # Initialize FastMCP server
 mcp = FastMCP("AgenticTraderBroker")
@@ -56,11 +56,12 @@ mcp = FastMCP("AgenticTraderBroker")
 # VEDASTRO TOOLS
 # ============================================================================
 
+
 @mcp.tool()
 async def vedastro__generate_signal(
     symbol: str,
     current_price: float,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Generate trading signal from astrological data.
 
@@ -71,18 +72,24 @@ async def vedastro__generate_signal(
     Returns:
         Trading signal with confidence and astrological context
     """
+
     # Create a minimal context for logging
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
-        def error(self, msg): logger.error(msg)
-        def warning(self, msg): logger.warning(msg)
+        def info(self, msg):
+            logger.info(msg)
+
+        def error(self, msg):
+            logger.error(msg)
+
+        def warning(self, msg):
+            logger.warning(msg)
 
     ctx = MinimalContext()
     return await vedastro_generate_signal(symbol, current_price, ctx)
 
 
 @mcp.tool()
-async def vedastro__get_dasha(symbol: str) -> Dict[str, Any]:
+async def vedastro__get_dasha(symbol: str) -> dict[str, Any]:
     """
     Get current Dasha period for an asset.
 
@@ -92,16 +99,20 @@ async def vedastro__get_dasha(symbol: str) -> Dict[str, Any]:
     Returns:
         Dasha information including Mahadasha, Antardasha
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
-        def error(self, msg): logger.error(msg)
+        def info(self, msg):
+            logger.info(msg)
+
+        def error(self, msg):
+            logger.error(msg)
 
     ctx = MinimalContext()
     return await vedastro_get_dasha(symbol, ctx)
 
 
 @mcp.tool()
-async def vedastro__get_transits(symbol: str) -> Dict[str, Any]:
+async def vedastro__get_transits(symbol: str) -> dict[str, Any]:
     """
     Get current planetary transits.
 
@@ -111,9 +122,13 @@ async def vedastro__get_transits(symbol: str) -> Dict[str, Any]:
     Returns:
         Transit information
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
-        def error(self, msg): logger.error(msg)
+        def info(self, msg):
+            logger.info(msg)
+
+        def error(self, msg):
+            logger.error(msg)
 
     ctx = MinimalContext()
     return await vedastro_get_transits(symbol, ctx)
@@ -123,6 +138,7 @@ async def vedastro__get_transits(symbol: str) -> Dict[str, Any]:
 # ELEMENTAL TOOLS
 # ============================================================================
 
+
 @mcp.tool()
 async def elemental__fire_position_size(
     symbol: str,
@@ -130,7 +146,7 @@ async def elemental__fire_position_size(
     vedastro_score: float,
     dominant_planet: str,
     price_history: list,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Calculate position size using Fire element logic.
 
@@ -148,8 +164,10 @@ async def elemental__fire_position_size(
     Returns:
         Position sizing recommendation
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
+        def info(self, msg):
+            logger.info(msg)
 
     ctx = MinimalContext()
     return await elemental_fire_position_size(
@@ -161,7 +179,7 @@ async def elemental__fire_position_size(
 async def elemental__earth_entry_check(
     symbol: str,
     trade_history: list,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Check if entry is allowed (Earth element).
 
@@ -174,8 +192,10 @@ async def elemental__earth_entry_check(
     Returns:
         Entry permission
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
+        def info(self, msg):
+            logger.info(msg)
 
     ctx = MinimalContext()
     return await elemental_earth_entry_check(symbol, trade_history, ctx)
@@ -189,7 +209,7 @@ async def elemental__earth_exit_check(
     entry_price: float,
     current_price: float,
     peak_price: float,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Check if position should be exited (Earth element).
 
@@ -208,8 +228,10 @@ async def elemental__earth_exit_check(
     Returns:
         Exit recommendation
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
+        def info(self, msg):
+            logger.info(msg)
 
     ctx = MinimalContext()
     return await elemental_earth_exit_check(
@@ -221,7 +243,7 @@ async def elemental__earth_exit_check(
 async def elemental__water_regime_check(
     symbol: str,
     prices: list,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Check macro regime and hedge signals (Water element).
 
@@ -232,8 +254,10 @@ async def elemental__water_regime_check(
     Returns:
         Regime assessment
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
+        def info(self, msg):
+            logger.info(msg)
 
     ctx = MinimalContext()
     return await elemental_water_regime_check(symbol, prices, ctx)
@@ -245,7 +269,7 @@ async def elemental__ether_consensus(
     earth_vote: float,
     water_vote: float,
     air_vote: float,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Synthesize elemental consensus.
 
@@ -258,8 +282,10 @@ async def elemental__ether_consensus(
     Returns:
         Consensus decision (approved if harmony > 0.45)
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
+        def info(self, msg):
+            logger.info(msg)
 
     ctx = MinimalContext()
     return await elemental_ether_consensus(fire_vote, earth_vote, water_vote, air_vote, ctx)
@@ -269,13 +295,14 @@ async def elemental__ether_consensus(
 # DATA TOOLS
 # ============================================================================
 
+
 @mcp.tool()
 async def data__get_historical_prices(
     symbol: str,
     start_date: str,
     end_date: str,
     timeframe: str = "1d",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get historical price data.
 
@@ -288,8 +315,10 @@ async def data__get_historical_prices(
     Returns:
         OHLCV data
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
+        def info(self, msg):
+            logger.info(msg)
 
     ctx = MinimalContext()
     return await data_get_historical_prices(symbol, start_date, end_date, timeframe, ctx)
@@ -298,7 +327,7 @@ async def data__get_historical_prices(
 @mcp.tool()
 async def data__get_portfolio_status(
     account_id: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get current portfolio status.
 
@@ -308,8 +337,10 @@ async def data__get_portfolio_status(
     Returns:
         Portfolio summary
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
+        def info(self, msg):
+            logger.info(msg)
 
     ctx = MinimalContext()
     return await data_get_portfolio_status(account_id, ctx)
@@ -318,7 +349,7 @@ async def data__get_portfolio_status(
 @mcp.tool()
 async def data__get_market_regime(
     symbol: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get current market regime for a symbol.
 
@@ -328,8 +359,10 @@ async def data__get_market_regime(
     Returns:
         Market regime assessment
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
+        def info(self, msg):
+            logger.info(msg)
 
     ctx = MinimalContext()
     return await data_get_market_regime(symbol, ctx)
@@ -339,6 +372,7 @@ async def data__get_market_regime(
 # EXECUTION TOOLS
 # ============================================================================
 
+
 @mcp.tool()
 async def execution__execute_paper_trade(
     symbol: str,
@@ -346,7 +380,7 @@ async def execution__execute_paper_trade(
     quantity: float,
     current_price: float,
     account_id: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Execute a paper trade.
 
@@ -365,9 +399,13 @@ async def execution__execute_paper_trade(
     Returns:
         Trade execution details
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
-        def error(self, msg): logger.error(msg)
+        def info(self, msg):
+            logger.info(msg)
+
+        def error(self, msg):
+            logger.error(msg)
 
     ctx = MinimalContext()
     return await execution_execute_paper_trade(
@@ -378,7 +416,7 @@ async def execution__execute_paper_trade(
 @mcp.tool()
 async def execution__get_open_positions(
     account_id: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get all open positions for an account.
 
@@ -388,8 +426,10 @@ async def execution__get_open_positions(
     Returns:
         List of open positions
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
+        def info(self, msg):
+            logger.info(msg)
 
     ctx = MinimalContext()
     return await execution_get_open_positions(account_id, ctx)
@@ -400,7 +440,7 @@ async def execution__close_position(
     symbol: str,
     account_id: str,
     current_price: float,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Close an open position.
 
@@ -412,8 +452,10 @@ async def execution__close_position(
     Returns:
         Close order details
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
+        def info(self, msg):
+            logger.info(msg)
 
     ctx = MinimalContext()
     return await execution_close_position(symbol, account_id, current_price, ctx)
@@ -423,7 +465,7 @@ async def execution__close_position(
 async def execution__get_trade_history(
     account_id: str,
     limit: int = 100,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get trade history for an account.
 
@@ -434,8 +476,10 @@ async def execution__get_trade_history(
     Returns:
         Trade history
     """
+
     class MinimalContext:
-        def info(self, msg): logger.info(msg)
+        def info(self, msg):
+            logger.info(msg)
 
     ctx = MinimalContext()
     return await execution_get_trade_history(account_id, limit, ctx)
@@ -445,8 +489,9 @@ async def execution__get_trade_history(
 # HEALTH & MONITORING
 # ============================================================================
 
+
 @mcp.tool()
-async def system__health_check() -> Dict[str, Any]:
+async def system__health_check() -> dict[str, Any]:
     """
     Check system health and circuit breaker states.
 
@@ -476,7 +521,7 @@ async def system__health_check() -> Dict[str, Any]:
         "status": "healthy" if all_healthy else "degraded",
         "circuit_breaker_states": circuit_states,
         "version": "1.0.0",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
@@ -488,8 +533,8 @@ if __name__ == "__main__":
     logger.info("=" * 60)
     logger.info("Starting AgenticTraderBroker MCP Server")
     logger.info("=" * 60)
-    logger.info(f"Server Name: AgenticTraderBroker")
-    logger.info(f"Transport: stdio")
+    logger.info("Server Name: AgenticTraderBroker")
+    logger.info("Transport: stdio")
 
     # Get registered tools
     tool_manager = mcp._tool_manager
@@ -503,4 +548,4 @@ if __name__ == "__main__":
     logger.info("=" * 60)
 
     # Run with stdio transport (for Claude Desktop, etc.)
-    mcp.run(transport='stdio')
+    mcp.run(transport="stdio")

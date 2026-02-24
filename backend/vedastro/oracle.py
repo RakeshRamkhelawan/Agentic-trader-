@@ -10,7 +10,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import xgboost as xgb
@@ -43,10 +43,10 @@ class XGBoostOracle:
 
     def __init__(
         self,
-        model_path: Optional[str] = None,
+        model_path: str | None = None,
         confidence_threshold: float = 0.6,
         min_samples: int = 100,
-        model_params: Optional[Dict] = None,
+        model_params: dict | None = None,
     ):
         """
         Initialize XGBoost Oracle.
@@ -61,8 +61,8 @@ class XGBoostOracle:
         self.min_samples = min_samples
         self.model_params = model_params or self.DEFAULT_PARAMS.copy()
         self.model = None
-        self.feature_importance: Dict[str, float] = {}
-        self.training_history: List[Dict] = []
+        self.feature_importance: dict[str, float] = {}
+        self.training_history: list[dict] = []
 
         if model_path and os.path.exists(model_path):
             self.load_model(model_path)
@@ -74,7 +74,7 @@ class XGBoostOracle:
         self.model = xgb.XGBClassifier(**self.model_params)
         logger.info("Initialized default XGBoost model")
 
-    def predict(self, features: np.ndarray) -> Dict[str, Any]:
+    def predict(self, features: np.ndarray) -> dict[str, Any]:
         """
         Generate prediction from feature vector.
 
@@ -110,7 +110,7 @@ class XGBoostOracle:
             "confidence_gap": abs(proba[1] - proba[0]),
         }
 
-    def predict_batch(self, features: np.ndarray) -> List[Dict[str, Any]]:
+    def predict_batch(self, features: np.ndarray) -> list[dict[str, Any]]:
         """
         Batch prediction for multiple samples.
 
@@ -127,7 +127,7 @@ class XGBoostOracle:
         predictions = np.argmax(probabilities, axis=1)
 
         results = []
-        for pred, proba in zip(predictions, probabilities):
+        for pred, proba in zip(predictions, probabilities, strict=False):
             confidence = float(np.max(proba))
             results.append(
                 {
@@ -148,7 +148,7 @@ class XGBoostOracle:
         y: np.ndarray,
         validation_split: float = 0.2,
         early_stopping_rounds: int = 10,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Train model on historical data.
 
@@ -187,9 +187,11 @@ class XGBoostOracle:
             "val_accuracy": val_acc,
             "train_samples": len(X_train),
             "val_samples": len(X_val),
-            "best_iteration": self.model.best_iteration
-            if hasattr(self.model, "best_iteration")
-            else self.model_params["n_estimators"],
+            "best_iteration": (
+                self.model.best_iteration
+                if hasattr(self.model, "best_iteration")
+                else self.model_params["n_estimators"]
+            ),
         }
 
         self.training_history.append(metrics)
@@ -198,7 +200,7 @@ class XGBoostOracle:
         return metrics
 
     def update_online(
-        self, X: np.ndarray, y: np.ndarray, learning_rate: Optional[float] = None
+        self, X: np.ndarray, y: np.ndarray, learning_rate: float | None = None
     ) -> None:
         """
         Online learning update with new data.
@@ -252,10 +254,10 @@ class XGBoostOracle:
 
         feature_names = FeatureEngine().get_feature_names()
         self.feature_importance = {
-            name: float(imp) for name, imp in zip(feature_names, importance)
+            name: float(imp) for name, imp in zip(feature_names, importance, strict=False)
         }
 
-    def get_top_features(self, n: int = 5) -> List[Tuple[str, float]]:
+    def get_top_features(self, n: int = 5) -> list[tuple[str, float]]:
         """
         Get top N most important features.
 
@@ -268,9 +270,7 @@ class XGBoostOracle:
         if not self.feature_importance:
             self._update_feature_importance()
 
-        sorted_features = sorted(
-            self.feature_importance.items(), key=lambda x: x[1], reverse=True
-        )
+        sorted_features = sorted(self.feature_importance.items(), key=lambda x: x[1], reverse=True)
         return sorted_features[:n]
 
     def save_model(self, path: str) -> None:
@@ -313,7 +313,7 @@ class XGBoostOracle:
         # Load metadata if available
         meta_path = path.replace(".json", "_metadata.json")
         if os.path.exists(meta_path):
-            with open(meta_path, "r") as f:
+            with open(meta_path) as f:
                 metadata = json.load(f)
                 self.confidence_threshold = metadata.get("confidence_threshold", 0.6)
                 self.feature_importance = metadata.get("feature_importance", {})
@@ -321,15 +321,13 @@ class XGBoostOracle:
 
         logger.info(f"Model loaded from {path}")
 
-    def get_model_info(self) -> Dict[str, Any]:
+    def get_model_info(self) -> dict[str, Any]:
         """Get model information."""
         return {
             "initialized": self.model is not None,
             "confidence_threshold": self.confidence_threshold,
             "min_samples": self.min_samples,
-            "feature_count": len(self.feature_importance)
-            if self.feature_importance
-            else 0,
+            "feature_count": len(self.feature_importance) if self.feature_importance else 0,
             "training_runs": len(self.training_history),
             "best_val_accuracy": max(
                 (h.get("val_accuracy", 0) for h in self.training_history), default=0

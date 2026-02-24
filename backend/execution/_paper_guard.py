@@ -8,9 +8,9 @@ live orders naar exchanges worden gestuurd tijdens paper trading.
 
 import logging
 import os
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from functools import wraps
-from typing import Callable
 
 logger = logging.getLogger("PaperGuard")
 
@@ -50,7 +50,7 @@ class PaperGuardAuditLogger:
             "event": "paper_guard_intercept",
             "function": func_name,
             "trading_mode": "paper",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "intercepted": True,
             "session_id": session_id,
             "intent": self._extract_intent(args, kwargs),
@@ -142,7 +142,7 @@ def paper_guard(func: Callable) -> Callable:
             logger.warning(
                 f"[PAPER_GUARD] INTERCEPTED: {func_name} "
                 f"ARGS={args[1:]} KWARGS={kwargs} — "
-                f"ORDER NOT SENT TO EXCHANGE @ {datetime.now(timezone.utc).isoformat()}"
+                f"ORDER NOT SENT TO EXCHANGE @ {datetime.now(UTC).isoformat()}"
             )
 
             # Schrijf naar audit log
@@ -153,8 +153,7 @@ def paper_guard(func: Callable) -> Callable:
 
             # Update Prometheus metric als beschikbaar
             try:
-                from backend.monitoring.paper_metrics import \
-                    PAPER_GUARD_INTERCEPTS
+                from backend.monitoring.paper_metrics import PAPER_GUARD_INTERCEPTS
 
                 PAPER_GUARD_INTERCEPTS.labels(function=func_name).inc()
             except ImportError:
@@ -176,8 +175,7 @@ def paper_guard(func: Callable) -> Callable:
             func_name = f"{func.__module__}.{func.__qualname__}"
 
             logger.warning(
-                f"[PAPER_GUARD] INTERCEPTED (sync): {func_name} "
-                f"ARGS={args[1:]} KWARGS={kwargs}"
+                f"[PAPER_GUARD] INTERCEPTED (sync): {func_name} " f"ARGS={args[1:]} KWARGS={kwargs}"
             )
 
             raise PaperModeViolation(

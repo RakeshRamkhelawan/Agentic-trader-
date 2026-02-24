@@ -23,7 +23,7 @@ Features:
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class MetricsProvider(ABC):
     """
 
     @abstractmethod
-    def get_current_metrics(self) -> Dict[str, Any]:
+    def get_current_metrics(self) -> dict[str, Any]:
         """
         Get current system metrics snapshot.
 
@@ -55,7 +55,7 @@ class MetricsProvider(ABC):
         pass
 
     @abstractmethod
-    def get_historical_metrics(self, hours: int = 24) -> List[Dict[str, Any]]:
+    def get_historical_metrics(self, hours: int = 24) -> list[dict[str, Any]]:
         """
         Get historical metrics over time range.
 
@@ -71,7 +71,7 @@ class MetricsProvider(ABC):
         pass
 
     @abstractmethod
-    def get_layer_status(self, layer_id: int) -> Dict[str, Any]:
+    def get_layer_status(self, layer_id: int) -> dict[str, Any]:
         """
         Get detailed status for one Mahabhutas layer.
 
@@ -130,7 +130,7 @@ class DashboardAPI:
         self.metrics_provider = metrics_provider
         self.config = {}
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         GET /api/metrics - Current system metrics.
 
@@ -140,7 +140,7 @@ class DashboardAPI:
         """
         pass
 
-    def get_coherence(self) -> Dict[int, float]:
+    def get_coherence(self) -> dict[int, float]:
         """
         GET /api/coherence - Mahabhutas coherence values.
 
@@ -150,7 +150,7 @@ class DashboardAPI:
         """
         pass
 
-    def get_alerts(self, severity: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_alerts(self, severity: str | None = None) -> list[dict[str, Any]]:
         """
         GET /api/alerts - Recent alerts.
 
@@ -162,7 +162,7 @@ class DashboardAPI:
         """
         pass
 
-    def get_history(self, hours: int = 24) -> List[Dict[str, Any]]:
+    def get_history(self, hours: int = 24) -> list[dict[str, Any]]:
         """
         GET /api/history - Historical metrics data.
 
@@ -174,7 +174,7 @@ class DashboardAPI:
         """
         pass
 
-    def get_layer_status(self, layer_id: int) -> Dict[str, Any]:
+    def get_layer_status(self, layer_id: int) -> dict[str, Any]:
         """
         GET /api/layer/{layer_id} - Detailed layer status.
 
@@ -186,7 +186,7 @@ class DashboardAPI:
         """
         pass
 
-    def update_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+    def update_config(self, config: dict[str, Any]) -> dict[str, Any]:
         """
         POST /api/config - Update dashboard configuration.
 
@@ -199,7 +199,7 @@ class DashboardAPI:
         """
         pass
 
-    def get_health(self) -> Dict[str, Any]:
+    def get_health(self) -> dict[str, Any]:
         """
         GET /api/health - Overall system health status.
 
@@ -239,9 +239,7 @@ class RealtimeMetricsService:
     - Alert generation
     """
 
-    def __init__(
-        self, metrics_provider: MetricsProvider, refresh_interval_ms: int = 1000
-    ):
+    def __init__(self, metrics_provider: MetricsProvider, refresh_interval_ms: int = 1000):
         """
         Initialize realtime metrics service.
 
@@ -258,7 +256,7 @@ class RealtimeMetricsService:
         self.metrics_cache = {}
         self.cache_ttl_ms = refresh_interval_ms
 
-    def get_current_metrics(self, use_cache: bool = True) -> Dict[str, Any]:
+    def get_current_metrics(self, use_cache: bool = True) -> dict[str, Any]:
         """
         Get current metrics snapshot.
 
@@ -270,9 +268,7 @@ class RealtimeMetricsService:
         """
         pass
 
-    def validate_coherence_values(
-        self, coherence: Dict[int, float]
-    ) -> Dict[int, float]:
+    def validate_coherence_values(self, coherence: dict[int, float]) -> dict[int, float]:
         """
         Validate and clamp coherence values to [0.3, 1.0].
 
@@ -287,7 +283,7 @@ class RealtimeMetricsService:
         """
         pass
 
-    def calculate_system_load(self, metrics: Dict[str, Any]) -> float:
+    def calculate_system_load(self, metrics: dict[str, Any]) -> float:
         """
         Calculate overall system load (0-1).
 
@@ -302,7 +298,7 @@ class RealtimeMetricsService:
         """
         pass
 
-    def aggregate_all_metrics(self) -> Dict[str, Any]:
+    def aggregate_all_metrics(self) -> dict[str, Any]:
         """
         Aggregate all metrics into single snapshot.
 
@@ -364,7 +360,7 @@ class AlertService:
         self.alerts = []
         self.alert_counts = {}
 
-    def check_coherence_thresholds(self, coherence: Dict[int, float]) -> List[str]:
+    def check_coherence_thresholds(self, coherence: dict[int, float]) -> list[str]:
         """
         Check coherence values against thresholds.
 
@@ -380,7 +376,7 @@ class AlertService:
         """
         pass
 
-    def check_metric_thresholds(self, metrics: Dict[str, Any]) -> List[str]:
+    def check_metric_thresholds(self, metrics: dict[str, Any]) -> list[str]:
         """
         Check metrics against thresholds.
 
@@ -412,8 +408,8 @@ class AlertService:
         pass
 
     def get_recent_alerts(
-        self, limit: int = 50, severity: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, limit: int = 50, severity: str | None = None
+    ) -> list[dict[str, Any]]:
         """
         Get recent alerts with optional severity filter.
 
@@ -429,7 +425,7 @@ class AlertService:
         """
         pass
 
-    def clear_alerts(self, older_than_hours: Optional[int] = None) -> int:
+    def clear_alerts(self, older_than_hours: int | None = None) -> int:
         """
         Clear old alerts.
 
@@ -486,7 +482,7 @@ class HistoricalAnalyticsService:
         self.metric_history = []
         self.baseline = {}
 
-    def add_metrics_sample(self, metrics: Dict[str, Any]) -> None:
+    def add_metrics_sample(self, metrics: dict[str, Any]) -> None:
         """
         Add metrics sample to history.
 
@@ -498,7 +494,7 @@ class HistoricalAnalyticsService:
         """
         pass
 
-    def get_history(self, hours: Optional[int] = None) -> List[Dict[str, Any]]:
+    def get_history(self, hours: int | None = None) -> list[dict[str, Any]]:
         """
         Get metric history over time range.
 
@@ -529,7 +525,7 @@ class HistoricalAnalyticsService:
         """
         pass
 
-    def calculate_percentiles(self, metric_name: str) -> Dict[str, float]:
+    def calculate_percentiles(self, metric_name: str) -> dict[str, float]:
         """
         Calculate percentiles for metric.
 
@@ -576,7 +572,7 @@ class HistoricalAnalyticsService:
         """
         pass
 
-    def aggregate_to_interval(self, interval_minutes: int) -> List[Dict[str, Any]]:
+    def aggregate_to_interval(self, interval_minutes: int) -> list[dict[str, Any]]:
         """
         Aggregate metrics to coarser time interval.
 
@@ -591,9 +587,7 @@ class HistoricalAnalyticsService:
         """
         pass
 
-    def forecast_metric(
-        self, metric_name: str, minutes_ahead: int = 5
-    ) -> Dict[str, Any]:
+    def forecast_metric(self, metric_name: str, minutes_ahead: int = 5) -> dict[str, Any]:
         """
         Simple trend-based forecast.
 
@@ -647,14 +641,12 @@ class DashboardIntegration:
         Should initialize all services.
         """
         self.metrics_provider = metrics_provider
-        self.realtime_service = RealtimeMetricsService(
-            metrics_provider, refresh_interval_ms
-        )
+        self.realtime_service = RealtimeMetricsService(metrics_provider, refresh_interval_ms)
         self.alert_service = AlertService(alert_retention_hours)
         self.analytics_service = HistoricalAnalyticsService(history_size)
         self.api = DashboardAPI(metrics_provider)
 
-    def get_dashboard_data(self) -> Dict[str, Any]:
+    def get_dashboard_data(self) -> dict[str, Any]:
         """
         Get all data needed for dashboard render.
 

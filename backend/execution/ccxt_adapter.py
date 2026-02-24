@@ -7,13 +7,13 @@ via the CCXT library with WebSocket streaming support.
 
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
-from backend.schemas.market_data import OrderBook
+from backend.schemas.market_data import OrderBook, OrderUpdate, TickerUpdate
 from backend.schemas.market_data import OrderStatus as MarketOrderStatus
-from backend.schemas.market_data import OrderUpdate, TickerUpdate
 from backend.schemas.orders import OrderRequest, OrderStatus
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class CCXTAdapter(ExecutionInterface):
         secret: str = "",
         password: str = "",
         sandbox: bool = False,
-        options: Optional[Dict[str, Any]] = None,
+        options: dict[str, Any] | None = None,
     ):
         """
         Initialize CCXT adapter.
@@ -137,14 +137,10 @@ class CCXTAdapter(ExecutionInterface):
         trading_mode = os.getenv("TRADING_MODE", "paper")
         if trading_mode == "paper":
             logger.error("🚫 BLOCKED: CCXT submit_order() aangeroepen in PAPER mode!")
-            logger.error(
-                "   Gebruik ShadowPortfolioManager of PaperExchange voor paper trading."
-            )
+            logger.error("   Gebruik ShadowPortfolioManager of PaperExchange voor paper trading.")
             return OrderResult(
                 order_id="",
-                client_order_id=str(order.client_order_id)
-                if order.client_order_id
-                else "",
+                client_order_id=str(order.client_order_id) if order.client_order_id else "",
                 status=OrderStatus.REJECTED,
                 error_message="Cannot place real orders in PAPER mode. Use paper trading components.",
             )
@@ -152,9 +148,7 @@ class CCXTAdapter(ExecutionInterface):
         if not self._exchange:
             return OrderResult(
                 order_id="mock-order-001",
-                client_order_id=str(order.client_order_id)
-                if order.client_order_id
-                else "mock-001",
+                client_order_id=str(order.client_order_id) if order.client_order_id else "mock-001",
                 status=OrderStatus.PENDING,
                 error_message="CCXT not available",
             )
@@ -182,9 +176,7 @@ class CCXTAdapter(ExecutionInterface):
             logger.error(f"Order submission failed: {e}")
             return OrderResult(
                 order_id="",
-                client_order_id=str(order.client_order_id)
-                if order.client_order_id
-                else "",
+                client_order_id=str(order.client_order_id) if order.client_order_id else "",
                 status=OrderStatus.REJECTED,
                 error_message=str(e),
             )
@@ -220,7 +212,7 @@ class CCXTAdapter(ExecutionInterface):
                 error_message=str(e),
             )
 
-    async def get_balance(self) -> Dict[str, float]:
+    async def get_balance(self) -> dict[str, float]:
         """Get account balance."""
         if not self._exchange:
             return {"EUR": 10000.0, "BTC": 1.0}  # Mock balance
@@ -232,7 +224,7 @@ class CCXTAdapter(ExecutionInterface):
             logger.error(f"Get balance failed: {e}")
             return {}
 
-    async def get_ticker(self, symbol: str) -> Dict[str, float]:
+    async def get_ticker(self, symbol: str) -> dict[str, float]:
         """Get ticker data."""
         if not self._exchange:
             return {"bid": 45000.0, "ask": 45010.0, "last": 45005.0}
@@ -251,7 +243,7 @@ class CCXTAdapter(ExecutionInterface):
 
     # ==================== DATA SCOUT COMPATIBLE METHODS ====================
 
-    async def fetch_ticker(self, symbol: str) -> Dict[str, Any]:
+    async def fetch_ticker(self, symbol: str) -> dict[str, Any]:
         """
         Fetch ticker data (DataScout compatible).
 
@@ -283,7 +275,7 @@ class CCXTAdapter(ExecutionInterface):
             logger.error(f"fetch_ticker failed for {symbol}: {e}")
             raise ValueError(f"Failed to fetch ticker: {e}")
 
-    async def fetch_orderbook(self, symbol: str, limit: int = 10) -> Dict[str, Any]:
+    async def fetch_orderbook(self, symbol: str, limit: int = 10) -> dict[str, Any]:
         """
         Fetch orderbook snapshot (DataScout compatible).
 
@@ -301,9 +293,7 @@ class CCXTAdapter(ExecutionInterface):
             }
 
         try:
-            orderbook = await asyncio.to_thread(
-                self._exchange.fetch_order_book, symbol, limit
-            )
+            orderbook = await asyncio.to_thread(self._exchange.fetch_order_book, symbol, limit)
             return {
                 "bids": orderbook.get("bids", [])[:limit],
                 "asks": orderbook.get("asks", [])[:limit],
@@ -329,9 +319,7 @@ class CCXTAdapter(ExecutionInterface):
         try:
             # Only applicable for perpetual/futures contracts
             if hasattr(self._exchange, "fetch_funding_rate"):
-                funding = await asyncio.to_thread(
-                    self._exchange.fetch_funding_rate, symbol
-                )
+                funding = await asyncio.to_thread(self._exchange.fetch_funding_rate, symbol)
                 return funding.get("fundingRate", 0.0)
             return 0.0  # Spot market has no funding
         except Exception as e:
@@ -352,7 +340,7 @@ class CCXTAdapter(ExecutionInterface):
 
     # ==================== WEBSOCKET STREAMING METHODS ====================
 
-    async def subscribe_ticker(self, symbol: str) -> AsyncGenerator[TickerUpdate, None]:
+    async def subscribe_ticker(self, symbol: str) -> AsyncGenerator[TickerUpdate]:
         """Stream real-time ticker updates."""
         if not self._exchange_ws:
             # Mock ticker stream
@@ -388,9 +376,7 @@ class CCXTAdapter(ExecutionInterface):
                 logger.error(f"Ticker stream error: {e}")
                 await asyncio.sleep(1.0)  # Reconnect delay
 
-    async def subscribe_orderbook(
-        self, symbol: str, depth: int = 10
-    ) -> AsyncGenerator[OrderBook, None]:
+    async def subscribe_orderbook(self, symbol: str, depth: int = 10) -> AsyncGenerator[OrderBook]:
         """Stream order book updates."""
         if not self._exchange_ws:
             # Mock orderbook
@@ -405,9 +391,7 @@ class CCXTAdapter(ExecutionInterface):
 
         while True:
             try:
-                orderbook = await self._exchange_ws.watch_order_book(
-                    symbol, limit=depth
-                )
+                orderbook = await self._exchange_ws.watch_order_book(symbol, limit=depth)
                 yield OrderBook(
                     symbol=symbol,
                     bids=[(b[0], b[1]) for b in orderbook["bids"][:depth]],
@@ -422,7 +406,7 @@ class CCXTAdapter(ExecutionInterface):
                 logger.error(f"Orderbook stream error: {e}")
                 await asyncio.sleep(1.0)
 
-    async def subscribe_orders(self) -> AsyncGenerator[OrderUpdate, None]:
+    async def subscribe_orders(self) -> AsyncGenerator[OrderUpdate]:
         """Stream order updates."""
         if not self._exchange_ws:
             # Mock - no order updates in mock mode
@@ -437,9 +421,7 @@ class CCXTAdapter(ExecutionInterface):
                     yield OrderUpdate(
                         order_id=order["id"],
                         status=MarketOrderStatus(
-                            self.STATUS_MAP.get(
-                                order["status"], OrderStatus.PENDING
-                            ).value
+                            self.STATUS_MAP.get(order["status"], OrderStatus.PENDING).value
                         ),
                         filled_qty=order.get("filled", 0),
                         avg_price=order.get("average", 0),
@@ -454,7 +436,7 @@ class CCXTAdapter(ExecutionInterface):
 
     async def get_candles(
         self, symbol: str, timeframe: str = "1m", limit: int = 100
-    ) -> list[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Fetch OHLCV candles asynchronously.
 
@@ -512,7 +494,7 @@ class CCXTAdapter(ExecutionInterface):
             raise
 
     @property
-    def exchange(self) -> Optional[Any]:
+    def exchange(self) -> Any | None:
         """
         Expose the underlying CCXT exchange instance.
         Use with caution - prefer using adapter methods.

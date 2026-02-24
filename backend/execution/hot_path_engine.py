@@ -19,11 +19,14 @@ import asyncio
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from backend.execution.broker_interface import (ExecutionInterface,
-                                                OrderRequest, OrderSide,
-                                                OrderType)
+from backend.execution.broker_interface import (
+    ExecutionInterface,
+    OrderRequest,
+    OrderSide,
+    OrderType,
+)
 from backend.execution.fast_config import FALLBACK_CONFIG, FastConfigManager
 
 
@@ -38,7 +41,7 @@ class ExecutionDecision:
     source: str = "hot_path"  # Always 'hot_path'
     quantity: float = 0.0  # Order size (0.0=default)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "action": self.action,
@@ -97,9 +100,7 @@ class HotPathEngine:
             # Fallback on any error (robust)
             return self.fallback_decision
 
-    def _make_decision(
-        self, config: Dict[str, Any], config_version: int
-    ) -> ExecutionDecision:
+    def _make_decision(self, config: dict[str, Any], config_version: int) -> ExecutionDecision:
         """
         Create execution decision from config.
 
@@ -115,12 +116,10 @@ class HotPathEngine:
             confidence=float(config.get("confidence", FALLBACK_CONFIG["confidence"])),
             timestamp=time.time(),
             config_version=config_version,
-            quantity=float(
-                config.get("quantity", FALLBACK_CONFIG.get("quantity", 0.0))
-            ),
+            quantity=float(config.get("quantity", FALLBACK_CONFIG.get("quantity", 0.0))),
         )
 
-    def get_decision_as_dict(self) -> Dict[str, Any]:
+    def get_decision_as_dict(self) -> dict[str, Any]:
         """
         Get execution decision as dictionary.
 
@@ -165,7 +164,7 @@ class HotPathExecutor:
     def __init__(
         self,
         config_path: str,
-        broker_adapter: Optional[ExecutionInterface] = None,
+        broker_adapter: ExecutionInterface | None = None,
         shadow_mode: bool = True,
         symbol: str = "BTC-EUR",
         batch_size: int = 10,
@@ -187,7 +186,7 @@ class HotPathExecutor:
         self.batch_size = batch_size
         self.last_decision_time = 0
 
-    def get_decision_batch(self, size: Optional[int] = None) -> List[ExecutionDecision]:
+    def get_decision_batch(self, size: int | None = None) -> list[ExecutionDecision]:
         """
         Get a batch of execution decisions.
 
@@ -260,9 +259,7 @@ class HotPathExecutor:
         # Use quantity from decision if > 0, otherwise default placeholder
         qty = decision.quantity if decision.quantity > 0 else 0.0001
 
-        order = OrderRequest(
-            symbol=self.symbol, side=side, order_type=OrderType.MARKET, qty=qty
-        )
+        order = OrderRequest(symbol=self.symbol, side=side, order_type=OrderType.MARKET, qty=qty)
 
         if self.shadow_mode:
             print(
@@ -271,9 +268,7 @@ class HotPathExecutor:
             return True
 
         try:
-            print(
-                f"[LIVE EXECUTION] Sending Order: {side.value} {qty} {self.symbol}..."
-            )
+            print(f"[LIVE EXECUTION] Sending Order: {side.value} {qty} {self.symbol}...")
             result = await self.adapter.submit_order(order)
             print(
                 f"[LIVE EXECUTION] Order Sent! ID: {result.order_id} Status: {result.status.value}"
@@ -302,6 +297,4 @@ if __name__ == "__main__":
 
         # Get decision
         decision = engine.get_execution_decision()
-        print(
-            f"✓ Decision: action={decision.action}, confidence={decision.confidence:.2f}"
-        )
+        print(f"✓ Decision: action={decision.action}, confidence={decision.confidence:.2f}")

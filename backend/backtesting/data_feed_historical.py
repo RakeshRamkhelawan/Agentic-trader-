@@ -6,7 +6,7 @@ and iterate through bars sequentially during a backtest.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pandas as pd
 
@@ -27,13 +27,11 @@ class HistoricalCSVData(DataFeed):
             csv_path: Absolute path to the CSV file.
         """
         self.csv_path = csv_path
-        self._data: Dict[str, pd.DataFrame] = {}
+        self._data: dict[str, pd.DataFrame] = {}
         self._current_index: int = 0
-        self._timestamps: List[datetime] = []
+        self._timestamps: list[datetime] = []
 
-    def load_data(
-        self, symbols: List[str], start_date: datetime, end_date: datetime
-    ) -> None:
+    def load_data(self, symbols: list[str], start_date: datetime, end_date: datetime) -> None:
         """Load CSV and filter to [start_date, end_date] for each symbol."""
         df = pd.read_csv(self.csv_path)
 
@@ -47,9 +45,7 @@ class HistoricalCSVData(DataFeed):
             df.rename(columns={"timestamp": "datetime"}, inplace=True)
             df["datetime"] = pd.to_datetime(df["datetime"])
         else:
-            raise ValueError(
-                "CSV must have a 'datetime', 'date', or 'timestamp' column."
-            )
+            raise ValueError("CSV must have a 'datetime', 'date', or 'timestamp' column.")
 
         # Filter date range
         mask = (df["datetime"] >= pd.Timestamp(start_date)) & (
@@ -87,7 +83,7 @@ class HistoricalCSVData(DataFeed):
             return datetime.now()
         return self._timestamps[self._current_index]
 
-    def get_latest_bar(self, symbol: str) -> Optional[Dict[str, Any]]:
+    def get_latest_bar(self, symbol: str) -> dict[str, Any] | None:
         """Return the OHLCV bar for the current index."""
         if symbol not in self._data:
             return None

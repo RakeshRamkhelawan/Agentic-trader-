@@ -9,9 +9,10 @@ This module provides utilities for:
 """
 
 import logging
+from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +31,7 @@ class BatchConfig:
     max_retries: int = 3
 
 
-def batch_iterator(
-    items: List[Any], batch_size: int = 100
-) -> Generator[List[Any], None, None]:
+def batch_iterator(items: list[Any], batch_size: int = 100) -> Generator[list[Any]]:
     """
     Yield successive batches from a list.
 
@@ -52,7 +51,7 @@ def batch_iterator(
 
 
 async def async_batch_processor(
-    items: List[Any], processor_func, batch_size: int = 100, max_concurrent: int = 3
+    items: list[Any], processor_func, batch_size: int = 100, max_concurrent: int = 3
 ):
     """
     Process items in batches with async support.
@@ -98,13 +97,13 @@ class QueryCache:
     """
 
     def __init__(self, max_size: int = 1000, default_ttl: int = 300):
-        self.cache: Dict[str, tuple[Any, float]] = {}
+        self.cache: dict[str, tuple[Any, float]] = {}
         self.max_size = max_size
         self.default_ttl = default_ttl
         self.hits = 0
         self.misses = 0
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get cached result if not expired."""
         if key not in self.cache:
             self.misses += 1
@@ -141,7 +140,7 @@ class QueryCache:
         total = self.hits + self.misses
         return self.hits / total if total > 0 else 0.0
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         return {
             "size": len(self.cache),
@@ -176,7 +175,7 @@ class StreamingProcessor:
         """
         batch = []
 
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             for line in f:
                 batch.append(line.strip())
 
@@ -189,9 +188,7 @@ class StreamingProcessor:
                 processor_func(batch)
 
     @staticmethod
-    def chunked_processing(
-        data: List[Any], chunk_size: int = 1000
-    ) -> Generator[List[Any], None, None]:
+    def chunked_processing(data: list[Any], chunk_size: int = 1000) -> Generator[list[Any]]:
         """
         Yield chunks of data for streaming processing.
 
@@ -263,7 +260,7 @@ class OptimizedQueries:
     """
 
     @staticmethod
-    def bulk_insert_pattern(items: List[Dict[str, Any]]) -> str:
+    def bulk_insert_pattern(items: list[dict[str, Any]]) -> str:
         """
         Generate optimized bulk insert query.
 
@@ -285,14 +282,12 @@ class OptimizedQueries:
             return ""
 
         keys = list(items[0].keys())
-        values_list = [
-            f"({', '.join(str(item.get(k, 'NULL')) for k in keys)})" for item in items
-        ]
+        values_list = [f"({', '.join(str(item.get(k, 'NULL')) for k in keys)})" for item in items]
 
         return f"INSERT INTO table ({', '.join(keys)}) VALUES {', '.join(values_list)}"
 
     @staticmethod
-    def batch_update_pattern(updates: List[Dict[str, Any]]) -> str:
+    def batch_update_pattern(updates: list[dict[str, Any]]) -> str:
         """
         Generate optimized batch update query using CASE.
 
@@ -318,7 +313,7 @@ class OperationStats:
     """Track and report statistics for data operations."""
 
     def __init__(self):
-        self.operations: Dict[str, Dict[str, Any]] = {}
+        self.operations: dict[str, dict[str, Any]] = {}
 
     def record_operation(
         self,
@@ -344,7 +339,7 @@ class OperationStats:
         if status != "success":
             stats["errors"] += 1
 
-    def get_stats(self, operation_name: str) -> Dict[str, float]:
+    def get_stats(self, operation_name: str) -> dict[str, float]:
         """Get statistics for an operation."""
         if operation_name not in self.operations:
             return {}

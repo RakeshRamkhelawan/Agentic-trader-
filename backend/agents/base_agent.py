@@ -11,8 +11,8 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from collections import deque
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from backend.events.event_bus import EventBus
@@ -73,24 +73,20 @@ class BaseAgent(ABC):
         self.agent_role = agent_role
 
         # State management
-        self.state: Dict[str, Any] = {}
+        self.state: dict[str, Any] = {}
 
         # MEMORY-SAFE: Use deque with maxlen to prevent unbounded growth
         # This prevents OOM crashes during long trading sessions
         self._max_reasoning_history = max_reasoning_history
-        self.reasoning_history: deque[Dict[str, Any]] = deque(
-            maxlen=max_reasoning_history
-        )
+        self.reasoning_history: deque[dict[str, Any]] = deque(maxlen=max_reasoning_history)
 
         # Event buffer for async processing (also bounded)
         self._max_event_buffer = max_event_buffer
-        self._event_buffer: deque[Dict[str, Any]] = deque(maxlen=max_event_buffer)
+        self._event_buffer: deque[dict[str, Any]] = deque(maxlen=max_event_buffer)
 
         # Logger
         self.logger = logging.getLogger(f"{__name__}.{agent_name}")
-        self.logger.info(
-            f"{agent_name} initialized (max_history={max_reasoning_history})"
-        )
+        self.logger.info(f"{agent_name} initialized (max_history={max_reasoning_history})")
 
         # Health Monitoring
         self.last_heartbeat = time.time()
@@ -101,16 +97,14 @@ class BaseAgent(ABC):
         self._peak_reasoning_size = 0
 
     @abstractmethod
-    async def analyze(
-        self, features: Dict[str, Any], context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """
         Analyze market features and context to generate a decision.
         Must implement ReAct reasoning pattern.
         """
         pass
 
-    async def ask_llm(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    async def ask_llm(self, prompt: str, system_prompt: str | None = None) -> str:
         """
         Ask LLM provider for reasoning or explanation.
         Returns fallback message if provider not available.
@@ -127,8 +121,8 @@ class BaseAgent(ABC):
             return f"LLM error: {str(e)}"
 
     async def publish_thought(
-        self, reasoning: str, confidence: float, data: Dict[str, Any]
-    ) -> Optional[str]:
+        self, reasoning: str, confidence: float, data: dict[str, Any]
+    ) -> str | None:
         """
         Publish agent thought to event bus.
         Returns message ID if published, None if bus not available.
@@ -143,7 +137,7 @@ class BaseAgent(ABC):
                 "reasoning": reasoning,
                 "confidence": str(confidence),
                 "data": str(data),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             message_id = await self.event_bus.publish("agent_thoughts", event_data)
             return message_id
@@ -162,7 +156,7 @@ class BaseAgent(ABC):
             self.failed_events += 1
         self.heartbeat()
 
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         """
         Return current health status and metrics.
         Status is 'unhealthy' if no heartbeat for > 60 seconds.
@@ -207,7 +201,7 @@ class BaseAgent(ABC):
         # Add to bounded deque - oldest entry auto-removed at maxlen
         self.reasoning_history.append(
             {
-                "timestamp": datetime.now(timezone.utc),
+                "timestamp": datetime.now(UTC),
                 "type": "think",
                 "content": observation,
             }
@@ -223,14 +217,14 @@ class BaseAgent(ABC):
         self.logger.debug(thought)
         return thought
 
-    def act(self, action: str, rationale: str) -> Dict[str, Any]:
+    def act(self, action: str, rationale: str) -> dict[str, Any]:
         """
         ReAct ACT step: Take action based on reasoning.
 
         Stores action in bounded reasoning_history (deque with maxlen).
         """
         action_record = {
-            "timestamp": datetime.now(timezone.utc),
+            "timestamp": datetime.now(UTC),
             "type": "act",
             "action": action,
             "rationale": rationale,
@@ -242,7 +236,7 @@ class BaseAgent(ABC):
         self.logger.info(f"[ACT] {action}: {rationale}")
         return action_record
 
-    def get_reasoning_chain(self, limit: Optional[int] = None) -> List[str]:
+    def get_reasoning_chain(self, limit: int | None = None) -> list[str]:
         """
         Get complete reasoning chain for explainability.
 
@@ -278,7 +272,7 @@ class BaseAgent(ABC):
         self.logger.info(f"Cleared {cleared} reasoning history entries")
         return cleared
 
-    def update_state(self, updates: Dict[str, Any] | str, value: Any = None) -> None:
+    def update_state(self, updates: dict[str, Any] | str, value: Any = None) -> None:
         """
         Update agent internal state.
         Can accept either dict of updates or key-value pair.
@@ -290,11 +284,11 @@ class BaseAgent(ABC):
             self.state[updates] = value
             self.logger.debug(f"State updated: {updates} = {value}")
 
-    def get_state(self) -> Dict[str, Any]:
+    def get_state(self) -> dict[str, Any]:
         """Get current agent state."""
         return self.state.copy()
 
-    def buffer_event(self, event: Dict[str, Any]) -> bool:
+    def buffer_event(self, event: dict[str, Any]) -> bool:
         """
         Buffer an event for async processing.
 
@@ -305,15 +299,13 @@ class BaseAgent(ABC):
             True if buffered, False if buffer is full
         """
         if len(self._event_buffer) >= self._max_event_buffer:
-            self.logger.warning(
-                f"Event buffer full ({self._max_event_buffer}), dropping event"
-            )
+            self.logger.warning(f"Event buffer full ({self._max_event_buffer}), dropping event")
             return False
 
         self._event_buffer.append(event)
         return True
 
-    def get_buffered_events(self, clear: bool = True) -> List[Dict[str, Any]]:
+    def get_buffered_events(self, clear: bool = True) -> list[dict[str, Any]]:
         """
         Get buffered events for processing.
 
@@ -328,7 +320,7 @@ class BaseAgent(ABC):
             self._event_buffer.clear()
         return events
 
-    def get_memory_stats(self) -> Dict[str, Any]:
+    def get_memory_stats(self) -> dict[str, Any]:
         """
         Get detailed memory usage statistics.
 
@@ -340,8 +332,7 @@ class BaseAgent(ABC):
                 "current": len(self.reasoning_history),
                 "max": self._max_reasoning_history,
                 "peak": self._peak_reasoning_size,
-                "utilization": len(self.reasoning_history)
-                / self._max_reasoning_history,
+                "utilization": len(self.reasoning_history) / self._max_reasoning_history,
             },
             "event_buffer": {
                 "current": len(self._event_buffer),

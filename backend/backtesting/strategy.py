@@ -1,14 +1,11 @@
 from abc import ABC
 from datetime import datetime
-from typing import Optional
 
 from backend.backtesting.exchange import SimulatedExchange
 from backend.backtesting.fill_models import FillModel, FullFillModel
 from backend.backtesting.models import OrderSide, Trade
-from backend.backtesting.position_sizing import (FixedQuantitySizer,
-                                                 PositionSizer)
-from backend.backtesting.slippage_models import (FixedSlippageModel,
-                                                 SlippageModel)
+from backend.backtesting.position_sizing import FixedQuantitySizer, PositionSizer
+from backend.backtesting.slippage_models import FixedSlippageModel, SlippageModel
 
 
 class Strategy(ABC):
@@ -20,9 +17,9 @@ class Strategy(ABC):
     def __init__(
         self,
         exchange: SimulatedExchange,
-        position_sizer: Optional[PositionSizer] = None,
-        slippage_model: Optional[SlippageModel] = None,
-        fill_model: Optional[FillModel] = None,
+        position_sizer: PositionSizer | None = None,
+        slippage_model: SlippageModel | None = None,
+        fill_model: FillModel | None = None,
     ):
         self.exchange = exchange
         self.position_sizer = position_sizer or FixedQuantitySizer(base_quantity=1.0)
@@ -63,7 +60,7 @@ class Strategy(ABC):
         current_price: float,
         timestamp: datetime,
         available_volume: float = float("inf"),
-    ) -> Optional[Trade]:
+    ) -> Trade | None:
         """
         Execute an order with slippage and fill model simulation.
 

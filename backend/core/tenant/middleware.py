@@ -1,6 +1,7 @@
 """
 Tenant Middleware - ADR-005
 """
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 

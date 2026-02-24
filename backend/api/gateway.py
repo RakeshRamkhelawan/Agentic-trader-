@@ -14,9 +14,8 @@ import hashlib
 import logging
 import os
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional
 
 import jwt
 import redis.asyncio as redis
@@ -56,9 +55,7 @@ class OrderRequest(BaseModel):
     symbol: str = Field(..., description="Trading pair (e.g., BTC-EUR)")
     side: OrderSide
     quantity: float = Field(..., gt=0, description="Amount to trade")
-    price: Optional[float] = Field(
-        None, description="Limit price (None = market order)"
-    )
+    price: float | None = Field(None, description="Limit price (None = market order)")
     order_type: str = Field("limit", pattern="^(limit|market|stop)$")
 
 
@@ -102,7 +99,7 @@ class HealthResponse(BaseModel):
 class TokenCacheEntry:
     """Cached token validation result."""
 
-    def __init__(self, payload: Dict, cached_at: float):
+    def __init__(self, payload: dict, cached_at: float):
         self.payload = payload
         self.cached_at = cached_at
 
@@ -126,22 +123,20 @@ class RateLimiter:
     def __init__(
         self,
         requests_per_minute: int = 60,
-        redis_url: Optional[str] = None,
+        redis_url: str | None = None,
         use_pipeline: bool = True,
     ):
         self.requests_per_minute = requests_per_minute
         self.redis_url = redis_url
         self.use_pipeline = use_pipeline
-        self.redis: Optional[redis.Redis] = None
-        self._local_history: Dict[str, List[float]] = {}
-        self._pipeline_buffer: List[tuple] = []
+        self.redis: redis.Redis | None = None
+        self._local_history: dict[str, list[float]] = {}
+        self._pipeline_buffer: list[tuple] = []
         self._pipeline_batch_size = 10
 
         if self.redis_url:
             try:
-                self.redis = redis.from_url(
-                    self.redis_url, encoding="utf-8", decode_responses=True
-                )
+                self.redis = redis.from_url(self.redis_url, encoding="utf-8", decode_responses=True)
             except Exception as e:
                 _logger.error(f"Failed to initialize Redis Rate Limiter: {e}")
 
@@ -173,9 +168,7 @@ class RateLimiter:
 
                 return count <= self.requests_per_minute
             except Exception as e:
-                _logger.error(
-                    f"Redis rate limit check failed: {e}. Falling back to in-memory."
-                )
+                _logger.error(f"Redis rate limit check failed: {e}. Falling back to in-memory.")
 
         # In-memory fallback (Same logic as before)
         current_time = time.time()
@@ -184,9 +177,7 @@ class RateLimiter:
         if api_key not in self._local_history:
             self._local_history[api_key] = []
 
-        self._local_history[api_key] = [
-            t for t in self._local_history[api_key] if t > cutoff_time
-        ]
+        self._local_history[api_key] = [t for t in self._local_history[api_key] if t > cutoff_time]
 
         if len(self._local_history[api_key]) >= self.requests_per_minute:
             return False
@@ -210,10 +201,10 @@ class JWTManager:
 
     def __init__(
         self,
-        secret_key: Optional[str] = None,
+        secret_key: str | None = None,
         algorithm: str = "HS256",
         cache_ttl_seconds: int = 300,
-        redis_url: Optional[str] = None,
+        redis_url: str | None = None,
     ):
         if secret_key is None:
             secret_key = _JWT_SECRET
@@ -224,10 +215,10 @@ class JWTManager:
         self.cache_ttl_seconds = cache_ttl_seconds
 
         # Token cache: SHA256 hash -> TokenCacheEntry
-        self._token_cache: Dict[str, TokenCacheEntry] = {}
+        self._token_cache: dict[str, TokenCacheEntry] = {}
 
         # Redis for distributed caching (optional)
-        self.redis: Optional[redis.Redis] = None
+        self.redis: redis.Redis | None = None
         if redis_url:
             try:
                 self.redis = redis.from_url(redis_url)
@@ -245,7 +236,7 @@ class JWTManager:
         """
         return hashlib.sha256(token.encode()).hexdigest()
 
-    async def verify_token(self, token: str) -> Dict:
+    async def verify_token(self, token: str) -> dict:
         """
         Verify and decode JWT token with caching.
 
@@ -276,13 +267,9 @@ class JWTManager:
 
                     payload = json.loads(cached_payload)
                     # Update in-memory cache
-                    self._token_cache[token_hash] = TokenCacheEntry(
-                        payload, time.time()
-                    )
+                    self._token_cache[token_hash] = TokenCacheEntry(payload, time.time())
                     self.cache_hits += 1
-                    _logger.debug(
-                        f"Token cache HIT (Redis) for hash: {token_hash[:16]}..."
-                    )
+                    _logger.debug(f"Token cache HIT (Redis) for hash: {token_hash[:16]}...")
                     return payload
             except Exception as e:
                 _logger.error(f"Redis token cache read failed: {e}")
@@ -321,7 +308,7 @@ class JWTManager:
         self,
         tenant_id: str,
         account_id: str,
-        roles: List[str],
+        roles: list[str],
         expires_in_hours: int = 24,
     ) -> str:
         """
@@ -336,7 +323,7 @@ class JWTManager:
         Returns:
             JWT token string
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "tenant_id": tenant_id,
             "account_id": account_id,
@@ -371,7 +358,7 @@ class JWTManager:
             except Exception as e:
                 _logger.error(f"Redis token cache invalidation failed: {e}")
 
-    def get_cache_stats(self) -> Dict:
+    def get_cache_stats(self) -> dict:
         """Get token cache statistics."""
         total_requests = self.cache_hits + self.cache_misses
         hit_rate = (self.cache_hits / total_requests * 100) if total_requests > 0 else 0
@@ -395,9 +382,7 @@ class JWTManager:
 # ============================================
 
 
-async def get_current_user(
-    token: str = Header(...), jwt_manager: JWTManager = None
-) -> Dict:
+async def get_current_user(token: str = Header(...), jwt_manager: JWTManager = None) -> dict:
     """
     FastAPI dependency to get current user from token.
 
@@ -418,7 +403,7 @@ async def get_current_user(
     return await jwt_manager.verify_token(token)
 
 
-def has_role(user_payload: Dict, required_roles: List[str]) -> bool:
+def has_role(user_payload: dict, required_roles: list[str]) -> bool:
     """Check if user has any of the required roles."""
     user_roles = set(user_payload.get("roles", []))
     required = set(required_roles)
@@ -435,9 +420,9 @@ class APIGateway:
 
     def __init__(
         self,
-        secret_key: Optional[str] = None,
+        secret_key: str | None = None,
         requests_per_minute: int = 60,
-        redis_url: Optional[str] = None,
+        redis_url: str | None = None,
     ):
         self.app = FastAPI(title="Agentic Trader API", version="1.0.0")
         self.jwt_manager = JWTManager(
@@ -482,20 +467,16 @@ class APIGateway:
         def get_token_from_header(authorization: str = Header(None)) -> str:
             """Extract and verify Bearer token from Authorization header."""
             if not authorization:
-                raise HTTPException(
-                    status_code=403, detail="Missing authorization header"
-                )
+                raise HTTPException(status_code=403, detail="Missing authorization header")
 
             parts = authorization.split()
             if len(parts) != 2 or parts[0].lower() != "bearer":
-                raise HTTPException(
-                    status_code=403, detail="Invalid authorization header"
-                )
+                raise HTTPException(status_code=403, detail="Invalid authorization header")
 
             return parts[1]
 
         # Helper to get user from token
-        async def get_user(authorization: str = Header(None)) -> Dict:
+        async def get_user(authorization: str = Header(None)) -> dict:
             """Get verified user from authorization header."""
             token = get_token_from_header(authorization)
             return await self.jwt_manager.verify_token(token)
@@ -503,9 +484,7 @@ class APIGateway:
         @self.app.get("/health", response_model=HealthResponse)
         async def health_check():
             """Health check endpoint (no auth required)."""
-            return HealthResponse(
-                status="healthy", timestamp=datetime.now(timezone.utc), version="1.0.0"
-            )
+            return HealthResponse(status="healthy", timestamp=datetime.now(UTC), version="1.0.0")
 
         @self.app.get("/health/cache")
         async def cache_stats():
@@ -542,7 +521,7 @@ class APIGateway:
             return {"detail": "Token cache invalidated"}
 
         @self.app.post("/orders", response_model=ExecutionResponse)
-        async def place_order(order: OrderRequest, user: Dict = Depends(get_user)):
+        async def place_order(order: OrderRequest, user: dict = Depends(get_user)):
             """
             Place a trading order.
 
@@ -569,16 +548,14 @@ class APIGateway:
                 raise HTTPException(status_code=400, detail="Quantity must be positive")
 
             if order.order_type == "limit" and order.price is None:
-                raise HTTPException(
-                    status_code=400, detail="Limit orders require price"
-                )
+                raise HTTPException(status_code=400, detail="Limit orders require price")
 
             # In production: Send to execution engine
             # For now: Return mock response
             return ExecutionResponse(
                 execution_id="exec_" + str(int(time.time())),
                 status="pending",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 symbol=order.symbol,
                 quantity=order.quantity,
                 price=order.price or 0.0,
@@ -586,7 +563,7 @@ class APIGateway:
             )
 
         @self.app.get("/portfolio", response_model=PortfolioResponse)
-        async def get_portfolio(account_id: str, user: Dict = Depends(get_user)):
+        async def get_portfolio(account_id: str, user: dict = Depends(get_user)):
             """
             Get portfolio details.
 
@@ -623,7 +600,7 @@ class APIGateway:
         async def get_var(
             account_id: str,
             confidence_level: float = 0.95,
-            user: Dict = Depends(get_user),
+            user: dict = Depends(get_user),
         ):
             """
             Get Value at Risk metrics.
@@ -655,11 +632,11 @@ class APIGateway:
                 "confidence_level": confidence_level,
                 "var_usd": 2500.0,
                 "cvar_usd": 3200.0,
-                "timestamp": datetime.now(timezone.utc),
+                "timestamp": datetime.now(UTC),
             }
 
         @self.app.get("/admin/users")
-        async def admin_list_users(user: Dict = Depends(get_user)):
+        async def admin_list_users(user: dict = Depends(get_user)):
             """
             Admin endpoint to list all users.
 
@@ -682,9 +659,9 @@ class APIGateway:
 
 
 def create_gateway(
-    secret_key: Optional[str] = None,
+    secret_key: str | None = None,
     requests_per_minute: int = 60,
-    redis_url: Optional[str] = None,
+    redis_url: str | None = None,
 ) -> FastAPI:
     """
     Factory function to create API gateway.

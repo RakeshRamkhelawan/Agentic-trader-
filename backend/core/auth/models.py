@@ -4,7 +4,6 @@ Auth Models - Data structures for authentication system.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Optional
 
 
 @dataclass
@@ -16,15 +15,13 @@ class TokenPayload:
     """
 
     sub: str  # Subject (user ID)
-    tenant_id: str = (
-        "default"  # Default if missing in token (e.g. strict Auth0 setup not yet done)
-    )
-    roles: List[str] = field(default_factory=list)  # User roles
+    tenant_id: str = "default"  # Default if missing in token (e.g. strict Auth0 setup not yet done)
+    roles: list[str] = field(default_factory=list)  # User roles
     exp: int = 0  # Expiration timestamp
-    iat: Optional[int] = None  # Issued at timestamp
-    iss: Optional[str] = None  # Issuer
-    aud: Optional[str] = None  # Audience
-    email: Optional[str] = None  # User email (optional claim)
+    iat: int | None = None  # Issued at timestamp
+    iss: str | None = None  # Issuer
+    aud: str | None = None  # Audience
+    email: str | None = None  # User email (optional claim)
 
     @property
     def is_expired(self) -> bool:
@@ -35,7 +32,7 @@ class TokenPayload:
         """Check if user has a specific role."""
         return role in self.roles
 
-    def has_any_role(self, roles: List[str]) -> bool:
+    def has_any_role(self, roles: list[str]) -> bool:
         """Check if user has any of the specified roles."""
         return bool(set(self.roles) & set(roles))
 
@@ -48,8 +45,8 @@ class User:
 
     id: str
     tenant_id: str
-    email: Optional[str]
-    roles: List[str]
+    email: str | None
+    roles: list[str]
 
     @classmethod
     def from_token_payload(cls, payload: TokenPayload) -> "User":

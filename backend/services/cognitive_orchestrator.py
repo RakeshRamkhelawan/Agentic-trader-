@@ -11,28 +11,28 @@ import asyncio
 import json
 import logging
 import time
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
+from backend.agents.news_agent import NewsAgent
+from backend.agents.sentiment_agent_v2 import SentimentAgentV2
 from backend.core.agent_registry import AgentProfile, AgentRegistry
-from backend.core.auth.context import (get_current_tenant_optional,
-                                       tenant_context)
+from backend.core.auth.context import get_current_tenant_optional, tenant_context
 from backend.core.exceptions import QuotaExceededError
 from backend.core.guna_quantifier import GunaQuantifier
 from backend.core.memory_agent import MemoryAgent
 from backend.core.regime_detector import RegimeDetector
 from backend.core.telemetry.metrics import PrometheusMetrics  # NIEUW
-from backend.core.telemetry.tracing import get_tracer, setup_tracing
+from backend.core.telemetry.tracing import get_tracer
 from backend.llm.usage_tracker import UsageTracker
 from backend.schemas.agent_messages import AgentMessage
 from backend.schemas.guna import GunaVector
-from backend.agents.news_agent import NewsAgent
-from backend.agents.sentiment_agent import SentimentAgent
-from backend.agents.sentiment_agent_v2 import SentimentAgentV2
 from backend.services.execution_gateway import ExecutionGateway
 from backend.services.federated_triad import FederatedTriadSystem
 from backend.services.intent_monitor import IntentMonitor
 from backend.services.macro_agent import MacroAgent
+
 # Importeer alle agents die de Orchestrator moet kennen
 from backend.services.research_agent import ResearchAgent
 from backend.services.valuation_agent import ValuationAgent
@@ -53,23 +53,21 @@ class CognitiveOrchestrator:
     def __init__(
         self,
         agent_profiles_path: str = "backend/config/agent_profiles.yaml",
-        agent_registry: Optional[AgentRegistry] = None,  # Dependency Injection
-        guna_quantifier: Optional[GunaQuantifier] = None,
-        intent_monitor: Optional[IntentMonitor] = None,
+        agent_registry: AgentRegistry | None = None,  # Dependency Injection
+        guna_quantifier: GunaQuantifier | None = None,
+        intent_monitor: IntentMonitor | None = None,
         memory_agent_factory: Callable[
             [], MemoryAgent
         ] = MemoryAgent,  # Factory om MemoryAgent aan te maken
         signal_bridge=None,  # Optional SignalBridge for frontend communication
-        usage_tracker: Optional[UsageTracker] = None,  # Optional UsageTracker
+        usage_tracker: UsageTracker | None = None,  # Optional UsageTracker
         audit_logger=None,  # Optional AuditLogger
         clickhouse_client=None,  # NIEUW: Optional ClickHouseClient
         market_writer=None,  # NIEUW: Optional ClickHouseWriter
         message_writer=None,  # NIEUW: Optional ClickHouseWriter for AgentMessage
-        execution_gateway: Optional[ExecutionGateway] = None,  # Phase 9: Real Execution
+        execution_gateway: ExecutionGateway | None = None,  # Phase 9: Real Execution
     ):
-        self.agent_registry = agent_registry or AgentRegistry(
-            config_path=agent_profiles_path
-        )
+        self.agent_registry = agent_registry or AgentRegistry(config_path=agent_profiles_path)
         self.guna_quantifier = guna_quantifier or GunaQuantifier()
         self.intent_monitor = intent_monitor or IntentMonitor(
             ideal_balance=GunaVector(sattva=0.4, rajas=0.3, tamas=0.3)
@@ -83,17 +81,17 @@ class CognitiveOrchestrator:
         self.message_writer = message_writer
         self.execution_gateway = execution_gateway
 
-        self.agents: Dict[str, Any] = {}
-        self.message_handlers: Dict[str, List[Callable[[AgentMessage], Any]]] = {}
+        self.agents: dict[str, Any] = {}
+        self.message_handlers: dict[str, list[Callable[[AgentMessage], Any]]] = {}
         self.current_guna_balance = GunaVector(sattva=1 / 3, rajas=1 / 3, tamas=1 / 3)
-        self.global_guna_history: List[GunaVector] = []
+        self.global_guna_history: list[GunaVector] = []
 
         self.logger = logging.getLogger("Orchestrator")
-        
+
         # Federated Triad System - 5 Council deliberation
-        self.federated_triad: Optional[FederatedTriadSystem] = None
-        self.last_federated_decision: Optional[Dict[str, Any]] = None
-        
+        self.federated_triad: FederatedTriadSystem | None = None
+        self.last_federated_decision: dict[str, Any] | None = None
+
         self._initialize_agents()
 
     def _initialize_agents(self):
@@ -122,16 +120,12 @@ class CognitiveOrchestrator:
                         memory_agent=memory, message_bus=self.handle_message
                     )
                 elif agent_id == "risk_guardian_v1":
-                    from backend.services.risk_guardian_agent import \
-                        RiskGuardianAgent
+                    from backend.services.risk_guardian_agent import RiskGuardianAgent
 
                     # Use Factory if possible, or direct init
-                    self.agents[agent_id] = RiskGuardianAgent(
-                        message_bus=self.handle_message
-                    )
+                    self.agents[agent_id] = RiskGuardianAgent(message_bus=self.handle_message)
                 elif agent_id == "asset_discovery_v1":
-                    from backend.agents.asset_discovery_agent import \
-                        AssetDiscoveryAgent
+                    from backend.agents.asset_discovery_agent import AssetDiscoveryAgent
 
                     self.agents[agent_id] = AssetDiscoveryAgent(
                         llm_provider=None,  # Geen LLM nodig voor discovery
@@ -215,12 +209,16 @@ class CognitiveOrchestrator:
                         "source": message.source,
                         "target": message.target,
                         "tenant_id": effective_tenant,
-                        "conversation_id": message.payload.get("conversation_id")
-                        if isinstance(message.payload, dict)
-                        else None,
-                        "symbol": message.payload.get("symbol")
-                        if isinstance(message.payload, dict)
-                        else None,
+                        "conversation_id": (
+                            message.payload.get("conversation_id")
+                            if isinstance(message.payload, dict)
+                            else None
+                        ),
+                        "symbol": (
+                            message.payload.get("symbol")
+                            if isinstance(message.payload, dict)
+                            else None
+                        ),
                         "price": (
                             float(message.payload["price"])
                             if isinstance(message.payload, dict)
@@ -259,9 +257,7 @@ class CognitiveOrchestrator:
                 metrics.requests_in_progress.dec()
                 metrics.request_latency_seconds.observe(time.time() - start_time)
 
-    async def _process_message_logic(
-        self, message: AgentMessage, tenant_id: Optional[str]
-    ):
+    async def _process_message_logic(self, message: AgentMessage, tenant_id: str | None):
         """Internal logic for processing message, assumed to be in correct context."""
         if tenant_id:
             await self._check_quota(tenant_id)
@@ -296,9 +292,7 @@ class CognitiveOrchestrator:
                     tenant_id=tenant_id,  # Propagate tenant
                 )
                 if "risk_guardian_v1" in self.agents:
-                    await self.agents["risk_guardian_v1"].handle_message(
-                        validation_request
-                    )
+                    await self.agents["risk_guardian_v1"].handle_message(validation_request)
                 return
 
         event_guna = self._quantify_message_guna(message)
@@ -330,16 +324,14 @@ class CognitiveOrchestrator:
             self.intent_monitor.measure_deviation(self.current_guna_balance)
         )
 
-        target_profiles_to_notify: List[AgentProfile] = []
+        target_profiles_to_notify: list[AgentProfile] = []
 
         if (
             message.target == "all"
             or message.target == self.agent_registry.get_profile("orchestrator_v1").id
         ):
             target_profiles_to_notify = [
-                p
-                for p in self.agent_registry.profiles.values()
-                if message.type in p.subscriptions
+                p for p in self.agent_registry.profiles.values() if message.type in p.subscriptions
             ]
         else:
             profile = self.agent_registry.get_profile(message.target)
@@ -381,17 +373,11 @@ class CognitiveOrchestrator:
             try:
                 if message.payload:
                     if "text" in message.payload:
-                        return self.guna_quantifier.quantify_text(
-                            message.payload["text"]
-                        )
+                        return self.guna_quantifier.quantify_text(message.payload["text"])
                     elif "summary" in message.payload:
-                        return self.guna_quantifier.quantify_text(
-                            message.payload["summary"]
-                        )
+                        return self.guna_quantifier.quantify_text(message.payload["summary"])
                     elif "price" in message.payload or "volatility" in message.payload:
-                        return self.guna_quantifier.quantify_numerical_data(
-                            message.payload
-                        )
+                        return self.guna_quantifier.quantify_numerical_data(message.payload)
                 return GunaVector(sattva=1 / 3, rajas=1 / 3, tamas=1 / 3)  # Neutraal
             finally:
                 metrics.requests_in_progress.dec()
@@ -414,8 +400,6 @@ class CognitiveOrchestrator:
             "VALUATION_UPDATE",
             "RESEARCH_COMPLETE",
             "ANALYSIS_RESULT",
-            "RESEARCH_COMPLETE",
-            "ANALYSIS_RESULT",
             "ORDER_VALIDATION_RESULT",  # Added for Risk Feedback
             "SIGNAL",  # Added for generic signals
         }
@@ -433,9 +417,7 @@ class CognitiveOrchestrator:
         return agent_id.replace("_", " ").title()
 
     async def process_generic_message(self, message: AgentMessage):
-        self.logger.info(
-            f"Generic handler processed message: {message.id} from {message.source}"
-        )
+        self.logger.info(f"Generic handler processed message: {message.id} from {message.source}")
 
         # 1. Handle SIGNALS from Research Agent (BULLISH/BEARISH)
         if message.type == "SIGNAL" and message.source == "research_v1":
@@ -484,9 +466,7 @@ class CognitiveOrchestrator:
                 if "risk_guardian_v1" in self.agents:
                     await self.agents["risk_guardian_v1"].handle_message(validation_msg)
                 else:
-                    self.logger.warning(
-                        "RiskGuardian not found! Cannot validate order."
-                    )
+                    self.logger.warning("RiskGuardian not found! Cannot validate order.")
 
         # 2. Handle ORDER_VALIDATION_RESULT from Risk Guardian
         elif message.type == "ORDER_VALIDATION_RESULT":
@@ -494,9 +474,7 @@ class CognitiveOrchestrator:
             original_msg_id = message.payload.get("original_msg_id")
 
             if result.get("allowed"):
-                self.logger.info(
-                    f"✅ ORDER APPROVED by RiskGuardian: {result.get('reason')}"
-                )
+                self.logger.info(f"✅ ORDER APPROVED by RiskGuardian: {result.get('reason')}")
                 # EXECUTE ORDER (REAL)
                 if self.execution_gateway:
                     self.logger.info(f"🚀 SENDING ORDER TO GATEWAY: {original_msg_id}")
@@ -506,9 +484,7 @@ class CognitiveOrchestrator:
                         exec_result = await self.execution_gateway.execute_order(
                             symbol=order_details.get("symbol"),
                             side=order_details.get("side"),
-                            amount=order_details.get(
-                                "quantity", 0
-                            ),  # Ensure quantity is passed
+                            amount=order_details.get("quantity", 0),  # Ensure quantity is passed
                             order_type=order_details.get("order_type", "market"),
                             price=order_details.get("price"),
                             target_exchange=order_details.get(
@@ -519,14 +495,10 @@ class CognitiveOrchestrator:
                     except Exception as e:
                         self.logger.error(f"Execution Failed: {e}")
                 else:
-                    self.logger.warning(
-                        "Execution Gateway not attached! Order DROPPED."
-                    )
+                    self.logger.warning("Execution Gateway not attached! Order DROPPED.")
 
             else:
-                self.logger.warning(
-                    f"❌ ORDER BLOCKED by RiskGuardian: {result.get('reason')}"
-                )
+                self.logger.warning(f"❌ ORDER BLOCKED by RiskGuardian: {result.get('reason')}")
                 if result.get("requires_approval"):
                     self.logger.info("requesting HITL approval... (not implemented)")
 
@@ -544,9 +516,7 @@ class CognitiveOrchestrator:
 
         while True:
             try:
-                streams = await redis_client.xread(
-                    {stream_key: last_id}, count=100, block=1000
-                )
+                streams = await redis_client.xread({stream_key: last_id}, count=100, block=1000)
                 if not streams:
                     continue
 
@@ -565,12 +535,11 @@ class CognitiveOrchestrator:
                 self.logger.error(f"Market Consumer error: {e}")
                 await asyncio.sleep(5)
 
-    async def handle_market_tick(self, event: Dict[str, Any]):
+    async def handle_market_tick(self, event: dict[str, Any]):
         """Process incoming market tick with full validation and dispatch."""
         import time as _time
 
-        from backend.core.market_data.models import (EventType,
-                                                     UnifiedMarketEvent)
+        from backend.core.market_data.models import EventType, UnifiedMarketEvent
 
         try:
             # 1. DESERIALIZE & VALIDATE
@@ -603,9 +572,11 @@ class CognitiveOrchestrator:
                 # Schema: event_type, venue, symbol, ts_exchange, ts_received, price, size, side, bid, ask, bids_price, bids_size, asks_price, asks_size
                 now = datetime.now()
                 row = {
-                    "event_type": unified.event_type.value
-                    if hasattr(unified.event_type, "value")
-                    else str(unified.event_type),
+                    "event_type": (
+                        unified.event_type.value
+                        if hasattr(unified.event_type, "value")
+                        else str(unified.event_type)
+                    ),
                     "venue": unified.exchange,
                     "symbol": unified.symbol,
                     "ts_exchange": unified.timestamp,
@@ -636,7 +607,6 @@ class CognitiveOrchestrator:
         except Exception as e:
             self.logger.error(f"Tick processing error: {e}")
 
-
     # =========================================================================
     # FEDERATED TRIAD INTEGRATION
     # =========================================================================
@@ -652,10 +622,12 @@ class CognitiveOrchestrator:
             await self.federated_triad.initialize()
             self.logger.info("Federated Triad System initialized")
 
-    async def run_federated_cycle(self, market_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def run_federated_cycle(
+        self, market_data: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         Run a full Federated Triad deliberation cycle.
-        
+
         This coordinates all 5 councils through deliberation and
         produces a synthesized decision.
         """
@@ -668,10 +640,10 @@ class CognitiveOrchestrator:
 
         # Run the federated cycle
         result = await self.federated_triad.process_cycle(market_data)
-        
+
         if result.get("success"):
             self.last_federated_decision = result
-            
+
             # Broadcast decision via signal bridge if available
             if self.signal_bridge and result.get("decision"):
                 await self.signal_bridge.emit_federated_decision(
@@ -681,7 +653,7 @@ class CognitiveOrchestrator:
 
         return result
 
-    async def _gather_market_context(self) -> Dict[str, Any]:
+    async def _gather_market_context(self) -> dict[str, Any]:
         """Gather market context from all agents."""
         context = {
             "timestamp": time.time(),
@@ -693,19 +665,19 @@ class CognitiveOrchestrator:
         for agent_id, agent in self.agents.items():
             if agent_id == "orchestrator_v1":
                 continue
-                
+
             signal = "neutral"
             confidence = 0.5
-            
+
             # Try to get agent's perspective
-            if hasattr(agent, 'get_signal'):
+            if hasattr(agent, "get_signal"):
                 try:
                     signal_data = await agent.get_signal()
                     signal = signal_data.get("signal", "neutral")
                     confidence = signal_data.get("confidence", 0.5)
                 except Exception:
                     pass
-            elif hasattr(agent, 'prana'):
+            elif hasattr(agent, "prana"):
                 # Derive signal from prana
                 prana = agent.prana if isinstance(agent.prana, (int, float)) else 50
                 if prana > 70:
@@ -722,7 +694,7 @@ class CognitiveOrchestrator:
         # Determine overall trend
         bullish = sum(1 for s in context["agent_signals"].values() if s["signal"] == "bullish")
         bearish = sum(1 for s in context["agent_signals"].values() if s["signal"] == "bearish")
-        
+
         if bullish > bearish + 1:
             context["trend"] = "bullish"
         elif bearish > bullish + 1:
@@ -730,7 +702,7 @@ class CognitiveOrchestrator:
 
         return context
 
-    def get_federated_state(self) -> Dict[str, Any]:
+    def get_federated_state(self) -> dict[str, Any]:
         """Get current Federated Triad state."""
         if self.federated_triad is None:
             return {
@@ -755,10 +727,12 @@ class CognitiveOrchestrator:
             await self.federated_triad.initialize()
             self.logger.info("Federated Triad System initialized")
 
-    async def run_federated_cycle(self, market_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def run_federated_cycle(
+        self, market_data: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         Run a full Federated Triad deliberation cycle.
-        
+
         This coordinates all 5 councils through deliberation and
         produces a synthesized decision.
         """
@@ -771,10 +745,10 @@ class CognitiveOrchestrator:
 
         # Run the federated cycle
         result = await self.federated_triad.process_cycle(market_data)
-        
+
         if result.get("success"):
             self.last_federated_decision = result
-            
+
             # Broadcast decision via signal bridge if available
             if self.signal_bridge and result.get("decision"):
                 await self.signal_bridge.emit_federated_decision(
@@ -784,7 +758,7 @@ class CognitiveOrchestrator:
 
         return result
 
-    async def _gather_market_context(self) -> Dict[str, Any]:
+    async def _gather_market_context(self) -> dict[str, Any]:
         """Gather market context from all agents."""
         context = {
             "timestamp": time.time(),
@@ -796,19 +770,19 @@ class CognitiveOrchestrator:
         for agent_id, agent in self.agents.items():
             if agent_id == "orchestrator_v1":
                 continue
-                
+
             signal = "neutral"
             confidence = 0.5
-            
+
             # Try to get agent's perspective
-            if hasattr(agent, 'get_signal'):
+            if hasattr(agent, "get_signal"):
                 try:
                     signal_data = await agent.get_signal()
                     signal = signal_data.get("signal", "neutral")
                     confidence = signal_data.get("confidence", 0.5)
                 except Exception:
                     pass
-            elif hasattr(agent, 'prana'):
+            elif hasattr(agent, "prana"):
                 # Derive signal from prana
                 prana = agent.prana if isinstance(agent.prana, (int, float)) else 50
                 if prana > 70:
@@ -825,7 +799,7 @@ class CognitiveOrchestrator:
         # Determine overall trend
         bullish = sum(1 for s in context["agent_signals"].values() if s["signal"] == "bullish")
         bearish = sum(1 for s in context["agent_signals"].values() if s["signal"] == "bearish")
-        
+
         if bullish > bearish + 1:
             context["trend"] = "bullish"
         elif bearish > bullish + 1:
@@ -833,7 +807,7 @@ class CognitiveOrchestrator:
 
         return context
 
-    def get_federated_state(self) -> Dict[str, Any]:
+    def get_federated_state(self) -> dict[str, Any]:
         """Get current Federated Triad state."""
         if self.federated_triad is None:
             return {

@@ -6,7 +6,7 @@ Create Date: 2026-02-06 02:09:52.047339+00:00
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
@@ -14,9 +14,9 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "d8fce2b4fe40"
-down_revision: Union[str, None] = "8fa01144a921"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "8fa01144a921"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -31,12 +31,8 @@ def upgrade() -> None:
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("agent_id", sa.String(), nullable=False),
         sa.Column("timestamp", sa.DateTime(timezone=True), nullable=True),
-        sa.Column(
-            "state_vector", postgresql.JSONB(astext_type=sa.Text()), nullable=False
-        ),
-        sa.Column(
-            "next_state_vector", postgresql.JSONB(astext_type=sa.Text()), nullable=False
-        ),
+        sa.Column("state_vector", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("next_state_vector", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column("action", sa.Integer(), nullable=False),
         sa.Column("reward", sa.Float(), nullable=False),
         sa.Column("done", sa.Boolean(), nullable=True),
@@ -68,9 +64,7 @@ def upgrade() -> None:
         sa.Column("provider", sa.String(), nullable=True),
         sa.PrimaryKeyConstraint("symbol", "timeframe", "timestamp"),
     )
-    op.create_index(
-        op.f("ix_market_candles_symbol"), "market_candles", ["symbol"], unique=False
-    )
+    op.create_index(op.f("ix_market_candles_symbol"), "market_candles", ["symbol"], unique=False)
     op.create_index(
         op.f("ix_market_candles_timestamp"),
         "market_candles",
@@ -88,12 +82,8 @@ def upgrade() -> None:
         sa.Column("exchange_sequence", sa.Integer(), nullable=True),
         sa.PrimaryKeyConstraint("id", "timestamp"),  # Composite PK for TimescaleDB
     )
-    op.create_index(
-        op.f("ix_market_ticks_symbol"), "market_ticks", ["symbol"], unique=False
-    )
-    op.create_index(
-        op.f("ix_market_ticks_timestamp"), "market_ticks", ["timestamp"], unique=False
-    )
+    op.create_index(op.f("ix_market_ticks_symbol"), "market_ticks", ["symbol"], unique=False)
+    op.create_index(op.f("ix_market_ticks_timestamp"), "market_ticks", ["timestamp"], unique=False)
 
     # Convert to Hypertables
     # try:
@@ -112,9 +102,7 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_market_candles_timestamp"), table_name="market_candles")
     op.drop_index(op.f("ix_market_candles_symbol"), table_name="market_candles")
     op.drop_table("market_candles")
-    op.drop_index(
-        op.f("ix_agent_experiences_timestamp"), table_name="agent_experiences"
-    )
+    op.drop_index(op.f("ix_agent_experiences_timestamp"), table_name="agent_experiences")
     op.drop_index(op.f("ix_agent_experiences_agent_id"), table_name="agent_experiences")
     op.drop_table("agent_experiences")
     # ### end Alembic commands ###

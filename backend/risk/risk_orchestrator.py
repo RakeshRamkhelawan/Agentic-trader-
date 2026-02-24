@@ -10,7 +10,6 @@ before execution.
 
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 
 from backend.risk.drawdown_monitor import DrawdownMonitor, DrawdownStatus
 from backend.risk.kelly_criterion import KellyCriterion
@@ -42,7 +41,7 @@ class RiskDecision:
     recommended_quantity: float
     drawdown_status: DrawdownStatus
     sizing_method: str = "fixed_risk"
-    kelly_fraction: Optional[float] = None
+    kelly_fraction: float | None = None
     warnings: list = field(default_factory=list)
 
 
@@ -59,10 +58,10 @@ class RiskOrchestrator:
 
     def __init__(
         self,
-        drawdown_monitor: Optional[DrawdownMonitor] = None,
-        position_sizer: Optional[IntegratedPositionSizer] = None,
-        kelly: Optional[KellyCriterion] = None,
-        var_calculator: Optional[VaRCalculator] = None,
+        drawdown_monitor: DrawdownMonitor | None = None,
+        position_sizer: IntegratedPositionSizer | None = None,
+        kelly: KellyCriterion | None = None,
+        var_calculator: VaRCalculator | None = None,
         max_daily_var_pct: float = 0.05,
         max_positions: int = 10,
     ):
@@ -126,8 +125,7 @@ class RiskOrchestrator:
         if signal.confidence < 0.3:
             return RiskDecision(
                 approved=False,
-                reason="Signal confidence too low: %.2f < 0.30 threshold"
-                % signal.confidence,
+                reason="Signal confidence too low: %.2f < 0.30 threshold" % signal.confidence,
                 recommended_quantity=0.0,
                 drawdown_status=dd_status,
             )

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Basic Pydantic models for validation
 from pydantic import ValidationError
@@ -18,7 +18,7 @@ class RiskGuardianAgent:
     def __init__(
         self,
         settings_service=None,
-        memory_agent: Optional[MemoryAgent] = None,
+        memory_agent: MemoryAgent | None = None,
         message_bus=None,
     ):
         self.logger = logging.getLogger("RiskGuardian")
@@ -29,18 +29,16 @@ class RiskGuardianAgent:
     async def validate_order(
         self,
         tenant_id: str,
-        order_payload: Dict[str, Any],
-        user_preferences: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        order_payload: dict[str, Any],
+        user_preferences: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Validates if an order is allowed based on Autonomy & Risk Settings.
         Returns: {"allowed": bool, "reason": str, "requires_approval": bool}
         """
         try:
             # 1. Check Autonomy Status
-            autonomy = user_preferences.get(
-                "autonomy_status", AutonomyStatus.MANUAL.value
-            )
+            autonomy = user_preferences.get("autonomy_status", AutonomyStatus.MANUAL.value)
             risk_settings = user_preferences.get("risk_settings", {})
             profile = RiskProfile(**risk_settings)
 

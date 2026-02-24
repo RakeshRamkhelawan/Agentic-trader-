@@ -20,7 +20,6 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -31,9 +30,7 @@ try:
 except ImportError:
     FAISS_AVAILABLE = False
     logger = logging.getLogger(__name__)
-    logger.warning(
-        "FAISS not available. Install with: pip install faiss-cpu or faiss-gpu"
-    )
+    logger.warning("FAISS not available. Install with: pip install faiss-cpu or faiss-gpu")
 
 from backend.rag.vector_memory import VectorMemory, VectorStoreError
 
@@ -70,8 +67,8 @@ class FAISSVectorMemory:
     def __init__(
         self,
         dimension: int = 384,
-        config: Optional[HNSWConfig] = None,
-        persist_path: Optional[str] = None,
+        config: HNSWConfig | None = None,
+        persist_path: str | None = None,
     ):
         """
         Initialize FAISS HNSW vector memory.
@@ -82,9 +79,7 @@ class FAISSVectorMemory:
             persist_path: Path to persist index (None = in-memory only)
         """
         if not FAISS_AVAILABLE:
-            raise VectorStoreError(
-                "FAISS not available. Install with: pip install faiss-cpu"
-            )
+            raise VectorStoreError("FAISS not available. Install with: pip install faiss-cpu")
 
         self.dimension = dimension
         self.config = config or HNSWConfig(dimension=dimension)
@@ -94,7 +89,7 @@ class FAISSVectorMemory:
         self._init_index()
 
         # ID mapping (FAISS uses integer IDs, we want string IDs with metadata)
-        self.id_to_metadata: Dict[int, dict] = {}
+        self.id_to_metadata: dict[int, dict] = {}
         self.next_id: int = 0
 
         # Thread safety for concurrent writes
@@ -134,11 +129,9 @@ class FAISSVectorMemory:
 
                 # Load metadata
                 if metadata_path.exists():
-                    with open(metadata_path, "r") as f:
+                    with open(metadata_path) as f:
                         data = json.load(f)
-                        self.id_to_metadata = {
-                            int(k): v for k, v in data["metadata"].items()
-                        }
+                        self.id_to_metadata = {int(k): v for k, v in data["metadata"].items()}
                         self.next_id = data["next_id"]
                     logger.info(f"Loaded {len(self.id_to_metadata)} metadata entries")
 
@@ -188,9 +181,9 @@ class FAISSVectorMemory:
         self,
         query_vector: np.ndarray,
         k: int = 5,
-        category_filter: Optional[str] = None,
-        distance_threshold: Optional[float] = None,
-    ) -> List[dict]:
+        category_filter: str | None = None,
+        distance_threshold: float | None = None,
+    ) -> list[dict]:
         """
         O(log N) similarity search.
 
@@ -219,7 +212,7 @@ class FAISSVectorMemory:
 
         # Build results
         results = []
-        for dist, idx in zip(distances[0], indices[0]):
+        for dist, idx in zip(distances[0], indices[0], strict=False):
             if idx == -1:  # FAISS returns -1 for empty slots
                 continue
 
@@ -326,7 +319,7 @@ class HybridVectorMemory(VectorMemory):
         connection_string: str,
         dimension: int = 384,
         use_faiss: bool = True,
-        faiss_persist_path: Optional[str] = None,
+        faiss_persist_path: str | None = None,
     ):
         """
         Initialize hybrid vector memory.
@@ -340,7 +333,7 @@ class HybridVectorMemory(VectorMemory):
         super().__init__(connection_string, dimension)
 
         self.use_faiss = use_faiss and FAISS_AVAILABLE
-        self.faiss_memory: Optional[FAISSVectorMemory] = None
+        self.faiss_memory: FAISSVectorMemory | None = None
 
         if self.use_faiss:
             try:
@@ -356,10 +349,10 @@ class HybridVectorMemory(VectorMemory):
     async def insert(
         self,
         content: str,
-        embedding: List[float],
+        embedding: list[float],
         category: str,
-        asset: Optional[str] = None,
-        metadata: Optional[dict] = None,
+        asset: str | None = None,
+        metadata: dict | None = None,
     ) -> int:
         """
         Insert vector to both FAISS and pgvector.
@@ -384,12 +377,12 @@ class HybridVectorMemory(VectorMemory):
 
     async def search_similar(
         self,
-        query_embedding: List[float],
+        query_embedding: list[float],
         limit: int = 5,
-        category: Optional[str] = None,
-        asset: Optional[str] = None,
+        category: str | None = None,
+        asset: str | None = None,
         distance_threshold: float = 1.0,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """
         Search using FAISS (fast) with pgvector fallback.
         """

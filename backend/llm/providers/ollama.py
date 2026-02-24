@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import Optional, Type, TypeVar
+from typing import TypeVar
 
 import httpx
 from pydantic import BaseModel
@@ -14,16 +14,12 @@ T = TypeVar("T", bound=BaseModel)
 class OllamaProvider(LLMProvider):
     """Ollama LLM Provider for local model inference."""
 
-    def __init__(self, base_url: Optional[str] = None, model_name: str = "llama2"):
-        self.base_url = base_url or os.getenv(
-            "OLLAMA_BASE_URL", "http://localhost:11434"
-        )
+    def __init__(self, base_url: str | None = None, model_name: str = "llama2"):
+        self.base_url = base_url or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         self.model_name = model_name
         self.generate_endpoint = f"{self.base_url}/api/generate"
 
-    async def generate_text(
-        self, prompt: str, system_prompt: Optional[str] = None
-    ) -> str:
+    async def generate_text(self, prompt: str, system_prompt: str | None = None) -> str:
         """Generate text using Ollama API."""
         payload = {"model": self.model_name, "prompt": prompt, "stream": False}
 
@@ -38,7 +34,7 @@ class OllamaProvider(LLMProvider):
             return result["response"]
 
     async def generate_structured(
-        self, prompt: str, schema: Type[T], system_prompt: Optional[str] = None
+        self, prompt: str, schema: type[T], system_prompt: str | None = None
     ) -> T:
         """Generate structured output using Ollama API."""
         # Add JSON format instruction to prompt

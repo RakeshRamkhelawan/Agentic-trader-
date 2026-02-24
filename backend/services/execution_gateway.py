@@ -5,7 +5,7 @@ Handles interaction with Kraken (and other exchanges) via CCXT.
 
 import asyncio
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from backend.execution.exchange_adapter import ExchangeAdapter
 
@@ -25,7 +25,7 @@ class ExecutionGateway:
         self.default_exchange_id = default_exchange_id.lower()
 
         # Registry of active exchange instances
-        self.exchanges: Dict[str, Any] = {}
+        self.exchanges: dict[str, Any] = {}
 
         self.trading_mode = settings.TRADING_MODE.lower()
         self.dry_run = self.trading_mode != "live"
@@ -53,9 +53,7 @@ class ExecutionGateway:
                     # Verify connection
                     try:
                         markets = await rev_exchange.get_instruments()
-                        logger.info(
-                            f"Connected to Revolut X (LIVE). Instruments: {len(markets)}"
-                        )
+                        logger.info(f"Connected to Revolut X (LIVE). Instruments: {len(markets)}")
                         self.exchanges["revolut"] = rev_exchange
                     except Exception as e:
                         logger.error(f"Revolut Connection Check Failed: {e}")
@@ -130,9 +128,7 @@ class ExecutionGateway:
             try:
                 if hasattr(exchange, "close"):  # CCXT
                     await exchange.close()
-                elif hasattr(exchange, "client") and hasattr(
-                    exchange.client, "aclose"
-                ):  # Adapter
+                elif hasattr(exchange, "client") and hasattr(exchange.client, "aclose"):  # Adapter
                     await exchange.client.aclose()
             except Exception as e:
                 logger.error(f"Error closing {ex_id}: {e}")
@@ -144,9 +140,9 @@ class ExecutionGateway:
         side: str,
         amount: float,
         order_type: str = "market",
-        price: Optional[float] = None,
-        target_exchange: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        price: float | None = None,
+        target_exchange: str | None = None,
+    ) -> dict[str, Any]:
         """
         Execute an order on the target exchange.
         """
@@ -190,9 +186,7 @@ class ExecutionGateway:
                 # Convert standard params to OrderRequest
                 import uuid
 
-                from backend.adapters.revolut_adapter import (OrderRequest,
-                                                              OrderSide,
-                                                              OrderType)
+                from backend.adapters.revolut_adapter import OrderRequest, OrderSide, OrderType
 
                 # Revolut symbol usually 'BTC-USD', we might need mapping
                 rev_symbol = symbol.replace("/", "-")
@@ -202,9 +196,7 @@ class ExecutionGateway:
                     symbol=rev_symbol,
                     side=OrderSide.BUY if side.lower() == "buy" else OrderSide.SELL,
                     order_type=(
-                        OrderType.MARKET
-                        if order_type.lower() == "market"
-                        else OrderType.LIMIT
+                        OrderType.MARKET if order_type.lower() == "market" else OrderType.LIMIT
                     ),
                     qty=amount,
                     limit_price=price,
@@ -231,7 +223,7 @@ class ExecutionGateway:
             logger.error(f"Order Execution Failed on {target}: {e}")
             return {"status": "failed", "reason": str(e)}
 
-    async def get_balance(self, target_exchange: Optional[str] = None):
+    async def get_balance(self, target_exchange: str | None = None):
         """Get balance from specific exchange or aggregate?"""
         # Simplification: Return default exchange balance if not specified
         target = (target_exchange or self.default_exchange_id).lower()

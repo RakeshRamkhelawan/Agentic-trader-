@@ -5,11 +5,15 @@ Beoordeelt trade proposals en genereert RiskAssessment (approve/reject).
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import (MarketRegime, RiskAssessment,
-                                             RiskDecision, TradeProposal)
+from backend.core.schemas.ooda_types import (
+    MarketRegime,
+    RiskAssessment,
+    RiskDecision,
+    TradeProposal,
+)
 from backend.execution.fast_config import FastConfig
 from backend.governance.agent_gatekeeper import AgentRole
 
@@ -29,8 +33,8 @@ class RiskManagerAgent(BaseAgent):
 
     def __init__(
         self,
-        llm_provider: Optional[Any] = None,
-        event_bus: Optional[Any] = None,
+        llm_provider: Any | None = None,
+        event_bus: Any | None = None,
         max_position_size: float = 1.0,
         max_leverage: float = 3.0,
         min_confidence: float = 0.6,
@@ -90,9 +94,7 @@ class RiskManagerAgent(BaseAgent):
                 config = FastConfig.read()
                 dynamic_min_confidence = config.get("confidence", self.min_confidence)
                 if dynamic_min_confidence != self.min_confidence:
-                    logger.debug(
-                        f"Using dynamic min_confidence: {dynamic_min_confidence}"
-                    )
+                    logger.debug(f"Using dynamic min_confidence: {dynamic_min_confidence}")
             except Exception:
                 dynamic_min_confidence = self.min_confidence
 
@@ -103,15 +105,11 @@ class RiskManagerAgent(BaseAgent):
 
             # 2. Position size check
             if proposal.size > self.max_position_size:
-                violations.append(
-                    f"Size {proposal.size} > max {self.max_position_size}"
-                )
+                violations.append(f"Size {proposal.size} > max {self.max_position_size}")
 
             # 3. Leverage check
             if proposal.leverage and proposal.leverage > self.max_leverage:
-                violations.append(
-                    f"Leverage {proposal.leverage} > max {self.max_leverage}"
-                )
+                violations.append(f"Leverage {proposal.leverage} > max {self.max_leverage}")
 
             # 4. Regime suitability check
             if (
@@ -119,29 +117,25 @@ class RiskManagerAgent(BaseAgent):
                 and proposal.leverage
                 and proposal.leverage > 1.5
             ):
-                violations.append(
-                    f"High leverage {proposal.leverage} in VOLATILE regime"
-                )
+                violations.append(f"High leverage {proposal.leverage} in VOLATILE regime")
 
             # 5. Position concentration check
             new_position = current_position_size + proposal.size
             if abs(new_position) > self.max_position_size * 1.5:
-                violations.append(
-                    f"New position {new_position:.2f} exceeds concentration limit"
-                )
+                violations.append(f"New position {new_position:.2f} exceeds concentration limit")
 
             # Determine decision
             if not violations:
                 decision = RiskDecision.APPROVE
-                rationale = (
-                    f"All risk checks passed (confidence={proposal.confidence:.2f})"
-                )
+                rationale = f"All risk checks passed (confidence={proposal.confidence:.2f})"
                 self.trades_approved += 1
             elif len(violations) == 1 and "Size" in violations[0]:
                 # Size reduction scenario
                 decision = RiskDecision.REDUCE_SIZE
                 suggested_size = min(proposal.size, self.max_position_size)
-                rationale = f"Reducing size from {proposal.size} to {suggested_size}: {violations[0]}"
+                rationale = (
+                    f"Reducing size from {proposal.size} to {suggested_size}: {violations[0]}"
+                )
             else:
                 decision = RiskDecision.REJECT
                 rationale = f"Risk violations: {'; '.join(violations)}"
@@ -195,17 +189,12 @@ class RiskManagerAgent(BaseAgent):
 
         # Weighted average
         total_risk = (
-            0.3 * violation_risk
-            + 0.3 * confidence_risk
-            + 0.2 * size_risk
-            + 0.2 * leverage_risk
+            0.3 * violation_risk + 0.3 * confidence_risk + 0.2 * size_risk + 0.2 * leverage_risk
         )
 
         return max(0.0, min(1.0, total_risk))
 
-    async def analyze(
-        self, features: Dict[str, Any], context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """BaseAgent abstract - gebruik assess_risk()."""
         logger.warning("analyze() called on RiskManager - use assess_risk() instead")
         return {
@@ -213,7 +202,7 @@ class RiskManagerAgent(BaseAgent):
             "confidence": 0.0,
         }
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Krijg RiskManager statistieken."""
         health = self.health_check()
 

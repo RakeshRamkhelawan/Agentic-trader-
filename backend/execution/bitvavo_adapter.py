@@ -17,7 +17,7 @@ Environment Variables:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import ccxt.async_support as ccxt
 
@@ -45,16 +45,14 @@ class BitvavoAdapter:
         self.api_secret = settings.BITVAVO_API_SECRET
         self.sandbox = settings.BITVAVO_SANDBOX
 
-        self.exchange: Optional[ccxt.bitvavo] = None
+        self.exchange: ccxt.bitvavo | None = None
         self.circuit_breaker = CircuitBreaker(name="exchange_bitvavo")
 
     async def initialize(self):
         """Initialize Bitvavo exchange connection."""
         if not self.api_key or not self.api_secret:
             logger.warning("Bitvavo API credentials not configured")
-            logger.info(
-                "Get your API keys at: https://account.bitvavo.com/user/api-keys"
-            )
+            logger.info("Get your API keys at: https://account.bitvavo.com/user/api-keys")
             return False
 
         try:
@@ -71,9 +69,7 @@ class BitvavoAdapter:
             self.exchange = ccxt.bitvavo(config)
             await self.exchange.load_markets()
 
-            logger.info(
-                f"✅ Connected to Bitvavo ({'sandbox' if self.sandbox else 'live'})"
-            )
+            logger.info(f"✅ Connected to Bitvavo ({'sandbox' if self.sandbox else 'live'})")
             logger.info(f"   Available markets: {len(self.exchange.markets)}")
 
             # Log available EUR pairs
@@ -105,7 +101,7 @@ class BitvavoAdapter:
     # Market Data Methods
     # =========================================================================
 
-    async def fetch_ticker(self, symbol: str) -> Optional[Dict[str, Any]]:
+    async def fetch_ticker(self, symbol: str) -> dict[str, Any] | None:
         """Fetch current ticker data for a symbol (e.g., 'BTC/EUR')."""
         if not self.exchange or not self._check_credentials():
             return None
@@ -125,7 +121,7 @@ class BitvavoAdapter:
 
     async def fetch_ohlcv(
         self, symbol: str, timeframe: str = "1h", limit: int = 100
-    ) -> Optional[List[List[float]]]:
+    ) -> list[list[float]] | None:
         """
         Fetch OHLCV (candlestick) data.
 
@@ -149,9 +145,7 @@ class BitvavoAdapter:
             await self.circuit_breaker.record_failure()
             return None
 
-    async def fetch_order_book(
-        self, symbol: str, limit: int = 20
-    ) -> Optional[Dict[str, Any]]:
+    async def fetch_order_book(self, symbol: str, limit: int = 20) -> dict[str, Any] | None:
         """Fetch order book for a symbol."""
         if not self.exchange or not self._check_credentials():
             return None
@@ -172,7 +166,7 @@ class BitvavoAdapter:
     # Account Methods
     # =========================================================================
 
-    async def fetch_balance(self) -> Optional[Dict[str, Any]]:
+    async def fetch_balance(self) -> dict[str, Any] | None:
         """Fetch account balance."""
         if not self.exchange or not self._check_credentials():
             return None
@@ -208,7 +202,7 @@ class BitvavoAdapter:
         side: str,  # 'buy' or 'sell'
         amount: float,
         price: float,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Create a limit order.
 
@@ -250,7 +244,7 @@ class BitvavoAdapter:
         symbol: str,
         side: str,
         amount: float,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Create a market order.
 
@@ -299,9 +293,7 @@ class BitvavoAdapter:
             return False
 
     @paper_guard
-    async def fetch_open_orders(
-        self, symbol: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    async def fetch_open_orders(self, symbol: str | None = None) -> list[dict[str, Any]]:
         """
         Fetch all open orders.
 
@@ -321,13 +313,13 @@ class BitvavoAdapter:
     # Utility Methods
     # =========================================================================
 
-    def get_eur_pairs(self) -> List[str]:
+    def get_eur_pairs(self) -> list[str]:
         """Get all available EUR trading pairs."""
         if not self.exchange:
             return []
         return [s for s in self.exchange.markets if s.endswith("/EUR")]
 
-    def get_crypto_pairs(self, quote: str = "EUR") -> List[str]:
+    def get_crypto_pairs(self, quote: str = "EUR") -> list[str]:
         """Get all trading pairs for a quote currency."""
         if not self.exchange:
             return []
@@ -336,7 +328,7 @@ class BitvavoAdapter:
 
 
 # Factory function for easy instantiation
-async def create_bitvavo_adapter() -> Optional[BitvavoAdapter]:
+async def create_bitvavo_adapter() -> BitvavoAdapter | None:
     """
     Create and initialize a Bitvavo adapter.
 

@@ -11,31 +11,30 @@ NO GPU required - runs on any standard cloud instance.
 """
 
 import asyncio
-import time
-import sys
-from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional
 import logging
+import sys
+import time
+from collections.abc import Callable
+from datetime import datetime, timedelta
+from typing import Any
 
 # Configure logging to stderr (CRITICAL for MCP)
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stderr
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    stream=sys.stderr,
 )
 logger = logging.getLogger(__name__)
 
 # SaaS-friendly imports
 from backend.mcp_broker.performance.cache import BacktestCache, CacheConfig
-from backend.mcp_broker.performance.batch_processor import BatchProcessor
-from backend.mcp_broker.performance.parallel_engine import ParallelBacktestEngine
-from backend.mcp_broker.performance.metrics import PerformanceMetricsCollector, BacktestProfiler
-from backend.mcp_broker.performance.ultra_mode import UltraPerformanceMode, IncrementalBacktest
 from backend.mcp_broker.performance.distributed import ParallelProcessor, SimpleBacktestRunner
-
+from backend.mcp_broker.performance.metrics import BacktestProfiler
+from backend.mcp_broker.performance.ultra_mode import IncrementalBacktest, UltraPerformanceMode
 
 try:
     import numpy as np
+
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
@@ -48,12 +47,10 @@ class UltraBacktestConfig:
     def __init__(
         self,
         initial_capital: float = 100000.0,
-
         # Core optimizations (always enabled)
         enable_caching: bool = True,
         enable_parallel: bool = True,
         max_workers: int = 4,
-
         # SaaS-friendly (no GPU/distributed)
         enable_batching: bool = True,
         enable_incremental: bool = True,
@@ -78,13 +75,11 @@ class BacktestEngineV18Ultra:
     NO GPU, NO Ray, NO complex infrastructure.
     """
 
-    def __init__(self, config: Optional[UltraBacktestConfig] = None):
+    def __init__(self, config: UltraBacktestConfig | None = None):
         self.config = config or UltraBacktestConfig()
         self.ultra = UltraPerformanceMode()
-        self.cache: Optional[BacktestCache] = None
-        self.parallel = ParallelProcessor(
-            max_workers=self.config.max_workers
-        )
+        self.cache: BacktestCache | None = None
+        self.parallel = ParallelProcessor(max_workers=self.config.max_workers)
         self.profiler = BacktestProfiler()
 
     async def initialize(self):
@@ -101,11 +96,11 @@ class BacktestEngineV18Ultra:
 
     async def run_ultra_backtest(
         self,
-        symbols: List[str],
+        symbols: list[str],
         start_date: datetime,
         end_date: datetime,
-        progress_callback: Optional[Callable] = None
-    ) -> Dict[str, Any]:
+        progress_callback: Callable | None = None,
+    ) -> dict[str, Any]:
         """
         Run optimized backtest (SaaS friendly).
 
@@ -133,15 +128,12 @@ class BacktestEngineV18Ultra:
         return results
 
     async def _run_sequential(
-        self,
-        symbols: List[str],
-        start_date: datetime,
-        end_date: datetime
-    ) -> Dict[str, Any]:
+        self, symbols: list[str], start_date: datetime, end_date: datetime
+    ) -> dict[str, Any]:
         """Run sequential backtest (for small symbol sets)."""
         from backend.mcp_broker.backtest_engine_v18_optimized import (
+            OptimizedBacktestConfig,
             OptimizedBacktestEngineV18,
-            OptimizedBacktestConfig
         )
 
         config = OptimizedBacktestConfig(
@@ -153,20 +145,13 @@ class BacktestEngineV18Ultra:
         return await engine.run_backtest(symbols, start_date, end_date)
 
     async def _run_parallel(
-        self,
-        symbols: List[str],
-        start_date: datetime,
-        end_date: datetime
-    ) -> Dict[str, Any]:
+        self, symbols: list[str], start_date: datetime, end_date: datetime
+    ) -> dict[str, Any]:
         """Run parallel backtest using asyncio."""
-        runner = SimpleBacktestRunner(
-            max_workers=self.config.max_workers
-        )
+        runner = SimpleBacktestRunner(max_workers=self.config.max_workers)
 
         # Use the optimized backtest function for each symbol
-        from backend.mcp_broker.backtest_engine_v18_optimized import (
-            run_optimized_backtest
-        )
+        from backend.mcp_broker.backtest_engine_v18_optimized import run_optimized_backtest
 
         async def process_symbol(symbol, start, end, capital):
             return await run_optimized_backtest(
@@ -174,21 +159,16 @@ class BacktestEngineV18Ultra:
                 start_date=start,
                 end_date=end,
                 initial_capital=capital,
-                enable_parallel=False
+                enable_parallel=False,
             )
 
         return await runner.run_backtest(
-            symbols, start_date, end_date,
-            process_symbol,
-            self.config.initial_capital
+            symbols, start_date, end_date, process_symbol, self.config.initial_capital
         )
 
     async def run_incremental_backtest(
-        self,
-        symbols: List[str],
-        start_date: datetime,
-        end_date: datetime
-    ) -> Dict[str, Any]:
+        self, symbols: list[str], start_date: datetime, end_date: datetime
+    ) -> dict[str, Any]:
         """Run incremental backtest - only process new dates."""
         if not self.config.enable_incremental:
             return await self.run_ultra_backtest(symbols, start_date, end_date)
@@ -202,11 +182,7 @@ class BacktestEngineV18Ultra:
 
         logger.info(f"Processing {len(unprocessed)} new dates")
 
-        results = await self.run_ultra_backtest(
-            symbols,
-            unprocessed[0],
-            unprocessed[-1]
-        )
+        results = await self.run_ultra_backtest(symbols, unprocessed[0], unprocessed[-1])
 
         for date in unprocessed:
             incremental.mark_processed(date)
@@ -216,13 +192,13 @@ class BacktestEngineV18Ultra:
 
 # Convenience function
 async def run_ultra_backtest(
-    symbols: List[str],
+    symbols: list[str],
     start_date: datetime,
     end_date: datetime,
     initial_capital: float = 100000.0,
     enable_parallel: bool = True,
-    max_workers: int = 4
-) -> Dict[str, Any]:
+    max_workers: int = 4,
+) -> dict[str, Any]:
     """
     Run ultra-optimized backtest (SaaS friendly).
 
@@ -237,9 +213,7 @@ async def run_ultra_backtest(
         )
     """
     config = UltraBacktestConfig(
-        initial_capital=initial_capital,
-        enable_parallel=enable_parallel,
-        max_workers=max_workers
+        initial_capital=initial_capital, enable_parallel=enable_parallel, max_workers=max_workers
     )
 
     engine = BacktestEngineV18Ultra(config)
@@ -253,11 +227,11 @@ async def benchmark_ultra_mode():
     end = datetime.now()
     start = end - timedelta(days=7)
 
-    print("\n" + "="*60, file=sys.stderr)
-    print(" "*15 + "ULTRA MODE BENCHMARK (SaaS)", file=sys.stderr)
-    print("="*60, file=sys.stderr)
+    print("\n" + "=" * 60, file=sys.stderr)
+    print(" " * 15 + "ULTRA MODE BENCHMARK (SaaS)", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
     print(f"Symbols: {len(symbols)} | Days: 7", file=sys.stderr)
-    print("="*60, file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
 
     # Sequential
     print("\n[1/2] Sequential...", file=sys.stderr)
@@ -274,12 +248,12 @@ async def benchmark_ultra_mode():
     print(f"  Time: {par_time:.2f}s", file=sys.stderr)
 
     # Summary
-    print("\n" + "="*60, file=sys.stderr)
+    print("\n" + "=" * 60, file=sys.stderr)
     print("SUMMARY", file=sys.stderr)
-    print("="*60, file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
     print(f"Sequential: {seq_time:.2f}s", file=sys.stderr)
     print(f"Parallel:   {par_time:.2f}s (speedup: {seq_time/par_time:.2f}x)", file=sys.stderr)
-    print("="*60, file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
 
 
 if __name__ == "__main__":

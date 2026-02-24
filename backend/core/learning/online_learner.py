@@ -9,8 +9,7 @@ into the hot path read-only snapshot.
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any
 
 try:
     from river import linear_model, metrics, optim, preprocessing
@@ -38,9 +37,9 @@ class LearningMetrics:
 
     total_samples: int = 0
     drift_events: int = 0
-    last_drift_timestamp: Optional[float] = None
+    last_drift_timestamp: float | None = None
     model_accuracy: float = 0.0
-    strategy_weights: Dict[str, float] = field(default_factory=dict)
+    strategy_weights: dict[str, float] = field(default_factory=dict)
 
 
 class OnlineLearner:
@@ -85,27 +84,23 @@ class OnlineLearner:
 
         # River model: SGD classifier with feature scaling
         self.model = preprocessing.StandardScaler()
-        self.model |= linear_model.LogisticRegression(
-            optimizer=optim.SGD(lr=learning_rate)
-        )
+        self.model |= linear_model.LogisticRegression(optimizer=optim.SGD(lr=learning_rate))
 
         # ADWIN drift detector
-        self.drift_detector = (
-            ADWIN(delta=drift_delta) if enable_drift_detection else None
-        )
+        self.drift_detector = ADWIN(delta=drift_delta) if enable_drift_detection else None
 
         # Performance metrics tracking
         self.accuracy_metric = metrics.Accuracy()
 
         # Hot-path snapshot (atomically updated)
-        self._weight_snapshot: Dict[str, float] = {}
+        self._weight_snapshot: dict[str, float] = {}
         self._snapshot_lock = asyncio.Lock()
 
         # Learning metrics
         self.metrics = LearningMetrics()
 
         # Sample buffer for batch processing
-        self._sample_buffer: List[Tuple[Dict, Any, float]] = []
+        self._sample_buffer: list[tuple[dict, Any, float]] = []
         self._buffer_size = 100
 
         logger.info(
@@ -115,7 +110,7 @@ class OnlineLearner:
 
     async def learn(
         self,
-        features: Dict[str, float],
+        features: dict[str, float],
         action: int,
         reward: float,
     ) -> bool:
@@ -163,9 +158,7 @@ class OnlineLearner:
 
         return drift_detected
 
-    async def learn_batch(
-        self, samples: List[Tuple[Dict[str, float], int, float]]
-    ) -> int:
+    async def learn_batch(self, samples: list[tuple[dict[str, float], int, float]]) -> int:
         """
         Learn from a batch of samples (more efficient).
 
@@ -194,9 +187,7 @@ class OnlineLearner:
 
         # Reset model (start fresh)
         self.model = preprocessing.StandardScaler()
-        self.model |= linear_model.LogisticRegression(
-            optimizer=optim.SGD(lr=self.learning_rate)
-        )
+        self.model |= linear_model.LogisticRegression(optimizer=optim.SGD(lr=self.learning_rate))
 
         # Reset metrics
         self.accuracy_metric = metrics.Accuracy()
@@ -219,7 +210,7 @@ class OnlineLearner:
         except Exception as e:
             logger.error(f"Failed to update weight snapshot: {e}")
 
-    def get_strategy_weights(self) -> Dict[str, float]:
+    def get_strategy_weights(self) -> dict[str, float]:
         """
         Get current strategy weights (hot path - O(1)).
 
@@ -231,7 +222,7 @@ class OnlineLearner:
         """
         return self._weight_snapshot.copy()
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get learning metrics."""
         return {
             "total_samples": self.metrics.total_samples,
@@ -266,7 +257,7 @@ class OnlineLearner:
 
                 await self.learn(features, action, reward)
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             except Exception as e:
                 logger.error(f"Error in learning task: {e}")

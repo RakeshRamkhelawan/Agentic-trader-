@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
-from typing import Any, List
+from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -24,9 +24,7 @@ class ConfigService:
         # Simple in-memory cache
         self._cache = {}
 
-    async def get_setting(
-        self, session: AsyncSession, key: str, default: Any = None
-    ) -> Any:
+    async def get_setting(self, session: AsyncSession, key: str, default: Any = None) -> Any:
         """
         Get a configuration setting by key.
         """
@@ -36,9 +34,7 @@ class ConfigService:
 
         # 2. Check DB
         # TODO: Add find_by_key to BaseRepository to avoid raw SQL here
-        result = await session.execute(
-            select(RuntimeConfig).where(RuntimeConfig.key == key)
-        )
+        result = await session.execute(select(RuntimeConfig).where(RuntimeConfig.key == key))
         config = result.scalar_one_or_none()
 
         if config:
@@ -59,17 +55,13 @@ class ConfigService:
         Set a configuration setting. Creates if not exists, updates otherwise.
         """
         # Check if exists
-        result = await session.execute(
-            select(RuntimeConfig).where(RuntimeConfig.key == key)
-        )
+        result = await session.execute(select(RuntimeConfig).where(RuntimeConfig.key == key))
         existing = result.scalar_one_or_none()
 
         if existing:
             update_data = {
                 "value": value,
-                "updated_at": datetime.now(timezone.utc)
-                .replace(tzinfo=None)
-                .replace(tzinfo=None),
+                "updated_at": datetime.now(UTC).replace(tzinfo=None).replace(tzinfo=None),
             }
             if description:
                 update_data["description"] = description
@@ -85,7 +77,7 @@ class ConfigService:
                 "value": value,
                 "description": description,
                 "group": group,
-                "updated_at": datetime.now(timezone.utc).replace(tzinfo=None),
+                "updated_at": datetime.now(UTC).replace(tzinfo=None),
             }
             new_config = await self.repo.create(session, create_data)
             self._cache[key] = value
@@ -93,7 +85,7 @@ class ConfigService:
 
     async def get_all_settings(
         self, session: AsyncSession, group: str = None
-    ) -> List[RuntimeConfig]:
+    ) -> list[RuntimeConfig]:
         """
         Get all settings, optionally filtered by group.
         """

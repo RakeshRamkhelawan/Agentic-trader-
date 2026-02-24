@@ -7,7 +7,7 @@ enforcing multi-tenant data isolation at the query level.
 
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from backend.core.auth.context import get_current_tenant_optional
 from backend.storage.clickhouse_client import ClickHouseClient
@@ -53,12 +53,12 @@ class TenantAwareClickHouseClient(ClickHouseClient):
 
     def __init__(
         self,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
+        host: str | None = None,
+        port: int | None = None,
         database: str = "agentic_trading",
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        url: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
+        url: str | None = None,
         enforce_tenant: bool = True,
     ):
         """
@@ -135,8 +135,8 @@ class TenantAwareClickHouseClient(ClickHouseClient):
     async def query(
         self,
         sql: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        tenant_id: Optional[str] = None,
+        parameters: dict[str, Any] | None = None,
+        tenant_id: str | None = None,
     ) -> Any:
         """
         Execute query with automatic tenant filtering.
@@ -167,9 +167,9 @@ class TenantAwareClickHouseClient(ClickHouseClient):
     async def insert_with_tenant(
         self,
         table: str,
-        data: List[Dict[str, Any]],
-        column_names: Optional[List[str]] = None,
-        tenant_id: Optional[str] = None,
+        data: list[dict[str, Any]],
+        column_names: list[str] | None = None,
+        tenant_id: str | None = None,
     ) -> None:
         """
         Insert data with automatic tenant_id injection.
@@ -199,8 +199,6 @@ class TenantAwareClickHouseClient(ClickHouseClient):
 
         await self.insert(table, data, column_names)
 
-    async def execute(
-        self, query: str, parameters: Optional[Dict[str, Any]] = None
-    ) -> Any:
+    async def execute(self, query: str, parameters: dict[str, Any] | None = None) -> Any:
         """Execute raw SQL (use with caution, no automatic filtering)."""
         return await super().execute(query, parameters)

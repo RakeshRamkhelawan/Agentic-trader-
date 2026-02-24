@@ -6,17 +6,19 @@ Service voor permission checks en tracking van mode changes.
 
 import logging
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sqlalchemy import Column, DateTime, Integer, String, Text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from backend.core.database import Base
-from backend.governance.trading_permissions import (PermissionDeniedError,
-                                                    TradingPermission,
-                                                    TradingRole,
-                                                    has_permission)
+from backend.governance.trading_permissions import (
+    PermissionDeniedError,
+    TradingPermission,
+    TradingRole,
+    has_permission,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +39,7 @@ class TradingModeChange(Base):
     new_mode = Column(String(16), nullable=False)
     reason = Column(Text, nullable=True)
     approved_by = Column(String(64), nullable=True)
-    timestamp = Column(
-        DateTime, default=lambda: datetime.now(UTC), nullable=False, index=True
-    )
+    timestamp = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False, index=True)
 
     def __repr__(self):
         return f"<TradingModeChange {self.user_id}: {self.previous_mode} → {self.new_mode}>"
@@ -55,7 +55,7 @@ class PermissionService:
     - Audit logging van mode changes
     """
 
-    def __init__(self, db_session: AsyncSession, role_provider: Optional[Any] = None):
+    def __init__(self, db_session: AsyncSession, role_provider: Any | None = None):
         """
         Initialize PermissionService.
 
@@ -68,7 +68,7 @@ class PermissionService:
 
         # Hardcoded role mapping voor development
         # In productie: gebruik JWT claims of database
-        self._user_roles: Dict[str, TradingRole] = {
+        self._user_roles: dict[str, TradingRole] = {
             "admin": TradingRole.ADMIN,
             "operator": TradingRole.OPERATOR,
             "viewer": TradingRole.VIEWER,
@@ -131,8 +131,7 @@ class PermissionService:
 
         if not has_permission(role, permission):
             logger.warning(
-                f"Permission denied: user={user_id}, role={role}, "
-                f"permission={permission}"
+                f"Permission denied: user={user_id}, role={role}, " f"permission={permission}"
             )
             raise PermissionDeniedError(user_id, permission, role)
 
@@ -143,8 +142,8 @@ class PermissionService:
         user_id: str,
         previous_mode: str,
         new_mode: str,
-        reason: Optional[str] = None,
-        approved_by: Optional[str] = None,
+        reason: str | None = None,
+        approved_by: str | None = None,
     ) -> TradingModeChange:
         """
         Log trading mode change naar database.
@@ -182,8 +181,8 @@ class PermissionService:
         return change
 
     async def get_mode_changes(
-        self, user_id: Optional[str] = None, limit: int = 100
-    ) -> List[TradingModeChange]:
+        self, user_id: str | None = None, limit: int = 100
+    ) -> list[TradingModeChange]:
         """
         Get recent mode changes.
 
@@ -194,11 +193,7 @@ class PermissionService:
         Returns:
             List van TradingModeChange records
         """
-        query = (
-            select(TradingModeChange)
-            .order_by(TradingModeChange.timestamp.desc())
-            .limit(limit)
-        )
+        query = select(TradingModeChange).order_by(TradingModeChange.timestamp.desc()).limit(limit)
 
         if user_id:
             query = query.where(TradingModeChange.user_id == user_id)

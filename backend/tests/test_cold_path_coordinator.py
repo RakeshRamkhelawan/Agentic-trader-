@@ -20,8 +20,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from backend.orchestration.cold_path_coordinator import (ColdPathCoordinator,
-                                                         CoordinatorDecision)
+from backend.orchestration.cold_path_coordinator import ColdPathCoordinator, CoordinatorDecision
 
 pytestmark = pytest.mark.unit
 

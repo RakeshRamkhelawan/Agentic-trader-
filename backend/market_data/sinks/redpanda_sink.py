@@ -19,10 +19,11 @@ Date: 14 Feb 2026
 import asyncio
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class TopicType(Enum):
 class SinkConfig:
     """Redpanda sink configuration."""
 
-    bootstrap_servers: List[str] = None  # e.g., ["localhost:9092", "localhost:9093"]
+    bootstrap_servers: list[str] = None  # e.g., ["localhost:9092", "localhost:9093"]
     client_id: str = "ccxt-ws-provider"
     default_topic_prefix: str = "market-data"
     batch_size: int = 100
@@ -70,8 +71,8 @@ class RedpandaSink:
 
     def __init__(
         self,
-        config: Optional[SinkConfig] = None,
-        on_error: Optional[Callable[[str, Exception], None]] = None,
+        config: SinkConfig | None = None,
+        on_error: Callable[[str, Exception], None] | None = None,
     ):
         """
         Initialize Redpanda sink.
@@ -88,12 +89,12 @@ class RedpandaSink:
         self._connected = False
 
         # Batch buffering
-        self._batches: Dict[str, List[Dict[str, Any]]] = {
+        self._batches: dict[str, list[dict[str, Any]]] = {
             TopicType.TICKER.value: [],
             TopicType.ORDERBOOK.value: [],
             TopicType.ORDERS.value: [],
         }
-        self._batch_task: Optional[asyncio.Task] = None
+        self._batch_task: asyncio.Task | None = None
         self._lock = asyncio.Lock()
 
         # Metrics
@@ -118,9 +119,7 @@ class RedpandaSink:
             await self._producer.start()
             self._connected = True
 
-            logger.info(
-                "✓ Connected to Redpanda: %s", ", ".join(self.config.bootstrap_servers)
-            )
+            logger.info("✓ Connected to Redpanda: %s", ", ".join(self.config.bootstrap_servers))
 
             # Start batch flush task
             self._batch_task = asyncio.create_task(self._batch_flush_loop())
@@ -132,7 +131,7 @@ class RedpandaSink:
                 self.on_error("connect", e)
             raise
 
-    async def send_ticker(self, symbol: str, data: Dict[str, Any]) -> None:
+    async def send_ticker(self, symbol: str, data: dict[str, Any]) -> None:
         """
         Send ticker data to Redpanda.
 
@@ -157,7 +156,7 @@ class RedpandaSink:
             if len(self._batches[TopicType.TICKER.value]) >= self.config.batch_size:
                 await self._flush_batch(TopicType.TICKER.value)
 
-    async def send_orderbook(self, symbol: str, data: Dict[str, Any]) -> None:
+    async def send_orderbook(self, symbol: str, data: dict[str, Any]) -> None:
         """
         Send orderbook data to Redpanda.
 
@@ -181,7 +180,7 @@ class RedpandaSink:
             if len(self._batches[TopicType.ORDERBOOK.value]) >= self.config.batch_size:
                 await self._flush_batch(TopicType.ORDERBOOK.value)
 
-    async def send_order(self, symbol: str, data: Dict[str, Any]) -> None:
+    async def send_order(self, symbol: str, data: dict[str, Any]) -> None:
         """
         Send order update to Redpanda.
 
@@ -276,7 +275,7 @@ class RedpandaSink:
             self._batch_task.cancel()
             try:
                 await asyncio.wait_for(self._batch_task, timeout=2.0)
-            except (asyncio.TimeoutError, asyncio.CancelledError):
+            except (TimeoutError, asyncio.CancelledError):
                 pass
 
         # Flush remaining batches
@@ -296,7 +295,7 @@ class RedpandaSink:
     # Metrics & Monitoring
     # ========================================================================
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get sink metrics."""
         return {
             "connected": self._connected,
@@ -318,8 +317,8 @@ class RedpandaSink:
 
 
 async def create_redpanda_sink(
-    bootstrap_servers: List[str] = None,
-    on_error: Optional[Callable[[str, Exception], None]] = None,
+    bootstrap_servers: list[str] = None,
+    on_error: Callable[[str, Exception], None] | None = None,
 ) -> RedpandaSink:
     """
     Factory function to create and connect Redpanda sink.

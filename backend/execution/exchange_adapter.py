@@ -2,17 +2,16 @@ import base64
 import json
 import logging
 import time
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from collections.abc import AsyncGenerator
+from typing import Any
 
 import httpx
 from cryptography.hazmat.primitives import serialization
-from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
-                      wait_exponential)
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
-from backend.schemas.market_data import OrderBook
+from backend.schemas.market_data import OrderBook, OrderUpdate, TickerUpdate
 from backend.schemas.market_data import OrderStatus as MarketOrderStatus
-from backend.schemas.market_data import OrderUpdate, TickerUpdate
 from backend.schemas.orders import OrderRequest, OrderStatus
 
 logger = logging.getLogger(__name__)
@@ -61,17 +60,15 @@ class ExchangeAdapter(ExecutionInterface):
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type(
-            (httpx.NetworkError, httpx.TimeoutException, RateLimitError)
-        ),
+        retry=retry_if_exception_type((httpx.NetworkError, httpx.TimeoutException, RateLimitError)),
         reraise=True,
     )
     async def _request(
         self,
         method: str,
         path: str,
-        params: Optional[Dict] = None,
-        data: Optional[Dict] = None,
+        params: dict | None = None,
+        data: dict | None = None,
     ) -> Any:
         timestamp = str(int(time.time() * 1000))
 
@@ -84,9 +81,7 @@ class ExchangeAdapter(ExecutionInterface):
             query_str = "&".join([f"{k}={v}" for k, v in sorted(params.items())])
             full_path = f"{path}?{query_str}"
 
-        signature = self._generate_signature(
-            timestamp, method, path, query_str, body_str
-        )
+        signature = self._generate_signature(timestamp, method, path, query_str, body_str)
 
         # Generic Headers (Might need adjustment for other exchanges via subclassing)
         headers = {
@@ -107,9 +102,7 @@ class ExchangeAdapter(ExecutionInterface):
             if response.status_code >= 400:
                 if response.status_code == 429:
                     raise RateLimitError("Rate Limited")
-                raise Exception(
-                    f"Exchange API Error ({response.status_code}): {response.text}"
-                )
+                raise Exception(f"Exchange API Error ({response.status_code}): {response.text}")
 
             return response.json()
         except json.JSONDecodeError:
@@ -138,7 +131,7 @@ class ExchangeAdapter(ExecutionInterface):
             raw_response=response,
         )
 
-    async def get_balance(self) -> Dict[str, float]:
+    async def get_balance(self) -> dict[str, float]:
         # Fallback strategy for balance endpoints
         # /api/1.0/balances is the confirmed working endpoint for Revolut X
         endpoints = ["/api/1.0/balances", "/api/1.0/wallets", "/api/1.0/accounts"]
@@ -150,9 +143,7 @@ class ExchangeAdapter(ExecutionInterface):
                 balances = {}
                 if isinstance(response, list):
                     for item in response:
-                        currency = item.get(
-                            "currency", item.get("asset", item.get("code"))
-                        )
+                        currency = item.get("currency", item.get("asset", item.get("code")))
                         balance = item.get(
                             "balance",
                             item.get("available_balance", item.get("amount", 0)),
@@ -168,9 +159,7 @@ class ExchangeAdapter(ExecutionInterface):
                 last_error = e
                 continue
 
-        raise Exception(
-            f"Could not find balance endpoint. Last error: {str(last_error)}"
-        )
+        raise Exception(f"Could not find balance endpoint. Last error: {str(last_error)}")
 
     async def get_order_status(self, order_id: str) -> OrderResult:
         response = await self._request("GET", f"/api/1.0/orders/{order_id}")
@@ -187,15 +176,11 @@ class ExchangeAdapter(ExecutionInterface):
             client_order_id=response.get("client_order_id", ""),
             status=status_map.get(response.get("status"), OrderStatus.PENDING),
             filled_qty=float(response.get("filled_quantity", 0)),
-            avg_price=(
-                float(response.get("avg_price", 0))
-                if response.get("avg_price")
-                else None
-            ),
+            avg_price=(float(response.get("avg_price", 0)) if response.get("avg_price") else None),
             raw_response=response,
         )
 
-    async def get_instruments(self) -> List[Dict[str, Any]]:
+    async def get_instruments(self) -> list[dict[str, Any]]:
         """Get all tradable pairs from Revolut."""
         data = await self._request("GET", "/api/1.0/configuration/pairs")
         if isinstance(data, dict) and "pairs" in data:
@@ -204,12 +189,12 @@ class ExchangeAdapter(ExecutionInterface):
             return data["data"]
         return data
 
-    async def get_ticker(self, symbol: str) -> Dict[str, Any]:
+    async def get_ticker(self, symbol: str) -> dict[str, Any]:
         """Get ticker data for a specific symbol."""
         tickers = await self.get_tickers([symbol])
         return tickers.get(symbol, {"symbol": symbol, "last": 0.0})
 
-    async def get_tickers(self, symbols: List[str]) -> Dict[str, Dict[str, Any]]:
+    async def get_tickers(self, symbols: list[str]) -> dict[str, dict[str, Any]]:
         """Get ticker data for multiple symbols in bulk with chunking."""
         if not symbols:
             return {}
@@ -261,9 +246,7 @@ class ExchangeAdapter(ExecutionInterface):
                             "bid": float(item.get("bid", 0)),
                             "ask": float(item.get("ask", 0)),
                             "volume_24h": (
-                                float(item.get("volume_24h", 0))
-                                if item.get("volume_24h")
-                                else 0.0
+                                float(item.get("volume_24h", 0)) if item.get("volume_24h") else 0.0
                             ),
                             "change_24h": (
                                 float(item.get("price_change_24h", 0))
@@ -275,9 +258,7 @@ class ExchangeAdapter(ExecutionInterface):
                 # ... (Failure logging) ...
                 with open("debug_adapter.txt", "a") as f:
                     f.write(f"Bulk chunk failed: {e}\n")
-                logger.warning(
-                    f"Bulk tickers chunk failed, falling back to individual: {e}"
-                )
+                logger.warning(f"Bulk tickers chunk failed, falling back to individual: {e}")
                 # Fallback to individual fetches for this chunk
                 for sym in chunk:
                     try:
@@ -298,9 +279,7 @@ class ExchangeAdapter(ExecutionInterface):
                             target_item = resp["data"][0]
                         elif isinstance(resp, list) and len(resp) > 0:
                             target_item = resp[0]
-                        elif (
-                            isinstance(resp, dict) and "data" not in resp
-                        ):  # plain dict
+                        elif isinstance(resp, dict) and "data" not in resp:  # plain dict
                             target_item = resp
 
                         if target_item:
@@ -331,7 +310,7 @@ class ExchangeAdapter(ExecutionInterface):
 
     async def get_candles(
         self, symbol: str, timeframe: str = "1h", limit: int = 100
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get OHLCV candles."""
         params = {"interval": timeframe, "limit": limit}
         data = await self._request("GET", f"/api/1.0/candles/{symbol}", params=params)
@@ -342,7 +321,7 @@ class ExchangeAdapter(ExecutionInterface):
     async def cancel_all_orders(self):
         await self._request("DELETE", "/api/1.0/orders")
 
-    async def subscribe_ticker(self, symbol: str) -> AsyncGenerator[TickerUpdate, None]:
+    async def subscribe_ticker(self, symbol: str) -> AsyncGenerator[TickerUpdate]:
         import asyncio
         from datetime import datetime
 
@@ -362,19 +341,15 @@ class ExchangeAdapter(ExecutionInterface):
             except Exception:
                 await asyncio.sleep(5.0)
 
-    async def subscribe_orderbook(
-        self, symbol: str, depth: int = 10
-    ) -> AsyncGenerator[OrderBook, None]:
+    async def subscribe_orderbook(self, symbol: str, depth: int = 10) -> AsyncGenerator[OrderBook]:
         import asyncio
         from datetime import datetime
 
         while True:
-            yield OrderBook(
-                symbol=symbol, bids=[], asks=[], timestamp=datetime.utcnow()
-            )
+            yield OrderBook(symbol=symbol, bids=[], asks=[], timestamp=datetime.utcnow())
             await asyncio.sleep(5.0)
 
-    async def subscribe_orders(self) -> AsyncGenerator[OrderUpdate, None]:
+    async def subscribe_orders(self) -> AsyncGenerator[OrderUpdate]:
         import asyncio
         from datetime import datetime
 

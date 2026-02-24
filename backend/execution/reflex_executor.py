@@ -3,7 +3,6 @@ import logging
 import os
 import time
 import uuid
-from typing import Optional
 
 from backend.core.zero_copy_bridge import TradingIntent, ZeroCopyBridge
 from backend.execution.shadow_portfolio import ShadowPortfolioManager
@@ -30,10 +29,10 @@ class ReflexExecutor:
     ):
         self.shm_name = shm_name
         self.market_shm_name = market_shm_name
-        self.bridge: Optional[ZeroCopyBridge] = None
-        self.market_bridge: Optional[ZeroCopyBridge] = None
+        self.bridge: ZeroCopyBridge | None = None
+        self.market_bridge: ZeroCopyBridge | None = None
         self.running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
 
         # 🔒 PAPER MODE: ALTIJD hardcoded op "paper" voor veiligheid
         # Dit kan alleen worden overschreven via expliciete environment variable in live deployments
@@ -43,9 +42,7 @@ class ReflexExecutor:
         if self.trading_mode == "paper":
             # Paper mode: gebruik ShadowPortfolioManager voor simulatie
             self.portfolio = ShadowPortfolioManager(initial_cash=initial_capital)
-            logger.info(
-                "🛡️ ReflexExecutor in PAPER MODE - Simulatie met ShadowPortfolio"
-            )
+            logger.info("🛡️ ReflexExecutor in PAPER MODE - Simulatie met ShadowPortfolio")
         else:
             self.portfolio = None
             logger.critical("⚠️ ReflexExecutor in LIVE MODE - Echte orders mogelijk!")
@@ -62,9 +59,7 @@ class ReflexExecutor:
         try:
             # Initialize Intent Bridge (Reader Mode)
             # We assume the Mind (or system) has created the SHM
-            self.bridge = ZeroCopyBridge(
-                create=False, shm_name=self.shm_name, dtype_name="intent"
-            )
+            self.bridge = ZeroCopyBridge(create=False, shm_name=self.shm_name, dtype_name="intent")
             if self.bridge.shm is None:
                 self.bridge = None
             logger.info(f"Intent SHM connected: {self.shm_name}")
@@ -103,7 +98,7 @@ class ReflexExecutor:
             self.market_bridge.close()
         logger.info("Reflex Executor stopped.")
 
-    def read_intent(self, symbol: str) -> Optional[TradingIntent]:
+    def read_intent(self, symbol: str) -> TradingIntent | None:
         """
         Read intent from shared memory with minimal overhead.
         Also checks current market price if available.
@@ -135,7 +130,7 @@ class ReflexExecutor:
 
         return intent
 
-    async def _execute_paper_order(self, intent: TradingIntent) -> Optional[dict]:
+    async def _execute_paper_order(self, intent: TradingIntent) -> dict | None:
         """
         Execute order in PAPER mode - simuleert fill zonder echte exchange call.
         Dit is de ENIGE toegestane executie methode in paper mode.
@@ -181,9 +176,7 @@ class ReflexExecutor:
             )
             return fill_info
         else:
-            logger.warning(
-                f"[PAPER REJECTED] {side.value} {intent.symbol}: {result.error_message}"
-            )
+            logger.warning(f"[PAPER REJECTED] {side.value} {intent.symbol}: {result.error_message}")
             return None
 
     async def _reflex_loop(self):
@@ -195,9 +188,7 @@ class ReflexExecutor:
         # 🔒 KRITISCHE PAPER MODE GUARD
         if self.trading_mode != "paper":
             logger.critical("🚫 REFLEX EXECUTOR BLOCKED: Niet in paper mode!")
-            logger.critical(
-                "   Dit systeem is alleen geconfigureerd voor paper trading."
-            )
+            logger.critical("   Dit systeem is alleen geconfigureerd voor paper trading.")
             # In een live systeem zou je hier de live executie starten
             # Voor nu: alleen loggen en stoppen
             return
@@ -219,9 +210,7 @@ class ReflexExecutor:
                         latency_ms = latency_ns / 1_000_000
                         latency_sec = latency_ns / 1_000_000_000
 
-                        self.metrics.order_execution_latency_seconds.observe(
-                            latency_sec
-                        )
+                        self.metrics.order_execution_latency_seconds.observe(latency_sec)
 
                         logger.info(
                             f"[REFLEX] EXECUTE {action_str} {symbol} Size={intent.size} (Latency={latency_ms:.2f}ms)"

@@ -8,14 +8,13 @@ Provides:
 """
 
 import logging
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from backend.core.auth.context import (clear_context, set_current_tenant,
-                                       set_current_user)
+from backend.core.auth.context import clear_context, set_current_tenant, set_current_user
 from backend.core.auth.models import TokenPayload
 
 logger = logging.getLogger(__name__)
@@ -108,13 +107,13 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     def _is_public_path(self, path: str) -> bool:
         """Check if path is public (no auth required).
-        
+
         Handles exact matches, prefix matches (with *), and normalizes
         paths with/without trailing slashes.
         """
         # Normalize path: remove trailing slash (except for root "/")
         normalized_path = path if path == "/" else path.rstrip("/")
-        
+
         # Check exact match (with original and normalized path)
         if path in self.PUBLIC_PATHS:
             return True
@@ -130,15 +129,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 # Also check normalized path
                 if normalized_path.startswith(prefix.rstrip("/")):
                     return True
-                    
+
         # Prefix match for API docs
         if path.startswith("/docs") or path.startswith("/redoc"):
             return True
-            
 
         return False
 
-    def _extract_token(self, request: Request) -> Optional[str]:
+    def _extract_token(self, request: Request) -> str | None:
         """Extract Bearer token from Authorization header."""
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):

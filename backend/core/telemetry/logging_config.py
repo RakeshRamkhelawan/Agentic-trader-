@@ -11,7 +11,7 @@ Date: 2026-02-20
 import logging
 import logging.handlers
 import sys
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Try to import python-json-logger, fall back to basic if not available
 try:
@@ -66,9 +66,7 @@ class StructuredFormatter(logging.Formatter):
             CorrelationFilter().filter(record)
 
         # Build structured prefix
-        trace_id = getattr(record, "trace_id", "unknown")[
-            :8
-        ]  # Truncate for readability
+        trace_id = getattr(record, "trace_id", "unknown")[:8]  # Truncate for readability
         user_id = getattr(record, "user_id", "unknown")
 
         record.structured_prefix = f"[{trace_id}] [{user_id}]"
@@ -89,7 +87,7 @@ class JSONFormatter(
     - Any extra fields from record
     """
 
-    def __init__(self, fmt: Optional[str] = None, *args, **kwargs):
+    def __init__(self, fmt: str | None = None, *args, **kwargs):
         # Define standard fields to include
         standard_fields = [
             "timestamp",
@@ -119,9 +117,9 @@ class JSONFormatter(
 
     def add_fields(
         self,
-        log_record: Dict[str, Any],
+        log_record: dict[str, Any],
         record: logging.LogRecord,
-        message_dict: Dict[str, Any],
+        message_dict: dict[str, Any],
     ):
         """Add standard and correlation fields to log record."""
         super().add_fields(log_record, record, message_dict)
@@ -156,9 +154,7 @@ class JSONFormatter(
             if key not in log_record and not key.startswith("_"):
                 log_record[key] = value
 
-    def formatTime(
-        self, record: logging.LogRecord, datefmt: Optional[str] = None
-    ) -> str:
+    def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:
         """Format timestamp in ISO format."""
         from datetime import datetime
 
@@ -168,7 +164,7 @@ class JSONFormatter(
 def configure_logging(
     level: int = logging.INFO,
     json_format: bool = True,
-    log_file: Optional[str] = None,
+    log_file: str | None = None,
     use_colors: bool = False,
 ) -> None:
     """
@@ -218,9 +214,7 @@ def configure_logging(
                 log_file, maxBytes=10_000_000, backupCount=5
             )
             file_handler.setFormatter(
-                StructuredFormatter(
-                    "%(asctime)s [%(levelname)s] %(structured_prefix)s %(message)s"
-                )
+                StructuredFormatter("%(asctime)s [%(levelname)s] %(structured_prefix)s %(message)s")
             )
 
         file_handler.addFilter(correlation_filter)
@@ -294,13 +288,11 @@ def log_performance(
     logger: logging.Logger,
     operation: str,
     duration_ms: float,
-    threshold_ms: Optional[float] = None,
+    threshold_ms: float | None = None,
     **extra,
 ) -> None:
     """Log performance metric with optional threshold warning."""
-    level = (
-        logging.WARNING if threshold_ms and duration_ms > threshold_ms else logging.INFO
-    )
+    level = logging.WARNING if threshold_ms and duration_ms > threshold_ms else logging.INFO
 
     logger.log(
         level,

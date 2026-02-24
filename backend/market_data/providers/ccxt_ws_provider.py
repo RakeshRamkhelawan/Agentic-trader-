@@ -17,10 +17,11 @@ Date: 14 Feb 2026
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +64,8 @@ class CCXTWSProvider:
     def __init__(
         self,
         exchange_id: str = "binance",
-        config: Optional[ConnectionConfig] = None,
-        account_id: Optional[str] = None,
+        config: ConnectionConfig | None = None,
+        account_id: str | None = None,
     ):
         """
         Initialize WebSocket provider.
@@ -81,24 +82,22 @@ class CCXTWSProvider:
         # Connection state
         self._connected = False
         self._ws_connection = None
-        self._reconnect_task: Optional[asyncio.Task] = None
-        self._heartbeat_task: Optional[asyncio.Task] = None
-        self._receive_task: Optional[asyncio.Task] = None
+        self._reconnect_task: asyncio.Task | None = None
+        self._heartbeat_task: asyncio.Task | None = None
+        self._receive_task: asyncio.Task | None = None
 
         # Subscriptions: {(type, symbol): callback}
-        self._subscriptions: Dict[tuple, Callable] = {}
-        self._subscribed_symbols: Set[str] = set()
+        self._subscriptions: dict[tuple, Callable] = {}
+        self._subscribed_symbols: set[str] = set()
 
         # Message queue and backoff tracking
-        self._message_queue: asyncio.Queue = asyncio.Queue(
-            maxsize=self.config.buffer_size
-        )
+        self._message_queue: asyncio.Queue = asyncio.Queue(maxsize=self.config.buffer_size)
         self._retry_count = 0
         self._last_heartbeat = datetime.now()
         self._last_data_received = datetime.now()
 
         # Supported symbols cache (validated on subscribe)
-        self._supported_symbols: Set[str] = set()
+        self._supported_symbols: set[str] = set()
         self._symbol_cache_ttl = timedelta(hours=1)
         self._symbol_cache_time = datetime.now()
 
@@ -155,9 +154,7 @@ class CCXTWSProvider:
     async def _handle_reconnect(self) -> None:
         """Handle reconnection with exponential backoff."""
         if self._retry_count >= self.config.max_retries:
-            raise ConnectionError(
-                f"Failed to connect after {self.config.max_retries} retries"
-            )
+            raise ConnectionError(f"Failed to connect after {self.config.max_retries} retries")
 
         # Calculate backoff delay (1s, 2s, 4s, 8s, 16s)
         backoff_ms = min(
@@ -180,7 +177,7 @@ class CCXTWSProvider:
     async def subscribe_ticker(
         self,
         symbol: str,
-        callback: Callable[[str, Dict[str, Any]], None],
+        callback: Callable[[str, dict[str, Any]], None],
     ) -> None:
         """
         Subscribe to ticker updates (price, volume).
@@ -207,7 +204,7 @@ class CCXTWSProvider:
     async def subscribe_orderbook(
         self,
         symbol: str,
-        callback: Callable[[str, Dict[str, Any]], None],
+        callback: Callable[[str, dict[str, Any]], None],
         depth: int = 20,
     ) -> None:
         """
@@ -230,7 +227,7 @@ class CCXTWSProvider:
 
     async def subscribe_orders(
         self,
-        callback: Callable[[str, Dict[str, Any]], None],
+        callback: Callable[[str, dict[str, Any]], None],
     ) -> None:
         """
         Subscribe to account order updates.
@@ -295,7 +292,7 @@ class CCXTWSProvider:
                     asyncio.gather(*tasks_to_cancel, return_exceptions=True),
                     timeout=2.0,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.warning("Tasks did not cancel within timeout")
 
         try:
@@ -319,14 +316,10 @@ class CCXTWSProvider:
                         break
 
                     # Check if data received recently
-                    time_since_last = (
-                        datetime.now() - self._last_data_received
-                    ).total_seconds()
+                    time_since_last = (datetime.now() - self._last_data_received).total_seconds()
 
                     if time_since_last > self.config.heartbeat_timeout_s:
-                        logger.warning(
-                            "Heartbeat timeout (no data for %.1fs)", time_since_last
-                        )
+                        logger.warning("Heartbeat timeout (no data for %.1fs)", time_since_last)
                         self._connected = False
                         break
 
@@ -346,16 +339,14 @@ class CCXTWSProvider:
             while self._connected:
                 try:
                     # Simulate data reception with short timeout for responsiveness
-                    message = await asyncio.wait_for(
-                        self._message_queue.get(), timeout=0.5
-                    )
+                    message = await asyncio.wait_for(self._message_queue.get(), timeout=0.5)
 
                     self._last_data_received = datetime.now()
 
                     # Parse and dispatch message
                     await self._dispatch_message(message)
 
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # Normal timeout, continue checking if connected
                     continue
                 except asyncio.CancelledError:
@@ -369,7 +360,7 @@ class CCXTWSProvider:
                 # Don't immediately call _handle_reconnect here to avoid recursive calls
                 logger.info("Receive loop will trigger reconnect on next check")
 
-    async def _dispatch_message(self, message: Dict[str, Any]) -> None:
+    async def _dispatch_message(self, message: dict[str, Any]) -> None:
         """Parse message and call appropriate callback."""
         try:
             msg_type = message.get("type")
@@ -382,9 +373,7 @@ class CCXTWSProvider:
                     try:
                         await callback(symbol, message.get("data", {}))
                     except Exception as e:
-                        logger.error(
-                            "Ticker callback error for %s: %s", symbol, e, exc_info=True
-                        )
+                        logger.error("Ticker callback error for %s: %s", symbol, e, exc_info=True)
 
             elif msg_type == "orderbook" and symbol:
                 key = (SubscriptionType.ORDERBOOK, symbol)
@@ -425,9 +414,7 @@ class CCXTWSProvider:
                 elif sub_type == SubscriptionType.ORDERS:
                     await self.subscribe_orders(callback)
             except Exception as e:
-                logger.error(
-                    "Failed to restore subscription %s/%s: %s", sub_type, symbol, e
-                )
+                logger.error("Failed to restore subscription %s/%s: %s", sub_type, symbol, e)
 
     # ========================================================================
     # PRIVATE: Validation & Utilities
@@ -466,7 +453,7 @@ class CCXTWSProvider:
         self,
         msg_type: str,
         symbol: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
     ) -> None:
         """
         Inject simulated data for testing.
@@ -542,7 +529,7 @@ if __name__ == "__main__":
         # Create provider
         provider = await create_ws_provider("binance", testnet=True)
 
-        async def on_ticker(symbol: str, data: Dict[str, Any]):
+        async def on_ticker(symbol: str, data: dict[str, Any]):
             logger.info("Ticker %s: price=%.2f", symbol, data.get("last", 0))
 
         # Subscribe to BTC/USDT

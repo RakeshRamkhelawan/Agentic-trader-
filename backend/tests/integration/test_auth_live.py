@@ -77,8 +77,7 @@ def test_live_forged_token():
 # Optional Happy Path
 @pytest.mark.skipif(
     not any(
-        os.getenv(k)
-        for k in ["AUTH0_TEST_TOKEN", "BEARER_TOKEN", "ACCESS_TOKEN", "AUTH_TOKEN"]
+        os.getenv(k) for k in ["AUTH0_TEST_TOKEN", "BEARER_TOKEN", "ACCESS_TOKEN", "AUTH_TOKEN"]
     ),
     reason="Define AUTH0_TEST_TOKEN, BEARER_TOKEN, ACCESS_TOKEN or AUTH_TOKEN in .env to test valid access",
 )

@@ -7,8 +7,7 @@ from within the backtest loop.
 
 import asyncio
 import logging
-from contextlib import asynccontextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -25,7 +24,7 @@ class MCPClientWrapper:
         result = await client.call_tool("elemental__fire_position_size", {...})
     """
 
-    def __init__(self, server_params: Optional[StdioServerParameters] = None):
+    def __init__(self, server_params: StdioServerParameters | None = None):
         """
         Initialize MCP client wrapper.
 
@@ -42,12 +41,12 @@ class MCPClientWrapper:
             self.server_params = StdioServerParameters(
                 command=sys.executable,
                 args=["-m", "backend.mcp_broker.server"],
-                env={"PYTHONPATH": str(project_root)}
+                env={"PYTHONPATH": str(project_root)},
             )
         else:
             self.server_params = server_params
 
-        self._session: Optional[ClientSession] = None
+        self._session: ClientSession | None = None
         self._stdio_context = None
         self._initialized = False
 
@@ -91,11 +90,8 @@ class MCPClientWrapper:
         logger.info("MCP client disconnected")
 
     async def call_tool(
-        self,
-        tool_name: str,
-        params: Dict[str, Any],
-        timeout: float = 30.0
-    ) -> Dict[str, Any]:
+        self, tool_name: str, params: dict[str, Any], timeout: float = 30.0
+    ) -> dict[str, Any]:
         """
         Call an MCP tool.
 
@@ -112,15 +108,15 @@ class MCPClientWrapper:
 
         try:
             result = await asyncio.wait_for(
-                self._session.call_tool(tool_name, params),
-                timeout=timeout
+                self._session.call_tool(tool_name, params), timeout=timeout
             )
 
             # Parse result
             if result.content and len(result.content) > 0:
                 content = result.content[0]
-                if hasattr(content, 'text'):
+                if hasattr(content, "text"):
                     import json
+
                     try:
                         return json.loads(content.text)
                     except json.JSONDecodeError:
@@ -128,14 +124,14 @@ class MCPClientWrapper:
 
             return {"success": True}
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error(f"Tool call timeout: {tool_name}")
             raise
         except Exception as e:
             logger.error(f"Tool call failed: {tool_name} - {e}")
             raise
 
-    async def list_tools(self) -> List[str]:
+    async def list_tools(self) -> list[str]:
         """List available tools."""
         if not self._initialized:
             await self.initialize()
@@ -143,7 +139,7 @@ class MCPClientWrapper:
         tools = await self._session.list_tools()
         return [tool.name for tool in tools.tools]
 
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """Check system health."""
         return await self.call_tool("system__health_check", {})
 
@@ -156,8 +152,8 @@ class SynchronousMCPClient:
     """
 
     def __init__(self):
-        self._async_client: Optional[MCPClientWrapper] = None
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._async_client: MCPClientWrapper | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     def connect(self):
         """Connect to MCP server (synchronous)."""
@@ -177,11 +173,8 @@ class SynchronousMCPClient:
             logger.info("Synchronous MCP client disconnected")
 
     def call_tool(
-        self,
-        tool_name: str,
-        params: Dict[str, Any],
-        timeout: float = 30.0
-    ) -> Dict[str, Any]:
+        self, tool_name: str, params: dict[str, Any], timeout: float = 30.0
+    ) -> dict[str, Any]:
         """
         Call an MCP tool (synchronous).
 
@@ -210,19 +203,20 @@ class SynchronousMCPClient:
 
 # Convenience functions for direct tool calls
 
+
 async def get_elemental_consensus(
     fire_vote: float,
     earth_vote: float,
     water_vote: float,
     air_vote: float,
-    client: Optional[MCPClientWrapper] = None
-) -> Dict[str, Any]:
+    client: MCPClientWrapper | None = None,
+) -> dict[str, Any]:
     """Get elemental consensus decision."""
     params = {
         "fire_vote": fire_vote,
         "earth_vote": earth_vote,
         "water_vote": water_vote,
-        "air_vote": air_vote
+        "air_vote": air_vote,
     }
 
     if client:
@@ -237,16 +231,16 @@ async def get_position_size(
     portfolio_value: float,
     vedastro_score: float,
     dominant_planet: str,
-    price_history: List[float],
-    client: Optional[MCPClientWrapper] = None
-) -> Dict[str, Any]:
+    price_history: list[float],
+    client: MCPClientWrapper | None = None,
+) -> dict[str, Any]:
     """Calculate position size using Fire element."""
     params = {
         "symbol": symbol,
         "portfolio_value": portfolio_value,
         "vedastro_score": vedastro_score,
         "dominant_planet": dominant_planet,
-        "price_history": price_history
+        "price_history": price_history,
     }
 
     if client:
@@ -257,15 +251,10 @@ async def get_position_size(
 
 
 async def check_entry_allowed(
-    symbol: str,
-    trade_history: List[Dict[str, Any]],
-    client: Optional[MCPClientWrapper] = None
+    symbol: str, trade_history: list[dict[str, Any]], client: MCPClientWrapper | None = None
 ) -> bool:
     """Check if entry is allowed (Earth element)."""
-    params = {
-        "symbol": symbol,
-        "trade_history": trade_history
-    }
+    params = {"symbol": symbol, "trade_history": trade_history}
 
     if client:
         result = await client.call_tool("elemental__earth_entry_check", params)
@@ -283,8 +272,8 @@ async def check_exit_needed(
     entry_price: float,
     current_price: float,
     peak_price: float,
-    client: Optional[MCPClientWrapper] = None
-) -> Dict[str, Any]:
+    client: MCPClientWrapper | None = None,
+) -> dict[str, Any]:
     """Check if position should be exited."""
     params = {
         "symbol": symbol,
@@ -292,7 +281,7 @@ async def check_exit_needed(
         "current_date": current_date,
         "entry_price": entry_price,
         "current_price": current_price,
-        "peak_price": peak_price
+        "peak_price": peak_price,
     }
 
     if client:
@@ -303,15 +292,10 @@ async def check_exit_needed(
 
 
 async def get_vedastro_signal(
-    symbol: str,
-    current_price: float,
-    client: Optional[MCPClientWrapper] = None
-) -> Dict[str, Any]:
+    symbol: str, current_price: float, client: MCPClientWrapper | None = None
+) -> dict[str, Any]:
     """Get VedAstro trading signal."""
-    params = {
-        "symbol": symbol,
-        "current_price": current_price
-    }
+    params = {"symbol": symbol, "current_price": current_price}
 
     if client:
         return await client.call_tool("vedastro__generate_signal", params)
@@ -326,15 +310,15 @@ async def execute_paper_trade(
     quantity: float,
     current_price: float,
     account_id: str,
-    client: Optional[MCPClientWrapper] = None
-) -> Dict[str, Any]:
+    client: MCPClientWrapper | None = None,
+) -> dict[str, Any]:
     """Execute a paper trade."""
     params = {
         "symbol": symbol,
         "action": action,
         "quantity": quantity,
         "current_price": current_price,
-        "account_id": account_id
+        "account_id": account_id,
     }
 
     if client:
@@ -345,7 +329,7 @@ async def execute_paper_trade(
 
 
 # Global client instance for convenience
-_global_client: Optional[MCPClientWrapper] = None
+_global_client: MCPClientWrapper | None = None
 
 
 async def get_client() -> MCPClientWrapper:

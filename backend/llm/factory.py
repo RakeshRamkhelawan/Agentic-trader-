@@ -7,7 +7,6 @@ based on environment configuration or explicit parameters.
 
 import logging
 import os
-from typing import Optional
 
 from backend.llm.provider_interface import LLMProvider
 from backend.llm.providers.deepseek import DeepSeekProvider
@@ -31,7 +30,7 @@ class LLMFactory:
     _DEFAULT_PROVIDER = "ollama"
 
     @classmethod
-    def create(cls, provider_type: Optional[str] = None, **kwargs) -> LLMProvider:
+    def create(cls, provider_type: str | None = None, **kwargs) -> LLMProvider:
         """
         Create an LLM provider instance.
 
@@ -74,8 +73,7 @@ class LLMFactory:
         if provider_type not in cls._PROVIDERS:
             available = ", ".join(cls._PROVIDERS.keys())
             raise ValueError(
-                f"Unknown provider type: '{provider_type}'. "
-                f"Available providers: {available}"
+                f"Unknown provider type: '{provider_type}'. " f"Available providers: {available}"
             )
 
         # Get provider class and instantiate
@@ -125,9 +123,7 @@ class LLMFactory:
         agent_model = os.getenv(f"LLM_AGENT_{role_key}_MODEL")
 
         # Global fallbacks
-        provider_type = agent_provider or os.getenv(
-            "LLM_PROVIDER", cls._DEFAULT_PROVIDER
-        )
+        provider_type = agent_provider or os.getenv("LLM_PROVIDER", cls._DEFAULT_PROVIDER)
         model_name = agent_model or os.getenv("LLM_MODEL")
 
         # Pass model_name if resolved
@@ -161,15 +157,13 @@ class LLMFactory:
             >>> LLMFactory.register_provider("custom", CustomProvider)
         """
         if not issubclass(provider_class, LLMProvider):
-            raise TypeError(
-                f"{provider_class.__name__} must implement LLMProvider interface"
-            )
+            raise TypeError(f"{provider_class.__name__} must implement LLMProvider interface")
 
         cls._PROVIDERS[name.lower().strip()] = provider_class
 
 
 # Convenience functions
-def create_llm_provider(provider_type: Optional[str] = None, **kwargs) -> LLMProvider:
+def create_llm_provider(provider_type: str | None = None, **kwargs) -> LLMProvider:
     """
     Convenience function to create an LLM provider.
 
