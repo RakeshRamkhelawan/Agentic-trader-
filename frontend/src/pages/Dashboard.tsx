@@ -189,7 +189,7 @@ export function Dashboard() {
         <StatCard
           title='AI Agent Status'
           value={runningAgents > 0 ? 'Active' : agentsStatus.length > 0 ? 'Paused' : '—'}
-          change={`${runningAgents} agent${runningAgents !== 1 ? 's' : ''} running${agentsCoherence > 0 ? ` · ${(Math.min(agentsCoherence, 1) * 100).toFixed(0)}% coherence` : ''}`}
+          change={`${runningAgents} agent${runningAgents !== 1 ? 's' : ''} running${agentsCoherence.total_coherence > 0 ? ` · ${(Math.min(agentsCoherence.total_coherence, 1) * 100).toFixed(0)}% coherence` : ''}`}
           changeType={runningAgents > 0 ? 'positive' : 'neutral'}
           icon={Bot}
           delay={250}

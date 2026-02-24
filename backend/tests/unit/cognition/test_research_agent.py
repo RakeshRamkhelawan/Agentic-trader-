@@ -21,9 +21,7 @@ async def test_scrape_and_analyze(mock_memory):
     with respx.mock(base_url="https://cointelegraph.com") as respx_mock:
         long_text = "Bitcoin ETF approved! This is a massive signal for the entire crypto market. Bull run confirmed."
         respx_mock.get("").mock(
-            return_value=Response(
-                200, text=f"<html><body><p>{long_text}</p></body></html>"
-            )
+            return_value=Response(200, text=f"<html><body><p>{long_text}</p></body></html>")
         )
 
         # Override sources voor test snelheid

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Bell, Moon, Sun, User, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
-import { useAuthStore } from '@/store/authStore';
+import { useAuth } from '@/context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -32,7 +32,7 @@ const pageTitles: Record<string, string> = {
 export function Header({ className }: HeaderProps) {
   const navigate = useNavigate();
   const { sidebarExpanded } = useAppStore();
-  const { user, logout } = useAuthStore();
+  const { user, logout } = useAuth();
   const [isDark, setIsDark] = useState(true);
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -156,10 +156,10 @@ export function Header({ className }: HeaderProps) {
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-trade-purple to-trade-blue flex items-center justify-center">
                   <span className="text-sm font-semibold text-white">
-                    {user.firstName?.charAt(0).toUpperCase() || user.displayName?.charAt(0).toUpperCase()}
+                    {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <span className="text-sm text-white hidden sm:inline">{user.displayName}</span>
+                <span className="text-sm text-white hidden sm:inline">{user.name || user.email}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-[#111111] border-[#262626]">

@@ -6,10 +6,12 @@ Quick access to common market scenarios.
 
 from backend.core.schemas.ooda_types import MarketRegime
 from backend.testing.market_datasets import EvaluationDataset, MarketScenario
-from backend.testing.synthetic_data import (generate_flash_crash,
-                                            generate_ranging_market,
-                                            generate_trending_market,
-                                            generate_volatile_market)
+from backend.testing.synthetic_data import (
+    generate_flash_crash,
+    generate_ranging_market,
+    generate_trending_market,
+    generate_volatile_market,
+)
 
 
 class ScenarioLibrary:
@@ -84,9 +86,7 @@ class ScenarioLibrary:
             description="Sideways consolidation ±5% range",
             symbol="ETH/USDT",
             timeframe="1d",
-            data_points=generate_ranging_market(
-                center_price=3000.0, range_pct=0.05, num_days=30
-            ),
+            data_points=generate_ranging_market(center_price=3000.0, range_pct=0.05, num_days=30),
             expected_regime=MarketRegime.SIDEWAYS,
             metadata={
                 "category": "ranging",
@@ -107,9 +107,7 @@ class ScenarioLibrary:
             description="High volatility choppy market ±8% swings",
             symbol="SOL/USDT",
             timeframe="1d",
-            data_points=generate_volatile_market(
-                start_price=150.0, volatility=0.08, num_days=30
-            ),
+            data_points=generate_volatile_market(start_price=150.0, volatility=0.08, num_days=30),
             expected_regime=MarketRegime.VOLATILE,
             metadata={"category": "volatile", "expected_trades": "cautious or avoid"},
         )

@@ -1,14 +1,14 @@
 import pytest
 
 from backend.core.regime_detector import RegimeDetector
+
 # Importeer alle componenten die we hebben gebouwd
 from backend.core.schemas.ooda_types import MarketRegime
 from backend.execution.shadow_portfolio import ShadowPortfolioManager
 from backend.execution.smart_order_router import SmartOrderRouter
 from backend.risk.validators import RiskValidator, RiskViolationError
 from backend.schemas.market_data import MarketTick
-from backend.schemas.orders import (OrderRequest, OrderSide, OrderStatus,
-                                    OrderType)
+from backend.schemas.orders import OrderRequest, OrderSide, OrderStatus, OrderType
 
 # --- FIXTURES VOOR DE HELE KETEN ---
 

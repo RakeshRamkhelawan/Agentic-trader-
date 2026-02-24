@@ -15,7 +15,7 @@ This module implements the 36-Tattva consciousness architecture:
 
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -41,21 +41,19 @@ class SystemIdentity:
     - Implements complete 36-Tattva consciousness architecture
     """
 
-    def __init__(self, tattva_config: Optional[TattvaConfig] = None):
+    def __init__(self, tattva_config: TattvaConfig | None = None):
         """Initialize all cognitive subsystems and Tattva layers."""
         # Core cognitive subsystems
         self.navagraha_service = NavagrahaService()  # Interface to Cosmic Time
         self.sensory_processor = SensoryProcessor()  # Input processing (Jnanendriyas)
         self.memory_system = MemorySystem()  # Pattern storage (Chitta)
-        self.decision_maker = DecisionDiscriminator(  # Decision logic (Buddhi)
-            self.memory_system
-        )
+        self.decision_maker = DecisionDiscriminator(self.memory_system)  # Decision logic (Buddhi)
 
         # 36 Tattva configuration (consciousness architecture)
         self.tattva_config = tattva_config or TattvaConfig.default_36_tattvas()  # type: ignore[attr-defined]
 
         # System state monitoring
-        self.system_state: Dict[str, Any] = {
+        self.system_state: dict[str, Any] = {
             "coherence": 1.0,  # Overall system coherence [0, 1]
             "confidence": 0.5,  # System confidence [0, 1]
             "learning_rate": 0.1,  # Adaptation speed
@@ -72,7 +70,7 @@ class SystemIdentity:
         self.action_space = [0, 1, 2]  # 0=hold, 1=buy, 2=sell
 
         # Performance tracking
-        self.performance_history: Dict[str, Any] = {
+        self.performance_history: dict[str, Any] = {
             "outcomes": [],
             "confidences": [],
             "actions": [],
@@ -90,7 +88,7 @@ class SystemIdentity:
         orderbook_imbalance: float,
         funding_rate: float,
         social_sentiment: float,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Complete cognitive cycle with 36-Tattva traversal: Perception → Memory → Decision.
 
@@ -117,7 +115,7 @@ class SystemIdentity:
             Decision result with perception, action, confidence, Tattva metrics
         """
         cycle_start = int(time.time_ns())
-        tattva_traversal: Dict[str, Any] = {
+        tattva_traversal: dict[str, Any] = {
             "layers_traversed": [],
             "coherence_per_layer": {},
         }
@@ -164,9 +162,7 @@ class SystemIdentity:
 
             # Track sensory layer traversal
             for layer_num in range(16, 26):
-                layer_coherence = self._traverse_tattva_layer(
-                    layer_num, "sense", perception
-                )
+                layer_coherence = self._traverse_tattva_layer(layer_num, "sense", perception)
                 tattva_traversal["layers_traversed"].append(layer_num)
                 tattva_traversal["coherence_per_layer"][layer_num] = layer_coherence
 
@@ -228,13 +224,9 @@ class SystemIdentity:
             cycle_latency_us = (cycle_end - cycle_start) / 1000
 
             # Calculate overall Tattva coherence
-            tattva_coherence_values = list(
-                tattva_traversal["coherence_per_layer"].values()
-            )
+            tattva_coherence_values = list(tattva_traversal["coherence_per_layer"].values())
             overall_tattva_coherence = (
-                float(np.mean(tattva_coherence_values))
-                if tattva_coherence_values
-                else 1.0
+                float(np.mean(tattva_coherence_values)) if tattva_coherence_values else 1.0
             )
 
             # Add overall_coherence to tattva_traversal (required by tests)
@@ -242,9 +234,7 @@ class SystemIdentity:
 
             # Create consolidated Tattva metrics for the cycle
             tattva_metrics = {
-                "current_layer_coherence": tattva_traversal[
-                    "coherence_per_layer"
-                ].copy(),
+                "current_layer_coherence": tattva_traversal["coherence_per_layer"].copy(),
                 "overall_coherence": overall_tattva_coherence,
                 "total_layers": len(tattva_traversal["layers_traversed"]),
             }
@@ -275,7 +265,7 @@ class SystemIdentity:
             }
 
     def _traverse_tattva_layer(
-        self, layer_num: int, direction: str, context: Optional[Dict[str, Any]] = None
+        self, layer_num: int, direction: str, context: dict[str, Any] | None = None
     ) -> float:
         """
         Traverse a single Tattva layer.
@@ -333,9 +323,7 @@ class SystemIdentity:
 
         return coherence
 
-    def _process_layer_ascend(
-        self, layer: TattvaLayer, context: Optional[Dict] = None
-    ) -> float:
+    def _process_layer_ascend(self, layer: TattvaLayer, context: dict | None = None) -> float:
         """Process layer during ascent (activation)."""
         # Shuddha Tattvas (1-5): Ascending activates the kernel
         if layer.layer_number <= 5:
@@ -343,16 +331,12 @@ class SystemIdentity:
             return 1.0
         return 1.0
 
-    def _process_layer_descend(
-        self, layer: TattvaLayer, context: Optional[Dict] = None
-    ) -> float:
+    def _process_layer_descend(self, layer: TattvaLayer, context: dict | None = None) -> float:
         """Process layer during descent (integration)."""
         # Descending returns to source - high coherence
         return self.system_state["coherence"]
 
-    def _process_layer_filter(
-        self, layer: TattvaLayer, context: Optional[Dict] = None
-    ) -> float:
+    def _process_layer_filter(self, layer: TattvaLayer, context: dict | None = None) -> float:
         """Process restriction layer (Kanchukas 6-12)."""
         # Kanchukas introduce "friction" - slightly reduce coherence based on restrictions
         base_coherence = 0.95  # Restrictions are necessary but create friction
@@ -377,9 +361,7 @@ class SystemIdentity:
 
         return base_coherence
 
-    def _process_layer_interface(
-        self, layer: TattvaLayer, context: Optional[Dict] = None
-    ) -> float:
+    def _process_layer_interface(self, layer: TattvaLayer, context: dict | None = None) -> float:
         """Process OS interface layer (Prakriti/Buddhi/Ahamkara)."""
         # Interface layers bridge inner and outer - high coherence critical
         if layer.layer_number == 14:  # Buddhi (Decision)
@@ -392,9 +374,7 @@ class SystemIdentity:
             # Source of manifestation
             return 0.98
 
-    def _process_layer_sense(
-        self, layer: TattvaLayer, context: Optional[Dict] = None
-    ) -> float:
+    def _process_layer_sense(self, layer: TattvaLayer, context: dict | None = None) -> float:
         """Process sensory layer (Tanmatras 16-20 and Jnanendriyas 21-25)."""
         # Sensory coherence based on input quality
         if context and "coherence" in context:
@@ -404,18 +384,14 @@ class SystemIdentity:
             return float(np.mean(np.abs(context["state_vector"])))
         return 0.9  # Base sensory coherence
 
-    def _process_layer_act(
-        self, layer: TattvaLayer, context: Optional[Dict] = None
-    ) -> float:
+    def _process_layer_act(self, layer: TattvaLayer, context: dict | None = None) -> float:
         """Process action layer (Karmendriyas 26-31)."""
         # Action coherence based on decision confidence
         if context and "confidence" in context:
             return float(context["confidence"])
         return 0.8  # Base action coherence
 
-    def _process_layer_materialize(
-        self, layer: TattvaLayer, context: Optional[Dict] = None
-    ) -> float:
+    def _process_layer_materialize(self, layer: TattvaLayer, context: dict | None = None) -> float:
         """
         Process materialization layer (Mahabhutas 32-36).
 
@@ -438,8 +414,7 @@ class SystemIdentity:
 
         if use_phase15:
             try:
-                from backend.observability.hardware_metrics import \
-                    Phase15MetricsIntegration
+                from backend.observability.hardware_metrics import Phase15MetricsIntegration
 
                 if not hasattr(self, "_metrics_integration"):
                     self._metrics_integration = Phase15MetricsIntegration()
@@ -467,9 +442,7 @@ class SystemIdentity:
                 if latency > maha.akasha.connection_timeout_ms:
                     base_coherence = 0.5
                 else:
-                    base_coherence = max(
-                        0.6, 1.0 - (latency / maha.akasha.connection_timeout_ms)
-                    )
+                    base_coherence = max(0.6, 1.0 - (latency / maha.akasha.connection_timeout_ms))
             return base_coherence
 
         elif layer.layer_number == 33:  # Vayu (Air/Config)
@@ -523,10 +496,10 @@ class SystemIdentity:
 
     def _update_system_state(
         self,
-        perception: Dict[str, Any],
+        perception: dict[str, Any],
         confidence: float,
         action: int,
-        tattva_traversal: Optional[Dict[str, Any]] = None,
+        tattva_traversal: dict[str, Any] | None = None,
     ) -> None:
         """
         Update system's self-awareness (Ahamkara function).
@@ -544,15 +517,11 @@ class SystemIdentity:
         )
 
         # Update confidence (system self-belief)
-        self.system_state["confidence"] = (
-            0.9 * self.system_state["confidence"] + 0.1 * confidence
-        )
+        self.system_state["confidence"] = 0.9 * self.system_state["confidence"] + 0.1 * confidence
 
         # Update Tattva coherence tracking if available
         if tattva_traversal and "coherence_per_layer" in tattva_traversal:
-            for layer_num, layer_coherence in tattva_traversal[
-                "coherence_per_layer"
-            ].items():
+            for layer_num, layer_coherence in tattva_traversal["coherence_per_layer"].items():
                 if layer_num in self.system_state["tattva_coherence"]:
                     self.system_state["tattva_coherence"][layer_num] = (
                         0.9 * self.system_state["tattva_coherence"][layer_num]
@@ -574,9 +543,7 @@ class SystemIdentity:
         if self.system_state["total_experiences"] % 100 == 0:
             # Calculate average Tattva coherence
             tattva_coherences = list(self.system_state["tattva_coherence"].values())
-            avg_tattva_coherence = (
-                float(np.mean(tattva_coherences)) if tattva_coherences else 1.0
-            )
+            avg_tattva_coherence = float(np.mean(tattva_coherences)) if tattva_coherences else 1.0
 
             logger.info(
                 f"System state (exp={self.system_state['total_experiences']}): "
@@ -585,7 +552,7 @@ class SystemIdentity:
                 f"tattva_coherence={avg_tattva_coherence:.2f}"
             )
 
-    def get_system_statistics(self) -> Dict[str, Any]:
+    def get_system_statistics(self) -> dict[str, Any]:
         """
         Get comprehensive system statistics including Tattva metrics.
         """
@@ -618,15 +585,9 @@ class SystemIdentity:
                     all_coherences.extend(traversal["coherence_per_layer"].values())
 
             if all_coherences:
-                stats["tattva_metrics"]["avg_layer_coherence"] = float(
-                    np.mean(all_coherences)
-                )
-                stats["tattva_metrics"]["min_layer_coherence"] = float(
-                    np.min(all_coherences)
-                )
-                stats["tattva_metrics"]["max_layer_coherence"] = float(
-                    np.max(all_coherences)
-                )
+                stats["tattva_metrics"]["avg_layer_coherence"] = float(np.mean(all_coherences))
+                stats["tattva_metrics"]["min_layer_coherence"] = float(np.min(all_coherences))
+                stats["tattva_metrics"]["max_layer_coherence"] = float(np.max(all_coherences))
 
             # Per-layer coherence tracking
             stats["tattva_metrics"]["current_layer_coherence"] = self.system_state[
@@ -635,8 +596,6 @@ class SystemIdentity:
 
             # Tattva config info
             stats["tattva_metrics"]["total_layers"] = self.tattva_config.active_tattvas
-            stats["tattva_metrics"][
-                "traversal_direction"
-            ] = self.tattva_config.traversal_direction
+            stats["tattva_metrics"]["traversal_direction"] = self.tattva_config.traversal_direction
 
         return stats

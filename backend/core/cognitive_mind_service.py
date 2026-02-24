@@ -2,15 +2,14 @@ import asyncio
 import json
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 import redis.asyncio as redis
 
 from backend.core.config.settings import Settings
 from backend.core.karma.episode_memory import EpisodeMemory
 from backend.core.risk.guna_sizing import GunaType
-from backend.core.risk.mifid_checks import (ClientClassification,
-                                            ClientProfile, TradeRequest)
+from backend.core.risk.mifid_checks import ClientClassification, ClientProfile, TradeRequest
 from backend.core.risk.portfolio_risk import PortfolioRiskCalculator, RiskState
 from backend.core.risk.risk_manager import RiskManager
 from backend.core.strategy.selector import StrategySelector
@@ -31,10 +30,10 @@ class CognitiveMindService:
     def __init__(self, shm_name: str = "trading_intents_v2"):
         self.settings = Settings()
         self.shm_name = shm_name
-        self.redis_client: Optional[redis.Redis] = None
-        self.bridge: Optional[ZeroCopyBridge] = None
+        self.redis_client: redis.Redis | None = None
+        self.bridge: ZeroCopyBridge | None = None
         self.running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
 
         # Risk Management (Kanchukas/Constraints)
         self.risk_manager = RiskManager()
@@ -68,9 +67,7 @@ class CognitiveMindService:
         logger.info("Starting Cognitive Mind Service...")
 
         # Connect to Redis
-        self.redis_client = redis.from_url(
-            self.settings.REDIS_URL, decode_responses=True
-        )
+        self.redis_client = redis.from_url(self.settings.REDIS_URL, decode_responses=True)
         await self.redis_client.ping()
 
         # Initialize Zero-Copy Bridge (Writer Mode)
@@ -109,7 +106,7 @@ class CognitiveMindService:
             timestamp_ns=0,
         )
 
-    async def process_cycle(self, soul_context: Optional[Dict[str, Any]] = None):
+    async def process_cycle(self, soul_context: dict[str, Any] | None = None):
         """Single cognitive cycle for testing."""
         # 1. Fetch Soul Context
         if soul_context is None:
@@ -140,13 +137,9 @@ class CognitiveMindService:
                     max_drawdown=soul_context.get("max_drawdown", 0.0),
                     correlation=soul_context.get("correlation", 0.0),
                     liquidity=soul_context.get("liquidity", 1.0),
-                    volatility_percentile=soul_context.get(
-                        "volatility_percentile", 0.5
-                    ),
+                    volatility_percentile=soul_context.get("volatility_percentile", 0.5),
                 )
-                risk_eval = self.portfolio_risk_calculator.evaluate(
-                    risk_state, guna=current_guna
-                )
+                risk_eval = self.portfolio_risk_calculator.evaluate(risk_state, guna=current_guna)
 
                 if risk_eval.action == "hold":
                     logger.warning(
@@ -154,17 +147,13 @@ class CognitiveMindService:
                     )
                     intent = self._hold_intent()
                     self.bridge.write_intent("BTC/USD", intent)
-                    self.metrics.generated_shm_updates_total.labels(
-                        shm_name="intent_shm"
-                    ).inc()
+                    self.metrics.generated_shm_updates_total.labels(shm_name="intent_shm").inc()
                     logger.info(
                         f"Mind: Written Intent to SHM (Action=0, Size=0.0, Reason={risk_eval.reason})"
                     )
                     return
             except Exception as e:
-                logger.error(
-                    f"Portfolio risk calculator error: {e}, falling back to HOLD"
-                )
+                logger.error(f"Portfolio risk calculator error: {e}, falling back to HOLD")
                 intent = self._hold_intent()
                 self.bridge.write_intent("BTC/USD", intent)
                 return
@@ -192,9 +181,7 @@ class CognitiveMindService:
                 notional_value=candidate_intent.size * candidate_intent.entry_price,
             )
 
-            risk_decision = self.risk_manager.evaluate_trade(
-                self.profile, trade_req, current_guna
-            )
+            risk_decision = self.risk_manager.evaluate_trade(self.profile, trade_req, current_guna)
             reason = risk_decision.reason
 
             if risk_decision.decision == "reject":
@@ -210,9 +197,7 @@ class CognitiveMindService:
                     avg_win=1.5,
                     avg_loss=1.0,
                 )
-                _, guna_mult = self.portfolio_risk_calculator.get_guna_risk_params(
-                    current_guna
-                )
+                _, guna_mult = self.portfolio_risk_calculator.get_guna_risk_params(current_guna)
                 modulated_size = self.portfolio_risk_calculator.modulated_size(
                     kelly_size=kelly_size,
                     guna_multiplier=guna_mult,
@@ -227,9 +212,7 @@ class CognitiveMindService:
                 )
                 candidate_intent.size = final_size
                 intent = candidate_intent
-                reason = (
-                    "OK" if risk_decision.decision == "accept" else risk_decision.reason
-                )
+                reason = "OK" if risk_decision.decision == "accept" else risk_decision.reason
 
             if self.bridge:
                 self.bridge.write_intent("BTC/USD", intent)

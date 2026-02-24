@@ -48,9 +48,7 @@ def run_generator():
             try:
                 # Update Market Data
                 for sym in symbols:
-                    base_price = (
-                        50000 if "BTC" in sym else (3000 if "ETH" in sym else 100)
-                    )
+                    base_price = 50000 if "BTC" in sym else (3000 if "ETH" in sym else 100)
                     volatility = 0.001
                     price = base_price * (
                         1 + math.sin(t) * volatility + random.gauss(0, volatility / 10)

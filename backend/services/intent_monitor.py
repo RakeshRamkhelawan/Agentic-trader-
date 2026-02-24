@@ -52,6 +52,4 @@ class IntentMonitor:
                 f"Deviation Score: {deviation:.4f}"
             )
         else:
-            self.logger.info(
-                f"Guna balance within acceptable limits. Deviation: {deviation:.4f}"
-            )
+            self.logger.info(f"Guna balance within acceptable limits. Deviation: {deviation:.4f}")

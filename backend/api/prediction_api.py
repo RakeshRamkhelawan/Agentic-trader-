@@ -6,7 +6,7 @@ Routes all requests to the prediction-intelligence container.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -31,16 +31,16 @@ class SignalResponse(BaseModel):
     category: str
     signal_type: str
     confidence: float
-    symbol: Optional[str] = None
-    indicators: Dict[str, float]
+    symbol: str | None = None
+    indicators: dict[str, float]
     timestamp: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class SignalsResponse(BaseModel):
     """Response for signals list endpoint."""
 
-    signals: List[SignalResponse]
+    signals: list[SignalResponse]
     total: int
     source: str = "prediction-intelligence"
 
@@ -53,15 +53,15 @@ class AnalysisRequest(BaseModel):
         description="Type of analysis: maker_taker, volume_trends, statistical_tests",
     )
     market: str = Field("kalshi", description="Target market: kalshi or polymarket")
-    category: Optional[str] = Field(None, description="Optional category filter")
+    category: str | None = Field(None, description="Optional category filter")
 
 
 class AnalysisResponse(BaseModel):
     """Response from analysis endpoint."""
 
-    job_id: Optional[str] = None
+    job_id: str | None = None
     status: str
-    message: Optional[str] = None
+    message: str | None = None
 
 
 class AnalysisStatusResponse(BaseModel):
@@ -69,9 +69,9 @@ class AnalysisStatusResponse(BaseModel):
 
     job_id: str
     status: str
-    progress: Optional[float] = None
-    results: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    progress: float | None = None
+    results: dict[str, Any] | None = None
+    error: str | None = None
 
 
 class MarketSummaryResponse(BaseModel):
@@ -106,21 +106,13 @@ class ServiceStatusResponse(BaseModel):
     description="Fetch market signals from prediction-intelligence service",
 )
 async def get_prediction_signals(
-    market: Optional[str] = Query(
-        None, description="Filter by market: kalshi, polymarket"
-    ),
-    category: Optional[str] = Query(
-        None, description="Filter by category: crypto, politics, etc"
-    ),
-    signal_type: Optional[str] = Query(
+    market: str | None = Query(None, description="Filter by market: kalshi, polymarket"),
+    category: str | None = Query(None, description="Filter by category: crypto, politics, etc"),
+    signal_type: str | None = Query(
         None, description="Filter by signal type: bullish, bearish, neutral"
     ),
-    min_confidence: float = Query(
-        0.0, ge=0.0, le=1.0, description="Minimum confidence threshold"
-    ),
-    symbol: Optional[str] = Query(
-        None, description="Filter by trading symbol: BTC, ETH, etc"
-    ),
+    min_confidence: float = Query(0.0, ge=0.0, le=1.0, description="Minimum confidence threshold"),
+    symbol: str | None = Query(None, description="Filter by trading symbol: BTC, ETH, etc"),
     limit: int = Query(10, ge=1, le=100, description="Max results"),
 ) -> SignalsResponse:
     """

@@ -5,7 +5,6 @@ Role-Based Access Control voor veilige switching tussen trading modes.
 """
 
 from enum import Enum
-from typing import Optional
 
 
 class TradingPermission(str, Enum):
@@ -48,14 +47,12 @@ class PermissionDeniedError(Exception):
         self,
         user_id: str,
         permission: TradingPermission,
-        role: Optional[TradingRole] = None,
+        role: TradingRole | None = None,
     ):
         self.user_id = user_id
         self.permission = permission
         self.role = role
-        super().__init__(
-            f"User '{user_id}' (role={role}) lacks permission: {permission}"
-        )
+        super().__init__(f"User '{user_id}' (role={role}) lacks permission: {permission}")
 
 
 def has_permission(role: TradingRole, permission: TradingPermission) -> bool:

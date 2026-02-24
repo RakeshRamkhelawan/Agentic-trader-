@@ -1,12 +1,17 @@
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
 from backend.core.auth.context import get_current_tenant_optional
-from backend.llm.providers import (GeminiProvider, LLMProvider, MockProvider,
-                                   OllamaProvider, OpenAIProvider)
+from backend.llm.providers import (
+    GeminiProvider,
+    LLMProvider,
+    MockProvider,
+    OllamaProvider,
+    OpenAIProvider,
+)
 from backend.llm.providers.deepseek import DeepSeekProvider
 from backend.llm.resilience import CircuitBreaker, CircuitBreakerOpenException
 from backend.llm.usage_tracker import UsageTracker
@@ -22,15 +27,15 @@ class LLMMessage(BaseModel):
 
 class LLMResponse(BaseModel):
     text: str
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 class LLMService:
     def __init__(
         self,
         provider: LLMProvider,
-        usage_tracker: Optional[UsageTracker] = None,
-        fallback_provider: Optional[LLMProvider] = None,
+        usage_tracker: UsageTracker | None = None,
+        fallback_provider: LLMProvider | None = None,
     ):
         self.provider = provider
         self.fallback_provider = fallback_provider
@@ -101,9 +106,7 @@ class LLMService:
         )
         usage_tracker = UsageTracker(clickhouse_client=clickhouse_client)
 
-        logger.info(
-            f"LLM Service initialized with provider: {provider.__class__.__name__}"
-        )
+        logger.info(f"LLM Service initialized with provider: {provider.__class__.__name__}")
         return cls(provider, usage_tracker, fallback_provider)
 
     async def _track_usage(self, prompt: str, response_text: str, model: str):
@@ -113,9 +116,7 @@ class LLMService:
                 # For now using the model string passed to methods or from env
 
                 # Count tokens
-                prompt_tokens = self.usage_tracker.token_counter.count_tokens(
-                    prompt, model
-                )
+                prompt_tokens = self.usage_tracker.token_counter.count_tokens(prompt, model)
                 completion_tokens = self.usage_tracker.token_counter.count_tokens(
                     response_text, model
                 )
@@ -137,15 +138,11 @@ class LLMService:
             except Exception as e:
                 logger.warning(f"Failed to track usage: {e}")
 
-    async def generate_explanation(
-        self, prompt: str, context: Optional[Dict[str, Any]] = None
-    ) -> str:
+    async def generate_explanation(self, prompt: str, context: dict[str, Any] | None = None) -> str:
         """
         Generates a human-readable explanation using the LLM.
         """
-        system_prompt = (
-            "You are an expert financial analyst. Explain the rationale clearly."
-        )
+        system_prompt = "You are an expert financial analyst. Explain the rationale clearly."
         if context and context.get("role"):
             system_prompt += f" Act as a {context['role']}."
 
@@ -171,7 +168,7 @@ class LLMService:
 
         return response_text
 
-    async def analyze_sentiment(self, text: str) -> Dict[str, Any]:
+    async def analyze_sentiment(self, text: str) -> dict[str, Any]:
         """
         Analyzes sentiment and returns structured JSON.
         """

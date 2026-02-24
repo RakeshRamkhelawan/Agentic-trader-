@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 from cryptography.hazmat.primitives import serialization
@@ -53,10 +53,10 @@ class Order:
     quantity: str
     filled_quantity: str
     leaves_quantity: str
-    price: Optional[str]
+    price: str | None
     status: str
     time_in_force: str
-    execution_instructions: List[str]
+    execution_instructions: list[str]
     created_date: int
     updated_date: int
 
@@ -70,14 +70,12 @@ class RevolutXClient:
     """
 
     BASE_URL = "https://revx.revolut.com/api/1.0"
-    TIMESTAMP_OFFSET_MS = (
-        5000  # Subtract 5 seconds to prevent "future timestamp" errors
-    )
+    TIMESTAMP_OFFSET_MS = 5000  # Subtract 5 seconds to prevent "future timestamp" errors
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        private_key_path: Optional[str] = None,
+        api_key: str | None = None,
+        private_key_path: str | None = None,
         timeout: float = 30.0,
     ):
         """
@@ -89,13 +87,11 @@ class RevolutXClient:
             timeout: Request timeout in seconds
         """
         self.api_key = api_key or os.getenv("REVOLUT_API_KEY")
-        self.private_key_path = private_key_path or os.getenv(
-            "REVOLUT_PRIVATE_KEY_PATH"
-        )
+        self.private_key_path = private_key_path or os.getenv("REVOLUT_PRIVATE_KEY_PATH")
         self.timeout = timeout
 
-        self._session: Optional[httpx.AsyncClient] = None
-        self._private_key: Optional[Ed25519PrivateKey] = None
+        self._session: httpx.AsyncClient | None = None
+        self._private_key: Ed25519PrivateKey | None = None
         self._authenticated = False
 
         logger.info("✅ RevolutXClient initialized")
@@ -108,16 +104,12 @@ class RevolutXClient:
 
         private_key_file = Path(self.private_key_path)
         if not private_key_file.exists():
-            raise FileNotFoundError(
-                f"Private key file not found: {self.private_key_path}"
-            )
+            raise FileNotFoundError(f"Private key file not found: {self.private_key_path}")
 
         with open(private_key_file, "rb") as f:
             private_key_data = f.read()
 
-        private_key = serialization.load_pem_private_key(
-            private_key_data, password=None
-        )
+        private_key = serialization.load_pem_private_key(private_key_data, password=None)
 
         if not isinstance(private_key, Ed25519PrivateKey):
             raise ValueError("Private key is not an Ed25519 key")
@@ -262,8 +254,8 @@ class RevolutXClient:
             logger.info("Connection closed")
 
     async def get_active_orders(
-        self, symbols: Optional[List[str]] = None, limit: int = 100
-    ) -> List[Order]:
+        self, symbols: list[str] | None = None, limit: int = 100
+    ) -> list[Order]:
         """
         Get active orders
 
@@ -297,9 +289,7 @@ class RevolutXClient:
             "X-Revx-Signature": signature,
         }
 
-        response = await self._session.get(
-            f"/orders/active?{query_string}", headers=headers
-        )
+        response = await self._session.get(f"/orders/active?{query_string}", headers=headers)
 
         if response.status_code == 200:
             data = response.json()
@@ -316,12 +306,12 @@ class RevolutXClient:
         symbol: str,
         side: OrderSide,
         quantity: str,
-        price: Optional[str] = None,
-        client_order_id: Optional[str] = None,
+        price: str | None = None,
+        client_order_id: str | None = None,
         order_type: OrderType = OrderType.LIMIT,
         time_in_force: str = "gtc",
-        execution_instructions: Optional[List[str]] = None,
-    ) -> Optional[Order]:
+        execution_instructions: list[str] | None = None,
+    ) -> Order | None:
         """
         Place a new order
 
@@ -448,7 +438,7 @@ class RevolutXClient:
     # MARKET DATA METHODS (Public - No Authentication Required)
     # ========================================================================
 
-    async def get_ticker(self, symbol: str) -> Dict[str, Any]:
+    async def get_ticker(self, symbol: str) -> dict[str, Any]:
         """
         Get ticker data for a symbol (requires authentication)
 
@@ -500,7 +490,7 @@ class RevolutXClient:
             logger.error(f"[ERROR] Ticker fetch failed for {symbol}: {e}")
             raise
 
-    async def get_orderbook(self, symbol: str, depth: int = 10) -> Dict[str, Any]:
+    async def get_orderbook(self, symbol: str, depth: int = 10) -> dict[str, Any]:
         """
         Get orderbook snapshot (requires authentication)
 
@@ -541,12 +531,10 @@ class RevolutXClient:
                 # Parse orderbook
                 return {
                     "bids": [
-                        [float(b["price"]), float(b["quantity"])]
-                        for b in data.get("bids", [])
+                        [float(b["price"]), float(b["quantity"])] for b in data.get("bids", [])
                     ],
                     "asks": [
-                        [float(a["price"]), float(a["quantity"])]
-                        for a in data.get("asks", [])
+                        [float(a["price"]), float(a["quantity"])] for a in data.get("asks", [])
                     ],
                     "timestamp": data.get("timestamp", int(time.time() * 1000)),
                 }
@@ -558,7 +546,7 @@ class RevolutXClient:
             logger.error(f"[ERROR] Orderbook fetch failed for {symbol}: {e}")
             raise
 
-    async def get_symbols(self) -> List[str]:
+    async def get_symbols(self) -> list[str]:
         """
         Get list of available trading symbols (PUBLIC endpoint)
 

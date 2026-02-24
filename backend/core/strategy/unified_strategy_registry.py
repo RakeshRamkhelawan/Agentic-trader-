@@ -6,13 +6,15 @@ gebaseerd op planetaire periodes. Werkt als plugin systeem voor TraderAgent.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from backend.core.navagraha.service import NavagrahaService
 from backend.core.strategy.dasha_strategy_map import DashaStrategyMap
-from backend.core.strategy.implementations import (DefensiveStrategy,
-                                                   MeanReversionStrategy,
-                                                   TrendFollowingStrategy)
+from backend.core.strategy.implementations import (
+    DefensiveStrategy,
+    MeanReversionStrategy,
+    TrendFollowingStrategy,
+)
 from backend.core.strategy.interface import TradingStrategy
 from backend.core.zero_copy_bridge import TradingIntent
 
@@ -31,14 +33,14 @@ class UnifiedStrategyRegistry:
 
     def __init__(
         self,
-        navagraha_service: Optional[NavagrahaService] = None,
-        dasha_map: Optional[DashaStrategyMap] = None,
+        navagraha_service: NavagrahaService | None = None,
+        dasha_map: DashaStrategyMap | None = None,
     ):
         self.navagraha_service = navagraha_service
         self.dasha_map = dasha_map or DashaStrategyMap()
 
         # Strategy registry
-        self._strategies: Dict[str, TradingStrategy] = {
+        self._strategies: dict[str, TradingStrategy] = {
             "trend_following": TrendFollowingStrategy(),
             "mean_reversion": MeanReversionStrategy(),
             "defensive": DefensiveStrategy(),
@@ -57,16 +59,14 @@ class UnifiedStrategyRegistry:
             "Ketu": "defensive",  # Detachment - use defensive
         }
 
-        logger.info(
-            f"UnifiedStrategyRegistry initialized with {len(self._strategies)} strategies"
-        )
+        logger.info(f"UnifiedStrategyRegistry initialized with {len(self._strategies)} strategies")
 
     def register_strategy(self, strategy_id: str, strategy: TradingStrategy) -> None:
         """Register a new strategy."""
         self._strategies[strategy_id] = strategy
         logger.info(f"Registered strategy: {strategy_id}")
 
-    def get_strategy(self, strategy_id: str) -> Optional[TradingStrategy]:
+    def get_strategy(self, strategy_id: str) -> TradingStrategy | None:
         """Get strategy by ID."""
         return self._strategies.get(strategy_id)
 
@@ -87,9 +87,7 @@ class UnifiedStrategyRegistry:
 
         try:
             # Get current Navagraha state
-            nava_state = await self.navagraha_service.get_current_state(
-                lat=lat, lon=lon
-            )
+            nava_state = await self.navagraha_service.get_current_state(lat=lat, lon=lon)
 
             # Get current Dasha lord
             current_dasha = nava_state.current_dasha
@@ -117,11 +115,11 @@ class UnifiedStrategyRegistry:
 
     async def analyze_with_dasha_strategy(
         self,
-        market_data: Dict[str, Any],
-        soul_context: Dict[str, Any],
+        market_data: dict[str, Any],
+        soul_context: dict[str, Any],
         lat: float = 52.3676,
         lon: float = 4.9041,
-    ) -> Optional[TradingIntent]:
+    ) -> TradingIntent | None:
         """
         Analyze market using Dasha-appropriate strategy.
 
@@ -161,7 +159,7 @@ class UnifiedStrategyRegistry:
         self,
         mahadasha: str = "Sun",
         antardasha: str = "Sun",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get strategy config for Dasha periods."""
         config = self.dasha_map.get_strategy_config(mahadasha, antardasha)
         return {

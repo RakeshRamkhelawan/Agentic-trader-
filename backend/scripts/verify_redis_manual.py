@@ -1,10 +1,11 @@
 import asyncio
 import json
 import logging
+
 # Add project root to path
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 sys.path.append(os.getcwd())
@@ -13,8 +14,7 @@ import redis.asyncio as redis
 
 from backend.core.config.settings import settings
 from backend.core.eternal_soul_service import EternalSoulService
-from backend.core.navagraha.models import (GunaDistribution, NavagrahaState,
-                                           PlanetName, PlanetState)
+from backend.core.navagraha.models import GunaDistribution, NavagrahaState, PlanetName, PlanetState
 from backend.core.schemas.ooda_types import MarketRegime
 
 # Configure logging
@@ -65,7 +65,7 @@ async def verify_redis_updates():
     soul_service.regime_detector = MagicMock()  # Not async - detect() is synchronous
 
     # Mock Navagraha Return
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     from pydantic import ValidationError
 

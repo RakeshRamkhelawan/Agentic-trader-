@@ -28,49 +28,59 @@ const REGIME_BADGES: Record<string, { color: string; icon: string }> = {
 };
 
 export function VedicContextPanel({ wsUrl }: { wsUrl: string }) {
+  const [connected, setConnected] = useState(false);
   const [state, setState] = useState<VedicState>({
     rahu_kala: false,
     market_regime: "neutral",
-    harmony_score: 0.5,
+    harmony_score: 0,
     dominant_element: "ether",
-    prana_levels: { ether: 100, air: 100, fire: 100, water: 100, earth: 100 },
-    vedic_time: "Brahma Muhurta",
-    navagraha_dominant: "Jupiter",
+    prana_levels: { ether: 0, air: 0, fire: 0, water: 0, earth: 0 },
+    vedic_time: "Initializing...",
+    navagraha_dominant: "Unknown",
   });
 
   useEffect(() => {
+    if (!wsUrl) return;
+    
     const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      setConnected(true);
+    };
+
+    ws.onclose = () => {
+      setConnected(false);
+    };
 
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.channel === "paper_trading.vedic") {
-          if (msg.type === "soul_update") {
-            setState((prev) => ({
-              ...prev,
-              rahu_kala: msg.data.rahu_kala,
-              market_regime: msg.data.market_regime,
-              vedic_time: msg.data.vedic_time,
-              navagraha_dominant: msg.data.navagraha_dominant,
-            }));
-          } else if (msg.type === "prana_update") {
-            setState((prev) => ({
-              ...prev,
-              prana_levels: {
-                ether: msg.data.ether ?? prev.prana_levels.ether,
-                air: msg.data.air ?? prev.prana_levels.air,
-                fire: msg.data.fire ?? prev.prana_levels.fire,
-                water: msg.data.water ?? prev.prana_levels.water,
-                earth: msg.data.earth ?? prev.prana_levels.earth,
-              },
-            }));
-          } else if (msg.type === "harmony_update") {
-            setState((prev) => ({
-              ...prev,
-              harmony_score: msg.data.harmony_score,
-              dominant_element: msg.data.dominant_element,
-            }));
-          }
+        // Handle various message types from V18 engine
+        if (msg.type === 'soul_update' || msg.channel === "paper_trading.vedic") {
+          setState((prev) => ({
+            ...prev,
+            rahu_kala: msg.data?.rahu_kala ?? prev.rahu_kala,
+            market_regime: msg.data?.market_regime ?? prev.market_regime,
+            vedic_time: msg.data?.vedic_time ?? prev.vedic_time,
+            navagraha_dominant: msg.data?.navagraha_dominant ?? prev.navagraha_dominant,
+          }));
+        } else if (msg.type === 'prana_update' || (msg.data && msg.data.ether !== undefined)) {
+          setState((prev) => ({
+            ...prev,
+            prana_levels: {
+              ether: msg.data?.ether ?? prev.prana_levels.ether,
+              air: msg.data?.air ?? prev.prana_levels.air,
+              fire: msg.data?.fire ?? prev.prana_levels.fire,
+              water: msg.data?.water ?? prev.prana_levels.water,
+              earth: msg.data?.earth ?? prev.prana_levels.earth,
+            },
+          }));
+        } else if (msg.type === 'harmony_update') {
+          setState((prev) => ({
+            ...prev,
+            harmony_score: msg.data?.harmony_score ?? prev.harmony_score,
+            dominant_element: msg.data?.dominant_element ?? prev.dominant_element,
+          }));
         }
       } catch (err) {
         console.error("WS parse error:", err);

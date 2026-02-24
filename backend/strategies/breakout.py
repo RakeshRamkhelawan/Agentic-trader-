@@ -9,7 +9,7 @@ Entry Short: Price < range_low + volume > multiplier * avg
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from backend.core.market_data.models import UnifiedMarketEvent
 from backend.strategies.base import BaseStrategy
@@ -28,18 +28,18 @@ class BreakoutStrategy(BaseStrategy):
         max_history (int): Max ticks to keep in memory. Default 200.
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         super().__init__(config)
         self.consolidation_bars = config.get("consolidation_bars", 20)
         self.range_threshold = config.get("range_threshold", 0.03)
         self.volume_multiplier = config.get("volume_multiplier", 2.0)
         self.max_history = config.get("max_history", 200)
 
-        self._price_history: Dict[str, List[float]] = {}
-        self._volume_history: Dict[str, List[float]] = {}
-        self._consolidation_state: Dict[str, bool] = {}
+        self._price_history: dict[str, list[float]] = {}
+        self._volume_history: dict[str, list[float]] = {}
+        self._consolidation_state: dict[str, bool] = {}
 
-    async def on_tick(self, tick: UnifiedMarketEvent) -> Optional[Dict[str, Any]]:
+    async def on_tick(self, tick: UnifiedMarketEvent) -> dict[str, Any] | None:
         if not tick.price or tick.price <= 0:
             return None
 
@@ -92,9 +92,7 @@ class BreakoutStrategy(BaseStrategy):
             # Volume confirmation
             volume_confirmed = True
             if len(volumes) >= self.consolidation_bars and self.volume_multiplier > 0:
-                avg_volume = (
-                    sum(volumes[-self.consolidation_bars :]) / self.consolidation_bars
-                )
+                avg_volume = sum(volumes[-self.consolidation_bars :]) / self.consolidation_bars
                 if avg_volume > 0:
                     volume_confirmed = volume >= (avg_volume * self.volume_multiplier)
 

@@ -3,7 +3,7 @@ Integration tests for cognitive system with event bus and agents.
 Validates full cycle: Market Data → Cognitive Processing → Decision → Execution.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
 import numpy as np
@@ -58,16 +58,14 @@ async def test_cognitive_event_integration(event_bus, system_identity, market_da
     decision_event = {
         "event_type": "cognitive_decision",
         "source": "system_identity",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "action": result["action"],
         "confidence": result["confidence"],
         "rationale": result["rationale"],
     }
 
     # Publish to event bus
-    event_id = await event_bus.publish(
-        stream="cognitive_decisions", event_data=decision_event
-    )
+    event_id = await event_bus.publish(stream="cognitive_decisions", event_data=decision_event)
 
     # Verify event was published
     assert event_id is not None
@@ -185,7 +183,7 @@ async def test_multi_agent_cognitive_synthesis(event_bus, system_identity, marke
     sentiment_event = {
         "event_type": "agent_sentiment_analysis",
         "source": "sentiment_agent",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "sentiment_score": 0.7,
         "confidence": 0.8,
         "analysis": "Bullish signals detected",
@@ -197,7 +195,7 @@ async def test_multi_agent_cognitive_synthesis(event_bus, system_identity, marke
     regime_event = {
         "event_type": "agent_regime_analysis",
         "source": "market_regime_agent",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "regime": "trending",
         "confidence": 0.75,
         "direction": "up",
@@ -306,9 +304,7 @@ async def test_cognitive_cycle_latency(system_identity, market_data):
     elapsed = time.time() - start
 
     # Should complete in reasonable time (cold path)
-    assert (
-        elapsed < 2.0
-    )  # 2 seconds for full cycle is acceptable (includes startup overhead)
+    assert elapsed < 2.0  # 2 seconds for full cycle is acceptable (includes startup overhead)
 
     # Latency should be tracked
     cycle_stats = result.get("system_stats", {})

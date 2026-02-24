@@ -15,7 +15,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/store/authStore';
+import { useUserStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,9 @@ const incomeRanges = [
   '$100,000 - $250,000', 'Over $250,000'
 ];
 
-const idTypes = [
+type IdType = 'passport' | 'drivers_license' | 'national_id';
+
+const idTypes: { value: IdType; label: string }[] = [
   { value: 'passport', label: 'Passport' },
   { value: 'drivers_license', label: "Driver's License" },
   { value: 'national_id', label: 'National ID Card' },
@@ -46,32 +48,32 @@ const idTypes = [
 
 export function KYC() {
   const navigate = useNavigate();
-  const { kycData, updateKYCData, submitKYC, isLoading } = useAuthStore();
+  const { kycData, updateKYCData, submitKYC, kycIsLoading: isLoading } = useUserStore();
   
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     // Personal Info
-    firstName: kycData?.firstName || '',
-    lastName: kycData?.lastName || '',
-    dateOfBirth: kycData?.dateOfBirth || '',
+    firstName: kycData?.first_name || '',
+    lastName: kycData?.last_name || '',
+    dateOfBirth: kycData?.date_of_birth || '',
     nationality: kycData?.nationality || '',
-    phoneNumber: kycData?.phoneNumber || '',
+    phoneNumber: kycData?.phone_number || '',
     
     // Address
-    streetAddress: kycData?.streetAddress || '',
+    streetAddress: kycData?.street_address || '',
     city: kycData?.city || '',
-    postalCode: kycData?.postalCode || '',
+    postalCode: kycData?.postal_code || '',
     country: kycData?.country || '',
     
     // Identity
-    idType: kycData?.idType || '',
-    idNumber: kycData?.idNumber || '',
+    idType: kycData?.id_type || '',
+    idNumber: kycData?.id_number || '',
     
     // Financial
     occupation: kycData?.occupation || '',
-    employmentStatus: kycData?.employmentStatus || '',
-    annualIncome: kycData?.annualIncome || '',
-    sourceOfFunds: kycData?.sourceOfFunds || '',
+    employmentStatus: kycData?.employment_status || '',
+    annualIncome: kycData?.annual_income || '',
+    sourceOfFunds: kycData?.source_of_funds || '',
   });
 
   const [uploadedFiles, setUploadedFiles] = useState<{
@@ -242,7 +244,7 @@ export function KYC() {
           <div className="space-y-4 animate-fade-in">
             <div className="space-y-2">
               <Label className="text-white">ID Type</Label>
-              <Select value={formData.idType} onValueChange={(v) => updateField('idType', v as any)}>
+              <Select value={formData.idType} onValueChange={(v) => updateField('idType', v as IdType)}>
                 <SelectTrigger className="bg-[#0A0A0A] border-[#262626] text-white">
                   <SelectValue placeholder="Select ID type" />
                 </SelectTrigger>

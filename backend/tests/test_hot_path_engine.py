@@ -17,8 +17,7 @@ from threading import Thread
 import pytest
 
 from backend.execution.fast_config import FALLBACK_CONFIG, FastConfigManager
-from backend.execution.hot_path_engine import (ExecutionDecision,
-                                               HotPathEngine, HotPathExecutor)
+from backend.execution.hot_path_engine import ExecutionDecision, HotPathEngine, HotPathExecutor
 
 pytestmark = pytest.mark.unit
 
@@ -150,9 +149,7 @@ class TestHotPathLatency:
 
             sorted_times = sorted(times)
             p99_latency = sorted_times[int(0.99 * len(sorted_times))]
-            assert (
-                p99_latency < 0.005
-            ), f"P99 latency {p99_latency*1000:.3f}ms exceeds <5ms target"
+            assert p99_latency < 0.005, f"P99 latency {p99_latency*1000:.3f}ms exceeds <5ms target"
 
     def test_max_latency_reasonable(self):
         """Max latency should not exceed 10ms."""
@@ -256,9 +253,7 @@ class TestHotPathDeterminism:
             elapsed = time.perf_counter() - start
 
             # 100 decisions should take <50ms (0.5ms each)
-            assert (
-                elapsed < 0.05
-            ), f"100 decisions took {elapsed*1000:.1f}ms, expected <50ms"
+            assert elapsed < 0.05, f"100 decisions took {elapsed*1000:.1f}ms, expected <50ms"
 
 
 class TestHotPathFallback:
@@ -555,9 +550,7 @@ class TestHotPathPerformance:
 
             throughput = count / elapsed
             # Should achieve at least 2500 decisions/second after system initialization
-            assert (
-                throughput > 2_500
-            ), f"Throughput {throughput:.0f}/sec below 2.5k target"
+            assert throughput > 2_500, f"Throughput {throughput:.0f}/sec below 2.5k target"
 
     def test_consistency_under_load(self):
         """Results should be consistent even under load."""

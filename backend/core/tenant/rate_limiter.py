@@ -1,8 +1,8 @@
 """
 Tenant Rate Limiter - ADR-005
 """
+
 import time
-from typing import Dict, Tuple
 
 
 class TenantRateLimiter:
@@ -11,7 +11,7 @@ class TenantRateLimiter:
 
     async def check_rate_limit(
         self, tenant_id: str, resource: str, limit: int, window_seconds: int = 60
-    ) -> Tuple[bool, Dict[str, str]]:
+    ) -> tuple[bool, dict[str, str]]:
         key = f"ratelimit:{tenant_id}:{resource}"
         now = time.time()
 

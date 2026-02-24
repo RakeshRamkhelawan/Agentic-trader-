@@ -108,9 +108,7 @@ async def test_sentiment_agent_handles_missing_llm():
     """RED: SentimentAgent should handle missing LLM gracefully."""
     agent = SentimentAgent()  # No LLM provider
 
-    result = await agent.analyze(
-        features={"price": 50000}, context={"news": "Test news"}
-    )
+    result = await agent.analyze(features={"price": 50000}, context={"news": "Test news"})
 
     # Should return fallback result
     assert "error" in result or "sentiment" in result

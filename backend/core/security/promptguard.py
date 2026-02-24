@@ -9,7 +9,7 @@ Protects LLM agents from prompt injection attacks by:
 
 Usage:
     from backend.core.security.promptguard import PromptGuard
-    
+
     guard = PromptGuard()
     is_safe, reason = guard.scan(user_input)
     if not is_safe:
@@ -20,7 +20,6 @@ import hashlib
 import logging
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +30,8 @@ class ScanResult:
 
     is_safe: bool
     threat_level: str  # "none", "low", "medium", "high"
-    reason: Optional[str]
-    matched_patterns: List[str]
+    reason: str | None
+    matched_patterns: list[str]
     sanitized_input: str
 
 
@@ -107,16 +106,12 @@ class PromptGuard:
             max_input_length: Maximum allowed input length
         """
         self.max_input_length = max_input_length
-        self._high_risk_regex = [
-            re.compile(p, re.IGNORECASE) for p in self.HIGH_RISK_PATTERNS
-        ]
-        self._medium_risk_regex = [
-            re.compile(p, re.IGNORECASE) for p in self.MEDIUM_RISK_PATTERNS
-        ]
+        self._high_risk_regex = [re.compile(p, re.IGNORECASE) for p in self.HIGH_RISK_PATTERNS]
+        self._medium_risk_regex = [re.compile(p, re.IGNORECASE) for p in self.MEDIUM_RISK_PATTERNS]
         self._scan_count = 0
         self._threat_count = 0
 
-    def scan(self, user_input: str, context: Optional[Dict] = None) -> ScanResult:
+    def scan(self, user_input: str, context: dict | None = None) -> ScanResult:
         """
         Scan user input for prompt injection attempts.
 
@@ -197,9 +192,7 @@ class PromptGuard:
             sanitized = sanitized.replace(dangerous, safe)
         return sanitized
 
-    def _log_threat(
-        self, user_input: str, patterns: List[str], context: Optional[Dict]
-    ):
+    def _log_threat(self, user_input: str, patterns: list[str], context: dict | None):
         """Log security threat."""
         input_hash = hashlib.sha256(user_input.encode()).hexdigest()[:16]
         logger.warning(
@@ -212,7 +205,7 @@ class PromptGuard:
             },
         )
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get scanning statistics."""
         return {
             "total_scans": self._scan_count,
@@ -237,7 +230,7 @@ class APIKeyRotator:
         self._current_key_id = "v1"
         self._rotation_count = 0
 
-    def rotate_key(self, service: str) -> Tuple[str, str]:
+    def rotate_key(self, service: str) -> tuple[str, str]:
         """
         Rotate API key for service.
 
@@ -259,14 +252,12 @@ class APIKeyRotator:
         env_var = f"{service.upper()}_API_KEY"
         os.environ[env_var] = new_key
 
-        logger.info(
-            f"API key rotated for {service}: {self._current_key_id} -> {new_key_id}"
-        )
+        logger.info(f"API key rotated for {service}: {self._current_key_id} -> {new_key_id}")
         self._current_key_id = new_key_id
 
         return new_key_id, new_key
 
-    def get_current_key(self, service: str) -> Optional[str]:
+    def get_current_key(self, service: str) -> str | None:
         """Get current API key."""
         import os
 
@@ -275,7 +266,7 @@ class APIKeyRotator:
 
 
 # Convenience functions
-def scan_prompt(user_input: str, context: Optional[Dict] = None) -> ScanResult:
+def scan_prompt(user_input: str, context: dict | None = None) -> ScanResult:
     """Quick scan function using global guard."""
     return _global_guard.scan(user_input, context)
 

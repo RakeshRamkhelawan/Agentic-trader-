@@ -17,14 +17,10 @@ class RuntimeConfig(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     key = Column(String, unique=True, index=True, nullable=False)
-    value = Column(
-        JSON, nullable=False
-    )  # JSON for flexible typing (int, float, bool, dict)
+    value = Column(JSON, nullable=False)  # JSON for flexible typing (int, float, bool, dict)
     description = Column(String, nullable=True)
     is_encrypted = Column(Boolean, default=False)  # For sensitive keys
-    group = Column(
-        String, index=True, default="general"
-    )  # e.g. "risk", "trading", "system"
+    group = Column(String, index=True, default="general")  # e.g. "risk", "trading", "system"
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_by = Column(String, nullable=True)  # User ID or 'system'
 

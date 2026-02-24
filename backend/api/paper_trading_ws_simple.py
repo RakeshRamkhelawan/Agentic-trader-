@@ -20,7 +20,18 @@ connected_clients = set()
 @router.websocket("/ws/paper-trading")
 async def paper_trading_websocket(websocket: WebSocket):
     """Simple WebSocket endpoint for paper trading with Vedic context."""
-    await websocket.accept()
+    await _handle_paper_trading_ws(websocket)
+
+
+@router.websocket("/ws/public/paper-trading")
+async def paper_trading_websocket_public(websocket: WebSocket):
+    """Public WebSocket endpoint for paper trading (CORS-friendly)."""
+    logger.info("WebSocket connection attempt to /ws/public/paper-trading")
+    await _handle_paper_trading_ws(websocket)
+
+
+async def _handle_paper_trading_ws(websocket: WebSocket):
+    """Handle paper trading WebSocket connection."""
     connected_clients.add(websocket)
     client_id = id(websocket)
 
@@ -31,7 +42,9 @@ async def paper_trading_websocket(websocket: WebSocket):
 
     # Registreer client bij alle paper trading channels
     connection_id = f"paper_{client_id}"
-    await ws_manager.connect(websocket, connection_id)
+    tenant_id = "demo-tenant"
+    account_id = "demo-account"
+    await ws_manager.connect(websocket, connection_id, tenant_id, account_id)
     await ws_manager.subscribe(connection_id, "paper_trading.live")
     await ws_manager.subscribe(connection_id, "paper_trading.stats")
     await ws_manager.subscribe(connection_id, "paper_trading.agents")
@@ -67,7 +80,7 @@ async def paper_trading_websocket(websocket: WebSocket):
                 except:
                     pass
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Send keepalive
                 await websocket.send_json(
                     {"type": "keepalive", "timestamp": datetime.utcnow().isoformat()}

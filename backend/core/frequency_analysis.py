@@ -5,7 +5,6 @@ Uses FFT for spectral analysis without explicit symbolic terminology.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -18,7 +17,7 @@ class FrequencyDecomposition:
     """
 
     fundamental: float  # Base frequency (primary oscillation)
-    harmonics: List[float]  # Overtone magnitudes (1st through 8th)
+    harmonics: list[float]  # Overtone magnitudes (1st through 8th)
     phase: float  # Phase alignment in radians
     amplitude: float  # Peak magnitude intensity
     coherence: float  # Pattern stability [0, 1]
@@ -40,7 +39,7 @@ class VibrationalAnalyzer:
         self.window_size = window_size
         self.frequency_bands = self._init_frequency_bands()
 
-    def _init_frequency_bands(self) -> Dict[str, Tuple[float, float]]:
+    def _init_frequency_bands(self) -> dict[str, tuple[float, float]]:
         """
         Define frequency bands for analysis.
 
@@ -90,9 +89,7 @@ class VibrationalAnalyzer:
         else:
             dominant_idx = 0
 
-        fundamental_freq = (
-            frequencies[dominant_idx] if dominant_idx < len(frequencies) else 0.0
-        )
+        fundamental_freq = frequencies[dominant_idx] if dominant_idx < len(frequencies) else 0.0
 
         # Extract harmonics (integer multiples of fundamental)
         harmonics = []
@@ -110,19 +107,13 @@ class VibrationalAnalyzer:
                 harmonics.append(0.0)
 
         # Calculate phase of dominant frequency
-        phase = (
-            float(np.angle(fft_result[dominant_idx]))
-            if dominant_idx < len(fft_result)
-            else 0.0
-        )
+        phase = float(np.angle(fft_result[dominant_idx])) if dominant_idx < len(fft_result) else 0.0
 
         # Calculate coherence (stability of pattern)
         coherence = self._calculate_coherence(magnitudes)
 
         # Dominant amplitude
-        amplitude = (
-            float(magnitudes[dominant_idx]) if dominant_idx < len(magnitudes) else 0.0
-        )
+        amplitude = float(magnitudes[dominant_idx]) if dominant_idx < len(magnitudes) else 0.0
 
         return FrequencyDecomposition(
             fundamental=float(fundamental_freq),
@@ -171,7 +162,7 @@ class VibrationalAnalyzer:
 
         return max_idx
 
-    def _calculate_band_energies(self, decomp: FrequencyDecomposition) -> List[float]:
+    def _calculate_band_energies(self, decomp: FrequencyDecomposition) -> list[float]:
         """
         Calculate energy in each frequency band.
 

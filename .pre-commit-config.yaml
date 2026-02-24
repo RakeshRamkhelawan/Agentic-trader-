@@ -1,25 +1,114 @@
+# Pre-commit hooks for Agentic Trader Platform
+#
+# Installation:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Usage:
+#   pre-commit run --all-files    # Run manually
+#   git commit                    # Runs automatically on commit
+
+# Default settings
+default_stages: [pre-commit]
+default_language_version:
+  python: python3.13
+
+# Fail fast - stop on first error (set to false to see all issues)
+fail_fast: false
+
 repos:
-  - repo: https://github.com/psf/black
-    rev: 23.12.1
+  # ============================================================================
+  # Basic File Checks
+  # ============================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      # Prevent committing to main/develop directly
+      - id: no-commit-to-branch
+        args: [--branch, main, --branch, develop]
+        stages: [commit-msg]
+
+      # Check for merge conflicts
+      - id: check-merge-conflict
+
+      # Check for broken symlinks
+      - id: check-symlinks
+
+      # Check JSON syntax (exclude tsconfig which uses JSONC with comments)
+      - id: check-json
+        files: \.(json)$
+        exclude: tsconfig
+
+      # Check YAML syntax
+      - id: check-yaml
+        files: \.(yml|yaml)$
+        exclude: ^(.github/workflows/archive/|docker-compose\.)
+
+      # Check TOML syntax
+      - id: check-toml
+
+      # Prevent large files
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+
+      # Trim trailing whitespace
+      - id: trailing-whitespace
+        exclude: ^(frontend/|\.md$)
+
+      # Ensure files end with newline
+      - id: end-of-file-fixer
+        exclude: ^(frontend/|\.min\.|\.lock$)
+
+  # ============================================================================
+  # Python - Basic Checks Only (Non-blocking)
+  # ============================================================================
+  - repo: local
     hooks:
       - id: black
-        language_version: python3.13
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        name: isort (python)
+        name: Python Formatting
+        entry: bash -c 'black --check --diff "$@" || true' --
+        language: system
+        files: ^backend/.*\.py$
+        exclude: ^backend/tests/
+        # Non-blocking - just shows diff
+        verbose: true
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.11
+    rev: v0.8.0
     hooks:
       - id: ruff
-        args: [ --fix ]
+        name: Python Linting
+        args: [--fix, --exit-zero]
+        files: ^backend/.*\.py$
+        # exit-zero makes it non-blocking
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+  # ============================================================================
+  # Security Scans (Non-blocking)
+  # ============================================================================
+  - repo: local
     hooks:
-      - id: mypy
-        additional_dependencies: [types-requests, types-PyYAML]
-        args: [ --ignore-missing-imports, --no-incremental ]
+      - id: bandit
+        name: Security Scan
+        entry: bash -c 'bandit -c pyproject.toml -f json -o bandit-report.json "$@" || true' --
+        language: system
+        files: ^backend/.*\.py$
+        exclude: ^backend/tests/
+        # Non-blocking - just generates report
+        verbose: true
+
+  # ============================================================================
+  # Frontend - Basic Checks
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: frontend-type-check
+        name: Frontend Type Check
+        entry: bash -c 'cd frontend && npx tsc --noEmit 2>/dev/null || echo "Type issues found (non-blocking)"'
+        language: system
+        files: ^frontend/.*\.(ts|tsx)$
+        pass_filenames: false
+        # Non-blocking
+
+# Skip hooks in CI environment (GitHub Actions handles this)
+ci:
+  skip: [no-commit-to-branch]

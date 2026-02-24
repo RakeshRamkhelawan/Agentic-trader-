@@ -1,26 +1,43 @@
 """
-Paper Trading API Endpoints
+Paper Trading API Endpoints - V18 Integrated with WebSocket
+
+DEZE VERSIE draait de V18 engine als background task binnen de API,
+zodat het direct WebSocket berichten kan sturen voor real-time updates.
 """
 
 import asyncio
 import logging
-import os
-import subprocess
-import sys
-from typing import Optional
+from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from backend.core.config.settings import settings
+from backend.services.paper_trading_ws_broadcast import (
+    broadcast_agent_decision,
+    broadcast_portfolio,
+    broadcast_stats,
+    broadcast_trade,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/paper-trading", tags=["paper-trading"])
 
 # Global state
-_trading_process: Optional[subprocess.Popen] = None
+_trading_task: asyncio.Task | None = None
+_trading_engine: object | None = None
 _trading_logs: list = []
+_trading_trades: list = []
+_session_start_time: datetime | None = None
+
+# Import engine type for type hints
+try:
+    from backend.services.real_paper_trading_v18_direct import RealPaperTradingV18
+
+    _trading_engine: RealPaperTradingV18 | None = None
+except:
+    pass
 
 
 class StartSessionRequest(BaseModel):
@@ -28,209 +45,195 @@ class StartSessionRequest(BaseModel):
     capital: float = 10000.0
 
 
-@router.get("/status")
-async def get_status():
-    """Get current paper trading session status."""
-    global _trading_process
-    
-    is_running = _trading_process is not None and _trading_process.poll() is None
-    
-    # Read latest logs from session log file
-    logs = []
-    trades = []
-    portfolio = None
-    stats = None
-    
-    log_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "paper_trading_session.log")
-    if os.path.exists(log_file):
-        try:
-            with open(log_file, "r") as f:
-                file_logs = f.readlines()
-                logs = file_logs[-50:]  # Last 50 lines
-                
-                # Parse trades from logs
-                def is_trade_line(line: str) -> bool:
-                    """Return True if the line matches a trade pattern."""
-                    return (
-                        '[' in line and
-                        ']' in line and
-                        ('BUY' in line or 'SELL' in line) and
-                        '@ EUR' in line and
-                        'Executed' not in line
+async def _run_trading_engine(duration_hours: int, capital: float):
+    """Run V18 trading engine as background task with WebSocket broadcasts."""
+    global _trading_logs, _trading_trades, _session_start_time, _trading_engine
+
+    # Import here to avoid circular imports
+    import sys
+    from pathlib import Path
+
+    project_root = Path(__file__).parent.parent.parent
+    sys.path.insert(0, str(project_root))
+
+    from backend.services.real_paper_trading_v18_direct import (
+        RealPaperTradingV18,
+    )
+
+    _session_start_time = datetime.utcnow()
+    _trading_logs = []
+    _trading_trades = []
+
+    logger.info(f"[TRADING TASK] Starting V18 engine for {duration_hours}h with €{capital:,.2f}")
+
+    # Initialize engine
+    engine = RealPaperTradingV18(initial_capital=capital)
+    _trading_engine = engine  # Store globally for status endpoint
+
+    try:
+        await engine.initialize()
+
+        # Broadcast initial state
+        await broadcast_portfolio(
+            cash=capital, total_value=capital, pnl=0.0, pnl_pct=0.0, positions={}
+        )
+        await broadcast_stats(
+            total_trades=0, symbols_traded=0, buy_sell_ratio="0/0", agent_performance={}
+        )
+
+        # Run trading cycles
+        cycle_count = 0
+        max_cycles = int((duration_hours * 3600) / 30)  # Every 30 seconds
+
+        while cycle_count < max_cycles:
+            try:
+                # Run one cycle
+                await engine._trading_cycle()
+                cycle_count += 1
+
+                # Broadcast state every 5 cycles
+                if cycle_count % 5 == 0 and engine.state:
+                    await broadcast_portfolio(
+                        cash=engine.state.cash,
+                        total_value=engine.state.total_value,
+                        pnl=engine.state.total_pnl,
+                        pnl_pct=engine.state.total_value / capital - 1,
+                        positions=engine.state.open_positions,
+                    )
+                    await broadcast_stats(
+                        total_trades=engine.state.total_trades,
+                        symbols_traded=len(engine.state.open_positions),
+                        buy_sell_ratio=f"{engine.state.total_trades}/0",
+                        agent_performance={"V18_Elemental": {"trades": engine.state.total_trades}},
                     )
 
-                def parse_trade_line(line: str) -> Optional[dict]:
-                    """Parse a trade line and return a trade dict or None if parsing fails."""
-                    try:
-                        # Extract timestamp [HH:MM:SS]
-                        ts_start = line.find('[')
-                        ts_end = line.find(']', ts_start)
-                        timestamp = line[ts_start+1:ts_end]
+                # Wait 30 seconds between cycles
+                await asyncio.sleep(30)
 
-                        # Extract agent name [AgentName]
-                        agent_start = line.find('[', ts_end + 1)
-                        agent_end = line.find(']', agent_start)
-                        agent = line[agent_start+1:agent_end].strip()
+            except asyncio.CancelledError:
+                logger.info("[TRADING TASK] Cancelled")
+                break
+            except Exception as e:
+                logger.error(f"[TRADING TASK] Cycle error: {e}")
+                await asyncio.sleep(30)  # Continue after error
 
-                        # Find BUY or SELL
-                        if 'BUY' in line:
-                            side = 'buy'
-                            side_idx = line.find('BUY')
-                        else:
-                            side = 'sell'
-                            side_idx = line.find('SELL')
+        logger.info(f"[TRADING TASK] Completed {cycle_count} cycles")
 
-                        # Rest of line after side
-                        rest = line[side_idx + 4:].strip()
-                        parts = rest.split()
+    except Exception as e:
+        logger.error(f"[TRADING TASK] Fatal error: {e}", exc_info=True)
+    finally:
+        await engine.close()
+        logger.info("[TRADING TASK] Engine closed")
 
-                        if len(parts) >= 8:
-                            qty = float(parts[0])
-                            symbol = parts[1]
-                            price = float(parts[4])
-                            value = float(parts[7])
-                            return {
-                                "timestamp": f"2026-02-20T{timestamp}",
-                                "symbol": symbol,
-                                "side": side,
-                                "qty": qty,
-                                "price": price,
-                                "value": value,
-                                "agent": agent,
-                                "exchange": "Bitvavo"
-                            }
-                    except Exception:
-                        return None
-                    return None
 
-                for line in file_logs:
-                    # Parse trade lines like: [01:38:52] [Breakout          ] BUY     90.255737 FET/EUR         @ EUR 0.14 = EUR 12.55
-                    if is_trade_line(line):
-                        trade = parse_trade_line(line)
-                        if trade:
-                            trades.append(trade)
-                    
-                    # Parse status lines for portfolio
-                    if 'STATUS |' in line and 'P&L:' in line:
-                        try:
-                            # Extract P&L info
-                            import re
-                            pnl_match = re.search(r'P&L:\s*EUR\s*([+-]?[\d.]+)', line)
-                            if pnl_match:
-                                pnl = float(pnl_match.group(1))
-                                # Also check next line for volume
-                                idx = file_logs.index(line)
-                                if idx + 1 < len(file_logs):
-                                    vol_match = re.search(r'Volume:\s*EUR\s*([\d.,]+)', file_logs[idx + 1])
-                                    volume = vol_match.group(1).replace(',', '') if vol_match else "0"
-                                else:
-                                    volume = "0"
-                                
-                                stats = {
-                                    "total_trades": len(trades),
-                                    "pnl": pnl,
-                                    "volume": volume
-                                }
-                        except:
-                            pass
+@router.get("/status")
+async def get_status():
+    """Get current paper trading session status with real data."""
+    global _trading_task, _trading_engine, _trading_logs, _trading_trades, _session_start_time
+
+    is_running = _trading_task is not None and not _trading_task.done()
+
+    # Calculate session duration
+    uptime_seconds = 0
+    if _session_start_time and is_running:
+        uptime_seconds = (datetime.utcnow() - _session_start_time).total_seconds()
+
+    # Get latest data from engine if running
+    portfolio = None
+    stats = None
+    logs = []
+
+    # Try to get logs from engine's analytics directory
+    if is_running and _trading_engine:
+        try:
+            log_dir = Path("paper_trading_analytics")
+            if log_dir.exists():
+                jsonl_files = sorted(log_dir.glob("v18_analytics_*.jsonl"))
+                if jsonl_files:
+                    with open(jsonl_files[-1]) as f:
+                        lines = f.readlines()
+                        logs = lines[-30:]  # Last 30 lines
         except Exception as e:
-            logs = [f"Error reading logs: {e}"]
-    
+            logger.debug(f"Could not read logs: {e}")
+
+    # Get portfolio from engine state
+    if _trading_engine and hasattr(_trading_engine, "state") and _trading_engine.state:
+        state = _trading_engine.state
+        portfolio = {
+            "cash": state.cash,
+            "total_value": state.total_value,
+            "pnl": state.total_pnl,
+            "positions": state.open_positions,
+        }
+        stats = {"total_trades": state.total_trades, "uptime_seconds": uptime_seconds}
+
     return {
         "is_running": is_running,
         "trading_mode": settings.TRADING_MODE,
-        "logs": logs[-30:] if logs else [],
-        "trades": trades[-20:] if trades else [],  # Last 20 trades
+        "logs": logs if logs else _trading_logs[-30:] if _trading_logs else [],
+        "trades": _trading_trades[-20:] if _trading_trades else [],
         "portfolio": portfolio,
         "stats": stats,
-        "websocket_url": "/ws/paper-trading"
+        "websocket_url": "/ws/paper-trading",
+        "session_duration": uptime_seconds,
     }
 
 
 @router.post("/start")
-async def start_paper_trading(request: StartSessionRequest, background_tasks: BackgroundTasks):
-    """
-    Start a new paper trading session with €10,000 and ALL 400+ assets.
-    """
-    global _trading_process, _trading_logs
-    
+async def start_paper_trading(request: StartSessionRequest):
+    """Start a new paper trading session with live WebSocket updates."""
+    global _trading_task, _trading_engine
+
     if settings.TRADING_MODE != "paper":
         raise HTTPException(
-            status_code=400, 
-            detail=f"TRADING_MODE is '{settings.TRADING_MODE}', must be 'paper'"
+            status_code=400, detail=f"TRADING_MODE is '{settings.TRADING_MODE}', must be 'paper'"
         )
-    
+
     # Check if already running
-    if _trading_process and _trading_process.poll() is None:
+    if _trading_task and not _trading_task.done():
         raise HTTPException(status_code=400, detail="Trading session already running")
-    
+
     try:
-        # Get the project root
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        
-        # Use FAST version (TOP 50 assets for speed)
-        script_path = os.path.join(project_root, "scripts", "real_paper_trading_fast.py")
-        
-        if not os.path.exists(script_path):
-            # Fallback to original
-            script_path = os.path.join(project_root, "scripts", "real_paper_trading.py")
-            if not os.path.exists(script_path):
-                script_path = os.path.join(project_root, "backend", "services", "real_paper_trading.py")
-        
-        logger.info(f"Starting paper trading from: {script_path}")
-        
-        # Start the trading process
-        _trading_logs = []
-        
-        # Use subprocess.Popen to run in background
-        env = os.environ.copy()
-        env['PYTHONPATH'] = project_root
-        
-        # Log files for the subprocess
-        log_file = os.path.join(project_root, "paper_trading_session.log")
-        
-        _trading_process = subprocess.Popen(
-            [sys.executable, "-u", script_path, "--duration", str(request.duration), "--capital", str(request.capital)],
-            stdout=open(log_file, "w"),
-            stderr=subprocess.STDOUT,
-            cwd=project_root,
-            env=env
-        )
-        
-        logger.info(f"Paper trading started with PID: {_trading_process.pid}")
-        
+        # Start engine as background task (same process = WebSocket access!)
+        _trading_task = asyncio.create_task(_run_trading_engine(request.duration, request.capital))
+
+        logger.info(f"[API] Paper trading task started for {request.duration}h")
+
         return {
             "status": "started",
-            "pid": _trading_process.pid,
             "duration": request.duration,
             "capital": request.capital,
-            "message": f"Paper trading started with €{request.capital:,.2f} for {request.duration} hours"
+            "message": f"V18 Paper trading started with €{request.capital:,.2f} for {request.duration} hours",
+            "websocket": "/ws/paper-trading",
+            "realtime": True,
         }
-        
+
     except Exception as e:
-        logger.error(f"Failed to start paper trading: {e}")
+        logger.error(f"[API] Failed to start: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/stop")
 async def stop_paper_trading():
     """Stop the current paper trading session."""
-    global _trading_process
-    
-    if not _trading_process or _trading_process.poll() is not None:
+    global _trading_task
+
+    if not _trading_task or _trading_task.done():
         return {"status": "not_running", "message": "No active session"}
-    
+
     try:
-        _trading_process.terminate()
-        _trading_process.wait(timeout=5)
-        logger.info("Paper trading stopped")
+        _trading_task.cancel()
+        try:
+            await asyncio.wait_for(_trading_task, timeout=5.0)
+        except asyncio.CancelledError:
+            pass
+        except TimeoutError:
+            logger.warning("[API] Task didn't cancel in time")
+
+        logger.info("[API] Paper trading stopped")
         return {"status": "stopped", "message": "Trading session stopped"}
     except Exception as e:
-        # Force kill if needed
-        try:
-            _trading_process.kill()
-        except:
-            pass
+        logger.error(f"[API] Error stopping: {e}")
         return {"status": "error", "message": str(e)}
 
 
@@ -239,5 +242,16 @@ async def get_websocket_url():
     """Get WebSocket URL."""
     return {
         "websocket_url": "/ws/paper-trading",
-        "channels": ["paper_trading.live", "paper_trading.stats"]
+        "channels": ["paper_trading.live", "paper_trading.stats"],
+    }
+
+
+# Export broadcast functions for V18 engine to use
+def get_broadcast_functions():
+    """Return broadcast functions for external use."""
+    return {
+        "broadcast_trade": broadcast_trade,
+        "broadcast_agent_decision": broadcast_agent_decision,
+        "broadcast_portfolio": broadcast_portfolio,
+        "broadcast_stats": broadcast_stats,
     }

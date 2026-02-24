@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from backend.core.memory_agent import MemoryAgent  # GEWIJZIGD
 from backend.schemas.agent_messages import AgentMessage  # GEWIJZIGD
@@ -20,13 +20,11 @@ class MacroAgent:
 
     async def handle_message(self, message: AgentMessage):
         """Handle incoming messages from the orchestrator."""
-        self.logger.info(
-            f"Macro Agent received message: {message.type} from {message.source}"
-        )
+        self.logger.info(f"Macro Agent received message: {message.type} from {message.source}")
         if message.type == "TIMER_TICK_1HOUR":
             await self.run_cycle()
 
-    async def fetch_macro_data(self) -> Dict[str, float]:
+    async def fetch_macro_data(self) -> dict[str, float]:
         """
         In production: Fetch from Bloomberg/Fred/Yahoo API.
         For now: Mock values.
@@ -34,7 +32,7 @@ class MacroAgent:
         # TODO: Implement real API call
         return {"us_10y_yield": 4.0, "fear_greed_index": 50, "dxy": 100.0}
 
-    async def analyze_regime(self, data: Dict[str, float]) -> Dict[str, Any]:
+    async def analyze_regime(self, data: dict[str, float]) -> dict[str, Any]:
         """Determine regime based on metrics."""
         score = 0.0
 

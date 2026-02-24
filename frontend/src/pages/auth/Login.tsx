@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Eye, EyeOff, Mail, Lock, Zap, ArrowRight, Loader2 } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,9 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Separator } from '@/components/ui/separator';
 
 export function Login() {
-  const navigate = useNavigate();
-  const { login, isLoading, error, clearError } = useAuthStore();
-  const { loginWithRedirect, isLoading: isAuth0Loading } = useAuth0();
+  const { loginWithRedirect, isLoading: isAuth0Loading, error } = useAuth0();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,20 +20,12 @@ export function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearError();
-    
-    const success = await login(email, password);
-    if (success) {
-      navigate('/dashboard');
-    }
+    // Use Auth0 login instead of local
+    await loginWithRedirect();
   };
 
   const handleDemoLogin = async () => {
-    clearError();
-    const success = await login('demo@agentic.trader', 'demo123');
-    if (success) {
-      navigate('/dashboard');
-    }
+    await loginWithRedirect();
   };
 
   return (
@@ -66,7 +56,7 @@ export function Login() {
             {/* Error Message */}
             {error && (
               <div className="p-3 rounded-lg bg-trade-red/10 border border-trade-red/20 text-trade-red text-sm">
-                {error}
+                {error.message}
               </div>
             )}
 
@@ -130,10 +120,10 @@ export function Login() {
 
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isAuth0Loading}
                 className="w-full bg-trade-blue hover:bg-trade-blue/90 text-white py-6 font-semibold shadow-glow-blue"
               >
-                {isLoading ? (
+                {isAuth0Loading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Signing in...
@@ -153,7 +143,7 @@ export function Login() {
             <Button
               variant="outline"
               onClick={handleDemoLogin}
-              disabled={isLoading}
+              disabled={isAuth0Loading}
               className="w-full border-[#262626] bg-transparent text-white hover:bg-[#1A1A1A]"
             >
               Try Demo Account

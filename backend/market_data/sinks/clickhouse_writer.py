@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 from backend.storage.clickhouse_client import ClickHouseClient
 
@@ -27,7 +27,7 @@ class ClickHouseWriter:
         self._running = False
         self._task = None
 
-    async def enqueue(self, row: Dict[str, Any]):
+    async def enqueue(self, row: dict[str, Any]):
         """Add a row to the write queue."""
         if row is not None:
             await self._queue.put(row)
@@ -35,7 +35,7 @@ class ClickHouseWriter:
     async def run(self):
         """Process the queue and flush to ClickHouse."""
         self._running = True
-        buffer: List[Dict[str, Any]] = []
+        buffer: list[dict[str, Any]] = []
         last_flush = asyncio.get_event_loop().time()
 
         while self._running or not self._queue.empty():
@@ -44,15 +44,14 @@ class ClickHouseWriter:
                 try:
                     row = await asyncio.wait_for(self._queue.get(), timeout=0.1)
                     buffer.append(row)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
 
                 now = asyncio.get_event_loop().time()
                 time_since_flush = now - last_flush
 
                 if buffer and (
-                    len(buffer) >= self.batch_size
-                    or time_since_flush >= self.flush_interval
+                    len(buffer) >= self.batch_size or time_since_flush >= self.flush_interval
                 ):
                     try:
                         await self._flush(buffer)
@@ -75,7 +74,7 @@ class ClickHouseWriter:
             except Exception as e:
                 logger.error(f"Failed final flush to ClickHouse: {e}")
 
-    async def _flush(self, buffer: List[Dict[str, Any]]):
+    async def _flush(self, buffer: list[dict[str, Any]]):
         """Flush buffer to ClickHouse."""
         if not buffer:
             return

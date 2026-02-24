@@ -20,18 +20,20 @@ Expected Duration: Implementation phase
 
 import asyncio
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
 from backend.config.schemas import TattvaConfig
 from backend.core.system_identity import SystemIdentity
-from backend.observability.hardware_metrics import (AggregatedMetrics,
-                                                    ComputeMetrics,
-                                                    DataFlowMetrics,
-                                                    HardwareMetricsCollector,
-                                                    NetworkMetrics,
-                                                    StorageMetrics)
+from backend.observability.hardware_metrics import (
+    AggregatedMetrics,
+    ComputeMetrics,
+    DataFlowMetrics,
+    HardwareMetricsCollector,
+    NetworkMetrics,
+    StorageMetrics,
+)
 
 # ============================================================================
 # FIXTURES
@@ -64,9 +66,7 @@ class MockHardwareMetricsCollector(HardwareMetricsCollector):
 
     def collect_network_metrics(self) -> NetworkMetrics:
         if not self.network_up:
-            return NetworkMetrics(
-                latency_ms=5000, bandwidth_mbps=0, packet_loss_percent=100
-            )
+            return NetworkMetrics(latency_ms=5000, bandwidth_mbps=0, packet_loss_percent=100)
         return NetworkMetrics(
             latency_ms=self.latency_ms,
             bandwidth_mbps=self.bandwidth_mbps,
@@ -148,7 +148,7 @@ def mock_metrics_collector() -> MockHardwareMetricsCollector:
 
 
 @pytest.fixture
-def mock_network_conditions() -> Dict[str, Any]:
+def mock_network_conditions() -> dict[str, Any]:
     """
     Provides controllable network metric mocks.
     """
@@ -156,7 +156,7 @@ def mock_network_conditions() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def mock_compute_conditions() -> Dict[str, Any]:
+def mock_compute_conditions() -> dict[str, Any]:
     """
     Provides controllable compute metric mocks.
     """
@@ -347,9 +347,7 @@ class TestPhase15MetricsCollection:
 class TestPhase15AkashaNetworkAdaptation:
     """Tests for Akasha (L32/Network) coherence adaptation."""
 
-    def test_akasha_low_latency_coherence(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_akasha_low_latency_coherence(self, system_identity, mock_metrics_collector):
         """
         Verify Akasha coherence increases with low latency.
 
@@ -365,9 +363,7 @@ class TestPhase15AkashaNetworkAdaptation:
         """
         pass
 
-    def test_akasha_high_latency_degradation(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_akasha_high_latency_degradation(self, system_identity, mock_metrics_collector):
         """
         Verify Akasha coherence degrades with high latency.
 
@@ -399,9 +395,7 @@ class TestPhase15AkashaNetworkAdaptation:
         """
         pass
 
-    def test_akasha_network_failure_fallback(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_akasha_network_failure_fallback(self, system_identity, mock_metrics_collector):
         """
         Verify Akasha handles complete network failure gracefully.
 
@@ -418,9 +412,7 @@ class TestPhase15AkashaNetworkAdaptation:
         """
         pass
 
-    def test_akasha_bandwidth_constraints(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_akasha_bandwidth_constraints(self, system_identity, mock_metrics_collector):
         """
         Verify Akasha adapts to bandwidth constraints.
 
@@ -436,9 +428,7 @@ class TestPhase15AkashaNetworkAdaptation:
         """
         pass
 
-    def test_akasha_latency_spike_recovery(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_akasha_latency_spike_recovery(self, system_identity, mock_metrics_collector):
         """
         Verify Akasha recovers from temporary latency spike.
 
@@ -458,9 +448,7 @@ class TestPhase15AkashaNetworkAdaptation:
         """
         pass
 
-    def test_akasha_multiple_regions_averaging(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_akasha_multiple_regions_averaging(self, system_identity, mock_metrics_collector):
         """
         Verify Akasha averages latency across multiple endpoints.
 
@@ -520,9 +508,7 @@ class TestPhase15AgniComputeAdaptation:
         """
         pass
 
-    def test_agni_thermal_throttling_detection(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_agni_thermal_throttling_detection(self, system_identity, mock_metrics_collector):
         """
         Verify Agni detects thermal throttling.
 
@@ -554,9 +540,7 @@ class TestPhase15AgniComputeAdaptation:
         """
         pass
 
-    def test_agni_compute_resource_isolation(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_agni_compute_resource_isolation(self, system_identity, mock_metrics_collector):
         """
         Verify Agni isolates trading computation under pressure.
 
@@ -596,9 +580,7 @@ class TestPhase15AgniComputeAdaptation:
         """
         pass
 
-    def test_agni_available_cores_optimization(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_agni_available_cores_optimization(self, system_identity, mock_metrics_collector):
         """
         Verify Agni optimizes parallel processing based on available cores.
 
@@ -628,9 +610,7 @@ class TestPhase15AgniComputeAdaptation:
 class TestPhase15ApasDataFlowAdaptation:
     """Tests for Apas (L35/DataFlow) coherence adaptation."""
 
-    def test_apas_normal_queue_depth_coherence(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_apas_normal_queue_depth_coherence(self, system_identity, mock_metrics_collector):
         """
         Verify Apas coherence with normal queue depth.
 
@@ -680,9 +660,7 @@ class TestPhase15ApasDataFlowAdaptation:
         """
         pass
 
-    def test_apas_message_latency_measurement(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_apas_message_latency_measurement(self, system_identity, mock_metrics_collector):
         """
         Verify Apas measures end-to-end message latency.
 
@@ -719,9 +697,7 @@ class TestPhase15ApasDataFlowAdaptation:
         """
         pass
 
-    def test_apas_cache_hit_rate_optimization(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_apas_cache_hit_rate_optimization(self, system_identity, mock_metrics_collector):
         """
         Verify Apas optimizes caching based on access patterns.
 
@@ -768,9 +744,7 @@ class TestPhase15ApasDataFlowAdaptation:
 class TestPhase15PrithviStorageAdaptation:
     """Tests for Prithvi (L36/Storage) coherence adaptation."""
 
-    def test_prithvi_abundant_disk_space_coherence(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_prithvi_abundant_disk_space_coherence(self, system_identity, mock_metrics_collector):
         """
         Verify Prithvi coherence with abundant disk space.
 
@@ -817,9 +791,7 @@ class TestPhase15PrithviStorageAdaptation:
         """
         pass
 
-    def test_prithvi_write_latency_impact(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_prithvi_write_latency_impact(self, system_identity, mock_metrics_collector):
         """
         Verify write latency affects Prithvi coherence.
 
@@ -835,9 +807,7 @@ class TestPhase15PrithviStorageAdaptation:
         """
         pass
 
-    def test_prithvi_log_rotation_strategy(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_prithvi_log_rotation_strategy(self, system_identity, mock_metrics_collector):
         """
         Verify Prithvi adapts log rotation based on disk pressure.
 
@@ -858,9 +828,7 @@ class TestPhase15PrithviStorageAdaptation:
         """
         pass
 
-    def test_prithvi_backup_health_monitoring(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_prithvi_backup_health_monitoring(self, system_identity, mock_metrics_collector):
         """
         Verify Prithvi monitors backup status.
 
@@ -881,9 +849,7 @@ class TestPhase15PrithviStorageAdaptation:
         """
         pass
 
-    def test_prithvi_data_integrity_verification(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_prithvi_data_integrity_verification(self, system_identity, mock_metrics_collector):
         """
         Verify Prithvi checks data integrity.
 
@@ -909,9 +875,7 @@ class TestPhase15PrithviStorageAdaptation:
 class TestPhase15AdaptiveCoherence:
     """Tests for overall adaptive coherence calculation."""
 
-    def test_multi_element_degradation_cascade(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_multi_element_degradation_cascade(self, system_identity, mock_metrics_collector):
         """
         Verify cascading degradation when multiple elements fail.
 
@@ -934,9 +898,7 @@ class TestPhase15AdaptiveCoherence:
         """
         pass
 
-    def test_weighted_coherence_aggregation(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_weighted_coherence_aggregation(self, system_identity, mock_metrics_collector):
         """
         Verify system calculates weighted overall coherence.
 
@@ -959,9 +921,7 @@ class TestPhase15AdaptiveCoherence:
         """
         pass
 
-    def test_coherence_hysteresis_prevention(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_coherence_hysteresis_prevention(self, system_identity, mock_metrics_collector):
         """
         Verify system prevents rapid coherence oscillation.
 
@@ -1007,9 +967,7 @@ class TestPhase15AdaptiveCoherence:
         """
         pass
 
-    def test_coherence_prediction_forward_looking(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_coherence_prediction_forward_looking(self, system_identity, mock_metrics_collector):
         """
         Verify system predicts future coherence issues.
 
@@ -1111,9 +1069,7 @@ class TestPhase15AdaptiveCoherence:
 class TestPhase15SystemResilience:
     """Tests for system resilience under adverse conditions."""
 
-    def test_graceful_degradation_under_stress(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_graceful_degradation_under_stress(self, system_identity, mock_metrics_collector):
         """
         Verify system degrades gracefully under stress.
 
@@ -1138,9 +1094,7 @@ class TestPhase15SystemResilience:
         """
         pass
 
-    def test_resilience_to_metric_collection_failure(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_resilience_to_metric_collection_failure(self, system_identity, mock_metrics_collector):
         """
         Verify system survives metric collection failures.
 
@@ -1160,9 +1114,7 @@ class TestPhase15SystemResilience:
         """
         pass
 
-    def test_recovery_from_cascading_failures(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_recovery_from_cascading_failures(self, system_identity, mock_metrics_collector):
         """
         Verify system recovers from cascading failures.
 
@@ -1190,9 +1142,7 @@ class TestPhase15SystemResilience:
         """
         pass
 
-    def test_sustained_operation_memory_stability(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_sustained_operation_memory_stability(self, system_identity, mock_metrics_collector):
         """
         Verify system maintains stable memory usage over time.
 
@@ -1305,9 +1255,7 @@ class TestPhase15PerformanceAndMonitoring:
         """
         pass
 
-    def test_metrics_aggregation_accuracy(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_metrics_aggregation_accuracy(self, system_identity, mock_metrics_collector):
         """
         Verify metrics aggregation is accurate.
 
@@ -1392,9 +1340,7 @@ class TestPhase15PerformanceAndMonitoring:
         """
         pass
 
-    def test_metrics_correlation_analysis(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_metrics_correlation_analysis(self, system_identity, mock_metrics_collector):
         """
         Verify system analyzes metric correlations.
 
@@ -1410,9 +1356,7 @@ class TestPhase15PerformanceAndMonitoring:
         """
         pass
 
-    def test_metrics_baseline_establishment(
-        self, system_identity, mock_metrics_collector
-    ):
+    def test_metrics_baseline_establishment(self, system_identity, mock_metrics_collector):
         """
         Verify system establishes baselines for anomaly detection.
 

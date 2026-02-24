@@ -1,8 +1,7 @@
 import pytest
 
 from backend.execution.shadow_portfolio import ShadowPortfolioManager
-from backend.schemas.orders import (OrderRequest, OrderSide, OrderStatus,
-                                    OrderType)
+from backend.schemas.orders import OrderRequest, OrderSide, OrderStatus, OrderType
 
 
 @pytest.fixture
@@ -16,9 +15,7 @@ async def test_buy_stock_decreases_cash(manager):
     # Setup marktprijs (manager moet weten wat de prijs is)
     manager.update_price("AAPL", 150.0)
 
-    order = OrderRequest(
-        symbol="AAPL", qty=10, side=OrderSide.BUY, order_type=OrderType.MARKET
-    )
+    order = OrderRequest(symbol="AAPL", qty=10, side=OrderSide.BUY, order_type=OrderType.MARKET)
     result = await manager.submit_order(order)
 
     assert result.status == OrderStatus.FILLED
@@ -36,9 +33,7 @@ async def test_sell_stock_increases_cash(manager):
     manager.update_price("AAPL", 150.0)
     # Eerst kopen
     await manager.submit_order(
-        OrderRequest(
-            symbol="AAPL", qty=10, side=OrderSide.BUY, order_type=OrderType.MARKET
-        )
+        OrderRequest(symbol="AAPL", qty=10, side=OrderSide.BUY, order_type=OrderType.MARKET)
     )
 
     # Prijs stijgt
@@ -46,9 +41,7 @@ async def test_sell_stock_increases_cash(manager):
 
     # Verkopen
     await manager.submit_order(
-        OrderRequest(
-            symbol="AAPL", qty=5, side=OrderSide.SELL, order_type=OrderType.MARKET
-        )
+        OrderRequest(symbol="AAPL", qty=5, side=OrderSide.SELL, order_type=OrderType.MARKET)
     )
 
     # Cash: 8500 + (5 * 160) = 8500 + 800 = 9300
@@ -61,9 +54,7 @@ async def test_insufficient_funds(manager):
     """Unhappy Path: Niet genoeg geld."""
     manager.update_price("BTC", 50000.0)
     # Probeer 1 BTC te kopen met 10k cash
-    order = OrderRequest(
-        symbol="BTC", qty=1.0, side=OrderSide.BUY, order_type=OrderType.MARKET
-    )
+    order = OrderRequest(symbol="BTC", qty=1.0, side=OrderSide.BUY, order_type=OrderType.MARKET)
 
     result = await manager.submit_order(order)
     assert result.status == OrderStatus.REJECTED

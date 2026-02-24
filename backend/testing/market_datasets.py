@@ -6,7 +6,7 @@ Defines OHLCV data, market scenarios, en evaluation datasets.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from backend.core.schemas.ooda_types import MarketRegime
 
@@ -41,7 +41,7 @@ class OHLCV:
         if self.volume < 0:
             raise ValueError(f"Volume ({self.volume}) must be >= 0")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dict."""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -65,9 +65,9 @@ class MarketScenario:
     description: str
     symbol: str
     timeframe: str  # "1h", "1d"
-    data_points: List[OHLCV]
+    data_points: list[OHLCV]
     expected_regime: MarketRegime
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
     def __post_init__(self):
         """Validate scenario."""
@@ -93,7 +93,7 @@ class MarketScenario:
         delta = end - start
         return delta.total_seconds() / 3600
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dict."""
         return {
             "name": self.name,
@@ -115,7 +115,7 @@ class EvaluationDataset:
 
     def __init__(self):
         """Initialize empty dataset."""
-        self.scenarios: Dict[str, MarketScenario] = {}
+        self.scenarios: dict[str, MarketScenario] = {}
 
     def add_scenario(self, scenario: MarketScenario):
         """
@@ -126,7 +126,7 @@ class EvaluationDataset:
         """
         self.scenarios[scenario.name] = scenario
 
-    def get_scenario(self, name: str) -> Optional[MarketScenario]:
+    def get_scenario(self, name: str) -> MarketScenario | None:
         """
         Get scenario by name.
 
@@ -138,7 +138,7 @@ class EvaluationDataset:
         """
         return self.scenarios.get(name)
 
-    def list_scenarios(self) -> List[str]:
+    def list_scenarios(self) -> list[str]:
         """
         List all scenario names.
 
@@ -147,7 +147,7 @@ class EvaluationDataset:
         """
         return list(self.scenarios.keys())
 
-    def filter_by_regime(self, regime: MarketRegime) -> List[MarketScenario]:
+    def filter_by_regime(self, regime: MarketRegime) -> list[MarketScenario]:
         """
         Filter scenarios by expected regime.
 
@@ -158,12 +158,10 @@ class EvaluationDataset:
             List of matching scenarios
         """
         return [
-            scenario
-            for scenario in self.scenarios.values()
-            if scenario.expected_regime == regime
+            scenario for scenario in self.scenarios.values() if scenario.expected_regime == regime
         ]
 
-    def filter_by_symbol(self, symbol: str) -> List[MarketScenario]:
+    def filter_by_symbol(self, symbol: str) -> list[MarketScenario]:
         """
         Filter scenarios by symbol.
 
@@ -173,13 +171,9 @@ class EvaluationDataset:
         Returns:
             List of matching scenarios
         """
-        return [
-            scenario
-            for scenario in self.scenarios.values()
-            if scenario.symbol == symbol
-        ]
+        return [scenario for scenario in self.scenarios.values() if scenario.symbol == symbol]
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get dataset statistics.
 

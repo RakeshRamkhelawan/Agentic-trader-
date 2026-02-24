@@ -1,5 +1,5 @@
 import functools
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from .multi_level_cache import MultiLevelCache
 
@@ -7,8 +7,8 @@ from .multi_level_cache import MultiLevelCache
 def cached(
     cache: MultiLevelCache,
     namespace: str,
-    ttls: Optional[list[int]] = None,
-    key_builder: Optional[Callable] = None,
+    ttls: list[int] | None = None,
+    key_builder: Callable | None = None,
 ):
     def decorator(func):
         @functools.wraps(func)
@@ -18,9 +18,7 @@ def cached(
             else:
                 cache_args = args[1:] if args else []
 
-            return await cache.get_or_compute(
-                namespace, func, *cache_args, ttls=ttls, **kwargs
-            )
+            return await cache.get_or_compute(namespace, func, *cache_args, ttls=ttls, **kwargs)
 
         return wrapper
 

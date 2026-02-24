@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import Optional, Type, TypeVar
+from typing import TypeVar
 
 from google import genai
 from google.genai import types
@@ -13,12 +13,8 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class GeminiProvider(LLMProvider):
-    def __init__(
-        self, api_key: Optional[str] = None, model_name: str = "gemini-2.0-flash-exp"
-    ):
-        self.api_key = (
-            api_key or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
-        )
+    def __init__(self, api_key: str | None = None, model_name: str = "gemini-2.0-flash-exp"):
+        self.api_key = api_key or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
         self.model_name = model_name
 
         if not self.api_key:
@@ -26,9 +22,7 @@ class GeminiProvider(LLMProvider):
 
         self.client = genai.Client(api_key=self.api_key)
 
-    async def generate_text(
-        self, prompt: str, system_prompt: Optional[str] = None
-    ) -> str:
+    async def generate_text(self, prompt: str, system_prompt: str | None = None) -> str:
         contents = [types.Content(role="user", parts=[types.Part(text=prompt)])]
 
         config = None
@@ -41,7 +35,7 @@ class GeminiProvider(LLMProvider):
         return response.text
 
     async def generate_structured(
-        self, prompt: str, schema: Type[T], system_prompt: Optional[str] = None
+        self, prompt: str, schema: type[T], system_prompt: str | None = None
     ) -> T:
         # Use JSON mode with schema for structured output
         schema_json = schema.model_json_schema()

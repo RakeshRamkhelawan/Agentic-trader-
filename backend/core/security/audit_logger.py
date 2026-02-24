@@ -11,7 +11,7 @@ import logging
 import uuid
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Configure a specific logger for audit events
 audit_logger = logging.getLogger("audit")
@@ -53,8 +53,8 @@ class AuditLogger:
         action: str,
         resource: str,
         output_status: str,
-        details: Optional[Dict[str, Any]] = None,
-        trace_id: Optional[str] = None,
+        details: dict[str, Any] | None = None,
+        trace_id: str | None = None,
     ) -> None:
         """
         Log an audit event.
@@ -92,13 +92,11 @@ class AuditLogger:
         role: str,
         permission: str,
         granted: bool,
-        trace_id: Optional[str] = None,
+        trace_id: str | None = None,
     ):
         """Helper for logging authorization checks."""
         status = "GRANTED" if granted else "DENIED"
-        event_type = (
-            AuditEventType.AUTHZ_GRANTED if granted else AuditEventType.AUTHZ_DENIED
-        )
+        event_type = AuditEventType.AUTHZ_GRANTED if granted else AuditEventType.AUTHZ_DENIED
 
         self.log_event(
             event_type=event_type,
@@ -114,8 +112,8 @@ class AuditLogger:
         self,
         execution_plan: Any,
         outcome: str,
-        details: Dict[str, Any],
-        trace_id: Optional[str] = None,
+        details: dict[str, Any],
+        trace_id: str | None = None,
     ):
         """Helper for logging trade execution attempts."""
         self.log_event(

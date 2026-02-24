@@ -29,7 +29,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import RLock
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from backend.execution.fast_config import FastConfigManager
 
@@ -47,7 +47,7 @@ class CoordinatorDecision:
     timestamp: float  # When decision was made
     quantity: float = 0.0  # Trade quantity/size
 
-    def to_config(self) -> Dict[str, Any]:
+    def to_config(self) -> dict[str, Any]:
         """Convert to FastConfig format."""
         return {
             "action": self.action,
@@ -66,7 +66,7 @@ class AgentMetrics:
     failures: int = 0
     total_latency: float = 0.0  # Sum of all latencies
     total_confidence: float = 0.0  # Sum of confidences
-    last_failure: Optional[float] = None
+    last_failure: float | None = None
 
     @property
     def avg_latency(self) -> float:
@@ -98,10 +98,8 @@ class CoordinatorMetrics:
     config_writes: int = 0
     config_skips: int = 0
     total_decision_latency: float = 0.0
-    agent_metrics: Dict[str, AgentMetrics] = field(default_factory=dict)
-    action_distribution: Dict[int, int] = field(
-        default_factory=lambda: {0: 0, 1: 0, 2: 0}
-    )
+    agent_metrics: dict[str, AgentMetrics] = field(default_factory=dict)
+    action_distribution: dict[int, int] = field(default_factory=lambda: {0: 0, 1: 0, 2: 0})
 
     @property
     def avg_decision_latency(self) -> float:
@@ -121,7 +119,7 @@ class CoordinatorHealth:
     last_update: float
     config_version: int
     is_operational: bool
-    failed_agent_names: List[str] = field(default_factory=list)
+    failed_agent_names: list[str] = field(default_factory=list)
 
 
 class ColdPathCoordinator:
@@ -146,7 +144,7 @@ class ColdPathCoordinator:
     def __init__(
         self,
         config_path: str,
-        event_bus: Optional[Any] = None,
+        event_bus: Any | None = None,
         update_interval: float = DEFAULT_UPDATE_INTERVAL,
     ):
         """
@@ -167,17 +165,17 @@ class ColdPathCoordinator:
         )
 
         # Agent management
-        self.agents: List[Any] = []
-        self.agent_weights: Dict[str, float] = {}  # Reliability weights
-        self.failed_agents: Dict[str, float] = {}  # name -> failure_time
+        self.agents: list[Any] = []
+        self.agent_weights: dict[str, float] = {}  # Reliability weights
+        self.failed_agents: dict[str, float] = {}  # name -> failure_time
 
         # Config write throttling
         self.last_config_write = 0.0
-        self.last_best_decision: Optional[CoordinatorDecision] = None
+        self.last_best_decision: CoordinatorDecision | None = None
 
         # Metrics and monitoring
         self.metrics = CoordinatorMetrics()
-        self.decision_history: List[CoordinatorDecision] = []
+        self.decision_history: list[CoordinatorDecision] = []
         self.max_history_size = 100
 
         # Thread safety
@@ -266,7 +264,7 @@ class ColdPathCoordinator:
             logger.error(f"Error making decision: {e}", exc_info=True)
             return self._make_fallback_decision()
 
-    def _execute_agents(self) -> Dict[str, Any]:
+    def _execute_agents(self) -> dict[str, Any]:
         """
         Execute all registered agents.
 
@@ -327,7 +325,7 @@ class ColdPathCoordinator:
 
         return results
 
-    def _aggregate_decisions(self, results: Dict[str, Any]) -> CoordinatorDecision:
+    def _aggregate_decisions(self, results: dict[str, Any]) -> CoordinatorDecision:
         """
         Aggregate agent outputs into a single decision.
 
@@ -341,7 +339,7 @@ class ColdPathCoordinator:
             return self._make_fallback_decision()
 
         # Group by action
-        action_groups: Dict[int, List[float]] = {0: [], 1: [], 2: []}
+        action_groups: dict[int, list[float]] = {0: [], 1: [], 2: []}
 
         for agent_name, output in results.items():
             action = output.get("action", 0)
@@ -354,9 +352,7 @@ class ColdPathCoordinator:
 
         # Find action with highest average confidence
         action_scores = {
-            action: sum(scores) / len(scores)
-            for action, scores in action_groups.items()
-            if scores
+            action: sum(scores) / len(scores) for action, scores in action_groups.items() if scores
         }
 
         if not action_scores:
@@ -397,7 +393,7 @@ class ColdPathCoordinator:
             quantity=0.0,
         )
 
-    def _validate_agent_output(self, output: Dict[str, Any]) -> None:
+    def _validate_agent_output(self, output: dict[str, Any]) -> None:
         """
         Validate agent output format.
 
@@ -424,7 +420,7 @@ class ColdPathCoordinator:
             raise ValueError(f"confidence must be 0-1, got {confidence}")
 
     def _generate_reasoning(
-        self, results: Dict[str, Any], best_action: int, confidence: float
+        self, results: dict[str, Any], best_action: int, confidence: float
     ) -> str:
         """
         Generate human-readable decision reasoning.
@@ -441,7 +437,7 @@ class ColdPathCoordinator:
         action_name = {0: "HOLD", 1: "LONG", 2: "SHORT"}[best_action]
         return f"{action_name} (confidence={confidence:.2f}) from {agents}"
 
-    def write_config(self, decision: Optional[CoordinatorDecision] = None) -> None:
+    def write_config(self, decision: CoordinatorDecision | None = None) -> None:
         """
         Write decision to FastConfig if enough time has passed.
 
@@ -495,7 +491,7 @@ class ColdPathCoordinator:
         )
         logger.info(f"Set update interval to {self.update_interval}s")
 
-    def get_current_config(self) -> Dict[str, Any]:
+    def get_current_config(self) -> dict[str, Any]:
         """
         Get current config from FastConfig.
 
@@ -543,9 +539,7 @@ class ColdPathCoordinator:
                 action_distribution=dict(self.metrics.action_distribution),
             )
 
-    def get_decision_history(
-        self, num_decisions: int = 10
-    ) -> List[CoordinatorDecision]:
+    def get_decision_history(self, num_decisions: int = 10) -> list[CoordinatorDecision]:
         """
         Get recent decision history.
 
@@ -558,7 +552,7 @@ class ColdPathCoordinator:
         with self.write_lock:
             return list(self.decision_history[-num_decisions:])
 
-    def get_agent_metrics(self, agent_name: str) -> Optional[AgentMetrics]:
+    def get_agent_metrics(self, agent_name: str) -> AgentMetrics | None:
         """
         Get metrics for specific agent.
 

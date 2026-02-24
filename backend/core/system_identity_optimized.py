@@ -30,7 +30,7 @@ import logging
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -115,7 +115,7 @@ class SystemIdentityOptimized:
 
     def __init__(
         self,
-        tattva_config: Optional[TattvaConfig] = None,
+        tattva_config: TattvaConfig | None = None,
         coherence_threshold: float = 0.8,
         enable_metrics: bool = True,
     ):
@@ -142,7 +142,7 @@ class SystemIdentityOptimized:
         self._precompute_layer_masks()
 
         # System state monitoring
-        self.system_state: Dict[str, Any] = {
+        self.system_state: dict[str, Any] = {
             "coherence": 1.0,
             "confidence": 0.5,
             "learning_rate": 0.1,
@@ -160,7 +160,7 @@ class SystemIdentityOptimized:
         self.action_space = [0, 1, 2]  # 0=hold, 1=buy, 2=sell
 
         # Performance tracking
-        self.performance_history: Dict[str, Any] = {
+        self.performance_history: dict[str, Any] = {
             "outcomes": [],
             "confidences": [],
             "actions": [],
@@ -219,8 +219,8 @@ class SystemIdentityOptimized:
         self,
         layer_numbers: np.ndarray,
         direction: str,
-        context: Optional[Dict] = None,
-    ) -> Dict[int, float]:
+        context: dict | None = None,
+    ) -> dict[int, float]:
         """
         Traverse multiple Tattva layers using vectorized operations.
 
@@ -275,12 +275,14 @@ class SystemIdentityOptimized:
             )
 
         # Create result dictionary
-        return {int(layer): float(coh) for layer, coh in zip(layer_numbers, coherences)}
+        return {
+            int(layer): float(coh) for layer, coh in zip(layer_numbers, coherences, strict=False)
+        }
 
     def _calculate_materialization_coherence_vectorized(
         self,
         layer_numbers: np.ndarray,
-        context: Optional[Dict],
+        context: dict | None,
     ) -> np.ndarray:
         """
         Vectorized materialization coherence calculation.
@@ -320,7 +322,7 @@ class SystemIdentityOptimized:
         orderbook_imbalance: float,
         funding_rate: float,
         social_sentiment: float,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Optimized cognitive cycle with vectorized Tattva traversal.
 
@@ -359,7 +361,7 @@ class SystemIdentityOptimized:
         else:
             layers_to_traverse = self.FULL_LAYERS
 
-        tattva_traversal: Dict[str, Any] = {
+        tattva_traversal: dict[str, Any] = {
             "mode": mode.value,
             "layers_traversed": layers_to_traverse.tolist(),
             "coherence_per_layer": {},
@@ -425,9 +427,7 @@ class SystemIdentityOptimized:
             tattva_traversal["coherence_per_layer"][14] = confidence
 
             # Act: Layers 26-31
-            act_layers = layers_to_traverse[
-                (layers_to_traverse >= 26) & (layers_to_traverse <= 31)
-            ]
+            act_layers = layers_to_traverse[(layers_to_traverse >= 26) & (layers_to_traverse <= 31)]
             act_context = {"action": action, "confidence": confidence}
             tattva_traversal["coherence_per_layer"].update(
                 self._traverse_layers_vectorized(act_layers, "act", act_context)
@@ -466,13 +466,9 @@ class SystemIdentityOptimized:
             self.performance_history["traversal_latencies"].append(latency_us)
 
             # Calculate overall Tattva coherence
-            tattva_coherence_values = list(
-                tattva_traversal["coherence_per_layer"].values()
-            )
+            tattva_coherence_values = list(tattva_traversal["coherence_per_layer"].values())
             overall_tattva_coherence = (
-                float(np.mean(tattva_coherence_values))
-                if tattva_coherence_values
-                else 1.0
+                float(np.mean(tattva_coherence_values)) if tattva_coherence_values else 1.0
             )
 
             # Create metrics
@@ -487,16 +483,12 @@ class SystemIdentityOptimized:
                 "action": action,
                 "confidence": confidence,
                 "rationale": rationale,
-                "perception": {
-                    k: v for k, v in perception.items() if k != "state_vector"
-                },
+                "perception": {k: v for k, v in perception.items() if k != "state_vector"},
                 "perception_state": perception["state_vector"].tolist(),
                 "system_state": self.system_state.copy(),
                 "tattva_traversal": tattva_traversal,
                 "tattva_metrics": {
-                    "current_layer_coherence": tattva_traversal[
-                        "coherence_per_layer"
-                    ].copy(),
+                    "current_layer_coherence": tattva_traversal["coherence_per_layer"].copy(),
                     "overall_coherence": overall_tattva_coherence,
                     "total_layers": len(layers_to_traverse),
                     "mode": mode.value,
@@ -507,9 +499,7 @@ class SystemIdentityOptimized:
                     "mode": metrics.mode.value,
                     "layers": metrics.layers_traversed,
                     "latency_target_met": (
-                        latency_us < 80
-                        if mode == TraversalMode.SPARSE
-                        else latency_us < 200
+                        latency_us < 80 if mode == TraversalMode.SPARSE else latency_us < 200
                     ),
                 },
             }
@@ -525,10 +515,10 @@ class SystemIdentityOptimized:
 
     def _update_system_state(
         self,
-        perception: Dict[str, Any],
+        perception: dict[str, Any],
         confidence: float,
         action: int,
-        tattva_traversal: Optional[Dict[str, Any]] = None,
+        tattva_traversal: dict[str, Any] | None = None,
     ) -> None:
         """Update system's self-awareness (Ahamkara function)."""
         # Update coherence
@@ -538,15 +528,11 @@ class SystemIdentityOptimized:
         )
 
         # Update confidence
-        self.system_state["confidence"] = (
-            0.9 * self.system_state["confidence"] + 0.1 * confidence
-        )
+        self.system_state["confidence"] = 0.9 * self.system_state["confidence"] + 0.1 * confidence
 
         # Update Tattva coherence tracking
         if tattva_traversal and "coherence_per_layer" in tattva_traversal:
-            for layer_num, layer_coherence in tattva_traversal[
-                "coherence_per_layer"
-            ].items():
+            for layer_num, layer_coherence in tattva_traversal["coherence_per_layer"].items():
                 if layer_num in self.system_state["tattva_coherence"]:
                     self.system_state["tattva_coherence"][layer_num] = (
                         0.9 * self.system_state["tattva_coherence"][layer_num]
@@ -572,7 +558,7 @@ class SystemIdentityOptimized:
                 f"threshold={self.coherence_threshold}"
             )
 
-    def get_performance_statistics(self) -> Dict[str, Any]:
+    def get_performance_statistics(self) -> dict[str, Any]:
         """Get comprehensive performance statistics."""
         latencies = self.performance_history.get("traversal_latencies", [])
 
@@ -585,14 +571,14 @@ class SystemIdentityOptimized:
         sparse_latencies = [
             lat
             for lat, trav in zip(
-                latencies, self.performance_history.get("tattva_traversals", [])
+                latencies, self.performance_history.get("tattva_traversals", []), strict=False
             )
             if trav.get("mode") == "sparse"
         ]
         full_latencies = [
             lat
             for lat, trav in zip(
-                latencies, self.performance_history.get("tattva_traversals", [])
+                latencies, self.performance_history.get("tattva_traversals", []), strict=False
             )
             if trav.get("mode") == "full"
         ]
@@ -609,22 +595,16 @@ class SystemIdentityOptimized:
             "sparse_mode": {
                 "count": len(sparse_latencies),
                 "mean_us": float(np.mean(sparse_latencies)) if sparse_latencies else 0,
-                "p99_us": float(np.percentile(sparse_latencies, 99))
-                if sparse_latencies
-                else 0,
-                "target_met": all(lat < 80 for lat in sparse_latencies)
-                if sparse_latencies
-                else True,
+                "p99_us": float(np.percentile(sparse_latencies, 99)) if sparse_latencies else 0,
+                "target_met": (
+                    all(lat < 80 for lat in sparse_latencies) if sparse_latencies else True
+                ),
             },
             "full_mode": {
                 "count": len(full_latencies),
                 "mean_us": float(np.mean(full_latencies)) if full_latencies else 0,
-                "p99_us": float(np.percentile(full_latencies, 99))
-                if full_latencies
-                else 0,
-                "target_met": all(lat < 200 for lat in full_latencies)
-                if full_latencies
-                else True,
+                "p99_us": float(np.percentile(full_latencies, 99)) if full_latencies else 0,
+                "target_met": all(lat < 200 for lat in full_latencies) if full_latencies else True,
             },
             "configuration": {
                 "coherence_threshold": self.coherence_threshold,

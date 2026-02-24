@@ -6,7 +6,7 @@ Implements: Yogas, Avastas, Pancha Pakshi, Muhurtha, Advanced Vargas
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class PlanetState(Enum):
@@ -25,7 +25,7 @@ class Yoga:
     """Vedic Yoga (Planetary Combination)"""
 
     name: str
-    planets: List[str]
+    planets: list[str]
     strength: float  # 0-1
     description: str
     trading_significance: str
@@ -63,7 +63,7 @@ class MuhurthaData:
     nakshatra: str
     is_favorable: bool
     rating: float  # 0-10
-    warnings: List[str]
+    warnings: list[str]
 
 
 @dataclass
@@ -71,9 +71,9 @@ class VargaChart:
     """Divisional Chart (Varga)"""
 
     division: str  # D1, D9, D10, etc.
-    planets: Dict[str, Dict[str, Any]]
+    planets: dict[str, dict[str, Any]]
     ascendant: str
-    significant_placements: List[str]
+    significant_placements: list[str]
 
 
 class AdvancedVedAstroFeatures:
@@ -151,7 +151,7 @@ class AdvancedVedAstroFeatures:
 
     # ==================== YOGAS (Planetary Combinations) ====================
 
-    def calculate_all_yogas(self, kundli: Dict[str, Any]) -> List[Yoga]:
+    def calculate_all_yogas(self, kundli: dict[str, Any]) -> list[Yoga]:
         """
         Calculate all major Vedic Yogas.
         Returns list of active yogas with trading significance.
@@ -166,9 +166,7 @@ class AdvancedVedAstroFeatures:
                 Yoga(
                     name="Gaja Kesari Yoga",
                     planets=["Moon", "Jupiter"],
-                    strength=self._calculate_yoga_strength(
-                        planets, ["Moon", "Jupiter"]
-                    ),
+                    strength=self._calculate_yoga_strength(planets, ["Moon", "Jupiter"]),
                     description="Moon and Jupiter in mutual trine or conjunction - Wisdom, wealth, success",
                     trading_significance="EXCELLENT for trading - wisdom, intuition, and prosperity",
                 )
@@ -229,7 +227,7 @@ class AdvancedVedAstroFeatures:
 
         return sorted(yogas, key=lambda x: x.strength, reverse=True)
 
-    def _check_gaja_kesari_yoga(self, planets: Dict) -> bool:
+    def _check_gaja_kesari_yoga(self, planets: dict) -> bool:
         """Moon and Jupiter in mutual kendra (1,4,7,10) or conjunction."""
         moon = planets.get("Moon", {})
         jupiter = planets.get("Jupiter", {})
@@ -248,7 +246,7 @@ class AdvancedVedAstroFeatures:
         diff = abs(moon_house - jupiter_house)
         return diff in [3, 6, 9]  # 4th, 7th, 10th aspect
 
-    def _check_budha_aditya_yoga(self, planets: Dict) -> bool:
+    def _check_budha_aditya_yoga(self, planets: dict) -> bool:
         """Sun and Mercury in same sign."""
         sun = planets.get("Sun", {})
         mercury = planets.get("Mercury", {})
@@ -258,7 +256,7 @@ class AdvancedVedAstroFeatures:
 
         return sun.get("sign") == mercury.get("sign")
 
-    def _check_dhana_yogas(self, planets: Dict, lagna_sign: str) -> List[Yoga]:
+    def _check_dhana_yogas(self, planets: dict, lagna_sign: str) -> list[Yoga]:
         """Wealth producing combinations."""
         yogas = []
 
@@ -291,7 +289,7 @@ class AdvancedVedAstroFeatures:
 
         return yogas
 
-    def _check_raja_yogas(self, planets: Dict, lagna_sign: str) -> List[Yoga]:
+    def _check_raja_yogas(self, planets: dict, lagna_sign: str) -> list[Yoga]:
         """Power and status combinations."""
         yogas = []
 
@@ -300,7 +298,7 @@ class AdvancedVedAstroFeatures:
 
         return yogas
 
-    def _check_chandra_mangala_yoga(self, planets: Dict) -> bool:
+    def _check_chandra_mangala_yoga(self, planets: dict) -> bool:
         """Moon and Mars conjunction."""
         moon = planets.get("Moon", {})
         mars = planets.get("Mars", {})
@@ -310,14 +308,12 @@ class AdvancedVedAstroFeatures:
 
         return moon.get("sign") == mars.get("sign")
 
-    def _check_viparita_raja_yoga(
-        self, planets: Dict, lagna_sign: str
-    ) -> Optional[Yoga]:
+    def _check_viparita_raja_yoga(self, planets: dict, lagna_sign: str) -> Yoga | None:
         """Difficult lords producing good results."""
         # Simplified check
         return None
 
-    def _check_pancha_mahapurusha_yogas(self, planets: Dict) -> List[Yoga]:
+    def _check_pancha_mahapurusha_yogas(self, planets: dict) -> list[Yoga]:
         """Five great person yogas."""
         yogas = []
 
@@ -396,20 +392,16 @@ class AdvancedVedAstroFeatures:
 
         return yogas
 
-    def _check_lakshmi_yoga(self, planets: Dict, lagna_sign: str) -> bool:
+    def _check_lakshmi_yoga(self, planets: dict, lagna_sign: str) -> bool:
         """Venus strong and 9th lord well placed."""
         venus = planets.get("Venus", {})
         if not venus:
             return False
 
         # Simplified check - Venus in good dignity
-        return (
-            venus.get("exalted")
-            or venus.get("own_sign")
-            or venus.get("house") in [1, 5, 9]
-        )
+        return venus.get("exalted") or venus.get("own_sign") or venus.get("house") in [1, 5, 9]
 
-    def _calculate_yoga_strength(self, planets: Dict, yoga_planets: List[str]) -> float:
+    def _calculate_yoga_strength(self, planets: dict, yoga_planets: list[str]) -> float:
         """Calculate overall strength of a yoga based on planet strengths."""
         total_strength = 0
         for planet_name in yoga_planets:
@@ -418,7 +410,7 @@ class AdvancedVedAstroFeatures:
 
         return total_strength / len(yoga_planets) if yoga_planets else 0
 
-    def _get_planet_strength(self, planet: Dict) -> float:
+    def _get_planet_strength(self, planet: dict) -> float:
         """Get normalized planet strength (0-1)."""
         if not planet:
             return 0
@@ -440,7 +432,7 @@ class AdvancedVedAstroFeatures:
 
     # ==================== AVASTAS (Planetary States) ====================
 
-    def calculate_all_avastas(self, kundli: Dict[str, Any]) -> Dict[str, Avasta]:
+    def calculate_all_avastas(self, kundli: dict[str, Any]) -> dict[str, Avasta]:
         """
         Calculate Avastas (states) for all planets.
         Determines planetary strength and dignity.
@@ -455,7 +447,7 @@ class AdvancedVedAstroFeatures:
         return avastas
 
     def _calculate_single_avasta(
-        self, planet_name: str, planet_data: Dict, all_planets: Dict
+        self, planet_name: str, planet_data: dict, all_planets: dict
     ) -> Avasta:
         """Calculate Avasta for a single planet."""
 
@@ -501,9 +493,7 @@ class AdvancedVedAstroFeatures:
         # Retrograde adjustment
         if is_retro:
             if state in [PlanetState.EXALTED, PlanetState.OWN_SIGN]:
-                strength = min(
-                    100, strength * 1.1
-                )  # Stronger when retro in good dignity
+                strength = min(100, strength * 1.1)  # Stronger when retro in good dignity
             else:
                 strength *= 0.9
 
@@ -547,9 +537,7 @@ class AdvancedVedAstroFeatures:
         }
         return lords.get(sign, "")
 
-    def _is_combust(
-        self, planet_name: str, planet_data: Dict, all_planets: Dict
-    ) -> bool:
+    def _is_combust(self, planet_name: str, planet_data: dict, all_planets: dict) -> bool:
         """Check if planet is combust (within 8-15 degrees of Sun)."""
         if planet_name == "Sun":
             return False
@@ -680,9 +668,7 @@ class AdvancedVedAstroFeatures:
 
     # ==================== MUHURTHA (Electional Astrology) ====================
 
-    def calculate_muhurtha(
-        self, date: datetime, kundli: Dict[str, Any]
-    ) -> MuhurthaData:
+    def calculate_muhurtha(self, date: datetime, kundli: dict[str, Any]) -> MuhurthaData:
         """
         Calculate Muhurtha - favorable/unfavorable time quality.
         """
@@ -715,7 +701,7 @@ class AdvancedVedAstroFeatures:
             warnings=warnings,
         )
 
-    def _calculate_tithi(self, date: datetime, kundli: Dict) -> int:
+    def _calculate_tithi(self, date: datetime, kundli: dict) -> int:
         """Calculate Tithi (lunar day) number 1-30."""
         # Simplified - would need accurate sun/moon longitudes
         sun_long = kundli.get("planets", {}).get("Sun", {}).get("longitude", 0)
@@ -764,9 +750,7 @@ class AdvancedVedAstroFeatures:
                 return ttype
         return "Unknown"
 
-    def _calculate_muhurtha_rating(
-        self, tithi_type: str, nakshatra: str, kundli: Dict
-    ) -> float:
+    def _calculate_muhurtha_rating(self, tithi_type: str, nakshatra: str, kundli: dict) -> float:
         """Calculate overall Muhurtha rating 0-10."""
         base_rating = 5.0
 
@@ -796,7 +780,7 @@ class AdvancedVedAstroFeatures:
 
     # ==================== ADVANCED VARGAS ====================
 
-    def calculate_all_vargas(self, kundli: Dict[str, Any]) -> Dict[str, VargaChart]:
+    def calculate_all_vargas(self, kundli: dict[str, Any]) -> dict[str, VargaChart]:
         """
         Calculate all important Varga charts.
         """
@@ -805,69 +789,45 @@ class AdvancedVedAstroFeatures:
         lagna_long = kundli.get("lagna_longitude", 0)
 
         # D1 - Rasi (already calculated)
-        vargas["D1"] = self._create_varga_chart(
-            "D1", planets, lagna_long, self._d1_position
-        )
+        vargas["D1"] = self._create_varga_chart("D1", planets, lagna_long, self._d1_position)
 
         # D9 - Navamsa (already in base connector, but add here for completeness)
-        vargas["D9"] = self._create_varga_chart(
-            "D9", planets, lagna_long, self._d9_position
-        )
+        vargas["D9"] = self._create_varga_chart("D9", planets, lagna_long, self._d9_position)
 
         # D10 - Dasamsa (Career/Status)
-        vargas["D10"] = self._create_varga_chart(
-            "D10", planets, lagna_long, self._d10_position
-        )
+        vargas["D10"] = self._create_varga_chart("D10", planets, lagna_long, self._d10_position)
 
         # D12 - Dwadasamsa (Parents/Family)
-        vargas["D12"] = self._create_varga_chart(
-            "D12", planets, lagna_long, self._d12_position
-        )
+        vargas["D12"] = self._create_varga_chart("D12", planets, lagna_long, self._d12_position)
 
         # D16 - Shodasamsa (Vehicles/Comforts)
-        vargas["D16"] = self._create_varga_chart(
-            "D16", planets, lagna_long, self._d16_position
-        )
+        vargas["D16"] = self._create_varga_chart("D16", planets, lagna_long, self._d16_position)
 
         # D20 - Vimshamsa (Spiritual)
-        vargas["D20"] = self._create_varga_chart(
-            "D20", planets, lagna_long, self._d20_position
-        )
+        vargas["D20"] = self._create_varga_chart("D20", planets, lagna_long, self._d20_position)
 
         # D24 - Chaturvimshamsa (Education)
-        vargas["D24"] = self._create_varga_chart(
-            "D24", planets, lagna_long, self._d24_position
-        )
+        vargas["D24"] = self._create_varga_chart("D24", planets, lagna_long, self._d24_position)
 
         # D27 - Bhamsha (Strength/Courage)
-        vargas["D27"] = self._create_varga_chart(
-            "D27", planets, lagna_long, self._d27_position
-        )
+        vargas["D27"] = self._create_varga_chart("D27", planets, lagna_long, self._d27_position)
 
         # D30 - Trimshamsha (Misfortunes)
-        vargas["D30"] = self._create_varga_chart(
-            "D30", planets, lagna_long, self._d30_position
-        )
+        vargas["D30"] = self._create_varga_chart("D30", planets, lagna_long, self._d30_position)
 
         # D40 - Khavedamsha (Auspicious results)
-        vargas["D40"] = self._create_varga_chart(
-            "D40", planets, lagna_long, self._d40_position
-        )
+        vargas["D40"] = self._create_varga_chart("D40", planets, lagna_long, self._d40_position)
 
         # D45 - Akshavedamsha (All general matters)
-        vargas["D45"] = self._create_varga_chart(
-            "D45", planets, lagna_long, self._d45_position
-        )
+        vargas["D45"] = self._create_varga_chart("D45", planets, lagna_long, self._d45_position)
 
         # D60 - Shashtyamsha (General results)
-        vargas["D60"] = self._create_varga_chart(
-            "D60", planets, lagna_long, self._d60_position
-        )
+        vargas["D60"] = self._create_varga_chart("D60", planets, lagna_long, self._d60_position)
 
         return vargas
 
     def _create_varga_chart(
-        self, division: str, planets: Dict, lagna_long: float, position_func
+        self, division: str, planets: dict, lagna_long: float, position_func
     ) -> VargaChart:
         """Create a Varga chart using the given position function."""
         varga_planets = {}
@@ -887,9 +847,7 @@ class AdvancedVedAstroFeatures:
         varga_lagna = self.signs[varga_lagna_num]
 
         # Find significant placements
-        significant = self._find_significant_varga_placements(
-            varga_planets, varga_lagna
-        )
+        significant = self._find_significant_varga_placements(varga_planets, varga_lagna)
 
         return VargaChart(
             division=division,
@@ -1015,8 +973,8 @@ class AdvancedVedAstroFeatures:
         return (sign_num + shashtyamsha) % 12
 
     def _find_significant_varga_placements(
-        self, varga_planets: Dict, varga_lagna: str
-    ) -> List[str]:
+        self, varga_planets: dict, varga_lagna: str
+    ) -> list[str]:
         """Find significant placements in Varga chart."""
         significant = []
 

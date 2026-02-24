@@ -16,7 +16,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class Agent(ABC):
         pass
 
     @abstractmethod
-    def analyze(self) -> Dict[str, Any]:
+    def analyze(self) -> dict[str, Any]:
         """
         Analyze market and return decision.
 
@@ -78,7 +78,7 @@ class MockSentimentAgent(Agent):
         """Agent name."""
         return self._name
 
-    def analyze(self) -> Dict[str, Any]:
+    def analyze(self) -> dict[str, Any]:
         """
         Analyze sentiment and return decision.
 
@@ -138,7 +138,7 @@ class MockMarketRegimeAgent(Agent):
         """Agent name."""
         return self._name
 
-    def analyze(self) -> Dict[str, Any]:
+    def analyze(self) -> dict[str, Any]:
         """
         Analyze market regime and return decision.
 
@@ -206,7 +206,7 @@ class MockRiskGovernor(Agent):
         """Agent name."""
         return self._name
 
-    def analyze(self) -> Dict[str, Any]:
+    def analyze(self) -> dict[str, Any]:
         """
         Analyze risk and return decision.
 
@@ -280,8 +280,8 @@ class Phase11IntegrationCoordinator:
             config: Phase11IntegrationConfig with paths and weights
         """
         self.config = config
-        self.agents: Dict[str, Agent] = {}
-        self.agent_weights: Dict[str, float] = {}
+        self.agents: dict[str, Agent] = {}
+        self.agent_weights: dict[str, float] = {}
         self._call_count = 0
         self._decision_history = []
 
@@ -301,9 +301,7 @@ class Phase11IntegrationCoordinator:
             agent = MockMarketRegimeAgent(default_action=1, default_confidence=0.72)
         self.agents["MarketRegimeAgent"] = agent
         self.agent_weights["MarketRegimeAgent"] = self.config.market_regime_weight
-        logger.info(
-            f"Added MarketRegimeAgent with weight {self.config.market_regime_weight}"
-        )
+        logger.info(f"Added MarketRegimeAgent with weight {self.config.market_regime_weight}")
 
     def add_risk_governor(self, agent: MockRiskGovernor = None):
         """Add risk governor (or create mock)."""
@@ -311,11 +309,9 @@ class Phase11IntegrationCoordinator:
             agent = MockRiskGovernor(allow_trading=True, confidence=0.9)
         self.agents["RiskGovernor"] = agent
         self.agent_weights["RiskGovernor"] = self.config.risk_governor_weight
-        logger.info(
-            f"Added RiskGovernor with weight {self.config.risk_governor_weight}"
-        )
+        logger.info(f"Added RiskGovernor with weight {self.config.risk_governor_weight}")
 
-    def execute_agents(self) -> Dict[str, Dict[str, Any]]:
+    def execute_agents(self) -> dict[str, dict[str, Any]]:
         """
         Execute all agents and return their decisions.
 
@@ -336,9 +332,7 @@ class Phase11IntegrationCoordinator:
 
         return decisions
 
-    def aggregate_decisions(
-        self, decisions: Dict[str, Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def aggregate_decisions(self, decisions: dict[str, dict[str, Any]]) -> dict[str, Any]:
         """
         Aggregate agent decisions using weighted averaging.
 
@@ -348,9 +342,7 @@ class Phase11IntegrationCoordinator:
         Returns:
             aggregated decision: {action, confidence, reasoning, source}
         """
-        valid_decisions = {
-            name: dec for name, dec in decisions.items() if dec is not None
-        }
+        valid_decisions = {name: dec for name, dec in decisions.items() if dec is not None}
 
         if not valid_decisions:
             # Fallback: all agents failed
@@ -362,12 +354,12 @@ class Phase11IntegrationCoordinator:
             }
 
         # Aggregate confidence scores using weights
-        total_weight = sum(self.agent_weights[name] for name in valid_decisions.keys())
+        total_weight = sum(self.agent_weights[name] for name in valid_decisions)
 
         weighted_confidence = (
             sum(
                 valid_decisions[name]["confidence"] * self.agent_weights[name]
-                for name in valid_decisions.keys()
+                for name in valid_decisions
             )
             / total_weight
         )
@@ -392,7 +384,7 @@ class Phase11IntegrationCoordinator:
             "source": ", ".join(sources),
         }
 
-    def make_decision(self) -> Dict[str, Any]:
+    def make_decision(self) -> dict[str, Any]:
         """
         Execute full pipeline: execute agents, aggregate decisions.
 
@@ -418,7 +410,7 @@ class Phase11IntegrationCoordinator:
 
         return final_decision
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get coordination metrics."""
         if not self._decision_history:
             return {"decisions_made": 0, "avg_confidence": 0, "action_distribution": {}}
@@ -434,12 +426,10 @@ class Phase11IntegrationCoordinator:
             "decisions_made": len(self._decision_history),
             "avg_confidence": sum(confidences) / len(confidences),
             "action_distribution": action_dist,
-            "last_decision": (
-                self._decision_history[-1] if self._decision_history else None
-            ),
+            "last_decision": (self._decision_history[-1] if self._decision_history else None),
         }
 
-    def get_agent_statistics(self) -> Dict[str, Dict[str, Any]]:
+    def get_agent_statistics(self) -> dict[str, dict[str, Any]]:
         """Get statistics for each agent."""
         stats = {}
         for name, agent in self.agents.items():

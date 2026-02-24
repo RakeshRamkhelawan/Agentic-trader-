@@ -1,0 +1,84 @@
+# Docker Compose - Test Configuration
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+#
+# This configuration is optimized for running tests:
+# - Uses test databases with ephemeral storage
+# - Reduced resource limits
+# - Debug logging enabled
+# - Test-specific environment variables
+
+version: '3.8'
+
+services:
+  # Test database - uses ephemeral storage (no persistence)
+  postgres:
+    environment:
+      - POSTGRES_DB=trading_test_db
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD=test_password
+    volumes: []  # No persistence for tests
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d trading_test_db"]
+
+  # Test ClickHouse - ephemeral
+  clickhouse:
+    volumes: []  # No persistence for tests
+
+  # Test Redis - no persistence
+  redis:
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --appendonly no
+    volumes: []  # No config file mount for tests
+
+  # Test ChromaDB - ephemeral
+  chromadb:
+    volumes: []  # No persistence for tests
+
+  # Test Redpanda - minimal config
+  redpanda:
+    volumes: []  # No persistence for tests
+
+  # Test API configuration
+  api:
+    build:
+      target: production
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://test:test_password@postgres:5432/trading_test_db
+      - REDIS_URL=redis://redis:6379/0
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+      - LOG_LEVEL=DEBUG
+      - SECRET_KEY=test-secret-key
+      - JWT_SECRET_KEY=test-jwt-secret
+      - UVICORN_WORKERS=1
+      - MAX_WORKERS=2
+      - DEBUG=true
+      - TESTING=true
+    volumes:
+      - ./backend:/app/backend:ro
+      - ./tests:/app/tests:ro
+      - ./logs:/app/logs
+    command: >
+      sh -c "
+        echo 'Waiting for services...' &&
+        sleep 10 &&
+        pytest tests/ -v --tb=short
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: none  # Don't restart after tests complete

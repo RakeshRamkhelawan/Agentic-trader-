@@ -6,7 +6,7 @@ Converts complex Vedic astrology data into actionable trading signals for agents
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class SignalStrength(Enum):
@@ -34,14 +34,14 @@ class TradingSignal:
     signal: SignalStrength
     confidence: float  # 0-100
     timeframe: TimeFrame
-    entry_price_range: Optional[tuple]  # (min, max)
-    stop_loss: Optional[float]
-    take_profit: Optional[float]
+    entry_price_range: tuple | None  # (min, max)
+    stop_loss: float | None
+    take_profit: float | None
 
     # Astrological basis
-    primary_factors: List[str]
-    supporting_factors: List[str]
-    warning_factors: List[str]
+    primary_factors: list[str]
+    supporting_factors: list[str]
+    warning_factors: list[str]
 
     # Detailed context
     dasha_context: str
@@ -53,7 +53,7 @@ class TradingSignal:
     risk_level: str  # low/medium/high
     position_size_suggestion: str  # small/medium/large
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "timestamp": self.timestamp,
             "symbol": self.symbol,
@@ -125,16 +125,16 @@ class TradingSignalGenerator:
     def generate_signal(
         self,
         symbol: str,
-        kundli: Dict[str, Any],
+        kundli: dict[str, Any],
         dasha: Any,
-        ashtaka: Dict[str, Any],
-        yogas: List[Any],
-        avastas: Dict[str, Any],
-        sahams: Dict[str, float],
-        transits: Dict[str, Any],
+        ashtaka: dict[str, Any],
+        yogas: list[Any],
+        avastas: dict[str, Any],
+        sahams: dict[str, float],
+        transits: dict[str, Any],
         pancha_pakshi: Any,
         muhurtha: Any,
-        current_price: Optional[float] = None,
+        current_price: float | None = None,
     ) -> TradingSignal:
         """
         Generate comprehensive trading signal from all astrological data.
@@ -183,9 +183,7 @@ class TradingSignalGenerator:
         )
 
         # Determine action
-        action = self._generate_recommended_action(
-            signal, total_score, primary, warnings
-        )
+        action = self._generate_recommended_action(signal, total_score, primary, warnings)
 
         # Risk assessment
         risk_level = self._assess_risk_level(total_score, warnings, avastas)
@@ -243,7 +241,7 @@ class TradingSignalGenerator:
 
         return max(0, min(1, score))
 
-    def _calculate_yoga_score(self, yogas: List[Any]) -> float:
+    def _calculate_yoga_score(self, yogas: list[Any]) -> float:
         """Score based on present Yogas."""
         if not yogas:
             return 0.5
@@ -270,7 +268,7 @@ class TradingSignalGenerator:
 
         return max(0, min(1, score))
 
-    def _calculate_avasta_score(self, avastas: Dict[str, Any]) -> float:
+    def _calculate_avasta_score(self, avastas: dict[str, Any]) -> float:
         """Score based on planetary Avastas."""
         if not avastas:
             return 0.5
@@ -280,9 +278,7 @@ class TradingSignalGenerator:
 
         return avg_strength / 100
 
-    def _calculate_transit_score(
-        self, transits: Dict[str, Any], ashtaka: Dict[str, Any]
-    ) -> float:
+    def _calculate_transit_score(self, transits: dict[str, Any], ashtaka: dict[str, Any]) -> float:
         """Score based on current transits."""
         if not transits or not transits.get("current_positions"):
             return 0.5
@@ -309,9 +305,7 @@ class TradingSignalGenerator:
 
         return favorable / total
 
-    def _calculate_sahams_score(
-        self, sahams: Dict[str, float], transits: Dict[str, Any]
-    ) -> float:
+    def _calculate_sahams_score(self, sahams: dict[str, float], transits: dict[str, Any]) -> float:
         """Score based on Saham transits."""
         # Check if transits are favorable to Artha and Labha Sahams
         # This is a simplified version
@@ -358,9 +352,7 @@ Current Dasha Period:
 {main_context}
         """.strip()
 
-    def _generate_transit_context(
-        self, transits: Dict[str, Any], ashtaka: Dict[str, Any]
-    ) -> str:
+    def _generate_transit_context(self, transits: dict[str, Any], ashtaka: dict[str, Any]) -> str:
         """Generate human-readable transit context."""
         if not transits:
             return "No transit information available."
@@ -377,13 +369,9 @@ Current Dasha Period:
         if exalted:
             context_parts.append(f"Exalted planets (strong): {', '.join(exalted)}")
         if debilitated:
-            context_parts.append(
-                f"Debilitated planets (weak): {', '.join(debilitated)}"
-            )
+            context_parts.append(f"Debilitated planets (weak): {', '.join(debilitated)}")
         if retrograde:
-            context_parts.append(
-                f"Retrograde planets (review/rethink): {', '.join(retrograde)}"
-            )
+            context_parts.append(f"Retrograde planets (review/rethink): {', '.join(retrograde)}")
 
         return (
             "Current Transits:\n• " + "\n• ".join(context_parts)
@@ -416,12 +404,8 @@ Current Dasha Period:
 
         # Avasta factors
         if avastas:
-            strong_planets = [
-                a.planet for a in avastas.values() if a.strength_percent > 70
-            ]
-            weak_planets = [
-                a.planet for a in avastas.values() if a.strength_percent < 30
-            ]
+            strong_planets = [a.planet for a in avastas.values() if a.strength_percent > 70]
+            weak_planets = [a.planet for a in avastas.values() if a.strength_percent < 30]
 
             if strong_planets:
                 supporting.append(f"Strong planets: {', '.join(strong_planets)}")
@@ -442,13 +426,9 @@ Current Dasha Period:
         # Muhurtha
         if muhurtha:
             if muhurtha.is_favorable:
-                supporting.append(
-                    f"Favorable Muhurtha: {muhurtha.tithi} ({muhurtha.rating}/10)"
-                )
+                supporting.append(f"Favorable Muhurtha: {muhurtha.tithi} ({muhurtha.rating}/10)")
             else:
-                warnings.append(
-                    f"Unfavorable Muhurtha: {muhurtha.tithi} ({muhurtha.rating}/10)"
-                )
+                warnings.append(f"Unfavorable Muhurtha: {muhurtha.tithi} ({muhurtha.rating}/10)")
 
         # Pancha Pakshi
         if pancha_pakshi:
@@ -464,7 +444,7 @@ Current Dasha Period:
         return primary, supporting, warnings
 
     def _generate_recommended_action(
-        self, signal: SignalStrength, score: float, primary: List, warnings: List
+        self, signal: SignalStrength, score: float, primary: list, warnings: list
     ) -> str:
         """Generate specific action recommendation."""
 
@@ -479,11 +459,13 @@ Current Dasha Period:
         base_action = actions.get(signal, "HOLD")
 
         if warnings:
-            base_action += f"\n\nCAUTION: {len(warnings)} warning factors present. Use tight stop-loss."
+            base_action += (
+                f"\n\nCAUTION: {len(warnings)} warning factors present. Use tight stop-loss."
+            )
 
         return base_action
 
-    def _assess_risk_level(self, score: float, warnings: List, avastas: Dict) -> str:
+    def _assess_risk_level(self, score: float, warnings: list, avastas: dict) -> str:
         """Assess risk level."""
         risk_score = 0
 
@@ -508,9 +490,7 @@ Current Dasha Period:
         else:
             return "high"
 
-    def _suggest_position_size(
-        self, score: float, risk_level: str, warnings: List
-    ) -> str:
+    def _suggest_position_size(self, score: float, risk_level: str, warnings: list) -> str:
         """Suggest position size based on confidence and risk."""
         if risk_level == "high":
             return "small"
@@ -539,8 +519,8 @@ Current Dasha Period:
             return TimeFrame.SWING
 
     def _calculate_entry_range(
-        self, current_price: Optional[float], signal: SignalStrength
-    ) -> Optional[tuple]:
+        self, current_price: float | None, signal: SignalStrength
+    ) -> tuple | None:
         """Calculate suggested entry price range."""
         if not current_price:
             return None
@@ -555,8 +535,8 @@ Current Dasha Period:
             return None
 
     def _calculate_stop_loss(
-        self, current_price: Optional[float], signal: SignalStrength, score: float
-    ) -> Optional[float]:
+        self, current_price: float | None, signal: SignalStrength, score: float
+    ) -> float | None:
         """Calculate suggested stop-loss."""
         if not current_price:
             return None
@@ -577,8 +557,8 @@ Current Dasha Period:
             return None
 
     def _calculate_take_profit(
-        self, current_price: Optional[float], signal: SignalStrength, score: float
-    ) -> Optional[float]:
+        self, current_price: float | None, signal: SignalStrength, score: float
+    ) -> float | None:
         """Calculate suggested take-profit."""
         if not current_price:
             return None
@@ -644,7 +624,7 @@ Provide ONLY the JSON response.
 
     @staticmethod
     def build_consciousness_prompt(
-        kundli: Dict[str, Any], yogas: List[Any], dasha: Any, transits: Dict[str, Any]
+        kundli: dict[str, Any], yogas: list[Any], dasha: Any, transits: dict[str, Any]
     ) -> str:
         """Build prompt for consciousness/trading psychology agent."""
 

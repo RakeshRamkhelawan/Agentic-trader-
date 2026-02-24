@@ -2,8 +2,7 @@ import asyncio
 import logging
 import uuid
 from collections import deque
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 import tiktoken
 
@@ -15,9 +14,7 @@ class TokenCounter:
         self.encoders = {}
         try:
             self.encoders["gpt-4"] = tiktoken.encoding_for_model("gpt-4")
-            self.encoders["gpt-3.5-turbo"] = tiktoken.encoding_for_model(
-                "gpt-3.5-turbo"
-            )
+            self.encoders["gpt-3.5-turbo"] = tiktoken.encoding_for_model("gpt-3.5-turbo")
             self.encoders["default"] = tiktoken.get_encoding("cl100k_base")
         except Exception as e:
             logger.warning(f"Failed to initialize tiktoken encoders: {e}")
@@ -40,9 +37,7 @@ class TokenCounter:
         except Exception:
             return len(text) // 4
 
-    def calculate_cost(
-        self, prompt_tokens: int, completion_tokens: int, model: str
-    ) -> float:
+    def calculate_cost(self, prompt_tokens: int, completion_tokens: int, model: str) -> float:
         # Pricing as of Feb 2026 (update periodically)
         # Using approximated standard pricing for major models
         pricing = {
@@ -73,15 +68,11 @@ class TokenCounter:
             return 0.0  # Assumed free or unknown
 
         rates = pricing[pricing_model]
-        return (prompt_tokens * rates["prompt"]) + (
-            completion_tokens * rates["completion"]
-        )
+        return (prompt_tokens * rates["prompt"]) + (completion_tokens * rates["completion"])
 
 
 class UsageTracker:
-    def __init__(
-        self, clickhouse_client=None, batch_size: int = 10, flush_interval: int = 5
-    ):
+    def __init__(self, clickhouse_client=None, batch_size: int = 10, flush_interval: int = 5):
         self.clickhouse = clickhouse_client
         self.buffer = deque(maxlen=10000)
         self.batch_size = batch_size
@@ -117,14 +108,14 @@ class UsageTracker:
         completion_tokens: int,
         cost_usd: float,
         agent_name: str = "unknown",
-        request_id: Optional[str] = None,
+        request_id: str | None = None,
     ):
         if not request_id:
             request_id = str(uuid.uuid4())
 
         entry = {
             "tenant_id": tenant_id,
-            "timestamp": datetime.now(timezone.utc),
+            "timestamp": datetime.now(UTC),
             "model": model,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
@@ -148,9 +139,7 @@ class UsageTracker:
             return
 
         batch = []
-        while (
-            self.buffer and len(batch) < self.batch_size * 2
-        ):  # Flush up to 2x batch size
+        while self.buffer and len(batch) < self.batch_size * 2:  # Flush up to 2x batch size
             batch.append(self.buffer.popleft())
 
         if not batch:

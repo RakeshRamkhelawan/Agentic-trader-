@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 import numpy as np
 import pandas as pd
 
@@ -14,9 +12,9 @@ class MetricsCalculator:
 
     @staticmethod
     def calculate(
-        equity_curve: List[Dict],
+        equity_curve: list[dict],
         initial_capital: float,
-        trades: List[Trade] = None,
+        trades: list[Trade] = None,
         trading_days_per_year: int = 365,
     ) -> BacktestMetrics:
         """Calculate comprehensive backtesting metrics.
@@ -106,7 +104,7 @@ class MetricsCalculator:
         )
 
     @staticmethod
-    def calculate_trade_statistics(trades: List[Trade]) -> Dict:
+    def calculate_trade_statistics(trades: list[Trade]) -> dict:
         """Calculate detailed trade-level statistics.
 
         Args:
@@ -177,9 +175,7 @@ class MetricsCalculator:
             "total_trades": len(closed_trades),
             "winning_trades": len(winning_trades),
             "losing_trades": len(losing_trades),
-            "win_rate": (
-                len(winning_trades) / len(closed_trades) if closed_trades else 0.0
-            ),
+            "win_rate": (len(winning_trades) / len(closed_trades) if closed_trades else 0.0),
             "profit_factor": profit_factor,
             "avg_win": avg_win,
             "avg_loss": avg_loss,

@@ -9,7 +9,6 @@ Date: 2026-02-20
 """
 
 import time
-from typing import Optional
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -182,19 +181,13 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             method = request.method
             status = str(response.status_code)
 
-            self.request_count.labels(
-                method=method, endpoint=endpoint, status_code=status
-            ).inc()
+            self.request_count.labels(method=method, endpoint=endpoint, status_code=status).inc()
 
-            self.request_duration.labels(method=method, endpoint=endpoint).observe(
-                duration
-            )
+            self.request_duration.labels(method=method, endpoint=endpoint).observe(duration)
 
             self.request_size.labels(method=method, endpoint=endpoint).inc(request_size)
 
-            self.response_size.labels(method=method, endpoint=endpoint).inc(
-                response_size
-            )
+            self.response_size.labels(method=method, endpoint=endpoint).inc(response_size)
 
         return response
 
@@ -241,7 +234,7 @@ class SLOTrackingMiddleware(BaseHTTPMiddleware):
             slo_tracker.track_latency(flow, duration_ms / 1000, stage)
             slo_tracker.track_request(flow, success)
 
-    def _get_flow_type(self, path: str) -> Optional[FlowType]:
+    def _get_flow_type(self, path: str) -> FlowType | None:
         """Map path to flow type."""
         if "/trading/" in path and "/orders" in path:
             return FlowType.ORDER_EXECUTION
@@ -292,12 +285,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers[
-            "Strict-Transport-Security"
-        ] = "max-age=31536000; includeSubDomains"
-        response.headers[
-            "Content-Security-Policy"
-        ] = "default-src 'self'; frame-ancestors 'none';"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none';"
 
         # Remove server info
         response.headers.pop("Server", None)

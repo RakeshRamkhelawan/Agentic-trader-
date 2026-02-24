@@ -6,10 +6,11 @@ Prevents cascade failures by failing fast when services are unhealthy
 import asyncio
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from functools import wraps
-from typing import Callable, Optional, TypeVar
+from typing import TypeVar
 
 logger = logging.getLogger("CircuitBreaker")
 T = TypeVar("T")
@@ -48,8 +49,8 @@ class CircuitBreaker:
     def __init__(
         self,
         name: str,
-        config: Optional[CircuitBreakerConfig] = None,
-        on_state_change: Optional[Callable[[str, str], None]] = None,
+        config: CircuitBreakerConfig | None = None,
+        on_state_change: Callable[[str, str], None] | None = None,
     ):
         self.name = name
         self.config = config or CircuitBreakerConfig()
@@ -58,7 +59,7 @@ class CircuitBreaker:
         self._state = CircuitState.CLOSED
         self._failure_count = 0
         self._success_count = 0
-        self._last_failure_time: Optional[float] = None
+        self._last_failure_time: float | None = None
         self._half_open_calls = 0
         self._lock = asyncio.Lock()
 
@@ -68,9 +69,7 @@ class CircuitBreaker:
         self.total_successes = 0
         self.total_rejected = 0
 
-        logger.info(
-            f"[{self.name}] CircuitBreaker initialized (state: {self._state.value})"
-        )
+        logger.info(f"[{self.name}] CircuitBreaker initialized (state: {self._state.value})")
 
     @property
     def state(self) -> CircuitState:
@@ -118,9 +117,7 @@ class CircuitBreaker:
                 if self._last_failure_time:
                     elapsed = time.time() - self._last_failure_time
                     if elapsed >= self.config.recovery_timeout:
-                        logger.info(
-                            f"[{self.name}] Recovery timeout passed, entering HALF_OPEN"
-                        )
+                        logger.info(f"[{self.name}] Recovery timeout passed, entering HALF_OPEN")
                         self._transition_to(CircuitState.HALF_OPEN)
                         return True
 
@@ -143,9 +140,7 @@ class CircuitBreaker:
             if self._state == CircuitState.HALF_OPEN:
                 self._success_count += 1
                 if self._success_count >= self.config.success_threshold:
-                    logger.info(
-                        f"[{self.name}] Success threshold reached, closing circuit"
-                    )
+                    logger.info(f"[{self.name}] Success threshold reached, closing circuit")
                     self._transition_to(CircuitState.CLOSED)
             else:
                 # Reset failure count on success in CLOSED state
@@ -163,9 +158,7 @@ class CircuitBreaker:
                 self._transition_to(CircuitState.OPEN)
             elif self._state == CircuitState.CLOSED:
                 if self._failure_count >= self.config.failure_threshold:
-                    logger.warning(
-                        f"[{self.name}] Failure threshold reached, opening circuit"
-                    )
+                    logger.warning(f"[{self.name}] Failure threshold reached, opening circuit")
                     self._transition_to(CircuitState.OPEN)
 
     def protect(self, func: Callable[..., T]) -> Callable[..., T]:
@@ -224,21 +217,17 @@ class CircuitBreakerRegistry:
     def __init__(self):
         self._breakers: dict[str, CircuitBreaker] = {}
 
-    def register(
-        self, name: str, config: Optional[CircuitBreakerConfig] = None
-    ) -> CircuitBreaker:
+    def register(self, name: str, config: CircuitBreakerConfig | None = None) -> CircuitBreaker:
         """Register a new circuit breaker"""
         if name in self._breakers:
-            logger.warning(
-                f"Circuit breaker '{name}' already registered, returning existing"
-            )
+            logger.warning(f"Circuit breaker '{name}' already registered, returning existing")
             return self._breakers[name]
 
         breaker = CircuitBreaker(name, config)
         self._breakers[name] = breaker
         return breaker
 
-    def get(self, name: str) -> Optional[CircuitBreaker]:
+    def get(self, name: str) -> CircuitBreaker | None:
         """Get circuit breaker by name"""
         return self._breakers.get(name)
 

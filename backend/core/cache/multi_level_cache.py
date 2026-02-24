@@ -1,12 +1,12 @@
 import hashlib
 import json
-from typing import Any, List, Optional
+from typing import Any
 
 from .adapters import CacheAdapter
 
 
 class MultiLevelCache:
-    def __init__(self, adapters: List[CacheAdapter], default_ttls: List[int]):
+    def __init__(self, adapters: list[CacheAdapter], default_ttls: list[int]):
         if len(adapters) != len(default_ttls):
             raise ValueError("Number of adapters must match number of TTLs")
 
@@ -22,7 +22,7 @@ class MultiLevelCache:
         key_string = ":".join(key_parts)
         return hashlib.sha256(key_string.encode()).hexdigest()[:16]
 
-    async def get(self, namespace: str, *args, **kwargs) -> Optional[Any]:
+    async def get(self, namespace: str, *args, **kwargs) -> Any | None:
         key = self._generate_key(namespace, *args, **kwargs)
 
         for level, adapter in enumerate(self._adapters):
@@ -37,18 +37,13 @@ class MultiLevelCache:
         return None
 
     async def set(
-        self,
-        namespace: str,
-        value: Any,
-        *args,
-        ttls: Optional[List[int]] = None,
-        **kwargs
+        self, namespace: str, value: Any, *args, ttls: list[int] | None = None, **kwargs
     ) -> bool:
         key = self._generate_key(namespace, *args, **kwargs)
         ttls = ttls or self._default_ttls
 
         success = True
-        for level, (adapter, ttl) in enumerate(zip(self._adapters, ttls)):
+        for level, (adapter, ttl) in enumerate(zip(self._adapters, ttls, strict=False)):
             try:
                 await adapter.set(key, value, ttl)
             except Exception:
@@ -68,7 +63,7 @@ class MultiLevelCache:
 
         return success
 
-    async def clear(self, level: Optional[int] = None) -> bool:
+    async def clear(self, level: int | None = None) -> bool:
         if level is not None:
             try:
                 return await self._adapters[level].clear()
@@ -93,12 +88,7 @@ class MultiLevelCache:
                 continue
 
     async def get_or_compute(
-        self,
-        namespace: str,
-        compute_fn,
-        *args,
-        ttls: Optional[List[int]] = None,
-        **kwargs
+        self, namespace: str, compute_fn, *args, ttls: list[int] | None = None, **kwargs
     ) -> Any:
         value = await self.get(namespace, *args, **kwargs)
 

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -11,9 +11,7 @@ class GunaVector(BaseModel):
 
     sattva: float = Field(ge=0.0, le=1.0, description="Clarity, harmony, balance")
     rajas: float = Field(ge=0.0, le=1.0, description="Activity, change, passion")
-    tamas: float = Field(
-        ge=0.0, le=1.0, description="Inertia, darkness, stability, resistance"
-    )
+    tamas: float = Field(ge=0.0, le=1.0, description="Inertia, darkness, stability, resistance")
 
     def __post_init__(self):
         # Ensure the sum is approximately 1.0
@@ -25,9 +23,9 @@ class GunaVector(BaseModel):
             self.rajas *= factor
             self.tamas *= factor
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> dict[str, float]:
         return self.model_dump()
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "GunaVector":
+    def from_dict(cls, data: dict[str, Any]) -> "GunaVector":
         return cls(**data)

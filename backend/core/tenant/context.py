@@ -1,13 +1,14 @@
 """
 Tenant Context Management - ADR-005
 """
+
 import contextvars
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
-_tenant_context: contextvars.ContextVar[
-    Optional["TenantContext"]
-] = contextvars.ContextVar("tenant_context", default=None)
+_tenant_context: contextvars.ContextVar[Optional["TenantContext"]] = contextvars.ContextVar(
+    "tenant_context", default=None
+)
 
 
 @dataclass(frozen=True)
@@ -24,10 +25,10 @@ class TenantContext:
     tenant_id: str
     tier: str
     quotas: TenantQuotas
-    features: List[str]
-    settings: Dict[str, Any]
+    features: list[str]
+    settings: dict[str, Any]
 
-    TIERS: Dict[str, TenantQuotas] = field(
+    TIERS: dict[str, TenantQuotas] = field(
         default_factory=lambda: {
             "free": TenantQuotas(60, 10, 1, 10_000, 1),
             "professional": TenantQuotas(600, 1000, 10, 1_000_000, 5),

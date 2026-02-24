@@ -1,11 +1,15 @@
-from datetime import datetime, timezone
-from typing import Dict, Optional, Tuple
+from datetime import UTC, datetime
 
 import swisseph as swe  # type: ignore[import-not-found]
 
-from backend.core.navagraha.models import (AspectType, GunaDistribution,
-                                           NavagrahaState, PlanetaryAspect,
-                                           PlanetName, PlanetState)
+from backend.core.navagraha.models import (
+    AspectType,
+    GunaDistribution,
+    NavagrahaState,
+    PlanetaryAspect,
+    PlanetName,
+    PlanetState,
+)
 
 
 class EphemerisCalculator:
@@ -29,7 +33,7 @@ class EphemerisCalculator:
         AspectType.SEXTILE: (60.0, 4.0),
     }
 
-    def __init__(self, ephemeris_path: Optional[str] = None):
+    def __init__(self, ephemeris_path: str | None = None):
         if ephemeris_path:
             swe.set_ephe_path(ephemeris_path)
 
@@ -37,9 +41,9 @@ class EphemerisCalculator:
 
     def calculate_julian_day(self, dt: datetime) -> float:
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
         else:
-            dt = dt.astimezone(timezone.utc)
+            dt = dt.astimezone(UTC)
 
         year = dt.year
         month = dt.month
@@ -51,7 +55,7 @@ class EphemerisCalculator:
 
     def calculate_planet_position(
         self, planet_name: PlanetName, jd: float
-    ) -> Tuple[float, float, float, float]:
+    ) -> tuple[float, float, float, float]:
         swe_planet = self.PLANET_MAPPING[planet_name]
 
         result, flag = swe.calc_ut(jd, swe_planet, swe.FLG_SWIEPH | swe.FLG_SPEED)
@@ -74,13 +78,9 @@ class EphemerisCalculator:
 
         return longitude_sidereal, latitude, distance_au, speed
 
-    def calculate_planet_state(
-        self, planet_name: PlanetName, dt: datetime
-    ) -> PlanetState:
+    def calculate_planet_state(self, planet_name: PlanetName, dt: datetime) -> PlanetState:
         jd = self.calculate_julian_day(dt)
-        longitude, latitude, distance_au, speed = self.calculate_planet_position(
-            planet_name, jd
-        )
+        longitude, latitude, distance_au, speed = self.calculate_planet_position(planet_name, jd)
 
         is_retrograde = speed < 0
 
@@ -94,7 +94,7 @@ class EphemerisCalculator:
             calculated_at=dt,
         )
 
-    def calculate_all_planets(self, dt: datetime) -> Dict[PlanetName, PlanetState]:
+    def calculate_all_planets(self, dt: datetime) -> dict[PlanetName, PlanetState]:
         planets = {}
         for planet_name in PlanetName:
             planets[planet_name] = self.calculate_planet_state(planet_name, dt)
@@ -113,7 +113,7 @@ class EphemerisCalculator:
         return planets
 
     def calculate_guna_distribution(
-        self, planets: Dict[PlanetName, PlanetState], dt: datetime
+        self, planets: dict[PlanetName, PlanetState], dt: datetime
     ) -> GunaDistribution:
         sattva_weights = {
             PlanetName.JUPITER: 0.30,
@@ -135,7 +135,7 @@ class EphemerisCalculator:
             PlanetName.MARS: 0.10,
         }
 
-        def calculate_guna_score(weights: Dict[PlanetName, float]) -> float:
+        def calculate_guna_score(weights: dict[PlanetName, float]) -> float:
             score = 0.0
             for planet_name, weight in weights.items():
                 planet = planets[planet_name]
@@ -164,13 +164,9 @@ class EphemerisCalculator:
             rajas = rajas_raw / total
             tamas = tamas_raw / total
 
-        return GunaDistribution(
-            sattva=sattva, rajas=rajas, tamas=tamas, calculated_at=dt
-        )
+        return GunaDistribution(sattva=sattva, rajas=rajas, tamas=tamas, calculated_at=dt)
 
-    def calculate_aspects(
-        self, planets: Dict[PlanetName, PlanetState]
-    ) -> list[PlanetaryAspect]:
+    def calculate_aspects(self, planets: dict[PlanetName, PlanetState]) -> list[PlanetaryAspect]:
         aspects = []
         planet_list = list(planets.keys())
 
@@ -187,9 +183,7 @@ class EphemerisCalculator:
                     orb = abs(angle - ideal_angle)
 
                     if orb <= max_orb:
-                        is_applying = self._is_aspect_applying(
-                            planet1, planet2, ideal_angle
-                        )
+                        is_applying = self._is_aspect_applying(planet1, planet2, ideal_angle)
                         strength = 1.0 - (orb / max_orb)
 
                         aspects.append(
@@ -221,9 +215,7 @@ class EphemerisCalculator:
         else:
             return relative_speed < 0
 
-    def calculate_rahu_kala(
-        self, dt: datetime, location_lat: float, location_lon: float
-    ) -> bool:
+    def calculate_rahu_kala(self, dt: datetime, location_lat: float, location_lon: float) -> bool:
         day_of_week = dt.weekday()
 
         hour = dt.hour
@@ -247,7 +239,7 @@ class EphemerisCalculator:
         dt: datetime,
         location_lat: float,
         location_lon: float,
-        current_dasha: Optional[PlanetName] = None,
+        current_dasha: PlanetName | None = None,
     ) -> NavagrahaState:
         planets = self.calculate_all_planets(dt)
         guna_distribution = self.calculate_guna_distribution(planets, dt)

@@ -6,11 +6,10 @@ Strategy Integration: Accepteert strategy_registry voor Dasha-based strategie se
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from backend.agents.base_agent import BaseAgent
-from backend.core.schemas.ooda_types import (MarketRegime, Orientation,
-                                             TradeProposal)
+from backend.core.schemas.ooda_types import MarketRegime, Orientation, TradeProposal
 from backend.execution.fast_config import FastConfig
 from backend.governance.agent_gatekeeper import AgentRole
 
@@ -30,11 +29,11 @@ class TraderAgent(BaseAgent):
 
     def __init__(
         self,
-        llm_provider: Optional[Any] = None,
-        event_bus: Optional[Any] = None,
+        llm_provider: Any | None = None,
+        event_bus: Any | None = None,
         default_risk_reward: float = 2.0,
         base_position_size: float = 0.1,
-        strategy_registry: Optional[Any] = None,  # UnifiedStrategyRegistry
+        strategy_registry: Any | None = None,  # UnifiedStrategyRegistry
     ):
         """
         Initialiseer Trader.
@@ -64,7 +63,7 @@ class TraderAgent(BaseAgent):
         orientation: Orientation,
         current_price: float,
         strategy_id: str = "momentum_v1",
-    ) -> Optional[TradeProposal]:
+    ) -> TradeProposal | None:
         """
         Genereer trade proposal uit orientation.
 
@@ -102,9 +101,7 @@ class TraderAgent(BaseAgent):
                     if intent and intent.action in ["buy", "sell"]:
                         # Convert TradingIntent to TradeProposal
                         side = intent.action
-                        size = (
-                            intent.size if intent.size > 0 else self.base_position_size
-                        )
+                        size = intent.size if intent.size > 0 else self.base_position_size
 
                         # Adjust confidence by strategy confidence
                         final_confidence = orientation.confidence * intent.confidence
@@ -117,9 +114,7 @@ class TraderAgent(BaseAgent):
                         side = None
 
                 except Exception as e:
-                    logger.warning(
-                        f"Strategy registry analysis failed: {e}, using fallback"
-                    )
+                    logger.warning(f"Strategy registry analysis failed: {e}, using fallback")
                     side = None
             else:
                 # Fallback: use legacy determination
@@ -137,14 +132,10 @@ class TraderAgent(BaseAgent):
                 return None
 
             # Calculate position size (confidence-weighted)
-            size = self._calculate_position_size(
-                orientation.confidence, orientation.regime
-            )
+            size = self._calculate_position_size(orientation.confidence, orientation.regime)
 
             # Calculate stop loss & take profit
-            stop_loss, take_profit = self._calculate_levels(
-                current_price, side, orientation.regime
-            )
+            stop_loss, take_profit = self._calculate_levels(current_price, side, orientation.regime)
 
             # Generate rationale
             rationale = self._generate_rationale(orientation, side)
@@ -195,7 +186,7 @@ class TraderAgent(BaseAgent):
             self.record_activity(success=False)
             raise
 
-    def _determine_side(self, orientation: Orientation) -> Optional[str]:
+    def _determine_side(self, orientation: Orientation) -> str | None:
         """
         Bepaal trade richting (buy/sell) van orientation.
 
@@ -223,9 +214,7 @@ class TraderAgent(BaseAgent):
             # SIDEWAYS, VOLATILE, UNKNOWN → geen trade
             return None
 
-    def _calculate_position_size(
-        self, confidence: float, regime: MarketRegime
-    ) -> float:
+    def _calculate_position_size(self, confidence: float, regime: MarketRegime) -> float:
         """
         Bereken position size op basis van confidence en regime.
 
@@ -282,7 +271,7 @@ class TraderAgent(BaseAgent):
 
         return stop_loss, take_profit
 
-    def _determine_leverage(self, regime: MarketRegime) -> Optional[float]:
+    def _determine_leverage(self, regime: MarketRegime) -> float | None:
         """
         Bepaal leverage op basis van regime.
 
@@ -327,9 +316,7 @@ class TraderAgent(BaseAgent):
 
         return rationale
 
-    async def analyze(
-        self, features: Dict[str, Any], context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """BaseAgent abstract - gebruik propose_trade()."""
         logger.warning("analyze() called on Trader - use propose_trade() instead")
         return {
@@ -337,7 +324,7 @@ class TraderAgent(BaseAgent):
             "confidence": 0.0,
         }
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Krijg Trader statistieken."""
         health = self.health_check()
         stats = {

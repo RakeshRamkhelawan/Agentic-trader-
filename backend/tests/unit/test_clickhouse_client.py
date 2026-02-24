@@ -4,7 +4,7 @@ Tests for ClickHouse Client.
 TDD Test Suite - Write tests FIRST before implementation.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -136,9 +136,7 @@ async def test_clickhouse_insert_data():
         client = ClickHouseClient()
         await client.connect()
 
-        data = [
-            {"timestamp": datetime.now(timezone.utc), "symbol": "BTC", "price": 50000.0}
-        ]
+        data = [{"timestamp": datetime.now(UTC), "symbol": "BTC", "price": 50000.0}]
         await client.insert("market_ticks", data)
 
         mock_client.insert.assert_called_once()
@@ -242,9 +240,7 @@ def test_clickhouse_from_env():
     """RED: Should read connection settings from environment."""
     from backend.storage.clickhouse_client import ClickHouseClient
 
-    with patch.dict(
-        "os.environ", {"CLICKHOUSE_HOST": "custom-host", "CLICKHOUSE_PORT": "9000"}
-    ):
+    with patch.dict("os.environ", {"CLICKHOUSE_HOST": "custom-host", "CLICKHOUSE_PORT": "9000"}):
         with patch("clickhouse_connect.get_async_client"):
             client = ClickHouseClient()
             assert client.host == "custom-host" or "custom-host" in client.url
@@ -295,9 +291,7 @@ async def test_clickhouse_execute_injects_tenant_id_parameter():
             client = ClickHouseClient()
             await client.connect()
 
-            await client.execute(
-                "SELECT * FROM table WHERE tenant_id = {tenant_id:String}"
-            )
+            await client.execute("SELECT * FROM table WHERE tenant_id = {tenant_id:String}")
 
             # Check parameters
             mock_client.query.assert_called_with(

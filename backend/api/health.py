@@ -7,34 +7,29 @@ import asyncio
 import logging
 import os
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.core.resiliency.circuit_breaker import \
-    get_circuit_breaker_registry
+from backend.core.resiliency.circuit_breaker import get_circuit_breaker_registry
 
 logger = logging.getLogger("HealthAPI")
 router = APIRouter(prefix="/health", tags=["Health"])
 
 # Global service registry (populated during startup)
-_service_registry: Dict[str, Any] = {}
+_service_registry: dict[str, Any] = {}
 _startup_time = datetime.utcnow()
 
 
 class HealthStatus(BaseModel):
     """Health status model"""
 
-    status: str = Field(
-        ..., description="Overall health status: healthy, degraded, unhealthy"
-    )
+    status: str = Field(..., description="Overall health status: healthy, degraded, unhealthy")
     timestamp: str = Field(..., description="ISO8601 timestamp")
     version: str = Field(..., description="Application version")
     uptime_seconds: float = Field(..., description="Uptime in seconds")
-    environment: str = Field(
-        ..., description="Environment: development, staging, production"
-    )
+    environment: str = Field(..., description="Environment: development, staging, production")
     trading_mode: str = Field(..., description="Trading mode: paper, live, backtest")
 
 
@@ -44,20 +39,20 @@ class ServiceHealth(BaseModel):
     name: str
     status: str  # healthy, degraded, unhealthy
     healthy: bool
-    latency_ms: Optional[float] = None
+    latency_ms: float | None = None
     last_check: str
-    details: Dict[str, Any] = Field(default_factory=dict)
+    details: dict[str, Any] = Field(default_factory=dict)
 
 
 class DetailedHealthResponse(BaseModel):
     """Detailed health check response"""
 
     summary: HealthStatus
-    services: Dict[str, ServiceHealth]
-    circuit_breakers: Dict[str, Any]
+    services: dict[str, ServiceHealth]
+    circuit_breakers: dict[str, Any]
 
 
-def register_service(name: str, service: Any, check_func: Optional[callable] = None):
+def register_service(name: str, service: Any, check_func: callable | None = None):
     """Register a service for health monitoring"""
     _service_registry[name] = {
         "instance": service,
@@ -141,9 +136,7 @@ async def _check_chromadb_health() -> ServiceHealth:
 
         from backend.core.config.settings import settings
 
-        client = chromadb.HttpClient(
-            host=settings.CHROMADB_HOST, port=settings.CHROMADB_PORT
-        )
+        client = chromadb.HttpClient(host=settings.CHROMADB_HOST, port=settings.CHROMADB_PORT)
         client.heartbeat()
 
         latency = (asyncio.get_event_loop().time() - start_time) * 1000
@@ -233,9 +226,7 @@ async def basic_health_check():
     degraded_count = 0
 
     for result in results:
-        if isinstance(result, Exception):
-            unhealthy_count += 1
-        elif not result.healthy:
+        if isinstance(result, Exception) or not result.healthy:
             unhealthy_count += 1
         elif result.status == "degraded":
             degraded_count += 1
@@ -325,9 +316,7 @@ async def detailed_health_check():
         trading_mode=trading_mode,
     )
 
-    return DetailedHealthResponse(
-        summary=summary, services=services, circuit_breakers=cb_metrics
-    )
+    return DetailedHealthResponse(summary=summary, services=services, circuit_breakers=cb_metrics)
 
 
 @router.get("/ready")

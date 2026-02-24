@@ -10,7 +10,7 @@ Features:
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from backend.core.zero_copy_bridge import ZeroCopyBridge
 
@@ -36,12 +36,12 @@ class MarketDataStreamer:
 
     def __init__(self):
         # Active symbol subscriptions: symbol -> set of connection_ids
-        self.active_streams: Dict[str, asyncio.Task] = {}
-        self.symbol_configs: Dict[str, StreamConfig] = {}
+        self.active_streams: dict[str, asyncio.Task] = {}
+        self.symbol_configs: dict[str, StreamConfig] = {}
         # Reference to WebSocket manager (set externally)
         self.ws_manager = None
         # Exchange clients (lazy loaded)
-        self._exchanges: Dict[str, Any] = {}
+        self._exchanges: dict[str, Any] = {}
         self._use_mock = True  # Set to False in production
 
         # Zero-Copy Bridge (Writer)
@@ -197,14 +197,8 @@ class MarketDataStreamer:
                 )
 
                 # Format bids and asks as [price, size] arrays
-                bids = [
-                    [bid[0], bid[1]]
-                    for bid in orderbook["bids"][: config.orderbook_depth]
-                ]
-                asks = [
-                    [ask[0], ask[1]]
-                    for ask in orderbook["asks"][: config.orderbook_depth]
-                ]
+                bids = [[bid[0], bid[1]] for bid in orderbook["bids"][: config.orderbook_depth]]
+                asks = [[ask[0], ask[1]] for ask in orderbook["asks"][: config.orderbook_depth]]
 
                 # Update SHM with real BBO
                 if self.shm_bridge and bids and asks:
@@ -212,8 +206,7 @@ class MarketDataStreamer:
                         symbol=config.symbol,
                         bid=bids[0][0],
                         ask=asks[0][0],
-                        last=(bids[0][0] + asks[0][0])
-                        / 2,  # Approx last if not available
+                        last=(bids[0][0] + asks[0][0]) / 2,  # Approx last if not available
                         bid_size=bids[0][1],
                         ask_size=asks[0][1],
                     )

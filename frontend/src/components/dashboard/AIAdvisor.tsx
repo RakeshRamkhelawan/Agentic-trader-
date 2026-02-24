@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bot, Send, Sparkles, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import { Send, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

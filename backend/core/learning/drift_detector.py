@@ -12,9 +12,8 @@ has shifted and old strategies may no longer work.
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, List
-
 
 try:
     from river.drift import ADWIN as RiverADWIN
@@ -84,7 +83,7 @@ class ADWINDriftDetector:
         # Statistics
         self.sample_count = 0
         self.drift_count = 0
-        self._callbacks: List[Callable[[DriftEvent], None]] = []
+        self._callbacks: list[Callable[[DriftEvent], None]] = []
 
         logger.info(f"ADWIN detector '{name}' initialized: delta={delta}")
 
@@ -184,7 +183,7 @@ class MultiMetricDriftDetector:
     def __init__(self):
         """Initialize multi-metric detector."""
         self.detectors: dict[str, ADWINDriftDetector] = {}
-        self._drift_history: List[DriftEvent] = []
+        self._drift_history: list[DriftEvent] = []
 
     def add_detector(
         self,
@@ -217,13 +216,11 @@ class MultiMetricDriftDetector:
 
     def get_all_statistics(self) -> dict:
         """Get statistics for all detectors."""
-        return {
-            name: detector.get_statistics() for name, detector in self.detectors.items()
-        }
+        return {name: detector.get_statistics() for name, detector in self.detectors.items()}
 
     def get_drift_history(
         self,
         limit: int = 100,
-    ) -> List[DriftEvent]:
+    ) -> list[DriftEvent]:
         """Get recent drift events."""
         return self._drift_history[-limit:]

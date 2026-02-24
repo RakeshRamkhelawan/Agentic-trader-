@@ -25,10 +25,15 @@ try:
     from backend.agents.fund_manager_agent import FundManagerAgent
     from backend.agents.researcher_agents import BearResearcher, BullResearcher
     from backend.core.database import SessionManager
-    from backend.core.schemas.ooda_types import (MarketRegime, Observation,
-                                                 Orientation, PortfolioState,
-                                                 RiskAssessment, RiskDecision,
-                                                 TradeProposal)
+    from backend.core.schemas.ooda_types import (
+        MarketRegime,
+        Observation,
+        Orientation,
+        PortfolioState,
+        RiskAssessment,
+        RiskDecision,
+        TradeProposal,
+    )
 
     print(f"[OK] Successfully imported backend module from {backend.__file__}")
 except ImportError as e:
@@ -61,9 +66,7 @@ async def patch_database_engine():
         db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
 
     engine = create_async_engine(db_url, echo=False)
-    TestingSessionLocal = sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
-    )
+    TestingSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
     # Patch
     original = backend.core.database.AsyncSessionLocal
@@ -184,9 +187,7 @@ def mock_event_bus():
 @pytest.fixture
 def fund_manager():
     """Create FundManager instance."""
-    return FundManagerAgent(
-        max_position_pct=0.10, max_total_exposure=0.90, kelly_multiplier=0.5
-    )
+    return FundManagerAgent(max_position_pct=0.10, max_total_exposure=0.90, kelly_multiplier=0.5)
 
 
 @pytest.fixture

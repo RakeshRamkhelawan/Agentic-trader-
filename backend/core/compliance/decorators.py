@@ -1,8 +1,7 @@
 import functools
 import logging
 
-from backend.core.auth.context import (get_current_tenant_optional,
-                                       get_current_user_optional)
+from backend.core.auth.context import get_current_tenant_optional, get_current_user_optional
 
 logger = logging.getLogger(__name__)
 

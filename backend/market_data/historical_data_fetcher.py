@@ -27,7 +27,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd
 
@@ -97,8 +97,7 @@ class HistoricalDataFetcher:
             if self.config.symbol not in self.exchange.markets:
                 available = list(self.exchange.markets.keys())[:10]
                 raise ValueError(
-                    f"Symbol {self.config.symbol} not available. "
-                    f"Examples: {available}"
+                    f"Symbol {self.config.symbol} not available. " f"Examples: {available}"
                 )
 
             logger.info(f"✓ Connected to {self.config.exchange_id}")
@@ -133,7 +132,7 @@ class HistoricalDataFetcher:
         """Convert datetime to milliseconds."""
         return int(dt.timestamp() * 1000)
 
-    async def fetch_range(self, start_ms: int, end_ms: int) -> List[List[Any]]:
+    async def fetch_range(self, start_ms: int, end_ms: int) -> list[list[Any]]:
         """
         Fetch OHLCV data for a specific time range.
 
@@ -171,12 +170,8 @@ class HistoricalDataFetcher:
 
                 # Progress logging
                 if self._fetched_count % 5000 == 0:
-                    progress_pct = (
-                        (current_since - start_ms) / (end_ms - start_ms) * 100
-                    )
-                    logger.info(
-                        f"  Fetched {self._fetched_count} candles ({progress_pct:.1f}%)"
-                    )
+                    progress_pct = (current_since - start_ms) / (end_ms - start_ms) * 100
+                    logger.info(f"  Fetched {self._fetched_count} candles ({progress_pct:.1f}%)")
 
                 # Rate limiting
                 await asyncio.sleep(self.config.rate_limit_delay)
@@ -219,9 +214,7 @@ class HistoricalDataFetcher:
             logger.info(f"Resuming from {last_timestamp}")
 
         # Fetch data
-        logger.info(
-            f"Fetching data from {self.config.start_date} to {self.config.end_date}"
-        )
+        logger.info(f"Fetching data from {self.config.start_date} to {self.config.end_date}")
         candles = await self.fetch_range(start_ms, end_ms)
 
         if not candles:
@@ -230,9 +223,7 @@ class HistoricalDataFetcher:
             raise ValueError("No data fetched")
 
         # Convert to DataFrame
-        df = pd.DataFrame(
-            candles, columns=["timestamp", "open", "high", "low", "close", "volume"]
-        )
+        df = pd.DataFrame(candles, columns=["timestamp", "open", "high", "low", "close", "volume"])
 
         # Convert timestamp to datetime
         df["datetime"] = pd.to_datetime(df["timestamp"], unit="ms")
@@ -249,7 +240,7 @@ class HistoricalDataFetcher:
 
         return df
 
-    def get_data_summary(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def get_data_summary(self, df: pd.DataFrame) -> dict[str, Any]:
         """Generate summary statistics for fetched data."""
         if df.empty:
             return {"error": "Empty dataset"}
@@ -275,11 +266,11 @@ class MultiSymbolFetcher:
 
     def __init__(self, output_dir: str = "data/historical"):
         self.output_dir = output_dir
-        self.results: Dict[str, pd.DataFrame] = {}
+        self.results: dict[str, pd.DataFrame] = {}
 
     async def fetch_multiple(
-        self, configs: List[FetchConfig], max_concurrent: int = 3
-    ) -> Dict[str, pd.DataFrame]:
+        self, configs: list[FetchConfig], max_concurrent: int = 3
+    ) -> dict[str, pd.DataFrame]:
         """
         Fetch data for multiple symbols with concurrency limit.
 
@@ -326,9 +317,7 @@ class MultiSymbolFetcher:
 
 def parse_args():
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Fetch historical crypto data for backtesting"
-    )
+    parser = argparse.ArgumentParser(description="Fetch historical crypto data for backtesting")
 
     parser.add_argument(
         "--exchange",
@@ -351,15 +340,9 @@ def parse_args():
     )
     parser.add_argument("--start", required=True, help="Start date (YYYY-MM-DD)")
     parser.add_argument("--end", required=True, help="End date (YYYY-MM-DD)")
-    parser.add_argument(
-        "--output", "-o", default="data/historical", help="Output directory"
-    )
-    parser.add_argument(
-        "--batch-size", type=int, default=1000, help="Candles per request"
-    )
-    parser.add_argument(
-        "--no-resume", action="store_true", help="Don't resume from existing file"
-    )
+    parser.add_argument("--output", "-o", default="data/historical", help="Output directory")
+    parser.add_argument("--batch-size", type=int, default=1000, help="Candles per request")
+    parser.add_argument("--no-resume", action="store_true", help="Don't resume from existing file")
 
     return parser.parse_args()
 

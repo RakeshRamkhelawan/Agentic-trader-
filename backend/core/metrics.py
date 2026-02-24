@@ -69,9 +69,7 @@ guna_weights = Gauge(
     "samkhya_guna_weights", "Current guna weight distribution", ["guna", "tenant_id"]
 )
 
-agent_prana = Gauge(
-    "samkhya_agent_prana", "Elemental agent prana level", ["element", "tenant_id"]
-)
+agent_prana = Gauge("samkhya_agent_prana", "Elemental agent prana level", ["element", "tenant_id"])
 
 circuit_breaker_state = Enum(
     "samkhya_circuit_breaker_state",
@@ -105,13 +103,9 @@ trade_approval_duration = Histogram(
     buckets=[0.01, 0.05, 0.1, 0.5, 1.0],
 )
 
-errors_total = Counter(
-    "samkhya_errors_total", "Total errors by type", ["error_type", "component"]
-)
+errors_total = Counter("samkhya_errors_total", "Total errors by type", ["error_type", "component"])
 
-portfolio_pnl = Gauge(
-    "samkhya_portfolio_pnl", "Current portfolio PnL", ["tenant_id", "currency"]
-)
+portfolio_pnl = Gauge("samkhya_portfolio_pnl", "Current portfolio PnL", ["tenant_id", "currency"])
 
 audit_logs_total = Counter(
     "samkhya_audit_logs_total", "Audit log entries by action", ["action", "tenant_id"]
@@ -134,9 +128,7 @@ def track_ooda_phase(phase: str, tenant_id: str):
                 return result
             finally:
                 duration = time.time() - start
-                ooda_phase_duration.labels(phase=phase, tenant_id=tenant_id).observe(
-                    duration
-                )
+                ooda_phase_duration.labels(phase=phase, tenant_id=tenant_id).observe(duration)
 
         return wrapper
 

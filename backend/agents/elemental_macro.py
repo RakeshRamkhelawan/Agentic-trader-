@@ -14,8 +14,8 @@ Function:
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from backend.agents.elemental_base import ElementalBase
 from backend.governance.agent_gatekeeper import AgentRole
@@ -32,9 +32,9 @@ class ElementalMacro(ElementalBase):
     def __init__(
         self,
         agent_name: str = "Macro_Water",
-        llm_provider: Optional[Any] = None,
-        event_bus: Optional[Any] = None,
-        system_identity: Optional[Any] = None,
+        llm_provider: Any | None = None,
+        event_bus: Any | None = None,
+        system_identity: Any | None = None,
         agent_role: AgentRole = AgentRole.RESEARCHER,  # Analyst/Researcher role
     ):
         super().__init__(
@@ -53,9 +53,9 @@ class ElementalMacro(ElementalBase):
             max_prana=100.0,
             prana_decay_rate=8.0,
         )
-        self.memory_buffer: List[Dict] = []
+        self.memory_buffer: list[dict] = []
 
-    async def process_signal(self, signal: Dict[str, Any]) -> Dict[str, Any]:
+    async def process_signal(self, signal: dict[str, Any]) -> dict[str, Any]:
         """
         Analyze macro regime and recall similar contexts.
         """
@@ -78,7 +78,7 @@ class ElementalMacro(ElementalBase):
                 "regime": regime,
                 "context_score": 0.8 if similar_patterns else 0.2,
                 "similar_patterns": similar_patterns,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "prana_remaining": self.prana,
             }
 
@@ -94,7 +94,7 @@ class ElementalMacro(ElementalBase):
             logger.error(f"Error in Water processing: {e}", exc_info=True)
             return {"status": "error", "message": str(e)}
 
-    def _determine_regime(self, data: Dict[str, Any]) -> str:
+    def _determine_regime(self, data: dict[str, Any]) -> str:
         """Identify market regime (expansion/contraction)."""
         # Placeholder logic
         trend = data.get("trend", 0)
@@ -109,14 +109,12 @@ class ElementalMacro(ElementalBase):
         else:
             return "sideways_chop"
 
-    def _query_memory(self, data: Dict[str, Any]) -> List[str]:
+    def _query_memory(self, data: dict[str, Any]) -> list[str]:
         """Mock memory query."""
         # This would interface with RAG/VectorDB
-        return (
-            ["2024-Q1-Rally", "2023-Correction"] if data.get("trend", 0) > 0.2 else []
-        )
+        return ["2024-Q1-Rally", "2023-Correction"] if data.get("trend", 0) > 0.2 else []
 
-    def _degraded_response(self, reason: str) -> Dict:
+    def _degraded_response(self, reason: str) -> dict:
         """Low Prana fallback."""
         return {
             "agent": self.agent_name,

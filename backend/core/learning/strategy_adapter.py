@@ -8,7 +8,6 @@ Updates happen in cold path and are atomically swapped to hot path.
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Dict, List
 
 import numpy as np
 
@@ -40,7 +39,7 @@ class StrategyWeightAdapter:
 
     def __init__(
         self,
-        strategies: List[str],
+        strategies: list[str],
         alpha: float = 0.1,
         min_samples: int = 10,
         epsilon: float = 0.1,  # Minimum weight (exploration)
@@ -61,20 +60,19 @@ class StrategyWeightAdapter:
 
         # Initialize equal weights
         n_strategies = len(strategies)
-        self._weights: Dict[str, float] = {s: 1.0 / n_strategies for s in strategies}
+        self._weights: dict[str, float] = {s: 1.0 / n_strategies for s in strategies}
 
         # Performance tracking
-        self._performance: Dict[str, StrategyPerformance] = {
+        self._performance: dict[str, StrategyPerformance] = {
             s: StrategyPerformance(strategy_name=s) for s in strategies
         }
 
         # Atomic snapshot for hot path
-        self._weight_snapshot: Dict[str, float] = self._weights.copy()
+        self._weight_snapshot: dict[str, float] = self._weights.copy()
         self._snapshot_lock = asyncio.Lock()
 
         logger.info(
-            f"StrategyWeightAdapter initialized: strategies={strategies}, "
-            f"alpha={alpha}"
+            f"StrategyWeightAdapter initialized: strategies={strategies}, " f"alpha={alpha}"
         )
 
     async def update_performance(
@@ -151,7 +149,7 @@ class StrategyWeightAdapter:
 
         logger.debug(f"Strategy weights updated: {new_weights}")
 
-    def get_weights(self) -> Dict[str, float]:
+    def get_weights(self) -> dict[str, float]:
         """
         Get current strategy weights (hot path - O(1)).
 
@@ -159,12 +157,12 @@ class StrategyWeightAdapter:
         """
         return self._weight_snapshot.copy()
 
-    def get_strategy_ranking(self) -> List[tuple]:
+    def get_strategy_ranking(self) -> list[tuple]:
         """Get strategies ranked by weight."""
         weights = self.get_weights()
         return sorted(weights.items(), key=lambda x: x[1], reverse=True)
 
-    def get_performance_summary(self) -> Dict:
+    def get_performance_summary(self) -> dict:
         """Get performance summary for all strategies."""
         return {
             name: {
@@ -180,8 +178,6 @@ class StrategyWeightAdapter:
         """Reset all weights and performance."""
         n_strategies = len(self.strategies)
         self._weights = {s: 1.0 / n_strategies for s in self.strategies}
-        self._performance = {
-            s: StrategyPerformance(strategy_name=s) for s in self.strategies
-        }
+        self._performance = {s: StrategyPerformance(strategy_name=s) for s in self.strategies}
         self._weight_snapshot = self._weights.copy()
         logger.info("StrategyWeightAdapter reset")

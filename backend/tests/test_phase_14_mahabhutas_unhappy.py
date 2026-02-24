@@ -11,7 +11,6 @@ These tests verify that the physical layer infrastructure gracefully handles:
 - Partial failures
 """
 
-
 import numpy as np
 import pytest
 
@@ -101,9 +100,7 @@ class TestPhase14AkashaUnhappy:
 
     def test_akasha_timeout_zero_division(self, system_identity):
         """Test Akasha with zero timeout (division protection)"""
-        system_identity.tattva_config.mahabhutas.akasha.connection_timeout_ms = (
-            0.001  # Nearly zero
-        )
+        system_identity.tattva_config.mahabhutas.akasha.connection_timeout_ms = 0.001  # Nearly zero
         layer = next(
             (l for l in system_identity.tattva_config.layers if l.layer_number == 32),
             None,
@@ -324,9 +321,7 @@ class TestPhase14ApasUnhappy:
 
     def test_apas_zero_buffer_size(self, system_identity):
         """Test Apas with zero buffer size"""
-        system_identity.tattva_config.mahabhutas.apas.buffer_size_mb = (
-            0.001  # Nearly zero
-        )
+        system_identity.tattva_config.mahabhutas.apas.buffer_size_mb = 0.001  # Nearly zero
         layer = next(
             (l for l in system_identity.tattva_config.layers if l.layer_number == 35),
             None,
@@ -367,9 +362,7 @@ class TestPhase14PrithviUnhappy:
 
     def test_prithvi_transaction_safety_disabled(self, system_identity):
         """Test Prithvi with transaction safety disabled"""
-        system_identity.tattva_config.mahabhutas.prithvi.enable_transaction_safety = (
-            False
-        )
+        system_identity.tattva_config.mahabhutas.prithvi.enable_transaction_safety = False
         layer = next(
             (l for l in system_identity.tattva_config.layers if l.layer_number == 36),
             None,
@@ -402,9 +395,7 @@ class TestPhase14PrithviUnhappy:
     def test_prithvi_hot_data_exceeds_retention(self, system_identity):
         """Test Prithvi where hot data period > total retention"""
         system_identity.tattva_config.mahabhutas.prithvi.hot_data_days = 100
-        system_identity.tattva_config.mahabhutas.prithvi.data_retention_days = (
-            30  # Inconsistent
-        )
+        system_identity.tattva_config.mahabhutas.prithvi.data_retention_days = 30  # Inconsistent
         layer = next(
             (l for l in system_identity.tattva_config.layers if l.layer_number == 36),
             None,
@@ -427,9 +418,7 @@ class TestPhase14PrithviUnhappy:
 
     def test_prithvi_invalid_clickhouse_port(self, system_identity):
         """Test Prithvi with invalid ClickHouse port"""
-        system_identity.tattva_config.mahabhutas.prithvi.clickhouse_port = (
-            99999  # Invalid port
-        )
+        system_identity.tattva_config.mahabhutas.prithvi.clickhouse_port = 99999  # Invalid port
         layer = next(
             (l for l in system_identity.tattva_config.layers if l.layer_number == 36),
             None,
@@ -593,9 +582,7 @@ class TestPhase14ConfigurationUnhappy:
         assert "action" in result
 
     @pytest.mark.asyncio
-    async def test_process_market_cycle_with_nan_values(
-        self, system_identity, market_data
-    ):
+    async def test_process_market_cycle_with_nan_values(self, system_identity, market_data):
         """Test process_market_cycle with NaN in market data"""
         market_data["price_data"][0] = np.nan
         # Should handle NaN gracefully or raise appropriate error
@@ -608,9 +595,7 @@ class TestPhase14ConfigurationUnhappy:
             pass
 
     @pytest.mark.asyncio
-    async def test_process_market_cycle_with_infinite_values(
-        self, system_identity, market_data
-    ):
+    async def test_process_market_cycle_with_infinite_values(self, system_identity, market_data):
         """Test process_market_cycle with infinite values"""
         market_data["price_data"][0] = np.inf
         try:
@@ -633,11 +618,7 @@ class TestPhase14CoherenceRangeViolations:
         # Test all materialize layers
         for layer_num in range(32, 37):
             layer = next(
-                (
-                    l
-                    for l in system_identity.tattva_config.layers
-                    if l.layer_number == layer_num
-                ),
+                (l for l in system_identity.tattva_config.layers if l.layer_number == layer_num),
                 None,
             )
             if layer:
@@ -657,11 +638,7 @@ class TestPhase14CoherenceRangeViolations:
         for i, context in enumerate(extreme_contexts):
             layer_num = 32 + i  # Test Akasha, Vayu, Agni
             layer = next(
-                (
-                    l
-                    for l in system_identity.tattva_config.layers
-                    if l.layer_number == layer_num
-                ),
+                (l for l in system_identity.tattva_config.layers if l.layer_number == layer_num),
                 None,
             )
             if layer:
@@ -671,9 +648,7 @@ class TestPhase14CoherenceRangeViolations:
                 ), f"Extreme context produced invalid coherence: {coherence}"
 
     @pytest.mark.asyncio
-    async def test_multiple_cycles_coherence_consistency(
-        self, system_identity, market_data
-    ):
+    async def test_multiple_cycles_coherence_consistency(self, system_identity, market_data):
         """Test that coherence values remain consistent across cycles"""
         coherence_history = []
 

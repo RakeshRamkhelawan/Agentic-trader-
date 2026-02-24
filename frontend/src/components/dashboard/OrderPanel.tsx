@@ -1,5 +1,6 @@
+import axios from 'axios';
 import { useState } from 'react';
-import { ArrowUpRight, ArrowDownRight, Wallet, Loader2, Info } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
 import { ordersApi } from '@/lib/api';
@@ -54,8 +55,10 @@ export function OrderPanel() {
 
       // Refresh portfolio balance after order
       await Promise.allSettled([fetchPortfolio(), fetchOrders()]);
-    } catch (error: any) {
-      const msg = error?.response?.data?.detail ?? error?.message ?? 'Order failed. Please try again.';
+    } catch (error: unknown) {
+      const msg = axios.isAxiosError(error) 
+        ? error.response?.data?.detail ?? error.message 
+        : error instanceof Error ? error.message : 'Order failed. Please try again.';
       toast.error('Order failed', { description: msg });
     } finally {
       setIsSubmitting(false);

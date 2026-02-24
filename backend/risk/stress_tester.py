@@ -7,7 +7,6 @@ Used for regulatory compliance (Basel III, MiFID II stress tests).
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional
 
 
 class StressScenario(str, Enum):
@@ -29,8 +28,8 @@ class StressTestResult:
     portfolio_value_before: float
     portfolio_value_after: float
     max_drawdown: float  # Percentage
-    recovery_days: Optional[int]  # Days to recover or None if not recovered
-    affected_assets: List[str]  # Which assets were hit hardest
+    recovery_days: int | None  # Days to recover or None if not recovered
+    affected_assets: list[str]  # Which assets were hit hardest
 
 
 class StressTestSuite:
@@ -43,7 +42,7 @@ class StressTestSuite:
     def __init__(self):
         self.scenarios = self._define_scenarios()
 
-    def _define_scenarios(self) -> Dict[StressScenario, Dict[str, float]]:
+    def _define_scenarios(self) -> dict[StressScenario, dict[str, float]]:
         """
         Define asset price shocks for each scenario.
 
@@ -86,7 +85,7 @@ class StressTestSuite:
 
     def apply_scenario(
         self,
-        portfolio: Dict[str, float],  # {asset: value_usd}
+        portfolio: dict[str, float],  # {asset: value_usd}
         scenario: StressScenario,
     ) -> StressTestResult:
         """
@@ -127,16 +126,12 @@ class StressTestSuite:
             shocked_portfolio[asset] = value * (1 + shock)
 
         portfolio_value_after = sum(shocked_portfolio.values())
-        max_drawdown = (
-            portfolio_value_before - portfolio_value_after
-        ) / portfolio_value_before
+        max_drawdown = (portfolio_value_before - portfolio_value_after) / portfolio_value_before
 
         # Estimate recovery (simplified: -1% recovery per day)
         recovery_days = None
         if max_drawdown > 0:
-            recovery_days = int(
-                abs(max_drawdown) * 100
-            )  # 50% loss = ~50 days to recover
+            recovery_days = int(abs(max_drawdown) * 100)  # 50% loss = ~50 days to recover
 
         return StressTestResult(
             scenario=scenario,
@@ -147,7 +142,7 @@ class StressTestSuite:
             affected_assets=affected_assets,
         )
 
-    def run_all_scenarios(self, portfolio: Dict[str, float]) -> List[StressTestResult]:
+    def run_all_scenarios(self, portfolio: dict[str, float]) -> list[StressTestResult]:
         """
         Run all defined stress scenarios on portfolio.
 
@@ -168,7 +163,7 @@ class StressTestSuite:
 
         return results
 
-    def get_worst_case(self, portfolio: Dict[str, float]) -> StressTestResult:
+    def get_worst_case(self, portfolio: dict[str, float]) -> StressTestResult:
         """
         Find which scenario causes the biggest loss.
 

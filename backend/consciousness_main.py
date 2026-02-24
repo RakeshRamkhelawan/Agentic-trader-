@@ -66,9 +66,7 @@ async def start_consciousness_architecture():
     # Layer 3: Reflex Body (Order execution)
     from backend.execution.reflex_executor import ReflexExecutor
 
-    reflex_body = ReflexExecutor(
-        shm_name="trading_intents_v2", market_shm_name="market_data_v2"
-    )
+    reflex_body = ReflexExecutor(shm_name="trading_intents_v2", market_shm_name="market_data_v2")
     try:
         await reflex_body.start()
         logger.info("✓ Layer 3: Reflex Body Service started (frequency: <10ms)")

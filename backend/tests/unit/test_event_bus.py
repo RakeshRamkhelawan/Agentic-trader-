@@ -74,9 +74,7 @@ async def test_event_bus_subscribe():
     mock_client = AsyncMock()
 
     # Mock stream response
-    mock_response = [
-        [b"test_stream", [(b"1234567890-0", {b"type": b"test", b"value": b"42"})]]
-    ]
+    mock_response = [[b"test_stream", [(b"1234567890-0", {b"type": b"test", b"value": b"42"})]]]
     mock_client.xreadgroup = AsyncMock(return_value=mock_response)
     bus.client = mock_client
 
@@ -121,9 +119,7 @@ async def test_event_bus_ack():
     ack_count = await bus.ack("test_stream", "test_group", "1234567890-0")
 
     assert ack_count == 1
-    mock_client.xack.assert_called_once_with(
-        "test_stream", "test_group", "1234567890-0"
-    )
+    mock_client.xack.assert_called_once_with("test_stream", "test_group", "1234567890-0")
 
 
 @pytest.mark.integration
@@ -170,8 +166,6 @@ async def test_event_bus_handles_redis_errors():
     bus = EventBus(redis_url="redis://localhost:9999")  # Wrong port
 
     # Mock to raise connection error
-    with patch(
-        "redis.asyncio.from_url", side_effect=redis.ConnectionError("Cannot connect")
-    ):
+    with patch("redis.asyncio.from_url", side_effect=redis.ConnectionError("Cannot connect")):
         with pytest.raises((redis.ConnectionError, Exception)):
             await bus.connect()

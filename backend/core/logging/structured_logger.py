@@ -6,8 +6,8 @@ Elke log-statement is JSON-parseerbaar voor observability.
 
 import json
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 
 class StructuredLogger:
@@ -25,11 +25,11 @@ class StructuredLogger:
         self._logger = logging.getLogger(service_name)
 
     def _create_log_entry(
-        self, event_type: str, data: Dict[str, Any], level: str = "info"
-    ) -> Dict[str, Any]:
+        self, event_type: str, data: dict[str, Any], level: str = "info"
+    ) -> dict[str, Any]:
         """Create a structured log entry."""
         return {
-            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+            "timestamp": datetime.now(UTC).isoformat() + "Z",
             "service": self.service_name,
             "trading_mode": self.trading_mode,
             "event_type": event_type,
@@ -37,7 +37,7 @@ class StructuredLogger:
             **data,
         }
 
-    def _log(self, level: str, event_type: str, data: Dict[str, Any]):
+    def _log(self, level: str, event_type: str, data: dict[str, Any]):
         """Log a structured entry."""
         entry = self._create_log_entry(event_type, data, level)
 
@@ -48,18 +48,18 @@ class StructuredLogger:
         return entry
 
     def log_trade_event(
-        self, event_type: str, data: Dict[str, Any], level: str = "info"
-    ) -> Dict[str, Any]:
+        self, event_type: str, data: dict[str, Any], level: str = "info"
+    ) -> dict[str, Any]:
         """Log een trade event."""
         return self._log(level, event_type, data)
 
     def log_vedic_event(
         self,
         event_type: str,
-        soul_context: Dict[str, Any],
-        harmony: Optional[float] = None,
+        soul_context: dict[str, Any],
+        harmony: float | None = None,
         level: str = "info",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Log een Vedic cycle event."""
         data = {
             "vedic_event": event_type,
@@ -77,10 +77,10 @@ class StructuredLogger:
         self,
         agent: str,
         element: str,
-        decision: Dict[str, Any],
+        decision: dict[str, Any],
         prana: float,
         level: str = "info",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Log een agent beslissing."""
         data = {
             "agent": agent,
@@ -93,8 +93,6 @@ class StructuredLogger:
         return self._log(level, "agent_decision", data)
 
 
-def get_structured_logger(
-    service_name: str, trading_mode: str = "paper"
-) -> StructuredLogger:
+def get_structured_logger(service_name: str, trading_mode: str = "paper") -> StructuredLogger:
     """Get a structured logger instance."""
     return StructuredLogger(service_name, trading_mode)

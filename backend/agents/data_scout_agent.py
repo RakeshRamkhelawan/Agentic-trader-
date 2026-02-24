@@ -6,7 +6,7 @@ Verzamelt en normaliseert marktdata tot gestandaardiseerde Observation objects.
 
 import logging
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from backend.agents.base_agent import BaseAgent
 from backend.core.schemas.ooda_types import Observation
@@ -34,9 +34,9 @@ class DataScoutAgent(BaseAgent):
 
     def __init__(
         self,
-        llm_provider: Optional[Any] = None,
-        event_bus: Optional[Any] = None,
-        data_source: Optional[Any] = None,
+        llm_provider: Any | None = None,
+        event_bus: Any | None = None,
+        data_source: Any | None = None,
     ):
         """
         Initialiseer DataScout.
@@ -106,9 +106,7 @@ class DataScoutAgent(BaseAgent):
                 obs_data["funding_rate"] = await self._fetch_funding_rate(symbol)
 
             # Fetch prediction market signals
-            obs_data["prediction_signals"] = await self._fetch_prediction_signals(
-                symbol
-            )
+            obs_data["prediction_signals"] = await self._fetch_prediction_signals(symbol)
 
             # Create Observation (with validation)
             observation = Observation(**obs_data)
@@ -121,8 +119,7 @@ class DataScoutAgent(BaseAgent):
             self.record_activity(success=True)
 
             logger.info(
-                f"Observation collected: {symbol} @ {observation.price} "
-                f"(trace_id={trace_id})"
+                f"Observation collected: {symbol} @ {observation.price} " f"(trace_id={trace_id})"
             )
 
             return observation
@@ -132,7 +129,7 @@ class DataScoutAgent(BaseAgent):
             self.record_activity(success=False)
             raise
 
-    async def _fetch_ticker(self, symbol: str) -> Dict[str, Any]:
+    async def _fetch_ticker(self, symbol: str) -> dict[str, Any]:
         """
         Fetch ticker data van data source.
 
@@ -158,7 +155,7 @@ class DataScoutAgent(BaseAgent):
             logger.error(f"Data source error for {symbol}: {e}")
             raise ValueError(f"Failed to fetch ticker: {e}")
 
-    async def _fetch_orderbook(self, symbol: str, depth: int = 10) -> Dict[str, Any]:
+    async def _fetch_orderbook(self, symbol: str, depth: int = 10) -> dict[str, Any]:
         """
         Fetch orderbook snapshot.
 
@@ -185,7 +182,7 @@ class DataScoutAgent(BaseAgent):
             logger.warning(f"Failed to fetch orderbook for {symbol}: {e}")
             return {"bids": [], "asks": []}
 
-    async def _fetch_funding_rate(self, symbol: str) -> Optional[float]:
+    async def _fetch_funding_rate(self, symbol: str) -> float | None:
         """
         Fetch funding rate voor perpetual contracts.
 
@@ -202,7 +199,7 @@ class DataScoutAgent(BaseAgent):
             logger.debug(f"Funding rate not available for {symbol}: {e}")
             return None
 
-    async def _fetch_prediction_signals(self, symbol: str) -> List[Dict[str, Any]]:
+    async def _fetch_prediction_signals(self, symbol: str) -> list[dict[str, Any]]:
         """
         Fetch prediction market signals for symbol.
 
@@ -214,9 +211,7 @@ class DataScoutAgent(BaseAgent):
         """
         try:
             client = get_prediction_client()
-            signals = await client.get_signals(
-                symbol=symbol, min_confidence=0.5, limit=5
-            )
+            signals = await client.get_signals(symbol=symbol, min_confidence=0.5, limit=5)
 
             # Convert to dict format for Observation
             return [
@@ -264,9 +259,7 @@ class DataScoutAgent(BaseAgent):
         # Altijd local logging
         logger.debug(f"Audit log: {audit_data}")
 
-    async def analyze(
-        self, features: Dict[str, Any], context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """
         BaseAgent abstract method implementation.
 
@@ -278,7 +271,7 @@ class DataScoutAgent(BaseAgent):
             "confidence": 0.0,
         }
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Krijg DataScout statistieken.
 

@@ -230,7 +230,5 @@ class VolatilityScaledSizer(PositionSizer):
         # Inverse relationship: when volatility is high, reduce position size
         vol_adjustment = self.target_vol / self.current_volatility
 
-        quantity = (
-            portfolio_value * self.base_pct * vol_adjustment * signal_strength
-        ) / price
+        quantity = (portfolio_value * self.base_pct * vol_adjustment * signal_strength) / price
         return max(0.0, quantity)

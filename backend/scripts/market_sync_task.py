@@ -8,9 +8,7 @@ import os
 import sys
 
 # Add project root to path
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import ccxt.async_support as ccxt
 
@@ -124,9 +122,7 @@ async def sync_revolut(cache):
         if markets_data:
             # EXCLUDE TOXIC SYMBOLS that cause bulk API failures (400 Bad Request)
             blacklist = ["RNDR/EUR", "FTM/EUR", "USDT/EUR", "EOS/EUR"]
-            filtered_markets = [
-                m for m in markets_data if m["raw_symbol"] not in blacklist
-            ]
+            filtered_markets = [m for m in markets_data if m["raw_symbol"] not in blacklist]
 
             # Fetch real prices in bulk for valid symbols
             raw_symbols = [m["raw_symbol"] for m in filtered_markets]
