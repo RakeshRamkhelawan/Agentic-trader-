@@ -1,0 +1,120 @@
+version: '3.8'
+
+# Load production secrets from .env.prod (gitignored — never commit that file)
+# Copy .env.prod.example → .env.prod and fill in real values before deploying.
+
+services:
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentic_trader_api_prod
+    env_file:
+      - .env.prod
+    ports:
+      - "8003:8000"
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - trader-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: agentic_trader_db_prod
+    environment:
+      - POSTGRES_USER=${DB_USER:-trader}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME:-trading_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - trader-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-trader}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: agentic_trader_redis_prod
+    volumes:
+      - redis_data:/data
+    networks:
+      - trader-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: agentic_trader_clickhouse_prod
+    ports:
+      - "8123:8123"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - trader-network
+
+  trading-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentic_trader_engine_prod
+    command: ["python", "-m", "backend.trading.engine"]
+    env_file:
+      - .env.prod
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - trader-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: agentic_trader_prometheus_prod
+    volumes:
+      - ./prometheus.prod.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - trader-network
+    depends_on:
+      - api-server
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: agentic_trader_grafana_prod
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - trader-network
+    depends_on:
+      - prometheus
+
+networks:
+  trader-network:
+    name: trader-network
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  clickhouse_data:
+  prometheus_data:
+  grafana_data:

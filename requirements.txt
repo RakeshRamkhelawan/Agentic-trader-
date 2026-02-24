@@ -67,9 +67,9 @@ python-dotenv>=1.0.0
 # ============================================================================
 # Observability (Optional but recommended)
 # ============================================================================
-# prometheus-client>=0.21.0
-# opentelemetry-api>=1.28.0
-# opentelemetry-sdk>=1.28.0
+prometheus-client>=0.21.0
+opentelemetry-api>=1.28.0
+opentelemetry-sdk>=1.28.0
 
 # ============================================================================
 # Performance (Optional)
