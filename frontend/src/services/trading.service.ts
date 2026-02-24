@@ -5,7 +5,8 @@
  * Portfolio, positions, orders, and market data.
  */
 
-import { api } from '@/lib/api';
+import axios from 'axios';
+import api from '@/lib/api';
 import type { Portfolio, Position, Trade } from '@/types';
 
 /**
@@ -31,8 +32,8 @@ export async function getPosition(symbol: string): Promise<Position | null> {
   try {
     const response = await api.get<Position>(`/trading/positions/${symbol}`);
     return response.data;
-  } catch (error: any) {
-    if (error.response?.status === 404) {
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
       return null;
     }
     throw error;

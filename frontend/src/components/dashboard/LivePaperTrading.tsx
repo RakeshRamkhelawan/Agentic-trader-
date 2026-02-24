@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { API_URL, WS_URL } from '@/lib/config';
 
 import {
   Card,
@@ -76,12 +77,13 @@ export function LivePaperTrading() {
   const [wsConnected, setWsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasShownConnectedRef = useRef(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8003';
-  
   const getWsUrl = () => {
-    const baseUrl = (import.meta.env.VITE_WS_URL || 'ws://localhost:8003').replace(/\/$/, '');
-    return baseUrl.includes('/ws') ? `${baseUrl}/paper-trading` : `${baseUrl}/ws/paper-trading`;
+    const baseUrl = WS_URL.replace(/\/$/, '');
+    const result = baseUrl.includes('/ws') ? `${baseUrl}/paper-trading` : `${baseUrl}/ws/paper-trading`;
+    console.log('[DEBUG] WS_URL:', WS_URL, '-> Result:', result);
+    return result;
   };
 
   useEffect(() => {
@@ -170,17 +172,38 @@ export function LivePaperTrading() {
       try {
         const res = await fetch(`${API_URL}/api/v1/paper-trading/status`);
         const data = await res.json();
+        
+        // If already running, show message (only once)
+        if (data.is_running && !hasShownConnectedRef.current) {
+          console.log('[INFO] Active session found! Joining existing session...');
+          setError('Connected to existing 8-hour session (started at ' + new Date().toLocaleTimeString() + ')');
+          setTimeout(() => setError(null), 5000); // Clear after 5s
+          hasShownConnectedRef.current = true;
+        }
+        
         setIsRunning(data.is_running);
         
-        // Use trades from API if available (fallback for WebSocket)
-        if (data.trades && data.trades.length > 0) {
-          setTrades(prev => {
-            // Only update if we have more trades from API than local
-            if (data.trades.length > prev.length) {
-              return data.trades;
+        // Parse trades from logs if no trades in data
+        if (data.logs && Array.isArray(data.logs) && trades.length === 0) {
+          const logTrades: Trade[] = [];
+          data.logs.forEach((log: string) => {
+            const match = log.match(/\[ENTRY\]\s+(\S+)\s+(\d+\.?\d*)\s+@\s+EUR\s+(\d+\.?\d*)/);
+            if (match && !logTrades.find(t => t.symbol === match[1])) {
+              logTrades.push({
+                timestamp: new Date().toISOString(),
+                symbol: match[1],
+                side: 'buy',
+                qty: parseFloat(match[2]),
+                price: parseFloat(match[3]),
+                value: parseFloat(match[2]) * parseFloat(match[3]),
+                agent: 'V18_Elemental',
+                exchange: 'Bitvavo'
+              });
             }
-            return prev;
           });
+          if (logTrades.length > 0) {
+            setTrades(logTrades.slice(0, 50));
+          }
         }
         
         // Use stats from API
@@ -205,7 +228,7 @@ export function LivePaperTrading() {
     checkStatus();
     const interval = setInterval(checkStatus, 2000);
     return () => clearInterval(interval);
-  }, [API_URL]);
+  }, [API_URL, trades.length]);
 
   const startSession = async () => {
     setLoading(true);
@@ -223,7 +246,7 @@ export function LivePaperTrading() {
       } else {
         setError(data.detail || 'Failed to start');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to connect to server');
     } finally {
       setLoading(false);
@@ -244,7 +267,7 @@ export function LivePaperTrading() {
           wsRef.current.close();
         }
       }
-    } catch (err) {
+    } catch {
       setError('Failed to stop session');
     } finally {
       setLoading(false);

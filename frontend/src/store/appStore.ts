@@ -13,7 +13,7 @@ import {
   oodaApi,
   agentsApi,
 } from '@/lib/api';
-import type { Asset, Holding, Order, TradeHistory, AgentStrategy } from '@/lib/api';
+import type { Asset, Holding, Order, TradeHistory, AgentStrategy, AgentInfo, AgentTrade } from '@/lib/api';
 
 export interface AppUser {
   id: string;
@@ -286,16 +286,17 @@ export const useAppStore = create<AppState>()(
         try {
           const data = await agentsApi.getTrades();
           // Transform to TradeHistory format
-          const trades: TradeHistory[] = (data.trades || []).map((t: any) => ({
+          const trades: TradeHistory[] = (data.trades || []).map((t: AgentTrade) => ({
             id: t.id,
             symbol: t.symbol,
             side: t.side,
             amount: t.amount,
             price: t.price,
+            total: t.amount * t.price,
             timestamp: t.timestamp,
             status: 'filled',
-            venue: t.agent || 'AI Agent',
-            pnl: 0,
+            venue: t.agent_id || 'AI Agent',
+            type: 'agent',
           }));
           set({ agentTrades: trades, isLoadingAgentTrades: false });
         } catch (error) {
@@ -344,7 +345,7 @@ export const useAppStore = create<AppState>()(
           const data = await agentsApi.getStatus();
           // Normalize agents map into array
           const agentsList: AgentStrategy[] = Object.entries(data.agents ?? {}).map(
-            ([id, a]: [string, any]) => ({
+            ([id, a]: [string, AgentInfo]) => ({
               id,
               name: a.type ?? id,
               type: a.type ?? 'agent',
@@ -354,17 +355,17 @@ export const useAppStore = create<AppState>()(
               prana: Number(a.prana ?? 0),
             })
           );
-          // Get coherence metrics from new structure
-          const coherenceData = data.orchestrator_state?.coherence;
-          const coherence = coherenceData ? {
-            harmony: coherenceData.harmony ?? 0,
-            performance: coherenceData.performance ?? 0,
-            total_coherence: coherenceData.total_coherence ?? 0,
-            factors: coherenceData.factors,
-          } : {
-            harmony: data.orchestrator_state?.global_coherence ?? 0,
-            performance: 0,
-            total_coherence: data.orchestrator_state?.global_coherence ?? 0,
+          // Get coherence metrics from orchestrator state
+          const globalCoherence = data.orchestrator_state?.global_coherence ?? 0;
+          const coherence = {
+            harmony: globalCoherence,
+            performance: globalCoherence,
+            total_coherence: globalCoherence,
+            factors: {
+              active_agents: String(agentsList.length),
+              avg_prana: agentsList.reduce((sum, a) => sum + (a.prana || 0), 0) / (agentsList.length || 1),
+              total_trades: agentsList.reduce((sum, a) => sum + a.trades, 0),
+            },
           };
           set({ agentsStatus: agentsList, agentsCoherence: coherence, isLoadingAgents: false });
         } catch (error) {

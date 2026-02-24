@@ -1,0 +1,15 @@
+# Backend Startup Script with Logging
+$env:PYTHONPATH="."
+$env:DATABASE_URL="postgresql+asyncpg://trader:trading_secure@localhost:5432/trading_db"
+$env:REDIS_URL="redis://localhost:6379/0"
+$env:CLICKHOUSE_HOST="localhost"
+$env:CLICKHOUSE_PORT="8123"
+$env:CHROMA_HOST="localhost"
+$env:CHROMA_PORT="8005"
+$env:KAFKA_BOOTSTRAP_SERVERS="localhost:9092"
+$env:LOG_LEVEL="DEBUG"
+$env:SECRET_KEY="dev-secret-key"
+$env:JWT_SECRET_KEY="dev-jwt-secret"
+
+Write-Host "Starting backend... Check backend.log for output"
+python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8005 --workers 1 --log-level debug 2>&1 | Tee-Object -FilePath "backend.log"

@@ -4,7 +4,7 @@
  * Handles VedAstro signal generation and elemental consensus.
  */
 
-import { api } from '@/lib/api';
+import api from '@/lib/api';
 import type { VedAstroSignal, ElementalConsensus, ElementalVotes } from '@/types';
 
 /**

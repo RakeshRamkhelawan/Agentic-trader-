@@ -68,7 +68,7 @@ export const useUserStore = create<UserState>()(
       
       kycData: {
         status: 'not_started',
-      } as any,
+      } as Partial<KYCData>,
       kycStep: 0,
       kycStatus: null,
       kycIsLoading: false,
@@ -134,10 +134,10 @@ export const useUserStore = create<UserState>()(
           
           set({ kycIsLoading: false });
           return response.success;
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({ 
             kycIsLoading: false, 
-            kycError: error.message || 'KYC submission failed' 
+            kycError: error instanceof Error ? error.message : 'KYC submission failed' 
           });
           return false;
         }

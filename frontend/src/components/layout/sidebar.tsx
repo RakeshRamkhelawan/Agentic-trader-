@@ -159,12 +159,12 @@ export function Sidebar() {
                 <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#1A1A1A] cursor-pointer group">
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-trade-purple to-trade-blue flex items-center justify-center">
                     <span className="text-sm font-semibold text-white">
-                      {user.firstName?.charAt(0).toUpperCase() || user.displayName?.charAt(0).toUpperCase()}
+                      {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   {sidebarExpanded && (
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{user.displayName}</p>
+                      <p className="text-sm font-medium text-white truncate">{user.name || user.email}</p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
                   )}
@@ -180,7 +180,7 @@ export function Sidebar() {
               </TooltipTrigger>
               {!sidebarExpanded && (
                 <TooltipContent side="right" className="bg-[#1A1A1A] border-[#262626]">
-                  <p>{user.displayName}</p>
+                  <p>{user.name || user.email}</p>
                 </TooltipContent>
               )}
             </Tooltip>

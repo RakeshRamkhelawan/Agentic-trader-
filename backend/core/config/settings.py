@@ -1,6 +1,5 @@
 import os
 from functools import cached_property
-from typing import List, Optional
 
 from pydantic import Field  # Explicit import
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,9 +22,9 @@ class Settings(BaseSettings):
     # --- VAULT CONFIGURATION ---
     VAULT_ENABLED: bool = False
     VAULT_ADDR: str = "http://localhost:8200"
-    VAULT_TOKEN: Optional[str] = None
-    VAULT_ROLE_ID: Optional[str] = None
-    VAULT_SECRET_ID: Optional[str] = None
+    VAULT_TOKEN: str | None = None
+    VAULT_ROLE_ID: str | None = None
+    VAULT_SECRET_ID: str | None = None
 
     # --- INFRASTRUCTURE URLs ---
     KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
@@ -39,8 +38,8 @@ class Settings(BaseSettings):
     CHROMA_PORT: int = 8000
 
     # --- SECURITY (Non-sensitive defaults) ---
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
-    ALLOWED_ORIGINS: List[str] = Field(
+    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    ALLOWED_ORIGINS: list[str] = Field(
         default=["http://localhost:3000", "http://127.0.0.1:3000"],
         description="CORS allowed origins. Override via ALLOWED_ORIGINS env var (JSON list).",
     )
@@ -49,20 +48,36 @@ class Settings(BaseSettings):
         description="Enable /docs and /redoc. Set DOCS_ENABLED=false in production.",
     )
     # Pydantic will load REVOLUT_API_KEY from .env
-    REVOLUT_API_KEY_ENV: Optional[str] = Field(None, validation_alias="REVOLUT_API_KEY")
+    REVOLUT_API_KEY_ENV: str | None = Field(None, validation_alias="REVOLUT_API_KEY")
     REVOLUT_PRIVATE_KEY_PATH: str = "revolut_private.pem"
     REVOLUT_SANDBOX: bool = True
-    _jwt_secret_key: Optional[str] = None  # Deprecated, use env field below
-    JWT_SECRET_KEY_ENV: Optional[str] = Field(None, validation_alias="JWT_SECRET_KEY")
+    _jwt_secret_key: str | None = None  # Deprecated, use env field below
+    JWT_SECRET_KEY_ENV: str | None = Field(None, validation_alias="JWT_SECRET_KEY")
 
-    _database_url: Optional[str] = None  # Deprecated, use env field below
-    DATABASE_URL_ENV: Optional[str] = Field(None, validation_alias="DATABASE_URL")
+    _database_url: str | None = None  # Deprecated, use env field below
+    DATABASE_URL_ENV: str | None = Field(None, validation_alias="DATABASE_URL")
 
     # --- AUTH0 CONFIGURATION ---
-    AUTH0_DOMAIN: str = "agentictrader.eu.auth0.com"
-    AUTH0_API_AUDIENCE: str = "https://api.agentic-trader.com"
-    AUTH0_ISSUER: str = "https://agentictrader.eu.auth0.com/"
-    AUTH0_ALGORITHM: str = "RS256"
+    # Use environment variables - NO hardcoded values for security
+    AUTH0_DOMAIN: str = Field(
+        default="",
+        validation_alias="AUTH0_DOMAIN",
+        description="Auth0 tenant domain (e.g., your-app.auth0.com)",
+    )
+    AUTH0_API_AUDIENCE: str = Field(
+        default="", validation_alias="AUTH0_API_AUDIENCE", description="Auth0 API identifier"
+    )
+    AUTH0_ISSUER: str = Field(
+        default="", validation_alias="AUTH0_ISSUER", description="Auth0 token issuer URL"
+    )
+    AUTH0_ALGORITHM: str = Field(default="RS256", validation_alias="AUTH0_ALGORITHM")
+
+    # Development mode - bypass Auth0 for local testing
+    AUTH_DISABLED: bool = Field(
+        default=False,
+        validation_alias="AUTH_DISABLED",
+        description="WARNING: Only for development! Disables authentication.",
+    )
 
     # --- METRICS ---
     METRICS_SERVER_PORT: int = 8001
@@ -82,17 +97,13 @@ class Settings(BaseSettings):
 
     # --- MARKET DATA (Phase 2) ---
     EXCHANGE_ID: str = "bitvavo"  # Options: bitvavo, kraken, binance, etc.
-    EXCHANGE_API_KEY: Optional[str] = Field(
-        default=None, validation_alias="BITVAVO_API_KEY"
-    )
-    EXCHANGE_SECRET: Optional[str] = Field(
-        default=None, validation_alias="BITVAVO_API_SECRET"
-    )
+    EXCHANGE_API_KEY: str | None = Field(default=None, validation_alias="BITVAVO_API_KEY")
+    EXCHANGE_SECRET: str | None = Field(default=None, validation_alias="BITVAVO_API_SECRET")
     ENABLE_REALTIME_DATA: bool = False
 
     # --- BITVAVO SPECIFIC ---
-    BITVAVO_API_KEY: Optional[str] = None
-    BITVAVO_API_SECRET: Optional[str] = None
+    BITVAVO_API_KEY: str | None = None
+    BITVAVO_API_SECRET: str | None = None
     BITVAVO_SANDBOX: bool = False
 
     # Pydantic Settings Config
@@ -138,7 +149,7 @@ class Settings(BaseSettings):
                     print(f"Private Key File not found at: {path}")
                     return ""
 
-            with open(path, "r") as f:
+            with open(path) as f:
                 return f.read()
         except Exception as e:
             # logger isn't available in settings usually, print or ignore

@@ -34,9 +34,10 @@ repos:
       # Check for broken symlinks
       - id: check-symlinks
 
-      # Check JSON syntax
+      # Check JSON syntax (exclude tsconfig which uses JSONC with comments)
       - id: check-json
         files: \.(json)$
+        exclude: tsconfig
 
       # Check YAML syntax
       - id: check-yaml
@@ -84,12 +85,12 @@ repos:
   # ============================================================================
   # Security Scans (Non-blocking)
   # ============================================================================
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.10
+  - repo: local
     hooks:
       - id: bandit
         name: Security Scan
-        args: [-c, pyproject.toml, -f, json, -o, bandit-report.json]
+        entry: bash -c 'bandit -c pyproject.toml -f json -o bandit-report.json "$@" || true' --
+        language: system
         files: ^backend/.*\.py$
         exclude: ^backend/tests/
         # Non-blocking - just generates report

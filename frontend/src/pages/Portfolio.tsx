@@ -8,15 +8,20 @@ import { Button } from '@/components/ui/button';
 // Simple pie chart component
 function AllocationPieChart({ data }: { data: { label: string; value: number; color: string }[] }) {
   const total = data.reduce((acc, item) => acc + item.value, 0);
-  let currentAngle = 0;
+  
+  // Calculate angles without mutating variables during render
+  const angles = data.reduce<{ startAngle: number; endAngle: number; angle: number }[]>((acc, item) => {
+    const angle = (item.value / total) * 360;
+    const startAngle = acc.length === 0 ? 0 : acc[acc.length - 1].endAngle;
+    const endAngle = startAngle + angle;
+    acc.push({ startAngle, endAngle, angle });
+    return acc;
+  }, []);
 
   return (
     <svg viewBox="0 0 100 100" className="w-48 h-48">
       {data.map((item, index) => {
-        const angle = (item.value / total) * 360;
-        const startAngle = currentAngle;
-        const endAngle = currentAngle + angle;
-        currentAngle += angle;
+        const { startAngle, endAngle, angle } = angles[index];
 
         const startRad = (startAngle * Math.PI) / 180;
         const endRad = (endAngle * Math.PI) / 180;

@@ -1,129 +1,426 @@
 """
-Elemental Agent Manager - Vedic Trading Intelligence
-Integrates Fire, Water, Air, Earth, and Ether agents into trading decisions
+Elemental Agent Manager V17 - VedAstro Hybrid Edition
+
+Combines VedAstro TradingSignalGenerator with Elemental risk management.
+
+V17 Key Changes:
+1. VedAstro-driven entry decisions (BUY/SELL/HOLD)
+2. Elemental simplified to risk filtering only
+3. Fire: Position sizing only (€2k cap)
+4. Earth: Entry blocking only (3-loss rule)
+5. Water: Regime check preserved
+6. Aggressive thresholds: Fire 0.30, Earth 0.40
+
+Retained from V16:
+- Daily cycle counting (5,239 cycles)
+- Trailing stop (+40% → -15%)
+- 60-day failsafe
+- €2,000 position cap
+- Water TLT inverse logic
 """
 
 import logging
 import os
+import statistics
 import sys
-from collections import deque
-from dataclasses import dataclass, field
+from collections import defaultdict, deque
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
-from backend.config.asset_universe import (FULL_ASSET_UNIVERSE)
-from backend.core.navagraha.asset_affinity import PLANET_ASSET_AFFINITY
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("ElementalAgentsV17")
 
-logger = logging.getLogger("ElementalAgents")
+
+# ============ V17: NAVAGRAHA RISK MULTIPLIERS (Preserved) ============
+PLANET_RISK_MULTIPLIERS = {
+    "SUN": 1.00,
+    "MOON": 0.80,
+    "MARS": 1.40,
+    "MERCURY": 0.90,
+    "JUPITER": 1.20,
+    "VENUS": 1.10,
+    "SATURN": 0.60,
+    "RAHU": 0.70,
+    "KETU": 0.75,
+}
+
+# V17: Aggressive thresholds for higher execution rate
+PLANET_THRESHOLDS = {
+    "SUN": 0.50,  # was 0.52
+    "MOON": 0.48,  # was 0.50
+    "MARS": 0.55,  # was 0.57
+    "MERCURY": 0.49,  # was 0.51
+    "JUPITER": 0.52,  # was 0.54
+    "VENUS": 0.49,  # was 0.51
+    "SATURN": 0.45,  # was 0.47
+    "RAHU": 0.57,  # was 0.59
+    "KETU": 0.53,  # was 0.55
+}
+
+ASSET_CLASSES = {
+    "crypto": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "AVAX",
+        "LINK",
+        "DOT",
+        "ADA",
+        "XRP",
+        "DOGE",
+        "LTC",
+        "ATOM",
+        "ALGO",
+        "VET",
+        "TRX",
+        "XLM",
+        "UNI",
+        "MATIC",
+        "FIL",
+        "ETC",
+    ],  # AAVE removed
+    "equity_us": [
+        "AAPL",
+        "MSFT",
+        "GOOGL",
+        "META",
+        "NVDA",
+        "AMZN",
+        "TSLA",
+        "AMD",
+        "CRM",
+        "ADBE",
+        "NFLX",
+        "ORCL",
+        "INTC",
+        "PYPL",
+        "ROKU",
+        "ZM",
+        "COIN",
+        "SNOW",
+        "UBER",
+        "IBM",
+    ],
+    "equity_eu": ["ASML", "SAP", "AIR", "ROG", "NESN", "TTE", "SHEL"],
+    "etf": ["SPY", "QQQ", "VTI", "IWM", "EEM", "EFA", "GLD", "TLT", "USO", "VIX"],
+    "bond": ["TLT", "IEF", "AGG", "BND", "GOVT"],
+    "inverse_etf": ["SH", "PSQ", "RWM", "TBF"],
+}
+
+HEDGE_PAIRS = {
+    "SPY": "SH",
+    "QQQ": "PSQ",
+    "IWM": "RWM",
+    "TLT": "TBF",
+}
+
+INVERSE_ETFS = {"SH", "PSQ", "RWM", "TBF"}
+BOND_SYMBOLS = {"TLT", "IEF", "AGG", "BND", "TBF", "GOVT"}
+
+WARM_START_CONFIDENCE = {
+    "crypto": 0.72,
+    "equity_us": 0.85,
+    "equity_eu": 0.78,
+    "etf": 0.88,
+}
+
+IPO_DATES = {
+    "COIN": "2021-04-14",
+    "SNOW": "2020-09-16",
+    "UBER": "2019-05-10",
+    "ZM": "2019-04-18",
+    "ROKU": "2017-09-28",
+}
 
 
 @dataclass
-class NavagrahaState:
-    """Current planetary state"""
-
-    dominant_planet: str = "JUPITER"
-    trading_gate_open: bool = True
-    rahu_kala_active: bool = False
-    consciousness_level: str = "Pure Awareness"
-    guna_distribution: Dict[str, float] = field(
-        default_factory=lambda: {"sattva": 0.55, "rajas": 0.30, "tamas": 0.15}
-    )
+class MacroSignal:
+    risk_on_score: float
+    regime: str
 
 
-@dataclass
-class FireDecision:
-    """Fire Agent (Risk Guardian) output"""
-
-    decision: str  # APPROVE, BLOCK, REDUCE
-    confidence: float
-    max_allowed_qty: Optional[float]
-    risk_score: float
-    blocking_reasons: List[str]
-    var_estimate_pct: float
-    fire_dharma: str
-    prana_consumed: float
+# ============ V17: FIRE AGENT - POSITION SIZING ONLY ============
 
 
-@dataclass
-class WaterRegime:
-    """Water Agent (Macro Research) output"""
-
-    regime: str  # expansion, contraction, neutral, recovery
-    asset_class_outlook: Dict[str, str]
-    favored_symbols: List[str]
-    avoid_symbols: List[str]
-    macro_narrative: str
-    confidence: float
-    water_dharma: str
-
-
-@dataclass
-class AirSignal:
-    """Air Agent (Technical Signals) output"""
-
-    symbol: str
-    action: str  # BUY, SELL, HOLD
-    confidence: float
-    entry_price: float
-    stop_loss: float
-    take_profit: float
-    technical_summary: str
-    indicators: Dict[str, Any]
-    air_dharma: str
-
-
-@dataclass
-class EarthValuation:
-    """Earth Agent (Valuation) output"""
-
-    symbol: str
-    fair_value: float
-    current_price: float
-    valuation_gap_pct: float
-    verdict: str  # UNDERVALUED, FAIR, OVERVALUED
-    confidence: float
-    methodology: str
-    earth_dharma: str
-
-
-@dataclass
-class EtherSynthesis:
-    """Ether Agent (Orchestrator) output"""
-
-    final_decision: str  # EXECUTE, BLOCK, PARTIAL
-    harmony_score: float
-    approved_symbol: Optional[str]
-    approved_action: Optional[str]
-    approved_qty: float
-    approved_price: float
-    stop_loss: float
-    take_profit: float
-    execution_urgency: str
-    consensus_achieved: bool
-    blocking_agent: Optional[str]
-    cosmic_narrative: str
-    ether_dharma: str
-
-
-class ElementalAgentManager:
+class FireAgentV17:
     """
-    Orchestrates all 5 elemental agents for trading decisions.
-    Implements Vedic trading logic without requiring LLM calls.
+    V17: Fire Agent - ONLY position sizing, no confidence calculation.
+    Harmony comes from VedAstro strength_score.
     """
+
+    MAX_POSITION_EUR = 2000.0
 
     def __init__(self):
-        # Technical indicator buffers
-        self.price_history: Dict[str, deque] = {}
-        self.volume_history: Dict[str, deque] = {}
-        self.history_length = 50
+        self.price_history: dict[str, deque] = defaultdict(lambda: deque(maxlen=60))
+        self.entry_prices: dict[str, float] = {}
+        self.peak_prices: dict[str, float] = {}
 
-        # Asset universe mapping
-        self.asset_map = {a.symbol: a for a in FULL_ASSET_UNIVERSE}
+    def record_price(self, symbol: str, price: float):
+        self.price_history[symbol].append(price)
 
-        # Performance tracking
-        self.agent_confidence_history: Dict[str, List[float]] = {
+    def record_entry(self, symbol: str, entry_price: float):
+        self.entry_prices[symbol] = entry_price
+        self.peak_prices[symbol] = entry_price
+
+    def record_exit(self, symbol: str, pnl: float):
+        self.entry_prices.pop(symbol, None)
+        self.peak_prices.pop(symbol, None)
+
+    def _calculate_atr(self, symbol: str, period: int = 14) -> float:
+        prices = list(self.price_history.get(symbol, []))
+        if len(prices) < period + 1:
+            return 0.02
+
+        tr_list = []
+        for i in range(1, min(period + 1, len(prices))):
+            high = prices[-i]
+            low = prices[-i - 1]
+            tr = abs(high - low) / low if low > 0 else 0
+            tr_list.append(tr)
+
+        return statistics.mean(tr_list) if tr_list else 0.02
+
+    def calculate_position_size(
+        self, symbol: str, portfolio_value: float, vedastro_score: float, dominant_planet: str
+    ) -> float:
+        """
+        V17: Position sizing using VedAstro score (0-100) as harmony.
+        No confidence calculation - VedAstro provides the signal quality.
+        """
+        prices = list(self.price_history.get(symbol, []))
+
+        if len(prices) < 20:
+            base_pct = 0.01
+        else:
+            atr = self._calculate_atr(symbol)
+            vol_factor = max(0.5, min(2.0, 0.03 / (atr + 0.001)))
+
+            # VedAstro score (0-100) → harmony factor (0.5-1.2)
+            harmony_factor = 0.5 + (vedastro_score / 100) * 0.7
+
+            streak = 0
+            for i in range(1, min(6, len(prices))):
+                if prices[-i] > prices[-i - 1]:
+                    streak += 1
+                else:
+                    break
+            streak_factor = 1.0 + (streak * 0.05)
+
+            planet_mult = PLANET_RISK_MULTIPLIERS.get(dominant_planet, 1.0)
+
+            base_pct = 0.015 * vol_factor * harmony_factor * streak_factor * planet_mult
+
+        raw_size = portfolio_value * base_pct
+        max_pct_size = portfolio_value * 0.02
+
+        return min(raw_size, max_pct_size, self.MAX_POSITION_EUR)
+
+
+# ============ V17: EARTH AGENT - ENTRY BLOCKING ONLY ============
+
+
+class EarthAgentV17:
+    """
+    V17: Earth Agent - ONLY entry blocking and trailing stops.
+    No confidence calculation - VedAstro provides signal quality.
+    """
+
+    MAX_HOLD_DAYS = 60
+
+    def __init__(self):
+        self.symbol_memory: dict[str, deque] = defaultdict(lambda: deque(maxlen=20))
+        self.win_rates: dict[str, float] = {}
+        self.entry_dates: dict[str, datetime] = {}
+        self.peak_unrealized_pnl: dict[str, float] = {}
+        self.trailing_stop_active: dict[str, bool] = {}
+
+    def record_entry(self, symbol: str, entry_date: datetime):
+        self.entry_dates[symbol] = entry_date
+        self.peak_unrealized_pnl[symbol] = 0.0
+        self.trailing_stop_active[symbol] = False
+
+    def record_exit(self, symbol: str, pnl: float, win: bool):
+        self.symbol_memory[symbol].append({"pnl": pnl, "win": win, "timestamp": datetime.now()})
+
+        history = list(self.symbol_memory[symbol])
+        if history:
+            wins = sum(1 for h in history if h["win"])
+            self.win_rates[symbol] = wins / len(history)
+
+        self.entry_dates.pop(symbol, None)
+        self.peak_unrealized_pnl.pop(symbol, None)
+        self.trailing_stop_active.pop(symbol, None)
+
+    def should_enter(self, symbol: str) -> bool:
+        """V17: 3 consecutive losses entry blocking (preserved)"""
+        recent = list(self.symbol_memory.get(symbol, []))
+        if len(recent) >= 3:
+            last_three = recent[-3:]
+            if all(not t["win"] for t in last_three):
+                return False
+        return True
+
+    def update_unrealized_pnl(self, symbol: str, unrealized_pnl_pct: float):
+        if symbol not in self.peak_unrealized_pnl:
+            self.peak_unrealized_pnl[symbol] = 0.0
+            self.trailing_stop_active[symbol] = False
+
+        if unrealized_pnl_pct > self.peak_unrealized_pnl[symbol]:
+            self.peak_unrealized_pnl[symbol] = unrealized_pnl_pct
+
+        if self.peak_unrealized_pnl[symbol] >= 0.40:
+            self.trailing_stop_active[symbol] = True
+
+    def check_trailing_stop(self, symbol: str, current_pnl_pct: float) -> bool:
+        if not self.trailing_stop_active.get(symbol, False):
+            return False
+
+        peak = self.peak_unrealized_pnl.get(symbol, 0.0)
+        if peak - current_pnl_pct >= 0.15:
+            return True
+        return False
+
+    def get_days_held(self, symbol: str, current_date: datetime) -> int:
+        entry_date = self.entry_dates.get(symbol)
+        if entry_date:
+            return (current_date - entry_date).days
+        return 0
+
+
+# ============ V12: WATER AGENT (PRESERVED - DO NOT MODIFY) ============
+
+
+class WaterAgentV12:
+    """Water Agent - STRICTLY PRESERVED from V12/V16"""
+
+    def __init__(self):
+        self.ASSET_CLASSES = ASSET_CLASSES
+        self.entry_macro_score: dict[str, float] = {}
+
+    def record_entry(self, symbol: str, macro_signal: MacroSignal):
+        self.entry_macro_score[symbol] = macro_signal.risk_on_score
+
+    def record_exit(self, symbol: str):
+        self.entry_macro_score.pop(symbol, None)
+
+    def _get_asset_class(self, symbol: str) -> str:
+        for cls, syms in self.ASSET_CLASSES.items():
+            if symbol in syms:
+                return cls
+        return "equity_us"
+
+    def get_macro_signal(self, prices: list[float]) -> MacroSignal:
+        if len(prices) < 20:
+            return MacroSignal(risk_on_score=0.5, regime="neutral")
+
+        price_change_30d = (prices[-1] - prices[-min(30, len(prices))]) / prices[
+            -min(30, len(prices))
+        ]
+        advancing = sum(1 for i in range(1, min(20, len(prices))) if prices[-i] > prices[-i - 1])
+        total = min(19, len(prices) - 1)
+
+        if total > 0:
+            advance_ratio = advancing / total
+            if advance_ratio > 0.6 and price_change_30d > 0.10:
+                regime = "expansion"
+                risk_on = 0.8
+            elif advance_ratio < 0.4 and price_change_30d < -0.10:
+                regime = "contraction"
+                risk_on = 0.2
+            elif price_change_30d > 0:
+                regime = "recovery"
+                risk_on = 0.6
+            else:
+                regime = "neutral"
+                risk_on = 0.5
+        else:
+            regime = "neutral"
+            risk_on = 0.5
+
+        return MacroSignal(risk_on_score=risk_on, regime=regime)
+
+    def get_hedge_signal(
+        self, primary_symbol: str, macro_signal: MacroSignal
+    ) -> tuple[str | None, float]:
+        hedge_sym = HEDGE_PAIRS.get(primary_symbol)
+        if not hedge_sym:
+            return None, 0.0
+
+        risk_on = macro_signal.risk_on_score
+
+        if risk_on < 0.35:
+            hedge_conf = 0.70 + (0.35 - risk_on) * 0.5
+            return hedge_sym, min(hedge_conf, 0.85)
+
+        return None, 0.0
+
+    def calculate_confidence(self, symbol: str, macro_signal: MacroSignal) -> float:
+        if symbol in INVERSE_ETFS:
+            risk_on = macro_signal.risk_on_score
+            base = WARM_START_CONFIDENCE.get("etf", 0.88)
+            return min(0.90, base * (1.5 - risk_on))
+
+        asset_class = self._get_asset_class(symbol)
+        base_conf = WARM_START_CONFIDENCE.get(asset_class, 0.80)
+
+        if macro_signal.regime == "expansion":
+            confidence = base_conf * 1.05
+        elif macro_signal.regime == "contraction":
+            confidence = base_conf * 0.85
+        else:
+            confidence = base_conf
+
+        return min(0.95, max(0.60, confidence))
+
+
+# ============ V17: VEDASTRO ELEMENTAL AGENT (HYBRID) ============
+
+
+class VedAstroElementalAgentV17:
+    """
+    V17: Hybrid agent combining VedAstro signal generation with Elemental risk management.
+
+    Flow:
+    1. VedAstro TradingSignalGenerator provides BUY/SELL/HOLD decision
+    2. Elemental agents filter for risk (entry blocking, position sizing)
+    3. Entry executed if VedAstro says BUY + Elemental risk filters pass
+    """
+
+    COMMISSION_PCT = 0.0005
+    SLIPPAGE_PCT = 0.001
+    MIN_VEDASTRO_CONFIDENCE = 50.0  # Minimum 50% confidence
+    MIN_VEDASTRO_SCORE = 45.0  # Minimum strength score
+
+    def __init__(self):
+        # Import VedAstro components
+        try:
+            from backend.vedastro import EnhancedAstroOrchestrator, TradingSignalGenerator
+
+            self.astro_orchestrator = EnhancedAstroOrchestrator()
+            self.signal_generator = TradingSignalGenerator()
+            self.vedastro_available = True
+            logger.info("✅ VedAstro components loaded successfully")
+        except Exception as e:
+            logger.error(f"❌ Failed to load VedAstro: {e}")
+            self.vedastro_available = False
+            raise
+
+        # Elemental risk components
+        self.fire_agent = FireAgentV17()
+        self.earth_agent = EarthAgentV17()
+        self.water_agent = WaterAgentV12()
+
+        # Cycle counting (preserved)
+        self.total_cycles = 0
+        self.consensus_count = 0
+        self.execute_count = 0
+        self.position_review_exits = 0
+        self.vedastro_entries = 0  # NEW: Track VedAstro-driven entries
+
+        self.agent_confidence_history: dict[str, list[float]] = {
             "fire": [],
             "water": [],
             "air": [],
@@ -131,814 +428,232 @@ class ElementalAgentManager:
             "ether": [],
         }
 
-    def _get_asset_info(self, symbol: str):
-        """Get asset info from universe"""
-        # Try exact match first
-        if symbol in self.asset_map:
-            return self.asset_map[symbol]
+        self.symbol_position_sizes: dict[str, list[float]] = defaultdict(list)
+        self.astro_cache: dict[str, Any] = {}  # Cache for VedAstro results
 
-        # Try with /EUR suffix for crypto
-        if f"{symbol}/EUR" in self.asset_map:
-            return self.asset_map[f"{symbol}/EUR"]
+    def increment_cycle(self):
+        """V17: Daily cycle increment (PRESERVED)"""
+        self.total_cycles += 1
 
-        # Default fallback
-        return None
+    def _get_cached_astro(self, symbol: str, date: datetime, price: float):
+        """V17: Cache VedAstro calculations for performance"""
+        cache_key = f"{symbol}_{date.strftime('%Y-%m-%d')}"
 
-    def _calculate_rsi(self, prices: List[float], period: int = 14) -> float:
-        """Calculate RSI technical indicator"""
-        if len(prices) < period + 1:
-            return 50.0
+        if cache_key not in self.astro_cache:
+            # Will be populated by evaluate_entry
+            pass
 
-        gains = []
-        losses = []
+        return self.astro_cache.get(cache_key)
 
-        for i in range(1, len(prices)):
-            change = prices[i] - prices[i - 1]
-            if change > 0:
-                gains.append(change)
-                losses.append(0)
+    async def evaluate_entry(
+        self, symbol: str, current_price: float, cycle_date: datetime, portfolio_value: float
+    ) -> dict | None:
+        """
+        V17 Entry evaluation:
+        1. Get VedAstro analysis (async)
+        2. Filter: Only BUY signals with sufficient confidence
+        3. Check Elemental risk filters
+        4. Calculate position size using VedAstro score
+        5. Return entry dict or None
+        """
+        if not self.vedastro_available:
+            logger.warning("VedAstro not available, skipping entry")
+            return None
+
+        # 1. VEDASTRO ANALYSIS (async)
+        try:
+            cache_key = f"{symbol}_{cycle_date.strftime('%Y-%m-%d')}"
+
+            if cache_key in self.astro_cache:
+                astro_analysis = self.astro_cache[cache_key]
             else:
-                gains.append(0)
-                losses.append(abs(change))
+                astro_analysis = await self.astro_orchestrator.analyze_asset(
+                    symbol=symbol, current_price=current_price
+                )
+                self.astro_cache[cache_key] = astro_analysis
 
-        if len(gains) < period:
-            return 50.0
+            signal = astro_analysis.trading_signal
 
-        avg_gain = sum(gains[-period:]) / period
-        avg_loss = sum(losses[-period:]) / period
+        except Exception as e:
+            logger.warning(f"VedAstro failed for {symbol}: {e}")
+            return None
 
-        if avg_loss == 0:
-            return 100.0
-
-        rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
-        return rsi
-
-    def _calculate_ema(self, prices: List[float], period: int = 20) -> float:
-        """Calculate EMA"""
-        if len(prices) < period:
-            return prices[-1] if prices else 0
-
-        multiplier = 2 / (period + 1)
-        ema = sum(prices[:period]) / period
-
-        for price in prices[period:]:
-            ema = (price * multiplier) + (ema * (1 - multiplier))
-
-        return ema
-
-    def _calculate_atr(
-        self,
-        highs: List[float],
-        lows: List[float],
-        closes: List[float],
-        period: int = 14,
-    ) -> float:
-        """Calculate Average True Range"""
-        if len(closes) < period + 1:
-            return closes[-1] * 0.02 if closes else 0
-
-        true_ranges = []
-        for i in range(1, len(closes)):
-            tr1 = highs[i] - lows[i]
-            tr2 = abs(highs[i] - closes[i - 1])
-            tr3 = abs(lows[i] - closes[i - 1])
-            true_ranges.append(max(tr1, tr2, tr3))
-
-        return sum(true_ranges[-period:]) / period if len(true_ranges) >= period else 0
-
-    def _calculate_volatility(self, prices: List[float]) -> float:
-        """Calculate price volatility as percentage"""
-        if len(prices) < 2:
-            return 0
-
-        returns = [
-            (prices[i] - prices[i - 1]) / prices[i - 1] for i in range(1, len(prices))
-        ]
-        if not returns:
-            return 0
-
-        mean_return = sum(returns) / len(returns)
-        variance = sum((r - mean_return) ** 2 for r in returns) / len(returns)
-        std_dev = variance**0.5
-
-        return std_dev * 100  # As percentage
-
-    def update_price_data(self, symbol: str, price: float, volume: float = 0):
-        """Update price history for technical analysis"""
-        if symbol not in self.price_history:
-            self.price_history[symbol] = deque(maxlen=self.history_length)
-            self.volume_history[symbol] = deque(maxlen=self.history_length)
-
-        self.price_history[symbol].append(price)
-        self.volume_history[symbol].append(volume)
-
-    # ============ FIRE AGENT (Risk Guardian) ============
-
-    def fire_agent_assess(
-        self,
-        symbol: str,
-        proposed_action: str,
-        proposed_qty: float,
-        price: float,
-        portfolio_value: float,
-        navagraha: NavagrahaState,
-        harmony_score: float,
-        prana_level: float,
-        market_regime: str,
-        volatility_24h: float,
-    ) -> FireDecision:
-        """
-        Fire Agent: Risk assessment and trade validation
-        """
-        blocking_reasons = []
-        risk_score = 0.0
-
-        # Rule 1: Rahu Kala check
-        if navagraha.rahu_kala_active:
-            return FireDecision(
-                decision="BLOCK",
-                confidence=1.0,
-                max_allowed_qty=None,
-                risk_score=1.0,
-                blocking_reasons=["Rahu Kala actief - geen trading"],
-                var_estimate_pct=0,
-                fire_dharma="Agni waarschuwt: Rahu's invloed is te sterk",
-                prana_consumed=0,
-            )
-
-        # Rule 2: Prana check
-        if prana_level < 10:
-            return FireDecision(
-                decision="BLOCK",
-                confidence=1.0,
-                max_allowed_qty=None,
-                risk_score=1.0,
-                blocking_reasons=["Prana uitgeput - veiligheid eerste"],
-                var_estimate_pct=0,
-                fire_dharma="Systeemprana te laag voor risico",
-                prana_consumed=0,
-            )
-
-        # Rule 3: Harmony check
-        if harmony_score < 0.25:
-            return FireDecision(
-                decision="BLOCK",
-                confidence=0.9,
-                max_allowed_qty=None,
-                risk_score=0.9,
-                blocking_reasons=["Systemische disharmonie"],
-                var_estimate_pct=0,
-                fire_dharma="Agni blokkeert door disharmonie",
-                prana_consumed=2.0,
-            )
-
-        # Get asset info
-        asset = self._get_asset_info(symbol)
-        asset_class = asset.asset_class.value if asset else "crypto"
-
-        # Asset-specific risk limits
-        asset_limits = {
-            "crypto": 0.02,  # 2% for crypto
-            "forex": 0.01,  # 1% for forex
-            "commodities": 0.015,  # 1.5% for commodities
-            "indices": 0.02,  # 2% for indices
-            "equities": 0.015,  # 1.5% for equities
-        }
-
-        max_risk = asset_limits.get(asset_class, 0.01)
-        trade_value = proposed_qty * price
-        trade_risk_pct = trade_value / portfolio_value if portfolio_value > 0 else 0
-
-        # Rule 4: Position size limit
-        if trade_risk_pct > max_risk:
-            risk_score += 0.3
-            max_allowed = (portfolio_value * max_risk) / price
-            blocking_reasons.append(
-                f"Positie {trade_risk_pct:.2%} > limiet {max_risk:.2%}"
-            )
+        # 2. FILTER: Only BUY signals
+        signal_value = signal.signal
+        if isinstance(signal_value, str):
+            signal_str = signal_value.lower()
         else:
-            max_allowed = proposed_qty
-
-        # Rule 5: Volatility check
-        if asset_class == "crypto" and volatility_24h > 8:
-            risk_score += 0.2
-            blocking_reasons.append("Crypto volatiliteit > 8%")
-        elif asset_class == "forex" and volatility_24h > 2:
-            risk_score += 0.2
-            blocking_reasons.append("Forex volatiliteit > 2%")
-
-        # Rule 6: Contraction regime check
-        if market_regime == "contraction" and asset_class == "crypto":
-            max_allowed *= 0.5
-            risk_score += 0.15
-            blocking_reasons.append("Contraction regime - reduceer crypto")
-
-        # Navagraha affinity bonus
-        dominant = navagraha.dominant_planet
-        favored_assets = PLANET_ASSET_AFFINITY.get(dominant, [])
-        if symbol in favored_assets or any(a in symbol for a in favored_assets):
-            risk_score -= 0.1  # Lower risk for favored assets
-
-        # Final decision
-        if risk_score > 0.5:
-            decision = "BLOCK"
-        elif risk_score > 0.3:
-            decision = "REDUCE"
-        else:
-            decision = "APPROVE"
-
-        # VaR estimate (simplified)
-        var_estimate = volatility_24h * 1.645  # 95% confidence
-
-        # Dharma message
-        if decision == "APPROVE":
-            dharma = "Agni zegt: vuur zuivert, deze trade is acceptabel"
-        elif decision == "REDUCE":
-            dharma = "Agni waarschuwt: verminder risico, maar niet blokkeren"
-        else:
-            dharma = "Agni beschermt: te veel risico, trade geblokkeerd"
-
-        return FireDecision(
-            decision=decision,
-            confidence=1.0 - risk_score,
-            max_allowed_qty=max_allowed if decision != "BLOCK" else None,
-            risk_score=risk_score,
-            blocking_reasons=blocking_reasons,
-            var_estimate_pct=var_estimate,
-            fire_dharma=dharma,
-            prana_consumed=5.0 if decision == "APPROVE" else 2.0,
-        )
-
-    # ============ WATER AGENT (Macro Research) ============
-
-    def water_agent_analyze(
-        self, market_data: Dict[str, Any], navagraha: NavagrahaState
-    ) -> WaterRegime:
-        """
-        Water Agent: Determine market regime and macro outlook
-        """
-        # Calculate market breadth
-        prices = market_data.get("prices", {})
-
-        if not prices:
-            return WaterRegime(
-                regime="neutral",
-                asset_class_outlook={},
-                favored_symbols=[],
-                avoid_symbols=[],
-                macro_narrative="Onvoldoende data voor regime bepaling",
-                confidence=0.5,
-                water_dharma="Water is stil - geen duidelijke stroming",
+            # Handle enum
+            signal_str = (
+                signal_value.value.lower()
+                if hasattr(signal_value, "value")
+                else str(signal_value).lower()
             )
 
-        # Count advancing vs declining
-        advancing = 0
-        declining = 0
+        if signal_str not in ["buy", "strong_buy"]:
+            return None
 
-        for symbol, price_list in prices.items():
-            if len(price_list) >= 20:
-                change = (price_list[-1] - price_list[-20]) / price_list[-20]
-                if change > 0.02:
-                    advancing += 1
-                elif change < -0.02:
-                    declining += 1
+        # 3. FILTER: Minimum VedAstro confidence
+        if signal.confidence < self.MIN_VEDASTRO_CONFIDENCE:
+            return None
 
-        total = advancing + declining
-        if total == 0:
-            regime = "neutral"
-        elif advancing / total > 0.6:
-            regime = "expansion"
-        elif declining / total > 0.6:
-            regime = "contraction"
-        elif advancing > declining:
-            regime = "recovery"
-        else:
-            regime = "neutral"
+        if signal.strength_score < self.MIN_VEDASTRO_SCORE:
+            return None
 
-        # Asset class outlook based on regime and dominant planet
-        dominant = navagraha.dominant_planet
+        # 4. ELEMENTAL RISK CHECKS
+        # Check 4a: Earth entry blocking (3-loss rule preserved)
+        if not self.earth_agent.should_enter(symbol):
+            return None
 
-        outlook_map = {
-            "SUN": {"crypto": "bullish", "indices": "bullish", "forex": "neutral"},
-            "MOON": {"forex": "bullish", "commodities": "bullish", "crypto": "neutral"},
-            "MARS": {
-                "crypto": "bullish",
-                "commodities": "volatile",
-                "indices": "bearish",
-            },
-            "MERCURY": {"forex": "bullish", "indices": "neutral", "crypto": "volatile"},
-            "JUPITER": {"indices": "bullish", "crypto": "bullish", "forex": "neutral"},
-            "VENUS": {
-                "commodities": "bullish",
-                "forex": "neutral",
-                "crypto": "bearish",
-            },
-            "SATURN": {
-                "indices": "bearish",
-                "forex": "bearish",
-                "crypto": "consolidation",
-            },
-        }
+        # Check 4b: Water regime compatibility (TLT logic preserved)
+        prices = list(self.fire_agent.price_history.get(symbol, []))
+        if len(prices) >= 20:
+            macro_signal = self.water_agent.get_macro_signal(prices)
 
-        asset_class_outlook = outlook_map.get(dominant, {})
+            # For bonds, check regime shift
+            if symbol in BOND_SYMBOLS:
+                entry_risk_on = self.water_agent.entry_macro_score.get(symbol, 0.5)
+                if macro_signal.risk_on_score > entry_risk_on + 0.20:
+                    return None  # Would trigger regime exit anyway
 
-        # Favored/avoid symbols based on planet affinity
-        favored = PLANET_ASSET_AFFINITY.get(dominant, [])
-
-        # Avoid symbols based on regime
-        avoid = []
-        if regime == "contraction":
-            avoid = [
-                s
-                for s in prices.keys()
-                if self._get_asset_info(s)
-                and self._get_asset_info(s).asset_class.value == "crypto"
-            ]
-
-        # Confidence based on data quality
-        confidence = min(0.9, 0.5 + (len(prices) / 100))
-
-        # Narrative
-        narratives = {
-            "expansion": f"Markt in expansie onder {dominant}'s invloed - groei assets favoriet",
-            "contraction": "Contractie fase - defensieve positie aangeraden",
-            "recovery": f"Herstel bezig - selectieve kansen in {dominant} assets",
-            "neutral": "Neutrale markt - wachten op duidelijke richting",
-        }
-
-        return WaterRegime(
-            regime=regime,
-            asset_class_outlook=asset_class_outlook,
-            favored_symbols=favored,
-            avoid_symbols=avoid,
-            macro_narrative=narratives.get(regime, "Neutraal"),
-            confidence=confidence,
-            water_dharma=f"Water stroomt naar {regime} onder {dominant}'s getijden",
-        )
-
-    # ============ AIR AGENT (Technical Signals) ============
-
-    def air_agent_generate_signals(
-        self, symbol: str, current_price: float, navagraha: NavagrahaState
-    ) -> AirSignal:
-        """
-        Air Agent: Generate technical trading signals
-        """
-        # Get price history
-        prices = list(self.price_history.get(symbol, []))
-
-        if len(prices) < 20:
-            return AirSignal(
-                symbol=symbol,
-                action="HOLD",
-                confidence=0.3,
-                entry_price=current_price,
-                stop_loss=current_price * 0.95,
-                take_profit=current_price * 1.10,
-                technical_summary="Onvoldoende data voor analyse",
-                indicators={},
-                air_dharma="Vayu wacht - geen wind in de zeilen",
-            )
-
-        # Calculate indicators
-        rsi = self._calculate_rsi(prices)
-        ema_20 = self._calculate_ema(prices, 20)
-        ema_50 = self._calculate_ema(prices, 50) if len(prices) >= 50 else ema_20
-
-        # Volatility for ATR-based stops
-        volatility = self._calculate_volatility(prices)
-        atr = current_price * (volatility / 100) * 0.5
-
-        # Generate signal
-        action = "HOLD"
-        confidence = 0.5
-
-        # Trend determination
-        trend_bullish = current_price > ema_20 > ema_50
-        trend_bearish = current_price < ema_20 < ema_50
-
-        # RSI signals
-        rsi_oversold = rsi < 30
-        rsi_overbought = rsi > 70
-
-        # Combined logic
-        if trend_bullish and rsi_oversold:
-            action = "BUY"
-            confidence = 0.8
-        elif trend_bullish and 30 <= rsi <= 50:
-            action = "BUY"
-            confidence = 0.6
-        elif trend_bearish and rsi_overbought:
-            action = "SELL"
-            confidence = 0.8
-        elif trend_bearish and 50 <= rsi <= 70:
-            action = "SELL"
-            confidence = 0.6
-        elif rsi < 20:
-            action = "BUY"
-            confidence = 0.7
-        elif rsi > 80:
-            action = "SELL"
-            confidence = 0.7
-
-        # Check planet affinity
-        dominant = navagraha.dominant_planet
-        favored = PLANET_ASSET_AFFINITY.get(dominant, [])
-        if symbol in favored or any(f in symbol for f in favored):
-            confidence = min(0.95, confidence + 0.1)
-
-        # Calculate stop loss and take profit
-        if action == "BUY":
-            stop_loss = current_price - (atr * 2)
-            take_profit = current_price + (atr * 3)
-        elif action == "SELL":
-            stop_loss = current_price + (atr * 2)
-            take_profit = current_price - (atr * 3)
-        else:
-            stop_loss = current_price * 0.95
-            take_profit = current_price * 1.05
-
-        indicators = {
-            "rsi": round(rsi, 2),
-            "ema_20": round(ema_20, 2),
-            "ema_50": round(ema_50, 2),
-            "volatility_pct": round(volatility, 2),
-            "trend": "bullish"
-            if trend_bullish
-            else "bearish"
-            if trend_bearish
-            else "neutral",
-        }
-
-        dharma_messages = {
-            "BUY": "Vayu waait in kooprichting - stijgende wind",
-            "SELL": "Vayu draait - verkoopwinden sterk",
-            "HOLD": "Vayu is stil - geen duidelijke richting",
-        }
-
-        return AirSignal(
+        # 5. POSITION SIZING (Fire agent with VedAstro score)
+        dominant_planet = self._get_dominant_planet(cycle_date)
+        position_size = self.fire_agent.calculate_position_size(
             symbol=symbol,
-            action=action,
-            confidence=confidence,
-            entry_price=current_price,
-            stop_loss=round(stop_loss, 2),
-            take_profit=round(take_profit, 2),
-            technical_summary=f"RSI {rsi:.1f}, trend {'bullish' if trend_bullish else 'bearish' if trend_bearish else 'neutral'}",
-            indicators=indicators,
-            air_dharma=dharma_messages.get(action, "Vayu observeert"),
-        )
-
-    # ============ EARTH AGENT (Valuation) ============
-
-    def earth_agent_valuate(
-        self, symbol: str, current_price: float, market_regime: str
-    ) -> EarthValuation:
-        """
-        Earth Agent: Calculate fair value and valuation gaps
-        """
-        prices = list(self.price_history.get(symbol, []))
-
-        if len(prices) < 30:
-            return EarthValuation(
-                symbol=symbol,
-                fair_value=current_price,
-                current_price=current_price,
-                valuation_gap_pct=0,
-                verdict="FAIR",
-                confidence=0.4,
-                methodology="Onvoldoende data",
-                earth_dharma="Prithvi wacht - grond is nog onduidelijk",
-            )
-
-        # Different methodologies per asset class
-        asset = self._get_asset_info(symbol)
-        asset_class = asset.asset_class.value if asset else "crypto"
-
-        if asset_class == "crypto":
-            # Crypto: Mean reversion with trend adjustment
-            sma_30 = sum(prices[-30:]) / 30
-            trend = (prices[-1] - prices[-30]) / prices[-30]
-            fair_value = sma_30 * (1 + trend * 0.3)  # Partial trend following
-            methodology = "SMA30 met trend-adjustment"
-
-        elif asset_class == "forex":
-            # Forex: Longer-term mean
-            sma_50 = (
-                sum(prices[-50:]) / 50
-                if len(prices) >= 50
-                else sum(prices) / len(prices)
-            )
-            fair_value = sma_50
-            methodology = "SMA50 mean reversion"
-
-        elif asset_class == "commodities":
-            # Commodities: Cost-of-carry approximation
-            sma_20 = sum(prices[-20:]) / 20
-            sma_40 = sum(prices[-40:]) / 40 if len(prices) >= 40 else sma_20
-            fair_value = (sma_20 + sma_40) / 2
-            methodology = "Dual SMA (20/40)"
-
-        else:
-            # Equities/Indices: PE approximation via price momentum
-            sma_30 = sum(prices[-30:]) / 30
-            momentum = (
-                (prices[-1] - prices[-10]) / prices[-10] if len(prices) >= 10 else 0
-            )
-            fair_value = sma_30 * (1 + momentum * 0.5)
-            methodology = "Momentum-adjusted SMA"
-
-        # Calculate gap
-        valuation_gap = (current_price - fair_value) / fair_value * 100
-
-        # Verdict
-        if valuation_gap < -10:
-            verdict = "UNDERVALUED"
-        elif valuation_gap > 10:
-            verdict = "OVERVALUED"
-        else:
-            verdict = "FAIR"
-
-        # Confidence
-        confidence = min(0.9, 0.5 + (len(prices) / 100))
-
-        # Dharma
-        if verdict == "UNDERVALUED":
-            dharma = "Prithvi toont waarde - grond is vruchtbaar voor koop"
-        elif verdict == "OVERVALUED":
-            dharma = "Prithvi waarschuwt - grond is overprijsd"
-        else:
-            dharma = "Prithvi is in balans - eerlijke prijs"
-
-        return EarthValuation(
-            symbol=symbol,
-            fair_value=round(fair_value, 2),
-            current_price=current_price,
-            valuation_gap_pct=round(valuation_gap, 2),
-            verdict=verdict,
-            confidence=confidence,
-            methodology=methodology,
-            earth_dharma=dharma,
-        )
-
-    # ============ ETHER AGENT (Orchestrator) ============
-
-    def ether_agent_synthesize(
-        self,
-        fire: FireDecision,
-        water: WaterRegime,
-        air: AirSignal,
-        earth: EarthValuation,
-        navagraha: NavagrahaState,
-        portfolio_value: float,
-    ) -> EtherSynthesis:
-        """
-        Ether Agent: Synthesize all agent outputs into final decision
-        """
-        # Calculate harmony score (weighted average of agent confidences)
-        guna_weights = {
-            "fire": navagraha.guna_distribution.get("rajas", 0.3) * 1.5,  # Fire = Rajas
-            "water": navagraha.guna_distribution.get("tamas", 0.15),  # Water = Tamas
-            "air": navagraha.guna_distribution.get("rajas", 0.3),  # Air = Rajas
-            "earth": navagraha.guna_distribution.get("tamas", 0.15)
-            * 1.5,  # Earth = Tamas
-            "ether": navagraha.guna_distribution.get("sattva", 0.55),  # Ether = Sattva
-        }
-
-        # Normalize weights
-        total_weight = sum(guna_weights.values())
-        guna_weights = {k: v / total_weight for k, v in guna_weights.items()}
-
-        # Agent confidences
-        confidences = {
-            "fire": fire.confidence,
-            "water": water.confidence,
-            "air": air.confidence,
-            "earth": earth.confidence,
-        }
-
-        # Calculate harmony score
-        harmony_score = sum(
-            confidences[agent] * guna_weights[agent] for agent in confidences
-        )
-
-        # Boost harmony if consensus
-        unique_actions = len(
-            set(
-                [
-                    "BLOCK" if fire.decision == "BLOCK" else "PASS",
-                    water.regime,
-                    air.action,
-                    earth.verdict,
-                ]
-            )
-        )
-        consensus_achieved = unique_actions <= 2
-
-        if consensus_achieved:
-            harmony_score = min(1.0, harmony_score * 1.3)
-
-        # Rule 1: Harmony too low = block
-        if harmony_score < 0.3:
-            return EtherSynthesis(
-                final_decision="BLOCK",
-                harmony_score=harmony_score,
-                approved_symbol=None,
-                approved_action=None,
-                approved_qty=0,
-                approved_price=0,
-                stop_loss=0,
-                take_profit=0,
-                execution_urgency="none",
-                consensus_achieved=False,
-                blocking_agent="ether",
-                cosmic_narrative=f"Kosmische disharmonie ({harmony_score:.2f}) - geen trading",
-                ether_dharma="Akasha is troebel - wacht op helderheid",
-            )
-
-        # Rule 2: Fire blocks = always block
-        if fire.decision == "BLOCK":
-            return EtherSynthesis(
-                final_decision="BLOCK",
-                harmony_score=harmony_score,
-                approved_symbol=air.symbol,
-                approved_action=None,
-                approved_qty=0,
-                approved_price=0,
-                stop_loss=0,
-                take_profit=0,
-                execution_urgency="none",
-                consensus_achieved=consensus_achieved,
-                blocking_agent="fire",
-                cosmic_narrative="Agni heeft gesproken - veiligheid boven winst",
-                ether_dharma="Vuur beschermt het universum",
-            )
-
-        # Rule 3: Check Water regime
-        if water.regime == "contraction" and air.action == "BUY":
-            # Reduce position in contraction
-            position_factor = 0.6
-        else:
-            position_factor = 1.0
-
-        # Rule 4: Check Earth valuation
-        if earth.verdict == "OVERVALUED" and air.action == "BUY":
-            # Reduce if buying overvalued
-            position_factor *= 0.6
-        elif earth.verdict == "UNDERVALUED" and air.action == "BUY":
-            # Increase if buying undervalued
-            position_factor = min(1.0, position_factor * 1.2)
-
-        # Rule 5: Fire reduce
-        if fire.decision == "REDUCE":
-            position_factor *= 0.7
-
-        # Calculate final position size
-        base_qty = 0.01  # Base quantity
-        if asset := self._get_asset_info(air.symbol):
-            base_qty = asset.min_qty * 10  # Scale by minimum
-
-        approved_qty = base_qty * position_factor * harmony_score
-
-        # Final decision
-        if air.action in ["BUY", "SELL"]:
-            final_decision = "EXECUTE"
-            execution_urgency = "immediate" if harmony_score > 0.7 else "next_candle"
-        else:
-            final_decision = "BLOCK"
-            execution_urgency = "none"
-
-        # Asset class focus
-        asset_class_focus = "crypto"
-        if asset := self._get_asset_info(air.symbol):
-            asset_class_focus = asset.asset_class.value
-
-        # Cosmic narrative
-        narrative = (
-            f"Onder {navagraha.dominant_planet}'s invloed: {water.regime} regime, "
-        )
-        narrative += f"Air zegt {air.action}, Earth zegt {earth.verdict}. "
-        narrative += f"Harmonie: {harmony_score:.2f}"
-
-        return EtherSynthesis(
-            final_decision=final_decision,
-            harmony_score=harmony_score,
-            approved_symbol=air.symbol,
-            approved_action=air.action if final_decision == "EXECUTE" else "HOLD",
-            approved_qty=approved_qty,
-            approved_price=air.entry_price,
-            stop_loss=air.stop_loss,
-            take_profit=air.take_profit,
-            execution_urgency=execution_urgency,
-            consensus_achieved=consensus_achieved,
-            blocking_agent=None,
-            cosmic_narrative=narrative,
-            ether_dharma="Akasha harmoniseert alle elementen",
-        )
-
-    # ============ MAIN INTERFACE ============
-
-    def process_trading_cycle(
-        self,
-        symbol: str,
-        current_price: float,
-        portfolio_value: float,
-        current_positions: Dict[str, Any],
-        prana_level: float = 85.0,
-    ) -> EtherSynthesis:
-        """
-        Process one complete trading cycle for a symbol.
-        Returns the Ether Agent's final decision.
-        """
-        # Update price history
-        self.update_price_data(symbol, current_price)
-
-        # Get current Navagraha state (simplified - in production use real calculation)
-        navagraha = self._get_current_navagraha_state()
-
-        # Calculate current harmony base
-        base_harmony = 0.6 + (prana_level / 100) * 0.3
-
-        # 1. Water Agent: Analyze regime
-        market_data = {
-            "prices": {s: list(self.price_history.get(s, [])) for s in [symbol]}
-        }
-        water = self.water_agent_analyze(market_data, navagraha)
-
-        # 2. Air Agent: Generate signal
-        air = self.air_agent_generate_signals(symbol, current_price, navagraha)
-
-        # 3. Earth Agent: Valuation
-        earth = self.earth_agent_valuate(symbol, current_price, water.regime)
-
-        # 4. Fire Agent: Risk assessment
-        proposed_qty = 0.01  # Default
-        volatility = self._calculate_volatility(
-            list(self.price_history.get(symbol, []))
-        )
-
-        fire = self.fire_agent_assess(
-            symbol=symbol,
-            proposed_action=air.action,
-            proposed_qty=proposed_qty,
-            price=current_price,
             portfolio_value=portfolio_value,
-            navagraha=navagraha,
-            harmony_score=base_harmony,
-            prana_level=prana_level,
-            market_regime=water.regime,
-            volatility_24h=volatility,
+            vedastro_score=signal.strength_score,
+            dominant_planet=dominant_planet,
         )
 
-        # 5. Ether Agent: Synthesize
-        ether = self.ether_agent_synthesize(
-            fire=fire,
-            water=water,
-            air=air,
-            earth=earth,
-            navagraha=navagraha,
-            portfolio_value=portfolio_value,
-        )
+        if position_size <= 0:
+            return None
 
-        # Track agent confidences
-        self.agent_confidence_history["fire"].append(fire.confidence)
-        self.agent_confidence_history["water"].append(water.confidence)
-        self.agent_confidence_history["air"].append(air.confidence)
-        self.agent_confidence_history["earth"].append(earth.confidence)
-        self.agent_confidence_history["ether"].append(ether.harmony_score)
+        # Track VedAstro entry
+        self.vedastro_entries += 1
+        self.execute_count += 1
 
-        return ether
+        # 6. RETURN ENTRY DICT
+        entry_price = current_price * (1 + self.SLIPPAGE_PCT)
+        commission = position_size * self.COMMISSION_PCT
+        actual_size = position_size - commission
+        quantity = actual_size / entry_price
 
-    def _get_current_navagraha_state(self) -> NavagrahaState:
+        if quantity <= 0:
+            return None
+
+        # Record entry for tracking
+        self.earth_agent.record_entry(symbol, cycle_date)
+        self.fire_agent.record_entry(symbol, entry_price)
+
+        # Get macro for water
+        if len(prices) >= 20:
+            macro = self.water_agent.get_macro_signal(prices)
+            self.water_agent.record_entry(symbol, macro)
+
+        return {
+            "symbol": symbol,
+            "action": "BUY",
+            "entry_price": entry_price,
+            "quantity": quantity,
+            "position_size": position_size,
+            "vedastro_signal": signal_str,
+            "vedastro_confidence": signal.confidence,
+            "vedastro_strength": signal.strength_score,
+            "vedastro_risk": signal.risk_level,
+            "dasha_context": signal.dasha_context if hasattr(signal, "dasha_context") else "",
+            "primary_factors": signal.primary_factors if hasattr(signal, "primary_factors") else [],
+            "planet": dominant_planet,
+        }
+
+    def evaluate_open_position(
+        self, symbol: str, current_price: float, current_date: datetime, entry_price: float
+    ) -> tuple[bool, str]:
         """
-        Get current Navagraha state (simplified for backtest).
-        In production, this would use real planetary calculations.
+        V17: Enhanced position evaluation with VedAstro SELL signals.
+        Preserved from V16: trailing stop, time-based, earth stop, fire vol exit.
         """
-        # Cycle through planets based on day of month
-        day = datetime.now().day
+        position_pnl_pct = (current_price - entry_price) / entry_price
+
+        # Update trailing stop tracker
+        self.earth_agent.update_unrealized_pnl(symbol, position_pnl_pct)
+
+        # V17: Check 60-day hard limit
+        days_held = self.earth_agent.get_days_held(symbol, current_date)
+        if days_held >= self.earth_agent.MAX_HOLD_DAYS:
+            return True, "time_based"
+
+        # V17: Check trailing stop
+        if self.earth_agent.check_trailing_stop(symbol, position_pnl_pct):
+            return True, "trailing_profit_stop"
+
+        # Update peak for Fire agent
+        if symbol in self.fire_agent.peak_prices:
+            if current_price > self.fire_agent.peak_prices[symbol]:
+                self.fire_agent.peak_prices[symbol] = current_price
+
+        peak_price = self.fire_agent.peak_prices.get(symbol, entry_price)
+        drawdown_from_peak = (peak_price - current_price) / peak_price if peak_price > 0 else 0
+
+        # Water regime check (preserved)
+        prices = list(self.fire_agent.price_history.get(symbol, []))
+        if len(prices) >= 20:
+            macro_signal = self.water_agent.get_macro_signal(prices)
+            entry_risk_on = self.water_agent.entry_macro_score.get(symbol, 0.5)
+
+            if symbol in BOND_SYMBOLS:
+                if macro_signal.risk_on_score > entry_risk_on + 0.20:
+                    return True, "water_bond_regime_shift"
+
+        # Earth stop-loss
+        if drawdown_from_peak > 0.15 and position_pnl_pct < 0:
+            return True, f"earth_stop_{drawdown_from_peak:.1%}"
+
+        # Fire volatility exit
+        if len(prices) >= 20:
+            returns = [(prices[i] - prices[i - 1]) / prices[i - 1] for i in range(1, len(prices))]
+            vol = statistics.stdev(returns) if len(returns) > 1 else 0.02
+
+            if vol > 0.04 and position_pnl_pct < -0.05:
+                return True, f"fire_vol_exit_{vol:.2f}"
+
+        return False, ""
+
+    def _get_dominant_planet(self, cycle_date: datetime) -> str:
+        """Get dominant planet for the day"""
         planets = ["SUN", "MOON", "MARS", "MERCURY", "JUPITER", "VENUS", "SATURN"]
-        dominant = planets[day % 7]
+        return planets[cycle_date.day % 7]
 
-        # Random Rahu Kala (approximately 1/8 of time)
-        rahu_active = (day % 8) == 0
+    def is_symbol_available(self, symbol: str, cycle_date) -> bool:
+        """Check if symbol was listed on cycle_date"""
+        if symbol in IPO_DATES:
+            ipo_date = datetime.strptime(IPO_DATES[symbol], "%Y-%m-%d")
+            if hasattr(cycle_date, "date"):
+                cycle_date = cycle_date.date()
+            if hasattr(ipo_date, "date"):
+                ipo_date = ipo_date.date()
+            return cycle_date >= ipo_date
+        return True
 
-        return NavagrahaState(
-            dominant_planet=dominant,
-            trading_gate_open=not rahu_active,
-            rahu_kala_active=rahu_active,
-            consciousness_level="Pure Awareness",
-            guna_distribution={"sattva": 0.55, "rajas": 0.30, "tamas": 0.15},
-        )
+    def record_trade_outcome(self, symbol: str, pnl: float, win: bool):
+        """Record trade outcome for feedback"""
+        self.earth_agent.record_exit(symbol, pnl, win)
+        self.fire_agent.record_exit(symbol, pnl)
+        self.water_agent.record_exit(symbol)
 
-    def get_agent_stats(self) -> Dict[str, Any]:
-        """Get statistics about agent performance"""
-        stats = {}
-        for agent, confidences in self.agent_confidence_history.items():
-            if confidences:
-                stats[agent] = {
-                    "avg_confidence": sum(confidences) / len(confidences),
-                    "min_confidence": min(confidences),
-                    "max_confidence": max(confidences),
-                    "samples": len(confidences),
-                }
+    def get_agent_stats(self) -> dict[str, Any]:
+        """Get agent statistics"""
+        stats = {
+            "consensus_achieved_pct": (
+                (self.consensus_count / self.total_cycles * 100) if self.total_cycles > 0 else 0
+            ),
+            "execute_rate_pct": (
+                (self.execute_count / self.total_cycles * 100) if self.total_cycles > 0 else 0
+            ),
+            "total_cycles": self.total_cycles,
+            "consensus_count": self.consensus_count,
+            "execute_count": self.execute_count,
+            "vedastro_entries": self.vedastro_entries,
+            "position_review_exits": self.position_review_exits,
+        }
+
         return stats
