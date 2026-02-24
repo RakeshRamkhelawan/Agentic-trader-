@@ -1,7 +1,8 @@
 import logging
 import time
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
 _logger = logging.getLogger(__name__)
 
@@ -22,9 +23,7 @@ class CircuitBreaker:
     Prevents cascading failures when a service (e.g. DeepSeek) is down.
     """
 
-    def __init__(
-        self, name: str, failure_threshold: int = 5, recovery_timeout: int = 60
-    ):
+    def __init__(self, name: str, failure_threshold: int = 5, recovery_timeout: int = 60):
         self.name = name
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
@@ -61,10 +60,7 @@ class CircuitBreaker:
         self.failure_count += 1
         self.last_failure_time = time.time()
 
-        if (
-            self.state == CircuitState.HALF_OPEN
-            or self.failure_count >= self.failure_threshold
-        ):
+        if self.state == CircuitState.HALF_OPEN or self.failure_count >= self.failure_threshold:
             if self.state != CircuitState.OPEN:
                 _logger.error(f"Circuit {self.name} opened due to failures!")
                 self.state = CircuitState.OPEN

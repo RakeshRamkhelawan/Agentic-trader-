@@ -11,7 +11,6 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
 from backend.schemas.orders import OrderRequest, OrderSide
@@ -72,7 +71,7 @@ class ExchangeCircuitBreaker:
     state: CircuitBreakerState = CircuitBreakerState.CLOSED
     failure_count: int = 0
     success_count: int = 0
-    last_failure_time: Optional[float] = None
+    last_failure_time: float | None = None
     half_open_calls: int = 0
 
     # Configuration
@@ -94,9 +93,7 @@ class ExchangeCircuitBreaker:
             if self.last_failure_time:
                 elapsed = time.time() - self.last_failure_time
                 if elapsed >= self.recovery_timeout:
-                    logger.info(
-                        f"[{self.exchange}] Recovery timeout passed, entering HALF_OPEN"
-                    )
+                    logger.info(f"[{self.exchange}] Recovery timeout passed, entering HALF_OPEN")
                     self._transition_to(CircuitBreakerState.HALF_OPEN)
                     return True
             return False
@@ -114,9 +111,7 @@ class ExchangeCircuitBreaker:
         if self.state == CircuitBreakerState.HALF_OPEN:
             self.success_count += 1
             if self.success_count >= self.success_threshold:
-                logger.info(
-                    f"[{self.exchange}] Success threshold reached, closing circuit"
-                )
+                logger.info(f"[{self.exchange}] Success threshold reached, closing circuit")
                 self._transition_to(CircuitBreakerState.CLOSED)
         else:
             # Reset failure count on success in CLOSED state
@@ -157,7 +152,7 @@ class ExchangeCircuitBreaker:
             self.failure_count = 0
             self.half_open_calls = 0
 
-    def get_metrics(self) -> Dict:
+    def get_metrics(self) -> dict:
         """Get circuit breaker metrics."""
         return {
             "exchange": self.exchange,
@@ -183,7 +178,7 @@ class SmartOrderRouter:
 
     def __init__(
         self,
-        adapters: Optional[Dict[str, ExecutionInterface]] = None,
+        adapters: dict[str, ExecutionInterface] | None = None,
         enable_circuit_breaker: bool = True,
     ):
         """
@@ -193,18 +188,18 @@ class SmartOrderRouter:
             adapters: Optional dict of exchange_name -> adapter
             enable_circuit_breaker: If True, enable circuit breaker protection
         """
-        self.adapters: Dict[str, ExecutionInterface] = adapters or {}
-        self.symbol_map: Dict[str, List[str]] = {}  # symbol -> [adapter_names]
+        self.adapters: dict[str, ExecutionInterface] = adapters or {}
+        self.symbol_map: dict[str, list[str]] = {}  # symbol -> [adapter_names]
         self.enable_circuit_breaker = enable_circuit_breaker
 
         # Circuit breakers per exchange (in-memory for <10μs lookups)
-        self._circuit_breakers: Dict[str, ExchangeCircuitBreaker] = {}
+        self._circuit_breakers: dict[str, ExchangeCircuitBreaker] = {}
 
     def register_adapter(
         self,
         name: str,
         adapter: ExecutionInterface,
-        supported_symbols: List[str],
+        supported_symbols: list[str],
         failure_threshold: int = 5,
         recovery_timeout: float = 30.0,
     ) -> None:
@@ -234,15 +229,13 @@ class SmartOrderRouter:
             if name not in self.symbol_map[symbol]:
                 self.symbol_map[symbol].append(name)
 
-        logger.info(
-            f"Registered adapter '{name}' with {len(supported_symbols)} symbols"
-        )
+        logger.info(f"Registered adapter '{name}' with {len(supported_symbols)} symbols")
 
-    def get_circuit_breaker(self, exchange: str) -> Optional[ExchangeCircuitBreaker]:
+    def get_circuit_breaker(self, exchange: str) -> ExchangeCircuitBreaker | None:
         """Get circuit breaker for an exchange."""
         return self._circuit_breakers.get(exchange)
 
-    def get_all_circuit_breaker_metrics(self) -> Dict[str, Dict]:
+    def get_all_circuit_breaker_metrics(self) -> dict[str, dict]:
         """Get metrics for all circuit breakers."""
         return {name: cb.get_metrics() for name, cb in self._circuit_breakers.items()}
 
@@ -250,7 +243,7 @@ class SmartOrderRouter:
         self,
         symbol: str,
         skip_unhealthy: bool = True,
-    ) -> Dict[str, ExchangePricing]:
+    ) -> dict[str, ExchangePricing]:
         """
         Get current prices from all exchanges supporting the symbol.
 
@@ -266,7 +259,7 @@ class SmartOrderRouter:
         if not exchanges:
             return {}
 
-        async def fetch_price(name: str) -> Tuple[str, Optional[ExchangePricing]]:
+        async def fetch_price(name: str) -> tuple[str, ExchangePricing | None]:
             # Check circuit breaker first (ultra-fast in-memory check)
             if skip_unhealthy and self.enable_circuit_breaker:
                 cb = self._circuit_breakers.get(name)
@@ -305,8 +298,8 @@ class SmartOrderRouter:
         return {name: pricing for name, pricing in results if pricing}
 
     def calculate_vwap_routing(
-        self, quantity: float, side: OrderSide, prices: Dict[str, ExchangePricing]
-    ) -> List[OrderAllocation]:
+        self, quantity: float, side: OrderSide, prices: dict[str, ExchangePricing]
+    ) -> list[OrderAllocation]:
         """
         Calculate optimal order allocation based on VWAP.
 
@@ -374,9 +367,7 @@ class SmartOrderRouter:
 
         return allocations
 
-    async def route_order(
-        self, order: OrderRequest, use_vwap: bool = True
-    ) -> List[OrderResult]:
+    async def route_order(self, order: OrderRequest, use_vwap: bool = True) -> list[OrderResult]:
         """
         Route order to optimal exchange(s) with circuit breaker protection.
 
@@ -446,9 +437,7 @@ class SmartOrderRouter:
 
             # Check if we need failover for failed allocations
             failed_exchanges = [
-                allocations[i].exchange
-                for i, r in enumerate(results)
-                if isinstance(r, Exception)
+                allocations[i].exchange for i, r in enumerate(results) if isinstance(r, Exception)
             ]
 
             if failed_exchanges:
@@ -460,7 +449,7 @@ class SmartOrderRouter:
             # Single exchange routing
             return await self.route_and_execute(order)
 
-    async def route_and_execute(self, order: OrderRequest) -> List[OrderResult]:
+    async def route_and_execute(self, order: OrderRequest) -> list[OrderResult]:
         """
         Find best adapter and execute order (single exchange) with failover.
 

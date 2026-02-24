@@ -26,9 +26,7 @@ def setup_logging(name: str) -> logging.Logger:
         )
     else:
         # Human readable
-        formatter = logging.Formatter(
-            "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s")
 
     handler.setFormatter(formatter)
     logger.addHandler(handler)

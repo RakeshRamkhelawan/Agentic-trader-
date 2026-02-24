@@ -6,7 +6,7 @@ These events enable decoupling between agents and observers.
 """
 
 from datetime import UTC, datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -27,12 +27,8 @@ class NewsEvent(BaseModel):
 
     source: str = Field(..., description="News source")
     headline: str = Field(..., description="News headline")
-    sentiment: float = Field(
-        ..., ge=-1.0, le=1.0, description="Sentiment score [-1, 1]"
-    )
-    symbols: list[str] = Field(
-        default_factory=list, description="Related trading symbols"
-    )
+    sentiment: float = Field(..., ge=-1.0, le=1.0, description="Sentiment score [-1, 1]")
+    symbols: list[str] = Field(default_factory=list, description="Related trading symbols")
     timestamp: float = Field(default_factory=lambda: datetime.now(UTC).timestamp())
 
 
@@ -64,11 +60,9 @@ class TradeExecutedEvent(BaseModel):
 class RiskAlertEvent(BaseModel):
     """Event for risk threshold violations."""
 
-    severity: str = Field(
-        ..., pattern="^(low|medium|high|critical)$", description="Alert severity"
-    )
+    severity: str = Field(..., pattern="^(low|medium|high|critical)$", description="Alert severity")
     message: str = Field(..., description="Alert message")
-    symbol: Optional[str] = Field(None, description="Related symbol")
+    symbol: str | None = Field(None, description="Related symbol")
     metric: str = Field(..., description="Risk metric that triggered alert")
     current_value: float = Field(..., description="Current metric value")
     threshold: float = Field(..., description="Threshold that was breached")
@@ -79,11 +73,9 @@ class SystemHealthEvent(BaseModel):
     """Event for system health monitoring."""
 
     component: str = Field(..., description="Component name")
-    status: str = Field(
-        ..., pattern="^(healthy|degraded|down)$", description="Health status"
-    )
-    metrics: Dict[str, Any] = Field(
+    status: str = Field(..., pattern="^(healthy|degraded|down)$", description="Health status")
+    metrics: dict[str, Any] = Field(
         default_factory=dict, description="Health metrics (latency, error_rate, etc.)"
     )
-    message: Optional[str] = Field(None, description="Status message")
+    message: str | None = Field(None, description="Status message")
     timestamp: float = Field(default_factory=lambda: datetime.now(UTC).timestamp())

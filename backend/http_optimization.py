@@ -12,7 +12,7 @@ This module provides optimized HTTP client configurations with:
 import hashlib
 import logging
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 
-def get_optimized_httpx_config() -> Dict[str, Any]:
+def get_optimized_httpx_config() -> dict[str, Any]:
     """
     Get optimized configuration for httpx client.
 
@@ -47,7 +47,7 @@ def get_optimized_httpx_config() -> Dict[str, Any]:
     }
 
 
-def get_optimized_httpx_async_config() -> Dict[str, Any]:
+def get_optimized_httpx_async_config() -> dict[str, Any]:
     """
     Get optimized configuration for async httpx client.
 
@@ -87,11 +87,11 @@ class RequestCache:
     """
 
     def __init__(self, ttl_seconds: int = 300, max_size: int = 1000):
-        self.cache: Dict[str, tuple[Any, float]] = {}
+        self.cache: dict[str, tuple[Any, float]] = {}
         self.ttl = ttl_seconds
         self.max_size = max_size
 
-    def _cache_key(self, method: str, url: str, params: Optional[Dict] = None) -> str:
+    def _cache_key(self, method: str, url: str, params: dict | None = None) -> str:
         """Generate cache key from request parameters."""
         key_data = f"{method}:{url}"
         if params:
@@ -99,9 +99,7 @@ class RequestCache:
 
         return hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()
 
-    def get(
-        self, method: str, url: str, params: Optional[Dict] = None
-    ) -> Optional[Any]:
+    def get(self, method: str, url: str, params: dict | None = None) -> Any | None:
         """Get cached response if available and not expired."""
         # Only cache GET requests
         if method.upper() != "GET":
@@ -122,9 +120,7 @@ class RequestCache:
         logger.debug(f"Cache hit for {method} {url}")
         return response
 
-    def set(
-        self, method: str, url: str, response: Any, params: Optional[Dict] = None
-    ) -> None:
+    def set(self, method: str, url: str, response: Any, params: dict | None = None) -> None:
         """Cache a response."""
         if method.upper() != "GET":
             return
@@ -156,7 +152,7 @@ class RequestDeduplicator:
     """
 
     def __init__(self):
-        self.pending: Dict[str, object] = {}  # In-flight requests
+        self.pending: dict[str, object] = {}  # In-flight requests
 
     def _cache_key(self, method: str, url: str) -> str:
         """Generate cache key from request."""
@@ -190,7 +186,7 @@ class RequestDeduplicator:
 # =============================================================================
 
 
-def get_retry_config() -> Dict[str, Any]:
+def get_retry_config() -> dict[str, Any]:
     """
     Get optimized retry configuration.
 
@@ -306,7 +302,7 @@ class CircuitBreaker:
         self.expected_exception = expected_exception
 
         self.failure_count = 0
-        self.last_failure_time: Optional[float] = None
+        self.last_failure_time: float | None = None
         self.state = CircuitBreakerState.CLOSED
 
     def call(self, func, *args, **kwargs):
@@ -343,9 +339,7 @@ class CircuitBreaker:
         if self.last_failure_time is None:
             return True
 
-        return (
-            datetime.now().timestamp() - self.last_failure_time > self.recovery_timeout
-        )
+        return datetime.now().timestamp() - self.last_failure_time > self.recovery_timeout
 
     def _on_success(self) -> None:
         """Reset failure count on successful call."""
@@ -359,9 +353,7 @@ class CircuitBreaker:
 
         if self.failure_count >= self.failure_threshold:
             self.state = CircuitBreakerState.OPEN
-            logger.warning(
-                f"Circuit breaker opened after {self.failure_count} failures"
-            )
+            logger.warning(f"Circuit breaker opened after {self.failure_count} failures")
 
     def get_state(self) -> str:
         """Get current circuit breaker state."""

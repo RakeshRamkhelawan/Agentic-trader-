@@ -6,7 +6,7 @@ Paper trading en order execution.
 
 import logging
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any
 
 from mcp.server.fastmcp import Context
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # V17 Constants
 COMMISSION_PCT = 0.0005  # 0.05%
-SLIPPAGE_PCT = 0.001     # 0.1%
+SLIPPAGE_PCT = 0.001  # 0.1%
 MAX_POSITION_EUR = 2000.0
 
 
@@ -27,8 +27,8 @@ async def execution_execute_paper_trade(
     quantity: float,
     current_price: float,
     account_id: str,
-    ctx: Context = None
-) -> Dict[str, Any]:
+    ctx: Context = None,
+) -> dict[str, Any]:
     """
     Execute a paper trade.
 
@@ -87,7 +87,7 @@ async def execution_execute_paper_trade(
             side=action.lower(),
             quantity=quantity,
             order_type="market",
-            current_price=current_price
+            current_price=current_price,
         )
 
         if ctx:
@@ -105,7 +105,7 @@ async def execution_execute_paper_trade(
             "net_value": gross_value - order.commission,
             "timestamp": order.timestamp.isoformat(),
             "account_id": account_id,
-            "constraints_applied": ["max_2000_eur", "commission_0.05pct", "slippage_0.1pct"]
+            "constraints_applied": ["max_2000_eur", "commission_0.05pct", "slippage_0.1pct"],
         }
 
     except Exception as e:
@@ -135,15 +135,12 @@ async def execution_execute_paper_trade(
             "timestamp": datetime.utcnow().isoformat(),
             "account_id": account_id,
             "constraints_applied": ["max_2000_eur", "commission_0.05pct", "slippage_0.1pct"],
-            "note": "Mock execution for testing"
+            "note": "Mock execution for testing",
         }
 
 
 @circuit_breaker(failure_threshold=5, timeout_seconds=10)
-async def execution_get_open_positions(
-    account_id: str,
-    ctx: Context = None
-) -> Dict[str, Any]:
+async def execution_get_open_positions(account_id: str, ctx: Context = None) -> dict[str, Any]:
     """
     Get all open positions for an account.
 
@@ -173,11 +170,15 @@ async def execution_get_open_positions(
                     "current_price": pos.current_price,
                     "unrealized_pnl": pos.unrealized_pnl,
                     "unrealized_pnl_pct": pos.unrealized_pnl_pct,
-                    "entry_date": pos.entry_date.isoformat() if hasattr(pos.entry_date, 'isoformat') else str(pos.entry_date)
+                    "entry_date": (
+                        pos.entry_date.isoformat()
+                        if hasattr(pos.entry_date, "isoformat")
+                        else str(pos.entry_date)
+                    ),
                 }
                 for pos in positions
             ],
-            "count": len(positions)
+            "count": len(positions),
         }
 
     except Exception as e:
@@ -187,17 +188,14 @@ async def execution_get_open_positions(
             "account_id": account_id,
             "positions": [],
             "count": 0,
-            "note": "Mock data for testing"
+            "note": "Mock data for testing",
         }
 
 
 @circuit_breaker(failure_threshold=3, timeout_seconds=10)
 async def execution_close_position(
-    symbol: str,
-    account_id: str,
-    current_price: float,
-    ctx: Context = None
-) -> Dict[str, Any]:
+    symbol: str, account_id: str, current_price: float, ctx: Context = None
+) -> dict[str, Any]:
     """
     Close an open position.
 
@@ -232,7 +230,7 @@ async def execution_close_position(
             side="sell" if position.quantity > 0 else "buy",
             quantity=quantity,
             order_type="market",
-            current_price=current_price
+            current_price=current_price,
         )
 
         if ctx:
@@ -247,7 +245,7 @@ async def execution_close_position(
             "filled_price": order.filled_price,
             "realized_pnl": position.unrealized_pnl,  # Approximation
             "timestamp": order.timestamp.isoformat(),
-            "account_id": account_id
+            "account_id": account_id,
         }
 
     except Exception as e:
@@ -257,10 +255,8 @@ async def execution_close_position(
 
 @circuit_breaker(failure_threshold=5, timeout_seconds=10)
 async def execution_get_trade_history(
-    account_id: str,
-    limit: int = 100,
-    ctx: Context = None
-) -> Dict[str, Any]:
+    account_id: str, limit: int = 100, ctx: Context = None
+) -> dict[str, Any]:
     """
     Get trade history for an account.
 
@@ -291,20 +287,19 @@ async def execution_get_trade_history(
                     "quantity": trade.quantity,
                     "price": trade.price,
                     "commission": trade.commission,
-                    "timestamp": trade.timestamp.isoformat() if hasattr(trade.timestamp, 'isoformat') else str(trade.timestamp),
-                    "pnl": getattr(trade, 'pnl', 0.0)
+                    "timestamp": (
+                        trade.timestamp.isoformat()
+                        if hasattr(trade.timestamp, "isoformat")
+                        else str(trade.timestamp)
+                    ),
+                    "pnl": getattr(trade, "pnl", 0.0),
                 }
                 for trade in trades
             ],
-            "count": len(trades)
+            "count": len(trades),
         }
 
     except Exception as e:
         logger.warning(f"Failed to get trade history: {e}, using mock")
 
-        return {
-            "account_id": account_id,
-            "trades": [],
-            "count": 0,
-            "note": "Mock data for testing"
-        }
+        return {"account_id": account_id, "trades": [], "count": 0, "note": "Mock data for testing"}

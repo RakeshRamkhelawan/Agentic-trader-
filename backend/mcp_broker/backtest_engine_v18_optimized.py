@@ -10,33 +10,27 @@ Features:
 - Progress reporting
 """
 
-import asyncio
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Tuple
 import time
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any
 
 from backend.mcp_broker.client import MCPClientWrapper, get_client
-from backend.mcp_broker.performance.cache import BacktestCache, CacheConfig, get_cache
 from backend.mcp_broker.performance.batch_processor import (
-    BatchProcessor,
     BatchConfig,
+    BatchProcessor,
     VectorizedElementalCalculator,
-    process_symbols_batch
 )
-from backend.mcp_broker.performance.parallel_engine import (
-    ParallelBacktestEngine,
-    ParallelConfig
-)
-from backend.mcp_broker.performance.metrics import (
-    PerformanceMetricsCollector,
-    BacktestProfiler
-)
+from backend.mcp_broker.performance.cache import BacktestCache, CacheConfig, get_cache
+from backend.mcp_broker.performance.metrics import BacktestProfiler, PerformanceMetricsCollector
+from backend.mcp_broker.performance.parallel_engine import ParallelBacktestEngine, ParallelConfig
 
 
 @dataclass
 class OptimizedBacktestConfig:
     """Configuration for optimized backtest."""
+
     # Core settings
     initial_capital: float = 100000.0
     max_position_eur: float = 2000.0
@@ -52,13 +46,13 @@ class OptimizedBacktestConfig:
     symbols_per_worker: int = 10
 
     # Cache settings
-    cache_config: Optional[CacheConfig] = None
+    cache_config: CacheConfig | None = None
 
     # Batch settings
-    batch_config: Optional[BatchConfig] = None
+    batch_config: BatchConfig | None = None
 
     # Progress
-    progress_callback: Optional[Callable[[int, int, Dict], None]] = None
+    progress_callback: Callable[[int, int, dict], None] | None = None
     progress_interval_seconds: int = 10
 
 
@@ -82,15 +76,15 @@ class OptimizedBacktestEngineV18:
         )
     """
 
-    def __init__(self, config: Optional[OptimizedBacktestConfig] = None):
+    def __init__(self, config: OptimizedBacktestConfig | None = None):
         self.config = config or OptimizedBacktestConfig()
-        self._client: Optional[MCPClientWrapper] = None
-        self._cache: Optional[BacktestCache] = None
-        self._batch_processor: Optional[BatchProcessor] = None
-        self._parallel_engine: Optional[ParallelBacktestEngine] = None
+        self._client: MCPClientWrapper | None = None
+        self._cache: BacktestCache | None = None
+        self._batch_processor: BatchProcessor | None = None
+        self._parallel_engine: ParallelBacktestEngine | None = None
         self._vectorized_calc = VectorizedElementalCalculator()
         self._profiler = BacktestProfiler()
-        self._metrics_collector: Optional[PerformanceMetricsCollector] = None
+        self._metrics_collector: PerformanceMetricsCollector | None = None
 
     async def _initialize(self) -> None:
         """Initialize all components."""
@@ -111,12 +105,10 @@ class OptimizedBacktestEngineV18:
         if self.config.enable_parallel_processing:
             parallel_config = ParallelConfig(
                 max_workers=self.config.max_workers,
-                symbols_per_worker=self.config.symbols_per_worker
+                symbols_per_worker=self.config.symbols_per_worker,
             )
             self._parallel_engine = ParallelBacktestEngine(
-                self._client,
-                self._cache,
-                parallel_config
+                self._client, self._cache, parallel_config
             )
 
             if self.config.progress_callback:
@@ -126,12 +118,8 @@ class OptimizedBacktestEngineV18:
         self._metrics_collector = self._profiler.start_profiling()
 
     async def run_backtest(
-        self,
-        symbols: List[str],
-        start_date: datetime,
-        end_date: datetime,
-        interval: str = "1d"
-    ) -> Dict[str, Any]:
+        self, symbols: list[str], start_date: datetime, end_date: datetime, interval: str = "1d"
+    ) -> dict[str, Any]:
         """
         Run optimized backtest.
 
@@ -168,18 +156,14 @@ class OptimizedBacktestEngineV18:
         results["performance"] = {
             "total_time_seconds": time.time() - start_time,
             "metrics": metrics.to_dict(),
-            "profile_report": self._profiler.generate_report()
+            "profile_report": self._profiler.generate_report(),
         }
 
         return results
 
     async def _run_sequential(
-        self,
-        symbols: List[str],
-        start_date: datetime,
-        end_date: datetime,
-        interval: str
-    ) -> Dict[str, Any]:
+        self, symbols: list[str], start_date: datetime, end_date: datetime, interval: str
+    ) -> dict[str, Any]:
         """Run sequential backtest with batching."""
         all_trades = []
         all_signals = []
@@ -192,9 +176,7 @@ class OptimizedBacktestEngineV18:
                 # Batch fetch market data for all symbols
                 market_data_tasks = []
                 for symbol in symbols:
-                    task = self._fetch_market_data_cached(
-                        symbol, start_date, end_date, interval
-                    )
+                    task = self._fetch_market_data_cached(symbol, start_date, end_date, interval)
                     market_data_tasks.append((symbol, task))
 
                 for symbol, task in market_data_tasks:
@@ -207,10 +189,7 @@ class OptimizedBacktestEngineV18:
         # Process each symbol
         for symbol in symbols:
             symbol_result = await self._process_symbol_optimized(
-                symbol,
-                start_date,
-                end_date,
-                market_data_cache.get(symbol, {})
+                symbol, start_date, end_date, market_data_cache.get(symbol, {})
             )
             all_trades.extend(symbol_result.get("trades", []))
             all_signals.extend(symbol_result.get("signals", []))
@@ -223,30 +202,20 @@ class OptimizedBacktestEngineV18:
             "trades": all_trades,
             "signals": all_signals,
             "final_portfolio_value": sum(portfolio_values),
-            "strategy": "sequential_optimized"
+            "strategy": "sequential_optimized",
         }
 
     async def _run_parallel(
-        self,
-        symbols: List[str],
-        start_date: datetime,
-        end_date: datetime
-    ) -> Dict[str, Any]:
+        self, symbols: list[str], start_date: datetime, end_date: datetime
+    ) -> dict[str, Any]:
         """Run parallel backtest."""
         return await self._parallel_engine.run_parallel_backtest(
-            symbols,
-            start_date,
-            end_date,
-            self.config.initial_capital
+            symbols, start_date, end_date, self.config.initial_capital
         )
 
     async def _fetch_market_data_cached(
-        self,
-        symbol: str,
-        start_date: datetime,
-        end_date: datetime,
-        interval: str
-    ) -> Dict:
+        self, symbol: str, start_date: datetime, end_date: datetime, interval: str
+    ) -> dict:
         """Fetch market data with caching."""
         # Try cache first
         if self.config.enable_caching and self._cache:
@@ -264,8 +233,8 @@ class OptimizedBacktestEngineV18:
                     "symbol": symbol,
                     "start_date": start_date.isoformat(),
                     "end_date": end_date.isoformat(),
-                    "interval": interval
-                }
+                    "interval": interval,
+                },
             )
 
         # Cache result
@@ -277,12 +246,8 @@ class OptimizedBacktestEngineV18:
         return result
 
     async def _process_symbol_optimized(
-        self,
-        symbol: str,
-        start_date: datetime,
-        end_date: datetime,
-        market_data: Dict
-    ) -> Dict[str, Any]:
+        self, symbol: str, start_date: datetime, end_date: datetime, market_data: dict
+    ) -> dict[str, Any]:
         """Process a single symbol with all optimizations."""
         trades = []
         signals = []
@@ -296,11 +261,7 @@ class OptimizedBacktestEngineV18:
             try:
                 # Get VedAstro signal (cached)
                 signal = await self._get_vedastro_signal_cached(symbol, current_date)
-                signals.append({
-                    "date": current_date.isoformat(),
-                    "symbol": symbol,
-                    **signal
-                })
+                signals.append({"date": current_date.isoformat(), "symbol": symbol, **signal})
 
                 vedastro_score = signal.get("score", 50)
 
@@ -316,9 +277,7 @@ class OptimizedBacktestEngineV18:
                     continue
 
                 # Get Elemental consensus (cached)
-                consensus = await self._get_elemental_consensus_cached(
-                    symbol, current_date, signal
-                )
+                consensus = await self._get_elemental_consensus_cached(symbol, current_date, signal)
 
                 if consensus.get("should_enter") and portfolio_value > 1000:
                     # Calculate position size
@@ -327,8 +286,7 @@ class OptimizedBacktestEngineV18:
                     )
 
                     position_size = min(
-                        position.get("position_size_eur", 1000),
-                        self.config.max_position_eur
+                        position.get("position_size_eur", 1000), self.config.max_position_eur
                     )
 
                     if position_size > 100:
@@ -342,7 +300,7 @@ class OptimizedBacktestEngineV18:
                             portfolio_value -= position_size
                             await self._metrics_collector.record_trade()
 
-            except Exception as e:
+            except Exception:
                 pass  # Continue to next day
 
             current_date += timedelta(days=1)
@@ -351,14 +309,10 @@ class OptimizedBacktestEngineV18:
             "symbol": symbol,
             "trades": trades,
             "signals": signals,
-            "final_portfolio_value": portfolio_value
+            "final_portfolio_value": portfolio_value,
         }
 
-    async def _get_vedastro_signal_cached(
-        self,
-        symbol: str,
-        date: datetime
-    ) -> Dict:
+    async def _get_vedastro_signal_cached(self, symbol: str, date: datetime) -> dict:
         """Get VedAstro signal with caching."""
         # Try cache
         if self.config.enable_caching and self._cache:
@@ -371,8 +325,7 @@ class OptimizedBacktestEngineV18:
         # Fetch from MCP
         with self._metrics_collector.time_tool_call("vedastro__generate_signal"):
             result = await self._client.call_tool(
-                "vedastro__generate_signal",
-                {"symbol": symbol, "date": date.isoformat()}
+                "vedastro__generate_signal", {"symbol": symbol, "date": date.isoformat()}
             )
 
         await self._metrics_collector.record_signal()
@@ -384,17 +337,14 @@ class OptimizedBacktestEngineV18:
         return result
 
     async def _get_elemental_consensus_cached(
-        self,
-        symbol: str,
-        date: datetime,
-        signal: Dict
-    ) -> Dict:
+        self, symbol: str, date: datetime, signal: dict
+    ) -> dict:
         """Get Elemental consensus with caching."""
         elemental_scores = {
             "fire": signal.get("fire", 0.5),
             "earth": signal.get("earth", 0.5),
             "water": signal.get("water", 0.5),
-            "air": signal.get("air", 0.5)
+            "air": signal.get("air", 0.5),
         }
 
         # Try cache
@@ -416,17 +366,13 @@ class OptimizedBacktestEngineV18:
                 result = {
                     "should_enter": should_enter,
                     "consensus_strength": avg_vote,
-                    "votes": elemental_scores
+                    "votes": elemental_scores,
                 }
         else:
             # Use MCP tool
             with self._metrics_collector.time_tool_call("elemental__ether_consensus"):
                 result = await self._client.call_tool(
-                    "elemental__ether_consensus",
-                    {
-                        **elemental_scores,
-                        "symbol": symbol
-                    }
+                    "elemental__ether_consensus", {**elemental_scores, "symbol": symbol}
                 )
 
         # Cache result
@@ -436,26 +382,18 @@ class OptimizedBacktestEngineV18:
         return result
 
     async def _calculate_position_cached(
-        self,
-        symbol: str,
-        portfolio_value: float,
-        vedastro_score: float,
-        market_data: Dict
-    ) -> Dict:
+        self, symbol: str, portfolio_value: float, vedastro_score: float, market_data: dict
+    ) -> dict:
         """Calculate position size with caching."""
         # Use vectorized calculation if enabled
         if self.config.enable_vectorization:
             with self._metrics_collector.time_section("elemental"):
                 # Vectorized position sizing
                 sizes = self._vectorized_calc.vectorized_position_sizes(
-                    np.array([portfolio_value]),
-                    np.array([vedastro_score])
+                    np.array([portfolio_value]), np.array([vedastro_score])
                 )
 
-                return {
-                    "position_size_eur": float(sizes[0]),
-                    "confidence": vedastro_score / 100.0
-                }
+                return {"position_size_eur": float(sizes[0]), "confidence": vedastro_score / 100.0}
         else:
             # Use MCP tool
             with self._metrics_collector.time_tool_call("elemental__fire_position_size"):
@@ -465,27 +403,18 @@ class OptimizedBacktestEngineV18:
                         "symbol": symbol,
                         "portfolio_value": portfolio_value,
                         "vedastro_score": vedastro_score,
-                        "price_history": market_data.get("prices", [100.0] * 20)
-                    }
+                        "price_history": market_data.get("prices", [100.0] * 20),
+                    },
                 )
 
     async def _execute_trade(
-        self,
-        symbol: str,
-        action: str,
-        quantity: float,
-        price: float
-    ) -> Optional[Dict]:
+        self, symbol: str, action: str, quantity: float, price: float
+    ) -> dict | None:
         """Execute a trade."""
         with self._metrics_collector.time_tool_call("execution__execute_paper_trade"):
             result = await self._client.call_tool(
                 "execution__execute_paper_trade",
-                {
-                    "symbol": symbol,
-                    "action": action,
-                    "quantity": quantity,
-                    "current_price": price
-                }
+                {"symbol": symbol, "action": action, "quantity": quantity, "current_price": price},
             )
 
         if "error" not in result:
@@ -495,15 +424,11 @@ class OptimizedBacktestEngineV18:
                 "action": action,
                 "quantity": quantity,
                 "price": price,
-                **result
+                **result,
             }
         return None
 
-    def _get_price_for_date(
-        self,
-        market_data: Dict,
-        date: datetime
-    ) -> Optional[float]:
+    def _get_price_for_date(self, market_data: dict, date: datetime) -> float | None:
         """Extract price for specific date from market data."""
         data = market_data.get("data", [])
         date_str = date.strftime("%Y-%m-%d")
@@ -514,22 +439,23 @@ class OptimizedBacktestEngineV18:
 
         return None
 
-    async def get_performance_report(self) -> Dict[str, Any]:
+    async def get_performance_report(self) -> dict[str, Any]:
         """Get detailed performance report."""
         return self._profiler.generate_report()
 
 
 # Convenience functions
 
+
 async def run_optimized_backtest(
-    symbols: List[str],
+    symbols: list[str],
     start_date: datetime,
     end_date: datetime,
     initial_capital: float = 100000.0,
     enable_parallel: bool = True,
     max_workers: int = 4,
-    progress_callback: Optional[Callable] = None
-) -> Dict[str, Any]:
+    progress_callback: Callable | None = None,
+) -> dict[str, Any]:
     """
     Run an optimized backtest with all performance features enabled.
 
@@ -554,7 +480,7 @@ async def run_optimized_backtest(
         enable_batch_processing=True,
         enable_vectorization=True,
         max_workers=max_workers,
-        progress_callback=progress_callback
+        progress_callback=progress_callback,
     )
 
     engine = OptimizedBacktestEngineV18(config)

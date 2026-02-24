@@ -62,12 +62,12 @@ repos:
   # ============================================================================
   # Python - Basic Checks Only (Non-blocking)
   # ============================================================================
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
+  - repo: local
     hooks:
       - id: black
         name: Python Formatting
-        args: [--check, --diff]
+        entry: bash -c 'black --check --diff "$@" || true' --
+        language: system
         files: ^backend/.*\.py$
         exclude: ^backend/tests/
         # Non-blocking - just shows diff

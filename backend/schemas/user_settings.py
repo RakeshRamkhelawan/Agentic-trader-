@@ -4,7 +4,6 @@ User Settings Schemas - Pydantic models for user settings API.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -44,15 +43,15 @@ class UserProfile(BaseModel):
 
     first_name: str = Field(default="", max_length=100)
     last_name: str = Field(default="", max_length=100)
-    email: Optional[EmailStr] = None
+    email: EmailStr | None = None
 
 
 class UserProfileUpdate(BaseModel):
     """Update request for user profile."""
 
-    first_name: Optional[str] = Field(None, max_length=100)
-    last_name: Optional[str] = Field(None, max_length=100)
-    email: Optional[EmailStr] = None
+    first_name: str | None = Field(None, max_length=100)
+    last_name: str | None = Field(None, max_length=100)
+    email: EmailStr | None = None
 
 
 # ============================================================================
@@ -72,10 +71,10 @@ class NotificationSettings(BaseModel):
 class NotificationSettingsUpdate(BaseModel):
     """Update request for notifications."""
 
-    order_executions: Optional[bool] = None
-    price_alerts: Optional[bool] = None
-    ai_signals: Optional[bool] = None
-    security_alerts: Optional[bool] = None
+    order_executions: bool | None = None
+    price_alerts: bool | None = None
+    ai_signals: bool | None = None
+    security_alerts: bool | None = None
 
 
 # ============================================================================
@@ -87,7 +86,7 @@ class SecuritySettings(BaseModel):
     """User security settings."""
 
     two_factor_enabled: bool = False
-    last_password_change: Optional[datetime] = None
+    last_password_change: datetime | None = None
 
 
 class Enable2FARequest(BaseModel):
@@ -101,7 +100,7 @@ class Enable2FAResponse(BaseModel):
 
     secret: str = Field(description="TOTP secret for authenticator app")
     qr_code_url: str = Field(description="QR code URL for scanning")
-    backup_codes: List[str] = Field(description="Backup recovery codes")
+    backup_codes: list[str] = Field(description="Backup recovery codes")
 
 
 class ChangePasswordRequest(BaseModel):
@@ -125,7 +124,7 @@ class AppearanceSettings(BaseModel):
 class AppearanceSettingsUpdate(BaseModel):
     """Update request for appearance."""
 
-    theme: Optional[ThemeType] = None
+    theme: ThemeType | None = None
 
 
 # ============================================================================
@@ -140,7 +139,7 @@ class BrokerAPIKey(BaseModel):
     exchange: ExchangeType
     api_key_masked: str = Field(description="Masked API key (last 4 chars visible)")
     created_at: datetime
-    last_used: Optional[datetime] = None
+    last_used: datetime | None = None
     is_valid: bool = True
 
 
@@ -150,15 +149,13 @@ class BrokerAPIKeyCreate(BaseModel):
     exchange: ExchangeType
     api_key: str = Field(min_length=10, description="Exchange API key")
     api_secret: str = Field(min_length=10, description="Exchange API secret")
-    passphrase: Optional[str] = Field(
-        None, description="Optional passphrase (for Coinbase)"
-    )
+    passphrase: str | None = Field(None, description="Optional passphrase (for Coinbase)")
 
 
 class BrokerAPIKeyList(BaseModel):
     """List of broker API keys."""
 
-    keys: List[BrokerAPIKey]
+    keys: list[BrokerAPIKey]
     total: int
 
 
@@ -177,8 +174,8 @@ class UserPreferences(BaseModel):
 class UserPreferencesUpdate(BaseModel):
     """Update request for preferences."""
 
-    default_currency: Optional[CurrencyType] = None
-    default_exchange: Optional[ExchangeType] = None
+    default_currency: CurrencyType | None = None
+    default_exchange: ExchangeType | None = None
 
 
 # ============================================================================

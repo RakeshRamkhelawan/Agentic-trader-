@@ -5,7 +5,7 @@ Tests complete sentiment analysis pipeline with EventBus and LLM.
 """
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
 import pytest
@@ -78,9 +78,7 @@ async def test_sentiment_agent_publishes_to_event_bus():
     mock_bus.publish = AsyncMock(return_value="msg_12345")
 
     llm = MockLLMProvider(sentiment="bearish", confidence=0.75)
-    agent = SentimentAgent(
-        agent_name="sentiment_publisher", llm_provider=llm, event_bus=mock_bus
-    )
+    agent = SentimentAgent(agent_name="sentiment_publisher", llm_provider=llm, event_bus=mock_bus)
 
     # Analyze and publish
     features = {"price": 45000.0, "volume": 2.0}
@@ -154,13 +152,11 @@ async def test_sentiment_agent_with_real_event_bus_mock():
 
     # Create agent
     llm = MockLLMProvider(sentiment="bullish", confidence=0.88)
-    agent = SentimentAgent(
-        agent_name="full_flow_agent", llm_provider=llm, event_bus=mock_bus
-    )
+    agent = SentimentAgent(agent_name="full_flow_agent", llm_provider=llm, event_bus=mock_bus)
 
     # Simulate market tick → analysis → publish
     features = {"price": 52000.0, "volume": 3.5, "volatility": 0.02}
-    context = {"symbol": "BTC/USD", "timestamp": datetime.now(timezone.utc)}
+    context = {"symbol": "BTC/USD", "timestamp": datetime.now(UTC)}
 
     result = await agent.analyze(features, context)
     await agent.publish_thought(
@@ -210,13 +206,9 @@ async def test_sentiment_agent_concurrent_analysis():
     agent = SentimentAgent(agent_name="concurrent_agent", llm_provider=llm)
 
     # Concurrent analysis tasks
-    features_list = [
-        {"price": 50000.0 + i * 100, "volume": 1.0 + i * 0.1} for i in range(5)
-    ]
+    features_list = [{"price": 50000.0 + i * 100, "volume": 1.0 + i * 0.1} for i in range(5)]
 
-    tasks = [
-        agent.analyze(features, {"symbol": "BTC/USD"}) for features in features_list
-    ]
+    tasks = [agent.analyze(features, {"symbol": "BTC/USD"}) for features in features_list]
 
     results = await asyncio.gather(*tasks)
 

@@ -2,19 +2,20 @@
 User Settings API - Manages user profile, preferences, and security settings.
 """
 
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps import get_current_tenant_id, get_db
-from backend.schemas.user_settings import (AppearanceSettings, BrokerAPIKey,
-                                           BrokerAPIKeyCreate,
-                                           NotificationSettings,
-                                           SecuritySettings, UserPreferences,
-                                           UserProfile)
-from backend.services.user_settings_service import (UserSettingsService,
-                                                    get_settings_service)
+from backend.schemas.user_settings import (
+    AppearanceSettings,
+    BrokerAPIKey,
+    BrokerAPIKeyCreate,
+    NotificationSettings,
+    SecuritySettings,
+    UserPreferences,
+    UserProfile,
+)
+from backend.services.user_settings_service import UserSettingsService, get_settings_service
 
 router = APIRouter()
 
@@ -137,7 +138,7 @@ async def update_appearance(
 # ============================================================================
 
 
-@router.get("/api-keys", response_model=List[BrokerAPIKey])
+@router.get("/api-keys", response_model=list[BrokerAPIKey])
 async def get_api_keys(
     tenant_id: str = Depends(get_current_tenant_id),
     service: UserSettingsService = Depends(get_service),

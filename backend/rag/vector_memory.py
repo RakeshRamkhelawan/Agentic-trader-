@@ -7,12 +7,11 @@ Provides similarity search for historical scenarios and strategy playbooks.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, DateTime, Index, Integer, String, Text, select
-from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
-                                    create_async_engine)
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
 logger = logging.getLogger(__name__)
@@ -115,10 +114,10 @@ class VectorMemory:
     async def insert(
         self,
         content: str,
-        embedding: List[float],
+        embedding: list[float],
         category: str,
-        asset: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        asset: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> int:
         """
         Insert trading knowledge with embedding.
@@ -157,9 +156,7 @@ class VectorMemory:
                 await session.commit()
                 await session.refresh(knowledge)
 
-                logger.info(
-                    f"Inserted knowledge ID {knowledge.id} (category={category})"
-                )
+                logger.info(f"Inserted knowledge ID {knowledge.id} (category={category})")
                 return knowledge.id
 
         except Exception as e:
@@ -168,12 +165,12 @@ class VectorMemory:
 
     async def search_similar(
         self,
-        query_embedding: List[float],
+        query_embedding: list[float],
         limit: int = 5,
-        category: Optional[str] = None,
-        asset: Optional[str] = None,
+        category: str | None = None,
+        asset: str | None = None,
         distance_threshold: float = 1.0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Search for similar knowledge using cosine distance.
 
@@ -203,9 +200,7 @@ class VectorMemory:
                     TradingKnowledge.content,
                     TradingKnowledge.category,
                     TradingKnowledge.asset,
-                    TradingKnowledge.embedding.cosine_distance(query_embedding).label(
-                        "distance"
-                    ),
+                    TradingKnowledge.embedding.cosine_distance(query_embedding).label("distance"),
                 )
 
                 if category:
@@ -214,8 +209,7 @@ class VectorMemory:
                     stmt = stmt.where(TradingKnowledge.asset == asset)
 
                 stmt = stmt.where(
-                    TradingKnowledge.embedding.cosine_distance(query_embedding)
-                    < distance_threshold
+                    TradingKnowledge.embedding.cosine_distance(query_embedding) < distance_threshold
                 )
                 stmt = stmt.order_by("distance")
                 stmt = stmt.limit(limit)

@@ -25,8 +25,11 @@ import tempfile
 import pytest
 
 from backend.orchestration.phase_11_integration import (
-    MockMarketRegimeAgent, MockRiskGovernor, MockSentimentAgent,
-    create_test_coordinator)
+    MockMarketRegimeAgent,
+    MockRiskGovernor,
+    MockSentimentAgent,
+    create_test_coordinator,
+)
 
 # ============================================================================
 # TEST FIXTURES
@@ -134,9 +137,7 @@ class TestPhase11SentimentAgentIntegration:
     """Test SentimentAgent integration with coordinator."""
 
     @pytest.mark.unit
-    def test_sentiment_agent_registered_with_coordinator(
-        self, coordinator, mock_sentiment_agent
-    ):
+    def test_sentiment_agent_registered_with_coordinator(self, coordinator, mock_sentiment_agent):
         """SentimentAgent successfully registers."""
         # After implementation:
         # coordinator.register_agent(mock_sentiment_agent, weight=1.0)
@@ -144,9 +145,7 @@ class TestPhase11SentimentAgentIntegration:
         pass
 
     @pytest.mark.unit
-    def test_sentiment_agent_decision_incorporated(
-        self, coordinator, mock_sentiment_agent
-    ):
+    def test_sentiment_agent_decision_incorporated(self, coordinator, mock_sentiment_agent):
         """SentimentAgent's decision influences coordinator decision."""
         # After implementation:
         # coordinator.register_agent(mock_sentiment_agent, weight=1.0)
@@ -184,9 +183,7 @@ class TestPhase11MarketRegimeAgentIntegration:
     """Test MarketRegimeAgent integration with coordinator."""
 
     @pytest.mark.unit
-    def test_market_regime_agent_registered(
-        self, coordinator, mock_market_regime_agent
-    ):
+    def test_market_regime_agent_registered(self, coordinator, mock_market_regime_agent):
         """MarketRegimeAgent successfully registers."""
         # After implementation:
         # coordinator.register_agent(mock_market_regime_agent, weight=0.8)
@@ -194,9 +191,7 @@ class TestPhase11MarketRegimeAgentIntegration:
         pass
 
     @pytest.mark.unit
-    def test_market_regime_agent_influences_decision(
-        self, coordinator, mock_market_regime_agent
-    ):
+    def test_market_regime_agent_influences_decision(self, coordinator, mock_market_regime_agent):
         """MarketRegimeAgent influences final decision."""
         # After implementation:
         # coordinator.register_agent(mock_market_regime_agent, weight=0.8)
@@ -337,9 +332,7 @@ class TestPhase11FullE2EPipeline:
         pass
 
     @pytest.mark.unit
-    def test_decision_history_tracked_through_pipeline(
-        self, coordinator, mock_sentiment_agent
-    ):
+    def test_decision_history_tracked_through_pipeline(self, coordinator, mock_sentiment_agent):
         """Decision history properly maintained through pipeline."""
         # After implementation:
         # coordinator.register_agent(mock_sentiment_agent, weight=1.0)
@@ -350,9 +343,7 @@ class TestPhase11FullE2EPipeline:
         pass
 
     @pytest.mark.unit
-    def test_metrics_accumulated_through_pipeline(
-        self, coordinator, mock_sentiment_agent
-    ):
+    def test_metrics_accumulated_through_pipeline(self, coordinator, mock_sentiment_agent):
         """Metrics properly accumulated through pipeline."""
         # After implementation:
         # coordinator.register_agent(mock_sentiment_agent, weight=1.0)
@@ -503,9 +494,7 @@ class TestPhase11RealDecisionFlow:
         pass
 
     @pytest.mark.unit
-    def test_risk_management_override(
-        self, coordinator, mock_sentiment_agent, mock_risk_governor
-    ):
+    def test_risk_management_override(self, coordinator, mock_sentiment_agent, mock_risk_governor):
         """RiskGovernor can override bullish signals."""
         # After implementation:
         # coordinator.register_agent(mock_sentiment_agent, weight=1.0)

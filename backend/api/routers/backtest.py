@@ -10,9 +10,9 @@ Provides endpoints for:
 import logging
 import time
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from backend.mcp_broker.backtest_engine_v18_optimized import run_optimized_backtest
@@ -27,9 +27,13 @@ router = APIRouter(prefix="/backtest", tags=["Backtest"])
 # Request/Response Schemas
 # ============================================================================
 
+
 class BacktestRequest(BaseModel):
     """Backtest execution request."""
-    symbols: List[str] = Field(..., min_items=1, max_items=100, description="List of symbols to backtest")
+
+    symbols: list[str] = Field(
+        ..., min_items=1, max_items=100, description="List of symbols to backtest"
+    )
     start_date: str = Field(..., description="Start date (ISO format: YYYY-MM-DD)")
     end_date: str = Field(..., description="End date (ISO format: YYYY-MM-DD)")
     initial_capital: float = Field(default=100000.0, gt=0, description="Initial capital in EUR")
@@ -40,33 +44,37 @@ class BacktestRequest(BaseModel):
 
 class BacktestTrade(BaseModel):
     """Individual trade record."""
+
     date: str
     symbol: str
     action: str
     quantity: float
     price: float
     size: float
-    pnl: Optional[float] = None
+    pnl: float | None = None
 
 
 class BacktestResponse(BaseModel):
     """Backtest execution response."""
+
     status: str
     backtest_id: str
     request: BacktestRequest
-    results: Dict[str, Any]
-    performance: Dict[str, Any]
+    results: dict[str, Any]
+    performance: dict[str, Any]
     execution_time_seconds: float
 
 
 class BatchBacktestRequest(BaseModel):
     """Batch backtest request for multiple configurations."""
-    configs: List[BacktestRequest] = Field(..., max_length=10)
+
+    configs: list[BacktestRequest] = Field(..., max_length=10)
 
 
 # ============================================================================
 # Endpoints
 # ============================================================================
+
 
 @router.post("/run", response_model=BacktestResponse)
 async def run_backtest(request: BacktestRequest):
@@ -101,10 +109,7 @@ async def run_backtest(request: BacktestRequest):
         end = datetime.fromisoformat(request.end_date)
 
         if start >= end:
-            raise HTTPException(
-                status_code=400,
-                detail="start_date must be before end_date"
-            )
+            raise HTTPException(status_code=400, detail="start_date must be before end_date")
 
         # Choose engine based on symbol count
         if len(request.symbols) > 10 and request.enable_parallel:
@@ -115,7 +120,7 @@ async def run_backtest(request: BacktestRequest):
                 end_date=end,
                 initial_capital=request.initial_capital,
                 enable_parallel=True,
-                max_workers=request.max_workers
+                max_workers=request.max_workers,
             )
         else:
             logger.info("Using Optimized backtest engine")
@@ -125,7 +130,7 @@ async def run_backtest(request: BacktestRequest):
                 end_date=end,
                 initial_capital=request.initial_capital,
                 enable_parallel=request.enable_parallel,
-                max_workers=request.max_workers
+                max_workers=request.max_workers,
             )
 
         execution_time = time.time() - start_time
@@ -138,7 +143,7 @@ async def run_backtest(request: BacktestRequest):
             request=request,
             results=results.get("trades", []),
             performance=results.get("performance", {}),
-            execution_time_seconds=execution_time
+            execution_time_seconds=execution_time,
         )
 
     except ValueError as e:
@@ -146,10 +151,7 @@ async def run_backtest(request: BacktestRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Backtest failed: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Backtest execution failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Backtest execution failed: {str(e)}")
 
 
 @router.post("/batch")
@@ -181,7 +183,7 @@ async def run_batch_backtest(request: BatchBacktestRequest):
         "total": len(request.configs),
         "successful": successful,
         "failed": len(request.configs) - successful,
-        "results": results
+        "results": results,
     }
 
 
@@ -191,16 +193,10 @@ async def get_cache_stats():
     try:
         cache = get_cache()
         stats = await cache.get_stats()
-        return {
-            "status": "success",
-            "stats": stats
-        }
+        return {"status": "success", "stats": stats}
     except Exception as e:
         logger.error(f"Failed to get cache stats: {e}")
-        return {
-            "status": "error",
-            "error": str(e)
-        }
+        return {"status": "error", "error": str(e)}
 
 
 @router.post("/cache/clear")

@@ -1,17 +1,15 @@
 import logging
 import os
 from functools import lru_cache
-from typing import Dict, Optional, Protocol
+from typing import Protocol
 
 logger = logging.getLogger(__name__)
 
 
 class SecretBackend(Protocol):
-    def get_secret(self, path: str, key: str) -> str:
-        ...
+    def get_secret(self, path: str, key: str) -> str: ...
 
-    def is_connected(self) -> bool:
-        ...
+    def is_connected(self) -> bool: ...
 
 
 class VaultBackend:
@@ -40,21 +38,21 @@ class EnvBackend:
 class SecretManager:
     def __init__(
         self,
-        primary_backend: Optional[SecretBackend] = None,
-        fallback_backend: Optional[SecretBackend] = None,
+        primary_backend: SecretBackend | None = None,
+        fallback_backend: SecretBackend | None = None,
         cache_enabled: bool = True,
     ):
         self._primary = primary_backend
         self._fallback = fallback_backend or EnvBackend()
         self._cache_enabled = cache_enabled
-        self._cache: Dict[str, str] = {}
+        self._cache: dict[str, str] = {}
 
         if self._primary and self._primary.is_connected():
             logger.info("SecretManager: Using primary backend (Vault)")
         else:
             logger.warning("SecretManager: Primary backend unavailable, using fallback")
 
-    def get_secret(self, path: str, key: str, default: Optional[str] = None) -> str:
+    def get_secret(self, path: str, key: str, default: str | None = None) -> str:
         cache_key = f"{path}/{key}"
 
         if self._cache_enabled and cache_key in self._cache:
@@ -68,9 +66,7 @@ class SecretManager:
                         self._cache[cache_key] = value
                     return value
         except Exception as e:
-            logger.warning(
-                f"SecretManager: Primary backend failed for {cache_key}: {e}"
-            )
+            logger.warning(f"SecretManager: Primary backend failed for {cache_key}: {e}")
 
         try:
             value = self._fallback.get_secret(path, key)
@@ -79,9 +75,7 @@ class SecretManager:
                     self._cache[cache_key] = value
                 return value
         except Exception as e:
-            logger.warning(
-                f"SecretManager: Fallback backend failed for {cache_key}: {e}"
-            )
+            logger.warning(f"SecretManager: Fallback backend failed for {cache_key}: {e}")
 
         if default is not None:
             return default

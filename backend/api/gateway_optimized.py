@@ -10,16 +10,15 @@ Performance targets:
 import logging
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Dict, List, Optional
 
 import redis.asyncio as redis
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.security import HTTPBearer
 
 # Import base gateway components
-from backend.api.gateway import (HealthResponse, JWTManager)
+from backend.api.gateway import HealthResponse, JWTManager
 from backend.core.config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -51,7 +50,7 @@ class RateLimitResult:
     limit: int
     remaining: int
     reset_time: int
-    retry_after: Optional[int] = None
+    retry_after: int | None = None
 
 
 class OptimizedRateLimiter:
@@ -68,7 +67,7 @@ class OptimizedRateLimiter:
         algorithm: RateLimitAlgorithm = RateLimitAlgorithm.FIXED_WINDOW,
         default_limit: int = 60,
         window_seconds: int = 60,
-        redis_url: Optional[str] = None,
+        redis_url: str | None = None,
         enable_pipeline: bool = True,
     ):
         self.algorithm = algorithm
@@ -76,23 +75,21 @@ class OptimizedRateLimiter:
         self.window_seconds = window_seconds
         self.enable_pipeline = enable_pipeline
 
-        self.redis: Optional[redis.Redis] = None
+        self.redis: redis.Redis | None = None
         if redis_url:
             try:
-                self.redis = redis.from_url(
-                    redis_url, encoding="utf-8", decode_responses=True
-                )
+                self.redis = redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
             except Exception as e:
                 logger.error(f"Failed to initialize Redis: {e}")
 
         # In-memory fallback
-        self._local_history: Dict[str, List[float]] = {}
+        self._local_history: dict[str, list[float]] = {}
 
     async def is_allowed(
         self,
         key: str,
-        limit: Optional[int] = None,
-        role: Optional[str] = None,
+        limit: int | None = None,
+        role: str | None = None,
     ) -> RateLimitResult:
         """
         Check if request is allowed under rate limit.
@@ -169,9 +166,7 @@ class OptimizedRateLimiter:
             self._local_history[key] = []
 
         # Remove old entries
-        self._local_history[key] = [
-            t for t in self._local_history[key] if t > window_start
-        ]
+        self._local_history[key] = [t for t in self._local_history[key] if t > window_start]
 
         count = len(self._local_history[key])
         allowed = count < limit
@@ -241,9 +236,9 @@ class OptimizedAPIGateway:
 
     def __init__(
         self,
-        secret_key: Optional[str] = None,
+        secret_key: str | None = None,
         rate_limit_algorithm: RateLimitAlgorithm = RateLimitAlgorithm.FIXED_WINDOW,
-        redis_url: Optional[str] = None,
+        redis_url: str | None = None,
     ):
         self.app = FastAPI(title="Agentic Trader API (Optimized)", version="2.0.0")
         self.jwt_manager = JWTManager(
@@ -268,18 +263,14 @@ class OptimizedAPIGateway:
     def _setup_routes(self):
         """Setup API routes with optimized rate limiting."""
 
-        async def get_user(authorization: str = Header(None)) -> Dict:
+        async def get_user(authorization: str = Header(None)) -> dict:
             """Get verified user from authorization header."""
             if not authorization:
-                raise HTTPException(
-                    status_code=403, detail="Missing authorization header"
-                )
+                raise HTTPException(status_code=403, detail="Missing authorization header")
 
             parts = authorization.split()
             if len(parts) != 2 or parts[0].lower() != "bearer":
-                raise HTTPException(
-                    status_code=403, detail="Invalid authorization header"
-                )
+                raise HTTPException(status_code=403, detail="Invalid authorization header")
 
             token = parts[1]
             return await self.jwt_manager.verify_token(token)
@@ -289,12 +280,12 @@ class OptimizedAPIGateway:
             """Health check endpoint."""
             return HealthResponse(
                 status="healthy",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 version="2.0.0-optimized",
             )
 
         @self.app.get("/rate-limit-status")
-        async def rate_limit_status(user: Dict = Depends(get_user)):
+        async def rate_limit_status(user: dict = Depends(get_user)):
             """Get current rate limit status."""
             account_id = user.get("account_id")
             role = user.get("roles", ["viewer"])[0]
@@ -313,9 +304,9 @@ class OptimizedAPIGateway:
 
 
 def create_optimized_gateway(
-    secret_key: Optional[str] = None,
+    secret_key: str | None = None,
     rate_limit_algorithm: str = "fixed",
-    redis_url: Optional[str] = None,
+    redis_url: str | None = None,
 ) -> FastAPI:
     """Factory function to create optimized API gateway."""
     algorithm = RateLimitAlgorithm(rate_limit_algorithm)

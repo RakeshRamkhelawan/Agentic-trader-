@@ -1,9 +1,9 @@
 """
 Policy Engine for Trade Governance - ADR-007
 """
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
 
 
 class ApprovalLevel(Enum):
@@ -17,7 +17,7 @@ class ApprovalLevel(Enum):
 class PolicyResult:
     level: ApprovalLevel
     reason: str
-    approvers: List[str]
+    approvers: list[str]
     risk_score: float
 
 
@@ -46,9 +46,7 @@ class PolicyEngine:
         if trade.value > 100_000:
             approvers.append("compliance")
 
-        return PolicyResult(
-            ApprovalLevel.REQUIRES_APPROVAL, f"Risk {risk:.2f}", approvers, risk
-        )
+        return PolicyResult(ApprovalLevel.REQUIRES_APPROVAL, f"Risk {risk:.2f}", approvers, risk)
 
     async def _calculate_risk(self, trade, portfolio, market) -> float:
         # Simplified risk calculation

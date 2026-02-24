@@ -7,7 +7,7 @@ This provides better isolation, resilience, and LLM orchestration capabilities.
 
 import logging
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Any
 
 from backend.mcp_broker.client import MCPClientWrapper
 
@@ -22,7 +22,7 @@ class ElementalAgentManagerV18:
     providing better resilience and enabling LLM orchestration.
     """
 
-    def __init__(self, mcp_client: Optional[MCPClientWrapper] = None):
+    def __init__(self, mcp_client: MCPClientWrapper | None = None):
         """
         Initialize Elemental Agent Manager V18.
 
@@ -33,13 +33,13 @@ class ElementalAgentManagerV18:
         self._owns_client = mcp_client is None
 
         # Track trade history for each symbol
-        self.trade_history: Dict[str, List[Dict[str, Any]]] = {}
+        self.trade_history: dict[str, list[dict[str, Any]]] = {}
 
         # Track open positions
-        self.open_positions: Dict[str, Dict[str, Any]] = {}
+        self.open_positions: dict[str, dict[str, Any]] = {}
 
         # Track peak prices for trailing stops
-        self.peak_prices: Dict[str, float] = {}
+        self.peak_prices: dict[str, float] = {}
 
         logger.info("ElementalAgentManagerV18 initialized")
 
@@ -63,8 +63,8 @@ class ElementalAgentManagerV18:
         portfolio_value: float,
         vedastro_score: float,
         dominant_planet: str,
-        price_history: List[float]
-    ) -> Optional[Dict[str, Any]]:
+        price_history: list[float],
+    ) -> dict[str, Any] | None:
         """
         Evaluate entry opportunity using MCP tools.
 
@@ -91,11 +91,7 @@ class ElementalAgentManagerV18:
         trade_history = self.trade_history.get(symbol, [])
 
         earth_result = await self.mcp_client.call_tool(
-            "elemental__earth_entry_check",
-            {
-                "symbol": symbol,
-                "trade_history": trade_history
-            }
+            "elemental__earth_entry_check", {"symbol": symbol, "trade_history": trade_history}
         )
 
         if not earth_result.get("can_enter", True):
@@ -105,11 +101,7 @@ class ElementalAgentManagerV18:
         # Check 2: Water regime check
         if len(price_history) >= 20:
             water_result = await self.mcp_client.call_tool(
-                "elemental__water_regime_check",
-                {
-                    "symbol": symbol,
-                    "prices": price_history
-                }
+                "elemental__water_regime_check", {"symbol": symbol, "prices": price_history}
             )
 
             # For bonds, check regime shift
@@ -127,8 +119,8 @@ class ElementalAgentManagerV18:
                 "portfolio_value": portfolio_value,
                 "vedastro_score": vedastro_score,
                 "dominant_planet": dominant_planet,
-                "price_history": price_history
-            }
+                "price_history": price_history,
+            },
         )
 
         position_size = fire_result.get("position_size_eur", 0)
@@ -148,7 +140,7 @@ class ElementalAgentManagerV18:
             "entry_date": datetime.utcnow().isoformat(),
             "entry_price": current_price,
             "quantity": quantity,
-            "position_size": position_size
+            "position_size": position_size,
         }
         self.peak_prices[symbol] = current_price
 
@@ -162,15 +154,12 @@ class ElementalAgentManagerV18:
             "position_size": position_size,
             "vedastro_score": vedastro_score,
             "dominant_planet": dominant_planet,
-            "elemental_consensus": fire_result.get("sizing_factors", {})
+            "elemental_consensus": fire_result.get("sizing_factors", {}),
         }
 
     async def evaluate_exit(
-        self,
-        symbol: str,
-        current_price: float,
-        current_date: Optional[str] = None
-    ) -> Tuple[bool, str]:
+        self, symbol: str, current_price: float, current_date: str | None = None
+    ) -> tuple[bool, str]:
         """
         Evaluate if position should be exited using MCP tools.
 
@@ -210,8 +199,8 @@ class ElementalAgentManagerV18:
                 "current_date": current_date,
                 "entry_price": entry_price,
                 "current_price": current_price,
-                "peak_price": peak_price
-            }
+                "peak_price": peak_price,
+            },
         )
 
         should_exit = result.get("should_exit", False)
@@ -234,12 +223,8 @@ class ElementalAgentManagerV18:
         return False, ""
 
     async def get_elemental_consensus(
-        self,
-        fire_vote: float,
-        earth_vote: float,
-        water_vote: float,
-        air_vote: float
-    ) -> Dict[str, Any]:
+        self, fire_vote: float, earth_vote: float, water_vote: float, air_vote: float
+    ) -> dict[str, Any]:
         """
         Get elemental consensus using MCP tool.
 
@@ -258,33 +243,30 @@ class ElementalAgentManagerV18:
                 "fire_vote": fire_vote,
                 "earth_vote": earth_vote,
                 "water_vote": water_vote,
-                "air_vote": air_vote
-            }
+                "air_vote": air_vote,
+            },
         )
 
         return result
 
-    def record_trade_outcome(
-        self,
-        symbol: str,
-        pnl_pct: float,
-        win: bool
-    ):
+    def record_trade_outcome(self, symbol: str, pnl_pct: float, win: bool):
         """Record trade outcome for tracking."""
         if symbol not in self.trade_history:
             self.trade_history[symbol] = []
 
-        self.trade_history[symbol].append({
-            "symbol": symbol,
-            "pnl": pnl_pct,
-            "win": win,
-            "timestamp": datetime.utcnow().isoformat()
-        })
+        self.trade_history[symbol].append(
+            {
+                "symbol": symbol,
+                "pnl": pnl_pct,
+                "win": win,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
         # Keep only last 50 trades per symbol
         self.trade_history[symbol] = self.trade_history[symbol][-50:]
 
-    def get_open_position(self, symbol: str) -> Optional[Dict[str, Any]]:
+    def get_open_position(self, symbol: str) -> dict[str, Any] | None:
         """Get open position for a symbol."""
         return self.open_positions.get(symbol)
 
@@ -292,12 +274,11 @@ class ElementalAgentManagerV18:
         """Check if symbol has open position."""
         return symbol in self.open_positions
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get manager statistics."""
         total_trades = sum(len(trades) for trades in self.trade_history.values())
         winning_trades = sum(
-            sum(1 for t in trades if t.get("win", False))
-            for trades in self.trade_history.values()
+            sum(1 for t in trades if t.get("win", False)) for trades in self.trade_history.values()
         )
 
         win_rate = winning_trades / total_trades if total_trades > 0 else 0
@@ -307,5 +288,5 @@ class ElementalAgentManagerV18:
             "total_trades": total_trades,
             "winning_trades": winning_trades,
             "win_rate": win_rate,
-            "symbols_tracked": len(self.trade_history)
+            "symbols_tracked": len(self.trade_history),
         }

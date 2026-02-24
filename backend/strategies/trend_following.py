@@ -9,7 +9,7 @@ Entry Short: Short MA < Long MA + RSI < 50
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pandas as pd
 
@@ -32,7 +32,7 @@ class TrendFollowingStrategy(BaseStrategy):
         max_history (int): Max ticks to keep in memory. Default 500.
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         super().__init__(config)
         self.short_window = config.get("short_window", 50)
         self.long_window = config.get("long_window", 200)
@@ -41,11 +41,11 @@ class TrendFollowingStrategy(BaseStrategy):
         self.volume_multiplier = config.get("volume_multiplier", 1.5)
         self.max_history = config.get("max_history", 500)
 
-        self._price_history: Dict[str, List[float]] = {}
-        self._volume_history: Dict[str, List[float]] = {}
-        self._prev_crossover: Dict[str, Optional[str]] = {}
+        self._price_history: dict[str, list[float]] = {}
+        self._volume_history: dict[str, list[float]] = {}
+        self._prev_crossover: dict[str, str | None] = {}
 
-    async def on_tick(self, tick: UnifiedMarketEvent) -> Optional[Dict[str, Any]]:
+    async def on_tick(self, tick: UnifiedMarketEvent) -> dict[str, Any] | None:
         if not tick.price or tick.price <= 0:
             return None
 
@@ -111,11 +111,7 @@ class TrendFollowingStrategy(BaseStrategy):
 
             # Generate signals
             direction = None
-            if (
-                current_cross == "GOLDEN"
-                and rsi > self.rsi_threshold
-                and volume_confirmed
-            ):
+            if current_cross == "GOLDEN" and rsi > self.rsi_threshold and volume_confirmed:
                 direction = "BULLISH"
             elif current_cross == "DEATH" and rsi < self.rsi_threshold:
                 direction = "BEARISH"
@@ -147,7 +143,7 @@ class TrendFollowingStrategy(BaseStrategy):
 
         return None
 
-    def _calculate_rsi(self, prices: List[float]) -> Optional[float]:
+    def _calculate_rsi(self, prices: list[float]) -> float | None:
         """Calculate RSI using Wilder's smoothing via pandas."""
         if len(prices) < self.rsi_period + 1:
             return None
@@ -158,12 +154,8 @@ class TrendFollowingStrategy(BaseStrategy):
         gain = delta.where(delta > 0, 0)
         loss = -delta.where(delta < 0, 0)
 
-        avg_gain = gain.rolling(
-            window=self.rsi_period, min_periods=self.rsi_period
-        ).mean()
-        avg_loss = loss.rolling(
-            window=self.rsi_period, min_periods=self.rsi_period
-        ).mean()
+        avg_gain = gain.rolling(window=self.rsi_period, min_periods=self.rsi_period).mean()
+        avg_loss = loss.rolling(window=self.rsi_period, min_periods=self.rsi_period).mean()
 
         curr_gain = avg_gain.iloc[-1]
         curr_loss = avg_loss.iloc[-1]

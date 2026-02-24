@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -20,7 +19,7 @@ class PerformanceAnalytics:
     """
 
     def calculate_metrics(
-        self, equity_curve: List[float], trades: List[Dict]
+        self, equity_curve: list[float], trades: list[dict]
     ) -> PerformanceMetrics:
         """
         Calculates standard metrics.
@@ -33,9 +32,7 @@ class PerformanceAnalytics:
         # 1. Total Return
         start_equity = equity_curve[0]
         end_equity = equity_curve[-1]
-        total_ret = (
-            (end_equity - start_equity) / start_equity if start_equity > 0 else 0
-        )
+        total_ret = (end_equity - start_equity) / start_equity if start_equity > 0 else 0
 
         # 2. Sharpe Ratio (assuming daily data for simplicity, usually needs resampling)
         # Using numpy for vector operations

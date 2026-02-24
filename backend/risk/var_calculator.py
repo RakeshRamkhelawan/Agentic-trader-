@@ -18,9 +18,7 @@ class VaRCalculator:
     def __init__(self):
         self.logger = logging.getLogger("VaRCalculator")
 
-    def calculate_historical_var(
-        self, returns: pd.Series, confidence_level: float = 0.95
-    ) -> float:
+    def calculate_historical_var(self, returns: pd.Series, confidence_level: float = 0.95) -> float:
         """
         Berekent Historical VaR van een reeks rendementen.
 
@@ -37,9 +35,7 @@ class VaRCalculator:
         if not isinstance(returns, pd.Series):
             raise VaRCalculationError("Input 'returns' must be a Pandas Series.")
         if not 0 < confidence_level < 1:
-            raise VaRCalculationError(
-                "Confidence level must be between 0 and 1 (exclusive)."
-            )
+            raise VaRCalculationError("Confidence level must be between 0 and 1 (exclusive).")
         if len(returns) < 100:  # Minimaal 100 observaties aanbevolen
             self.logger.warning(
                 f"Insufficient data ({len(returns)} points) for robust VaR calculation. At least 100 recommended."
@@ -61,8 +57,6 @@ class VaRCalculator:
         # De VaR is het rendement op die index
         var = sorted_returns.iloc[var_index]
 
-        self.logger.info(
-            f"Calculated VaR at {confidence_level*100}% confidence: {var:.4f}"
-        )
+        self.logger.info(f"Calculated VaR at {confidence_level*100}% confidence: {var:.4f}")
 
         return var

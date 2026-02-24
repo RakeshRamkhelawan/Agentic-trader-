@@ -21,9 +21,7 @@ class SmartRouter:
             "coinbase": {"maker_fee": 0.0040, "taker_fee": 0.0060},
         }
 
-    async def get_best_route(
-        self, asset: str, side: str, amount: float
-    ) -> RoutingDecision:
+    async def get_best_route(self, asset: str, side: str, amount: float) -> RoutingDecision:
         """
         Simulate checking multiple exchanges for the best price.
         In a real system, this would fetch Order Books via CCXT/WebSocket.

@@ -12,7 +12,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Optional, Set
+from typing import Any
 
 from fastapi import WebSocket
 
@@ -26,7 +26,7 @@ class Connection:
     websocket: WebSocket
     tenant_id: str
     account_id: str
-    subscriptions: Set[str] = field(default_factory=set)
+    subscriptions: set[str] = field(default_factory=set)
     connected_at: datetime = field(default_factory=datetime.utcnow)
     last_ping: datetime = field(default_factory=datetime.utcnow)
 
@@ -43,13 +43,13 @@ class WebSocketManager:
 
     def __init__(self):
         # Map of connection_id -> Connection
-        self.connections: Dict[str, Connection] = {}
+        self.connections: dict[str, Connection] = {}
         # Map of channel -> set of connection_ids
-        self.channel_subscribers: Dict[str, Set[str]] = {}
+        self.channel_subscribers: dict[str, set[str]] = {}
         # Lock for thread-safe operations
         self._lock = asyncio.Lock()
         # Heartbeat task
-        self._heartbeat_task: Optional[asyncio.Task] = None
+        self._heartbeat_task: asyncio.Task | None = None
 
     async def connect(
         self, websocket: WebSocket, connection_id: str, tenant_id: str, account_id: str
@@ -134,7 +134,7 @@ class WebSocketManager:
             logger.debug(f"Connection {connection_id} unsubscribed from {channel}")
             return True
 
-    async def send_message(self, connection_id: str, message: Dict[str, Any]) -> bool:
+    async def send_message(self, connection_id: str, message: dict[str, Any]) -> bool:
         """Send a message to a specific connection."""
         if connection_id not in self.connections:
             return False
@@ -149,7 +149,7 @@ class WebSocketManager:
             return False
 
     async def broadcast_to_channel(
-        self, channel: str, message: Dict[str, Any], message_type: str = "update"
+        self, channel: str, message: dict[str, Any], message_type: str = "update"
     ) -> int:
         """Broadcast a message to all subscribers of a channel."""
         if channel not in self.channel_subscribers:
@@ -214,18 +214,12 @@ class WebSocketManager:
             message_type="update",
         )
 
-    async def broadcast_order_update(
-        self, account_id: str, order_data: Dict[str, Any]
-    ) -> int:
+    async def broadcast_order_update(self, account_id: str, order_data: dict[str, Any]) -> int:
         """Broadcast order update to a specific user."""
         channel = f"orders.{account_id}"
-        return await self.broadcast_to_channel(
-            channel, order_data, message_type="update"
-        )
+        return await self.broadcast_to_channel(channel, order_data, message_type="update")
 
-    async def handle_client_message(
-        self, connection_id: str, message: Dict[str, Any]
-    ) -> None:
+    async def handle_client_message(self, connection_id: str, message: dict[str, Any]) -> None:
         """Handle incoming message from a client."""
         msg_type = message.get("type")
 
@@ -282,7 +276,7 @@ class WebSocketManager:
             logger.info(f"Disconnecting stale connection: {conn_id}")
             await self.disconnect(conn_id)
 
-    async def broadcast_navagraha_update(self, state: Dict[str, Any]) -> int:
+    async def broadcast_navagraha_update(self, state: dict[str, Any]) -> int:
         """Broadcast Navagraha state update."""
         return await self.broadcast_to_channel(
             "navagraha.updates",
@@ -290,7 +284,7 @@ class WebSocketManager:
             message_type="update",
         )
 
-    async def broadcast_ooda_update(self, cycle_state: Dict[str, Any]) -> int:
+    async def broadcast_ooda_update(self, cycle_state: dict[str, Any]) -> int:
         """Broadcast OODA Cycle state update."""
         return await self.broadcast_to_channel(
             "ooda.updates",
@@ -298,7 +292,7 @@ class WebSocketManager:
             message_type="update",
         )
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get WebSocket manager statistics."""
         return {
             "total_connections": len(self.connections),

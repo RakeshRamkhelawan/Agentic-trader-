@@ -5,9 +5,7 @@ from backend.models.orders import Order, OrderStatus
 
 
 @pytest.mark.asyncio
-async def test_trading_api_endpoints(
-    async_client: AsyncClient, db_session, test_user_token
-):
+async def test_trading_api_endpoints(async_client: AsyncClient, db_session, test_user_token):
     headers = {"Authorization": f"Bearer {test_user_token}"}
 
     # 1. Setup: Create a dummy active order in DB

@@ -7,9 +7,10 @@ Uses two-phase commit logic: PostgreSQL commits first, ClickHouse follows.
 
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, TypeVar
+from typing import Any, TypeVar
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,7 +38,7 @@ class PendingClickHouseOperation:
     """Represents a deferred ClickHouse operation."""
 
     table: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     operation: str = "insert"  # insert, update, delete
 
 
@@ -61,7 +62,7 @@ class UnitOfWork:
     def __init__(
         self,
         postgres_session: AsyncSession,
-        clickhouse_client: Optional[ClickHouseClient] = None,
+        clickhouse_client: ClickHouseClient | None = None,
         enable_clickhouse: bool = True,
     ):
         self.postgres_session = postgres_session
@@ -69,7 +70,7 @@ class UnitOfWork:
         self.enable_clickhouse = enable_clickhouse
 
         # Buffer for ClickHouse operations (deferred until PG commit)
-        self._clickhouse_buffer: List[PendingClickHouseOperation] = []
+        self._clickhouse_buffer: list[PendingClickHouseOperation] = []
 
         # Transaction state
         self._is_committed = False
@@ -77,7 +78,7 @@ class UnitOfWork:
         self._postgres_committed = False
 
         # Compensation log for ClickHouse failures
-        self._compensation_log: List[Callable] = []
+        self._compensation_log: list[Callable] = []
 
     async def __aenter__(self) -> "UnitOfWork":
         """Enter context - transaction begins."""
@@ -93,9 +94,7 @@ class UnitOfWork:
         """
         if exc_type is not None:
             # Exception occurred - rollback
-            logger.warning(
-                f"UnitOfWork: Exception occurred ({exc_type.__name__}), rolling back"
-            )
+            logger.warning(f"UnitOfWork: Exception occurred ({exc_type.__name__}), rolling back")
             await self.rollback()
             return False  # Re-raise the exception
         else:
@@ -109,7 +108,7 @@ class UnitOfWork:
                 raise
 
     def add_clickhouse_operation(
-        self, table: str, data: Dict[str, Any], operation: str = "insert"
+        self, table: str, data: dict[str, Any], operation: str = "insert"
     ) -> None:
         """
         Buffer a ClickHouse operation (deferred until PostgreSQL commit).
@@ -123,9 +122,7 @@ class UnitOfWork:
             logger.debug(f"ClickHouse disabled, skipping {operation} to {table}")
             return
 
-        pending = PendingClickHouseOperation(
-            table=table, data=data, operation=operation
-        )
+        pending = PendingClickHouseOperation(table=table, data=data, operation=operation)
         self._clickhouse_buffer.append(pending)
         logger.debug(f"Buffered {operation} operation for {table}")
 
@@ -183,9 +180,7 @@ class UnitOfWork:
             buffer_size = len(self._clickhouse_buffer)
             self._clickhouse_buffer.clear()
 
-            logger.info(
-                f"UnitOfWork: Rollback complete (cleared {buffer_size} CH operations)"
-            )
+            logger.info(f"UnitOfWork: Rollback complete (cleared {buffer_size} CH operations)")
 
         except Exception as e:
             logger.error(f"UnitOfWork: Rollback failed: {e}")
@@ -230,9 +225,7 @@ class UnitOfWork:
         # Clear buffer after processing
         self._clickhouse_buffer.clear()
 
-    async def _execute_clickhouse_operation(
-        self, operation: PendingClickHouseOperation
-    ) -> None:
+    async def _execute_clickhouse_operation(self, operation: PendingClickHouseOperation) -> None:
         """Execute a single ClickHouse operation."""
         if operation.operation == "insert":
             await self.clickhouse_client.insert(operation.table, operation.data)
@@ -241,9 +234,7 @@ class UnitOfWork:
             await self.clickhouse_client.insert(operation.table, operation.data)
         elif operation.operation == "delete":
             # ClickHouse uses mutations for deletes - avoid if possible
-            logger.warning(
-                f"Delete operation requested for {operation.table} - use soft deletes"
-            )
+            logger.warning(f"Delete operation requested for {operation.table} - use soft deletes")
         else:
             raise ValueError(f"Unknown operation: {operation.operation}")
 
@@ -275,7 +266,7 @@ class Repository(ABC):
         pass
 
     @abstractmethod
-    async def get(self, id: Any) -> Optional[Any]:
+    async def get(self, id: Any) -> Any | None:
         """Get entity by ID."""
         pass
 
@@ -284,9 +275,9 @@ class Repository(ABC):
 @asynccontextmanager
 async def create_unit_of_work(
     postgres_session: AsyncSession,
-    clickhouse_client: Optional[ClickHouseClient] = None,
+    clickhouse_client: ClickHouseClient | None = None,
     enable_clickhouse: bool = True,
-) -> AsyncGenerator[UnitOfWork, None]:
+) -> AsyncGenerator[UnitOfWork]:
     """
     Factory context manager for Unit of Work.
 

@@ -64,9 +64,7 @@ def test_factory_env_gemini_requires_api_key():
     """RED: Factory with gemini should use GOOGLE_API_KEY from env."""
     from backend.llm.factory import create_llm_provider
 
-    with patch.dict(
-        "os.environ", {"LLM_PROVIDER": "gemini", "GOOGLE_API_KEY": "env-key"}
-    ):
+    with patch.dict("os.environ", {"LLM_PROVIDER": "gemini", "GOOGLE_API_KEY": "env-key"}):
         with patch("google.genai.Client"):
             provider = create_llm_provider()
             from backend.llm.providers.gemini import GeminiProvider
@@ -87,9 +85,7 @@ def test_factory_passes_base_url_to_ollama():
     """RED: Factory should pass base_url to OllamaProvider."""
     from backend.llm.factory import create_llm_provider
 
-    provider = create_llm_provider(
-        provider_type="ollama", base_url="http://custom:8080"
-    )
+    provider = create_llm_provider(provider_type="ollama", base_url="http://custom:8080")
     assert provider.base_url == "http://custom:8080"
 
 

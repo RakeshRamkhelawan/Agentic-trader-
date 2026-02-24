@@ -10,14 +10,14 @@ Tests platform under load:
 
 Usage:
     locust -f backend/tests/load/locustfile.py --host=http://localhost:8000
-    
+
 Or via Docker:
     docker run -p 8089:8089 -v $(pwd)/backend/tests/load:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py
 """
 
 import random
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from locust import HttpUser, between, events, task
 from locust.runners import MasterRunner
@@ -75,7 +75,7 @@ class TradingPlatformUser(HttpUser):
             "symbol": self.symbol,
             "price": random.uniform(100, 50000),
             "volume": random.uniform(0.1, 100),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "trace_id": str(uuid.uuid4()),
         }
 
@@ -191,11 +191,9 @@ class ColdPathSaturator(HttpUser):
         """Trigger LLM-based anomaly detection."""
         anomaly_data = {
             "symbol": random.choice(SYMBOLS),
-            "anomaly_type": random.choice(
-                ["volume_spike", "price_gap", "pattern_break"]
-            ),
+            "anomaly_type": random.choice(["volume_spike", "price_gap", "pattern_break"]),
             "severity": random.choice(["low", "medium", "high"]),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         with self.client.post(

@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Dict, List
 
 from backend.backtesting.models import OrderSide, Position, Trade
 
@@ -10,17 +9,15 @@ class SimulatedExchange:
     Handles order matching, commission, and portfolio tracking.
     """
 
-    def __init__(
-        self, initial_capital: float = 10000.0, commission_rate: float = 0.001
-    ):
+    def __init__(self, initial_capital: float = 10000.0, commission_rate: float = 0.001):
         self.cash = initial_capital
         self.initial_capital = initial_capital
         self.commission_rate = commission_rate
-        self.positions: Dict[str, Position] = {}  # symbol -> Position
-        self.trades: List[Trade] = []
-        self.equity_curve: List[Dict] = []
+        self.positions: dict[str, Position] = {}  # symbol -> Position
+        self.trades: list[Trade] = []
+        self.equity_curve: list[dict] = []
 
-    def get_equity(self, current_prices: Dict[str, float]) -> float:
+    def get_equity(self, current_prices: dict[str, float]) -> float:
         """Calculate total account value (Cash + Market Value of positions)."""
         market_value = 0.0
         for symbol, pos in self.positions.items():
@@ -42,18 +39,12 @@ class SimulatedExchange:
         # Calculate cost and commission
         gross_amount = quantity * current_price
         commission = gross_amount * self.commission_rate
-        net_cost = (
-            gross_amount + commission
-            if side == OrderSide.BUY
-            else gross_amount - commission
-        )
+        net_cost = gross_amount + commission if side == OrderSide.BUY else gross_amount - commission
 
         # Validation checks (Simplified)
         if side == OrderSide.BUY:
             if net_cost > self.cash:
-                raise ValueError(
-                    f"Insufficient funds: Have {self.cash}, need {net_cost}"
-                )
+                raise ValueError(f"Insufficient funds: Have {self.cash}, need {net_cost}")
             self.cash -= net_cost
             self._update_position(symbol, quantity, current_price, side)
 
@@ -79,9 +70,7 @@ class SimulatedExchange:
         self.trades.append(trade)
         return trade
 
-    def _update_position(
-        self, symbol: str, quantity_delta: float, price: float, side: OrderSide
-    ):
+    def _update_position(self, symbol: str, quantity_delta: float, price: float, side: OrderSide):
         """Update position tracking."""
         pos = self.positions.get(symbol)
 
@@ -104,9 +93,7 @@ class SimulatedExchange:
         else:
             # Average price update (only on BUY)
             if quantity_delta > 0:
-                total_cost = (pos.quantity * pos.average_price) + (
-                    quantity_delta * price
-                )
+                total_cost = (pos.quantity * pos.average_price) + (quantity_delta * price)
                 pos.average_price = total_cost / new_quantity
 
             pos.quantity = new_quantity

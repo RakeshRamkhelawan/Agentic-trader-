@@ -10,12 +10,14 @@ Provides:
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any
+
 import numpy as np
 
 # Optional pandas import
 try:
     import pandas as pd
+
     PANDAS_AVAILABLE = True
 except ImportError:
     PANDAS_AVAILABLE = False
@@ -26,6 +28,7 @@ from backend.mcp_broker.client import MCPClientWrapper
 @dataclass
 class BatchConfig:
     """Configuration for batch processing."""
+
     max_batch_size: int = 50  # Max symbols per batch
     max_concurrent_calls: int = 10  # Max parallel MCP calls
     use_vectorization: bool = True
@@ -42,22 +45,14 @@ class BatchProcessor:
     - Intelligent prefetching
     """
 
-    def __init__(
-        self,
-        mcp_client: MCPClientWrapper,
-        config: Optional[BatchConfig] = None
-    ):
+    def __init__(self, mcp_client: MCPClientWrapper, config: BatchConfig | None = None):
         self.client = mcp_client
         self.config = config or BatchConfig()
         self._semaphore = asyncio.Semaphore(self.config.max_concurrent_calls)
         self._prefetch_queue: asyncio.Queue = asyncio.Queue()
-        self._cache: Dict[str, Any] = {}
+        self._cache: dict[str, Any] = {}
 
-    async def batch_call_tool(
-        self,
-        tool_name: str,
-        params_list: List[Dict[str, Any]]
-    ) -> List[Any]:
+    async def batch_call_tool(self, tool_name: str, params_list: list[dict[str, Any]]) -> list[Any]:
         """
         Execute multiple MCP tool calls in parallel with concurrency control.
 
@@ -68,7 +63,8 @@ class BatchProcessor:
         Returns:
             List of results in same order as params_list
         """
-        async def _call_single(params: Dict) -> Any:
+
+        async def _call_single(params: dict) -> Any:
             async with self._semaphore:
                 try:
                     return await self.client.call_tool(tool_name, params)
@@ -85,19 +81,15 @@ class BatchProcessor:
         processed_results = []
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                processed_results.append({
-                    "error": str(result),
-                    "params": params_list[i]
-                })
+                processed_results.append({"error": str(result), "params": params_list[i]})
             else:
                 processed_results.append(result)
 
         return processed_results
 
     async def batch_elemental_consensus(
-        self,
-        symbol_data: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, symbol_data: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """
         Batch process Elemental consensus for multiple symbols.
 
@@ -113,20 +105,14 @@ class BatchProcessor:
                 "earth_vote": data.get("earth_vote", 0.5),
                 "water_vote": data.get("water_vote", 0.5),
                 "air_vote": data.get("air_vote", 0.5),
-                "symbol": data["symbol"]
+                "symbol": data["symbol"],
             }
             for data in symbol_data
         ]
 
-        return await self.batch_call_tool(
-            "elemental__ether_consensus",
-            params_list
-        )
+        return await self.batch_call_tool("elemental__ether_consensus", params_list)
 
-    async def batch_position_sizes(
-        self,
-        symbol_data: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    async def batch_position_sizes(self, symbol_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Batch calculate position sizes for multiple symbols.
 
@@ -141,20 +127,16 @@ class BatchProcessor:
                 "symbol": data["symbol"],
                 "portfolio_value": data["portfolio_value"],
                 "vedastro_score": data.get("vedastro_score", 50),
-                "price_history": data.get("price_history", [100.0] * 20)
+                "price_history": data.get("price_history", [100.0] * 20),
             }
             for data in symbol_data
         ]
 
-        return await self.batch_call_tool(
-            "elemental__fire_position_size",
-            params_list
-        )
+        return await self.batch_call_tool("elemental__fire_position_size", params_list)
 
     async def batch_vedastro_signals(
-        self,
-        symbol_date_pairs: List[Tuple[str, datetime]]
-    ) -> List[Dict[str, Any]]:
+        self, symbol_date_pairs: list[tuple[str, datetime]]
+    ) -> list[dict[str, Any]]:
         """
         Batch fetch VedAstro signals for multiple symbol/date pairs.
 
@@ -168,21 +150,15 @@ class BatchProcessor:
             {
                 "symbol": symbol,
                 "current_price": 100.0,  # Will be updated with actual price
-                "date": date.isoformat()
+                "date": date.isoformat(),
             }
             for symbol, date in symbol_date_pairs
         ]
 
-        return await self.batch_call_tool(
-            "vedastro__generate_signal",
-            params_list
-        )
+        return await self.batch_call_tool("vedastro__generate_signal", params_list)
 
     async def prefetch_market_data(
-        self,
-        symbols: List[str],
-        current_date: datetime,
-        days_ahead: Optional[int] = None
+        self, symbols: list[str], current_date: datetime, days_ahead: int | None = None
     ) -> None:
         """
         Prefetch market data for upcoming dates.
@@ -200,8 +176,8 @@ class BatchProcessor:
                         {
                             "symbol": symbol,
                             "start_date": target_date.isoformat(),
-                            "end_date": target_date.isoformat()
-                        }
+                            "end_date": target_date.isoformat(),
+                        },
                     )
                 except Exception:
                     pass  # Prefetch errors are non-critical
@@ -227,7 +203,7 @@ class VectorizedElementalCalculator:
         self,
         portfolio_values: np.ndarray,
         vedastro_scores: np.ndarray,
-        confidences: Optional[np.ndarray] = None
+        confidences: np.ndarray | None = None,
     ) -> np.ndarray:
         """
         Calculate position sizes for multiple symbols vectorized.
@@ -257,19 +233,13 @@ class VectorizedElementalCalculator:
         absolute_cap = self.max_position_eur
 
         # Final size: min of all constraints
-        position_sizes = np.minimum(
-            np.minimum(scaled_sizes, max_by_portfolio),
-            absolute_cap
-        )
+        position_sizes = np.minimum(np.minimum(scaled_sizes, max_by_portfolio), absolute_cap)
 
         return position_sizes
 
     def vectorized_trailing_stops(
-        self,
-        entry_prices: np.ndarray,
-        current_prices: np.ndarray,
-        highest_prices: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        self, entry_prices: np.ndarray, current_prices: np.ndarray, highest_prices: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Vectorized trailing stop calculation.
 
@@ -285,10 +255,7 @@ class VectorizedElementalCalculator:
 
         # Trailing stop triggered if:
         # 1. Up 40% from entry AND down 15% from peak
-        trailing_triggered = (
-            (peak_returns >= 0.40) &
-            (current_from_peak <= -0.15)
-        )
+        trailing_triggered = (peak_returns >= 0.40) & (current_from_peak <= -0.15)
 
         # Or 2. Down 20% from entry (hard stop)
         hard_stop = total_returns <= -0.20
@@ -301,10 +268,8 @@ class VectorizedElementalCalculator:
         return should_exit, exit_prices
 
     def vectorized_commission_slippage(
-        self,
-        quantities: np.ndarray,
-        prices: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        self, quantities: np.ndarray, prices: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Calculate commission and slippage for multiple trades.
 
@@ -325,7 +290,7 @@ class VectorizedElementalCalculator:
         win_rates: np.ndarray,
         avg_wins: np.ndarray,
         avg_losses: np.ndarray,
-        portfolio_values: np.ndarray
+        portfolio_values: np.ndarray,
     ) -> np.ndarray:
         """
         Calculate Kelly criterion position sizes vectorized.
@@ -350,10 +315,8 @@ class VectorizedElementalCalculator:
         return np.minimum(position_sizes, self.max_position_eur)
 
     def batch_elemental_scores(
-        self,
-        price_histories: List[List[float]],
-        lookback: int = 20
-    ) -> Dict[str, np.ndarray]:
+        self, price_histories: list[list[float]], lookback: int = 20
+    ) -> dict[str, np.ndarray]:
         """
         Calculate Elemental scores for multiple symbols from price history.
 
@@ -401,17 +364,17 @@ class VectorizedElementalCalculator:
             "fire": fire_scores,
             "earth": earth_scores,
             "water": water_scores,
-            "air": air_scores
+            "air": air_scores,
         }
 
 
 # Convenience function for batch processing
 async def process_symbols_batch(
     mcp_client: MCPClientWrapper,
-    symbols: List[str],
+    symbols: list[str],
     portfolio_value: float,
-    vedastro_scores: Optional[Dict[str, float]] = None
-) -> Dict[str, Any]:
+    vedastro_scores: dict[str, float] | None = None,
+) -> dict[str, Any]:
     """
     Process a batch of symbols efficiently.
 
@@ -423,12 +386,14 @@ async def process_symbols_batch(
     # Prepare symbol data
     symbol_data = []
     for symbol in symbols:
-        symbol_data.append({
-            "symbol": symbol,
-            "portfolio_value": portfolio_value,
-            "vedastro_score": vedastro_scores.get(symbol, 50) if vedastro_scores else 50,
-            "price_history": [100.0] * 20  # Placeholder, should be actual data
-        })
+        symbol_data.append(
+            {
+                "symbol": symbol,
+                "portfolio_value": portfolio_value,
+                "vedastro_score": vedastro_scores.get(symbol, 50) if vedastro_scores else 50,
+                "price_history": [100.0] * 20,  # Placeholder, should be actual data
+            }
+        )
 
     # Batch get consensus and position sizes
     consensus_results = await processor.batch_elemental_consensus(symbol_data)
@@ -439,7 +404,7 @@ async def process_symbols_batch(
     for i, symbol in enumerate(symbols):
         combined[symbol] = {
             "consensus": consensus_results[i] if i < len(consensus_results) else None,
-            "position_size": position_results[i] if i < len(position_results) else None
+            "position_size": position_results[i] if i < len(position_results) else None,
         }
 
     return combined

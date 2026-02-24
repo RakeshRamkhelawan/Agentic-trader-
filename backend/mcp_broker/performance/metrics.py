@@ -10,23 +10,24 @@ Provides:
 
 import asyncio
 import time
-from collections import defaultdict
+from collections.abc import Callable
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple
-from contextlib import contextmanager
+from typing import Any
 
 
 @dataclass
 class ToolMetrics:
     """Metrics for a single MCP tool."""
+
     tool_name: str
     call_count: int = 0
     total_time_seconds: float = 0.0
-    min_time_seconds: float = float('inf')
+    min_time_seconds: float = float("inf")
     max_time_seconds: float = 0.0
     errors: int = 0
-    last_called: Optional[datetime] = None
+    last_called: datetime | None = None
 
     @property
     def avg_time_seconds(self) -> float:
@@ -47,11 +48,12 @@ class ToolMetrics:
 @dataclass
 class BacktestMetrics:
     """Comprehensive backtest performance metrics."""
+
     backtest_id: str
     start_time: datetime = field(default_factory=datetime.now)
-    end_time: Optional[datetime] = None
-    symbols: List[str] = field(default_factory=list)
-    date_range: Dict[str, str] = field(default_factory=dict)
+    end_time: datetime | None = None
+    symbols: list[str] = field(default_factory=list)
+    date_range: dict[str, str] = field(default_factory=dict)
 
     # Timing
     total_time_seconds: float = 0.0
@@ -67,7 +69,7 @@ class BacktestMetrics:
     total_signals_generated: int = 0
 
     # Tool-specific metrics
-    tool_metrics: Dict[str, ToolMetrics] = field(default_factory=dict)
+    tool_metrics: dict[str, ToolMetrics] = field(default_factory=dict)
 
     # Cache metrics
     cache_hits: int = 0
@@ -82,50 +84,51 @@ class BacktestMetrics:
             return 0.0
         return self.cache_hits / total
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "backtest_id": self.backtest_id,
             "duration": {
                 "start": self.start_time.isoformat() if self.start_time else None,
                 "end": self.end_time.isoformat() if self.end_time else None,
-                "total_seconds": self.total_time_seconds
+                "total_seconds": self.total_time_seconds,
             },
             "scope": {
                 "symbols": self.symbols,
                 "date_range": self.date_range,
                 "total_days": self.total_days_processed,
-                "total_trades": self.total_trades_executed
+                "total_trades": self.total_trades_executed,
             },
             "timing_breakdown": {
                 "data_fetch": self.data_fetch_time_seconds,
                 "vedastro": self.vedastro_time_seconds,
                 "elemental": self.elemental_time_seconds,
                 "execution": self.execution_time_seconds,
-                "other": self.total_time_seconds - (
-                    self.data_fetch_time_seconds +
-                    self.vedastro_time_seconds +
-                    self.elemental_time_seconds +
-                    self.execution_time_seconds
-                )
+                "other": self.total_time_seconds
+                - (
+                    self.data_fetch_time_seconds
+                    + self.vedastro_time_seconds
+                    + self.elemental_time_seconds
+                    + self.execution_time_seconds
+                ),
             },
             "tools": {
                 name: {
                     "calls": m.call_count,
                     "avg_time_ms": m.avg_time_seconds * 1000,
-                    "min_time_ms": m.min_time_seconds * 1000 if m.min_time_seconds != float('inf') else 0,
+                    "min_time_ms": (
+                        m.min_time_seconds * 1000 if m.min_time_seconds != float("inf") else 0
+                    ),
                     "max_time_ms": m.max_time_seconds * 1000,
-                    "errors": m.errors
+                    "errors": m.errors,
                 }
                 for name, m in self.tool_metrics.items()
             },
             "cache": {
                 "hits": self.cache_hits,
                 "misses": self.cache_misses,
-                "hit_rate": self.get_cache_hit_rate()
+                "hit_rate": self.get_cache_hit_rate(),
             },
-            "memory": {
-                "peak_mb": self.peak_memory_mb
-            }
+            "memory": {"peak_mb": self.peak_memory_mb},
         }
 
 
@@ -142,10 +145,10 @@ class PerformanceMetricsCollector:
         metrics = collector.get_metrics()
     """
 
-    def __init__(self, backtest_id: Optional[str] = None):
+    def __init__(self, backtest_id: str | None = None):
         self.backtest_id = backtest_id or f"bt_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.metrics = BacktestMetrics(backtest_id=self.backtest_id)
-        self._active_timers: Dict[str, float] = {}
+        self._active_timers: dict[str, float] = {}
         self._lock = asyncio.Lock()
 
     @contextmanager
@@ -173,7 +176,7 @@ class PerformanceMetricsCollector:
             setattr(
                 self.metrics,
                 f"{section}_time_seconds",
-                getattr(self.metrics, f"{section}_time_seconds", 0) + duration
+                getattr(self.metrics, f"{section}_time_seconds", 0) + duration,
             )
 
     def _record_tool_time(self, tool_name: str, duration: float, error: bool = False) -> None:
@@ -208,17 +211,14 @@ class PerformanceMetricsCollector:
         async with self._lock:
             self.metrics.total_days_processed += 1
 
-    def set_symbols(self, symbols: List[str]) -> None:
+    def set_symbols(self, symbols: list[str]) -> None:
         """Set the symbols being processed."""
         self.metrics.symbols = symbols
         self.metrics.total_symbols_processed = len(symbols)
 
     def set_date_range(self, start: datetime, end: datetime) -> None:
         """Set the date range."""
-        self.metrics.date_range = {
-            "start": start.isoformat(),
-            "end": end.isoformat()
-        }
+        self.metrics.date_range = {"start": start.isoformat(), "end": end.isoformat()}
 
     def finalize(self) -> BacktestMetrics:
         """Finalize metrics collection."""
@@ -229,57 +229,59 @@ class PerformanceMetricsCollector:
             ).total_seconds()
         return self.metrics
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get current metrics as dictionary."""
         return self.metrics.to_dict()
 
-    def get_slowest_tools(self, n: int = 5) -> List[Tuple[str, float]]:
+    def get_slowest_tools(self, n: int = 5) -> list[tuple[str, float]]:
         """Get the N slowest tools by average time."""
         tools = [
-            (name, metrics.avg_time_seconds)
-            for name, metrics in self.metrics.tool_metrics.items()
+            (name, metrics.avg_time_seconds) for name, metrics in self.metrics.tool_metrics.items()
         ]
         return sorted(tools, key=lambda x: x[1], reverse=True)[:n]
 
-    def get_most_called_tools(self, n: int = 5) -> List[Tuple[str, int]]:
+    def get_most_called_tools(self, n: int = 5) -> list[tuple[str, int]]:
         """Get the N most frequently called tools."""
-        tools = [
-            (name, metrics.call_count)
-            for name, metrics in self.metrics.tool_metrics.items()
-        ]
+        tools = [(name, metrics.call_count) for name, metrics in self.metrics.tool_metrics.items()]
         return sorted(tools, key=lambda x: x[1], reverse=True)[:n]
 
-    def identify_bottlenecks(self) -> List[Dict[str, Any]]:
+    def identify_bottlenecks(self) -> list[dict[str, Any]]:
         """Identify performance bottlenecks."""
         bottlenecks = []
 
         # Check for slow tools
         for name, metrics in self.metrics.tool_metrics.items():
             if metrics.avg_time_seconds > 1.0:  # > 1 second
-                bottlenecks.append({
-                    "type": "slow_tool",
-                    "tool": name,
-                    "avg_time_seconds": metrics.avg_time_seconds,
-                    "call_count": metrics.call_count,
-                    "impact": metrics.avg_time_seconds * metrics.call_count
-                })
+                bottlenecks.append(
+                    {
+                        "type": "slow_tool",
+                        "tool": name,
+                        "avg_time_seconds": metrics.avg_time_seconds,
+                        "call_count": metrics.call_count,
+                        "impact": metrics.avg_time_seconds * metrics.call_count,
+                    }
+                )
 
             if metrics.errors > 0:
-                bottlenecks.append({
-                    "type": "error_prone_tool",
-                    "tool": name,
-                    "error_count": metrics.errors,
-                    "error_rate": metrics.errors / max(metrics.call_count, 1)
-                })
+                bottlenecks.append(
+                    {
+                        "type": "error_prone_tool",
+                        "tool": name,
+                        "error_count": metrics.errors,
+                        "error_rate": metrics.errors / max(metrics.call_count, 1),
+                    }
+                )
 
         # Check cache hit rate
         hit_rate = self.metrics.get_cache_hit_rate()
         if hit_rate < 0.5 and (self.metrics.cache_hits + self.metrics.cache_misses) > 100:
-            bottlenecks.append({
-                "type": "low_cache_hit_rate",
-                "hit_rate": hit_rate,
-                "suggestion": "Consider increasing cache TTL or improving cache keys"
-            })
+            bottlenecks.append(
+                {
+                    "type": "low_cache_hit_rate",
+                    "hit_rate": hit_rate,
+                    "suggestion": "Consider increasing cache TTL or improving cache keys",
+                }
+            )
 
         return sorted(bottlenecks, key=lambda x: x.get("impact", 0), reverse=True)
 
@@ -292,10 +294,10 @@ class BacktestProfiler:
     """
 
     def __init__(self):
-        self.collector: Optional[PerformanceMetricsCollector] = None
-        self._snapshots: List[Dict[str, Any]] = []
+        self.collector: PerformanceMetricsCollector | None = None
+        self._snapshots: list[dict[str, Any]] = []
 
-    def start_profiling(self, backtest_id: Optional[str] = None) -> PerformanceMetricsCollector:
+    def start_profiling(self, backtest_id: str | None = None) -> PerformanceMetricsCollector:
         """Start profiling a backtest."""
         self.collector = PerformanceMetricsCollector(backtest_id)
         return self.collector
@@ -311,7 +313,7 @@ class BacktestProfiler:
         if self.collector:
             self._snapshots.append(self.collector.get_metrics())
 
-    def generate_report(self) -> Dict[str, Any]:
+    def generate_report(self) -> dict[str, Any]:
         """Generate comprehensive performance report."""
         if not self.collector:
             return {"error": "No profiling data available"}
@@ -324,13 +326,22 @@ class BacktestProfiler:
                 "duration_seconds": metrics.total_time_seconds,
                 "symbols": len(metrics.symbols),
                 "trades": metrics.total_trades_executed,
-                "trades_per_second": metrics.total_trades_executed / max(metrics.total_time_seconds, 0.001)
+                "trades_per_second": metrics.total_trades_executed
+                / max(metrics.total_time_seconds, 0.001),
             },
             "timing_breakdown": {
-                "data_fetch_pct": metrics.data_fetch_time_seconds / max(metrics.total_time_seconds, 0.001) * 100,
-                "vedastro_pct": metrics.vedastro_time_seconds / max(metrics.total_time_seconds, 0.001) * 100,
-                "elemental_pct": metrics.elemental_time_seconds / max(metrics.total_time_seconds, 0.001) * 100,
-                "execution_pct": metrics.execution_time_seconds / max(metrics.total_time_seconds, 0.001) * 100
+                "data_fetch_pct": metrics.data_fetch_time_seconds
+                / max(metrics.total_time_seconds, 0.001)
+                * 100,
+                "vedastro_pct": metrics.vedastro_time_seconds
+                / max(metrics.total_time_seconds, 0.001)
+                * 100,
+                "elemental_pct": metrics.elemental_time_seconds
+                / max(metrics.total_time_seconds, 0.001)
+                * 100,
+                "execution_pct": metrics.execution_time_seconds
+                / max(metrics.total_time_seconds, 0.001)
+                * 100,
             },
             "top_slowest_tools": [
                 {"tool": name, "avg_ms": avg * 1000}
@@ -344,14 +355,14 @@ class BacktestProfiler:
             "cache_performance": {
                 "hit_rate": metrics.get_cache_hit_rate(),
                 "hits": metrics.cache_hits,
-                "misses": metrics.cache_misses
+                "misses": metrics.cache_misses,
             },
-            "recommendations": self._generate_recommendations(metrics)
+            "recommendations": self._generate_recommendations(metrics),
         }
 
         return report
 
-    def _generate_recommendations(self, metrics: BacktestMetrics) -> List[str]:
+    def _generate_recommendations(self, metrics: BacktestMetrics) -> list[str]:
         """Generate optimization recommendations."""
         recommendations = []
 
@@ -398,8 +409,10 @@ class BacktestProfiler:
 
 # Decorator for automatic metrics collection
 
+
 def instrumented_tool_call(metrics_collector: PerformanceMetricsCollector):
     """Decorator to automatically instrument MCP tool calls."""
+
     def decorator(func: Callable) -> Callable:
         async def wrapper(*args, **kwargs):
             # Extract tool name from function name
@@ -409,4 +422,5 @@ def instrumented_tool_call(metrics_collector: PerformanceMetricsCollector):
                 return await func(*args, **kwargs)
 
         return wrapper
+
     return decorator

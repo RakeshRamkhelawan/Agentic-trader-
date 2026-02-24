@@ -5,7 +5,6 @@ Provides FastAPI dependency-style decorators for role enforcement.
 """
 
 import logging
-from typing import List
 
 from fastapi import HTTPException, Request
 from fastapi.security import HTTPBearer
@@ -45,7 +44,7 @@ def require_role(role: str):
     return role_checker
 
 
-def require_any_role(roles: List[str]):
+def require_any_role(roles: list[str]):
     """
     FastAPI dependency to require any of the specified roles.
 
@@ -58,9 +57,7 @@ def require_any_role(roles: List[str]):
     async def role_checker(request: Request):
         user_roles = getattr(request.state, "roles", [])
         if not set(user_roles) & set(roles):
-            logger.warning(
-                f"Access denied: required any of {roles}, user has {user_roles}"
-            )
+            logger.warning(f"Access denied: required any of {roles}, user has {user_roles}")
             raise ForbiddenError(f"One of roles {roles} required")
         return True
 

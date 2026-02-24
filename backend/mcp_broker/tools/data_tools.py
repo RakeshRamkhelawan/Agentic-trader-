@@ -5,7 +5,7 @@ Market data en portfolio informatie.
 """
 
 import logging
-from typing import Dict, Any, List
+from typing import Any
 
 from mcp.server.fastmcp import Context
 
@@ -17,12 +17,8 @@ logger = logging.getLogger(__name__)
 @circuit_breaker(failure_threshold=10, timeout_seconds=30)
 @retry(max_attempts=3, initial_delay_ms=200)
 async def data_get_historical_prices(
-    symbol: str,
-    start_date: str,
-    end_date: str,
-    timeframe: str = "1d",
-    ctx: Context = None
-) -> Dict[str, Any]:
+    symbol: str, start_date: str, end_date: str, timeframe: str = "1d", ctx: Context = None
+) -> dict[str, Any]:
     """
     Get historical price data.
 
@@ -45,10 +41,7 @@ async def data_get_historical_prices(
 
         repo = MarketDataRepository()
         data = await repo.get_ohlcv(
-            symbol=symbol,
-            start_date=start_date,
-            end_date=end_date,
-            timeframe=timeframe
+            symbol=symbol, start_date=start_date, end_date=end_date, timeframe=timeframe
         )
 
         if ctx:
@@ -66,11 +59,11 @@ async def data_get_historical_prices(
                     "high": candle.high,
                     "low": candle.low,
                     "close": candle.close,
-                    "volume": candle.volume
+                    "volume": candle.volume,
                 }
                 for candle in data
             ],
-            "count": len(data)
+            "count": len(data),
         }
 
     except Exception as e:
@@ -87,8 +80,8 @@ async def data_get_historical_prices(
         base_price = 100.0
         mock_data = []
 
-        start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-        end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        start = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        end = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
         current = start
 
         while current <= end:
@@ -99,14 +92,16 @@ async def data_get_historical_prices(
             high_price = max(open_price, close_price) * (1 + random.random() * 0.01)
             low_price = min(open_price, close_price) * (1 - random.random() * 0.01)
 
-            mock_data.append({
-                "timestamp": current.isoformat(),
-                "open": round(open_price, 2),
-                "high": round(high_price, 2),
-                "low": round(low_price, 2),
-                "close": round(close_price, 2),
-                "volume": int(random.random() * 1000000)
-            })
+            mock_data.append(
+                {
+                    "timestamp": current.isoformat(),
+                    "open": round(open_price, 2),
+                    "high": round(high_price, 2),
+                    "low": round(low_price, 2),
+                    "close": round(close_price, 2),
+                    "volume": int(random.random() * 1000000),
+                }
+            )
 
             base_price = close_price
             current += timedelta(days=1)
@@ -118,15 +113,12 @@ async def data_get_historical_prices(
             "end_date": end_date,
             "data": mock_data,
             "count": len(mock_data),
-            "note": "Mock data for testing"
+            "note": "Mock data for testing",
         }
 
 
 @circuit_breaker(failure_threshold=5, timeout_seconds=10)
-async def data_get_portfolio_status(
-    account_id: str,
-    ctx: Context = None
-) -> Dict[str, Any]:
+async def data_get_portfolio_status(account_id: str, ctx: Context = None) -> dict[str, Any]:
     """
     Get current portfolio status.
 
@@ -158,14 +150,14 @@ async def data_get_portfolio_status(
                     "entry_price": pos.entry_price,
                     "current_price": pos.current_price,
                     "unrealized_pnl": pos.unrealized_pnl,
-                    "unrealized_pnl_pct": pos.unrealized_pnl_pct
+                    "unrealized_pnl_pct": pos.unrealized_pnl_pct,
                 }
                 for pos in portfolio.positions
             ],
             "daily_pnl": portfolio.daily_pnl,
             "total_pnl": portfolio.total_pnl,
             "margin_used": portfolio.margin_used,
-            "margin_available": portfolio.margin_available
+            "margin_available": portfolio.margin_available,
         }
 
     except Exception as e:
@@ -179,15 +171,12 @@ async def data_get_portfolio_status(
             "open_positions": [],
             "daily_pnl": 0.0,
             "total_pnl": 0.0,
-            "note": "Mock portfolio for testing"
+            "note": "Mock portfolio for testing",
         }
 
 
 @circuit_breaker(failure_threshold=5, timeout_seconds=10)
-async def data_get_market_regime(
-    symbol: str,
-    ctx: Context = None
-) -> Dict[str, Any]:
+async def data_get_market_regime(symbol: str, ctx: Context = None) -> dict[str, Any]:
     """
     Get current market regime for a symbol.
 
@@ -213,7 +202,7 @@ async def data_get_market_regime(
             start_date=(datetime.utcnow() - timedelta(days=30)).isoformat(),
             end_date=datetime.utcnow().isoformat(),
             timeframe="1d",
-            ctx=ctx
+            ctx=ctx,
         )
 
         prices = [candle["close"] for candle in prices_result["data"]]
@@ -224,7 +213,7 @@ async def data_get_market_regime(
                 "regime": "unknown",
                 "trend": "neutral",
                 "volatility": "unknown",
-                "confidence": 0.0
+                "confidence": 0.0,
             }
 
         # Calculate trend
@@ -233,7 +222,7 @@ async def data_get_market_regime(
         trend = "bullish" if current_price > sma_20 else "bearish"
 
         # Calculate volatility
-        returns = [(prices[i] - prices[i-1]) / prices[i-1] for i in range(1, len(prices))]
+        returns = [(prices[i] - prices[i - 1]) / prices[i - 1] for i in range(1, len(prices))]
         volatility = sum(r**2 for r in returns) / len(returns) ** 0.5
 
         vol_label = "low"
@@ -250,7 +239,7 @@ async def data_get_market_regime(
             "volatility_value": volatility,
             "sma_20": sma_20,
             "current_price": current_price,
-            "confidence": 0.7
+            "confidence": 0.7,
         }
 
     except Exception as e:
@@ -260,5 +249,5 @@ async def data_get_market_regime(
             "regime": "unknown",
             "trend": "neutral",
             "volatility": "unknown",
-            "error": str(e)
+            "error": str(e),
         }

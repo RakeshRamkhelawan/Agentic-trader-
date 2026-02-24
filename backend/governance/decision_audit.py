@@ -6,7 +6,7 @@ Voor compliance, debugging, en post-mortem analysis.
 
 import logging
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sqlalchemy import JSON, Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,10 +72,7 @@ class DecisionAuditLog(Base):
     )
 
     def __repr__(self):
-        return (
-            f"<DecisionAuditLog {self.trace_id}: "
-            f"{self.symbol} {self.decision_summary}>"
-        )
+        return f"<DecisionAuditLog {self.trace_id}: " f"{self.symbol} {self.decision_summary}>"
 
 
 class AuditLogger:
@@ -96,11 +93,11 @@ class AuditLogger:
         self,
         trace_id: str,
         symbol: str,
-        observation: Optional[Dict[str, Any]] = None,
-        orientation: Optional[Dict[str, Any]] = None,
-        proposal: Optional[Dict[str, Any]] = None,
-        risk_assessment: Optional[Dict[str, Any]] = None,
-        execution: Optional[Dict[str, Any]] = None,
+        observation: dict[str, Any] | None = None,
+        orientation: dict[str, Any] | None = None,
+        proposal: dict[str, Any] | None = None,
+        risk_assessment: dict[str, Any] | None = None,
+        execution: dict[str, Any] | None = None,
         decision_summary: str = "",
         trading_mode: str = "notify_only",
         strategy_id: str = "unknown",
@@ -136,9 +133,7 @@ class AuditLogger:
 
             risk_decision = risk_assessment.get("decision") if risk_assessment else None
             risk_score = risk_assessment.get("risk_score") if risk_assessment else None
-            risk_rationale = (
-                risk_assessment.get("rationale") if risk_assessment else None
-            )
+            risk_rationale = risk_assessment.get("rationale") if risk_assessment else None
 
             execution_status = execution.get("status") if execution else None
 
@@ -179,7 +174,7 @@ class AuditLogger:
             await self.db_session.rollback()
             raise
 
-    async def get_by_trace_id(self, trace_id: str) -> Optional[DecisionAuditLog]:
+    async def get_by_trace_id(self, trace_id: str) -> DecisionAuditLog | None:
         """
         Retrieve audit log by trace ID.
 
@@ -195,8 +190,8 @@ class AuditLogger:
         return result.scalar_one_or_none()
 
     async def get_recent(
-        self, symbol: Optional[str] = None, limit: int = 100
-    ) -> List[DecisionAuditLog]:
+        self, symbol: str | None = None, limit: int = 100
+    ) -> list[DecisionAuditLog]:
         """
         Get recente audit logs.
 
@@ -207,11 +202,7 @@ class AuditLogger:
         Returns:
             List van DecisionAuditLog records
         """
-        query = (
-            select(DecisionAuditLog)
-            .order_by(DecisionAuditLog.timestamp.desc())
-            .limit(limit)
-        )
+        query = select(DecisionAuditLog).order_by(DecisionAuditLog.timestamp.desc()).limit(limit)
 
         if symbol:
             query = query.where(DecisionAuditLog.symbol == symbol)
@@ -219,7 +210,7 @@ class AuditLogger:
         result = await self.db_session.execute(query)
         return list(result.scalars().all())
 
-    async def get_statistics(self, symbol: Optional[str] = None) -> Dict[str, Any]:
+    async def get_statistics(self, symbol: str | None = None) -> dict[str, Any]:
         """
         Get audit statistics.
 

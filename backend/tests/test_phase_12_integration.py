@@ -30,16 +30,18 @@ import sys
 import time
 from pathlib import Path
 from threading import Thread
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
 # Add backend to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from orchestration.phase_12_real_agents import (Phase12RealAgentConfig,
-                                                Phase12RealAgentCoordinator,
-                                                RealAgentLoader)
+from orchestration.phase_12_real_agents import (
+    Phase12RealAgentConfig,
+    Phase12RealAgentCoordinator,
+    RealAgentLoader,
+)
 
 # ============================================================================
 # MOCK AGENT FOR FALLBACK
@@ -54,7 +56,7 @@ class MockAgent:
         self.action = action
         self.confidence = confidence
 
-    def analyze(self) -> Dict[str, Any]:
+    def analyze(self) -> dict[str, Any]:
         """Return mock decision."""
         return {
             "action": self.action,
@@ -410,9 +412,7 @@ class TestPhase12MarketRegimeAgentRealIntegration:
         assert isinstance(decision["reasoning"], str)
 
     @pytest.mark.unit
-    def test_real_market_regime_agent_multiple_executions(
-        self, real_market_regime_agent
-    ):
+    def test_real_market_regime_agent_multiple_executions(self, real_market_regime_agent):
         """
         Execute real MarketRegimeAgent multiple times and verify variation.
 

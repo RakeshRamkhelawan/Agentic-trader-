@@ -8,10 +8,8 @@ Endpoints:
 import asyncio
 import logging
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.websocket_manager import ws_manager
 
@@ -20,7 +18,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-async def handle_websocket_connection(websocket: WebSocket, token: Optional[str] = None):
+async def handle_websocket_connection(websocket: WebSocket, token: str | None = None):
     """
     Handle WebSocket connection lifecycle.
     Separated from endpoint for better error handling.
@@ -55,15 +53,12 @@ async def handle_websocket_connection(websocket: WebSocket, token: Optional[str]
         while True:
             try:
                 # Receive message with timeout for heartbeat
-                data = await asyncio.wait_for(
-                    websocket.receive_json(),
-                    timeout=60.0
-                )
+                data = await asyncio.wait_for(websocket.receive_json(), timeout=60.0)
 
                 # Handle the message
                 await ws_manager.handle_client_message(connection_id, data)
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Send ping to keep connection alive
                 await ws_manager.send_message(connection_id, {"type": "ping"})
 
@@ -76,7 +71,7 @@ async def handle_websocket_connection(websocket: WebSocket, token: Optional[str]
 
 
 @router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, token: Optional[str] = Query(None)):
+async def websocket_endpoint(websocket: WebSocket, token: str | None = Query(None)):
     """
     Main WebSocket endpoint for real-time trading data.
 

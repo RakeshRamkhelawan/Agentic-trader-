@@ -3,7 +3,7 @@ Enhanced Tattva Orchestrator with Full VedAstro Integration
 
 Integrates all Vedic astrology features:
 - Ashtakavarga
-- Vimshottari Dasha  
+- Vimshottari Dasha
 - Yogas
 - Avastas
 - Sahams
@@ -16,14 +16,18 @@ Integrates all Vedic astrology features:
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .advanced_features import (AdvancedVedAstroFeatures, Avasta, MuhurthaData,
-                                PanchaPakshiData, Yoga)
+from .advanced_features import (
+    AdvancedVedAstroFeatures,
+    Avasta,
+    MuhurthaData,
+    PanchaPakshiData,
+    Yoga,
+)
 from .connector import VedAstroConfig
 from .enhanced_connector import EnhancedVedAstroConnector
-from .trading_signals import (AgentPromptBuilder, TradingSignal,
-                              TradingSignalGenerator)
+from .trading_signals import AgentPromptBuilder, TradingSignal, TradingSignalGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -36,18 +40,18 @@ class CompleteAstroAnalysis:
     timestamp: str
 
     # Core data
-    kundli: Dict[str, Any]
-    transits: Dict[str, Any]
+    kundli: dict[str, Any]
+    transits: dict[str, Any]
 
     # Advanced features
     dasha: Any
-    ashtakavarga: Dict[str, Any]
-    yogas: List[Yoga]
-    avastas: Dict[str, Avasta]
-    sahams: Dict[str, float]
-    pancha_pakshi: Optional[PanchaPakshiData]
-    muhurtha: Optional[MuhurthaData]
-    vargas: Dict[str, Any]
+    ashtakavarga: dict[str, Any]
+    yogas: list[Yoga]
+    avastas: dict[str, Avasta]
+    sahams: dict[str, float]
+    pancha_pakshi: PanchaPakshiData | None
+    muhurtha: MuhurthaData | None
+    vargas: dict[str, Any]
 
     # Trading signal
     trading_signal: TradingSignal
@@ -82,7 +86,7 @@ class EnhancedAstroOrchestrator:
         "QQQ": datetime(1999, 3, 10, 9, 30),
     }
 
-    def __init__(self, config: Optional[VedAstroConfig] = None):
+    def __init__(self, config: VedAstroConfig | None = None):
         """Initialize orchestrator with all components."""
         self.config = config or VedAstroConfig()
 
@@ -93,18 +97,16 @@ class EnhancedAstroOrchestrator:
         self.prompt_builder = AgentPromptBuilder()
 
         # Caches
-        self._kundli_cache: Dict[str, Dict] = {}
-        self._analysis_cache: Dict[str, CompleteAstroAnalysis] = {}
+        self._kundli_cache: dict[str, dict] = {}
+        self._analysis_cache: dict[str, CompleteAstroAnalysis] = {}
 
-        logger.info(
-            "Enhanced Astro Orchestrator initialized with full VedAstro features"
-        )
+        logger.info("Enhanced Astro Orchestrator initialized with full VedAstro features")
 
     async def analyze_asset(
         self,
         symbol: str,
-        current_price: Optional[float] = None,
-        current_date: Optional[datetime] = None,
+        current_price: float | None = None,
+        current_date: datetime | None = None,
     ) -> CompleteAstroAnalysis:
         """
         Perform complete astrological analysis of an asset.
@@ -135,12 +137,8 @@ class EnhancedAstroOrchestrator:
         sahams = self.vedastro.calculate_all_sahams(kundli)
 
         # 5. Pancha Pakshi
-        moon_nakshatra = (
-            kundli.get("planets", {}).get("Moon", {}).get("nakshatra", "Ashwini")
-        )
-        pancha_pakshi = self.advanced.calculate_pancha_pakshi(
-            moon_nakshatra, current_date
-        )
+        moon_nakshatra = kundli.get("planets", {}).get("Moon", {}).get("nakshatra", "Ashwini")
+        pancha_pakshi = self.advanced.calculate_pancha_pakshi(moon_nakshatra, current_date)
 
         # 6. Muhurtha
         muhurtha = self.advanced.calculate_muhurtha(current_date, kundli)
@@ -195,7 +193,7 @@ class EnhancedAstroOrchestrator:
 
         return analysis
 
-    async def _get_kundli(self, symbol: str) -> Dict[str, Any]:
+    async def _get_kundli(self, symbol: str) -> dict[str, Any]:
         """Get Kundli from cache or calculate."""
         if symbol in self._kundli_cache:
             return self._kundli_cache[symbol]
@@ -215,7 +213,7 @@ class EnhancedAstroOrchestrator:
         self._kundli_cache[symbol] = kundli
         return kundli
 
-    def get_quick_signal(self, symbol: str) -> Dict[str, Any]:
+    def get_quick_signal(self, symbol: str) -> dict[str, Any]:
         """
         Get quick trading signal without full analysis.
         Uses cached data if available.
@@ -237,7 +235,7 @@ class EnhancedAstroOrchestrator:
 
         return {"error": "No cached analysis. Run analyze_asset() first."}
 
-    def compare_assets(self, symbols: List[str]) -> Dict[str, Any]:
+    def compare_assets(self, symbols: list[str]) -> dict[str, Any]:
         """
         Compare multiple assets and rank by astrological strength.
         """
@@ -254,12 +252,10 @@ class EnhancedAstroOrchestrator:
                         "symbol": symbol,
                         "score": analysis.overall_score,
                         "signal": analysis.trading_signal.signal.value,
-                        "dasha_lord": analysis.dasha.mahadasha_lord
-                        if analysis.dasha
-                        else "Unknown",
-                        "top_yoga": analysis.yogas[0].name
-                        if analysis.yogas
-                        else "None",
+                        "dasha_lord": (
+                            analysis.dasha.mahadasha_lord if analysis.dasha else "Unknown"
+                        ),
+                        "top_yoga": analysis.yogas[0].name if analysis.yogas else "None",
                     }
                 )
 
@@ -272,7 +268,7 @@ class EnhancedAstroOrchestrator:
             "best_score": results[0]["score"] if results else 0,
         }
 
-    def get_market_timing(self, symbol: str) -> Dict[str, Any]:
+    def get_market_timing(self, symbol: str) -> dict[str, Any]:
         """
         Get detailed market timing information.
         """
@@ -288,28 +284,24 @@ class EnhancedAstroOrchestrator:
             "symbol": symbol,
             "current_dasha": {
                 "mahadasha": analysis.dasha.mahadasha_lord if analysis.dasha else None,
-                "antardasha": analysis.dasha.antardasha_lord
-                if analysis.dasha
-                else None,
-                "pratyantardasha": analysis.dasha.pratyantardasha_lord
-                if analysis.dasha
-                else None,
+                "antardasha": analysis.dasha.antardasha_lord if analysis.dasha else None,
+                "pratyantardasha": analysis.dasha.pratyantardasha_lord if analysis.dasha else None,
             },
             "favorable_periods": {
                 "pancha_pakshi": {
-                    "activity": analysis.pancha_pakshi.current_activity
-                    if analysis.pancha_pakshi
-                    else None,
-                    "is_favorable": analysis.pancha_pakshi.is_favorable_period
-                    if analysis.pancha_pakshi
-                    else False,
+                    "activity": (
+                        analysis.pancha_pakshi.current_activity if analysis.pancha_pakshi else None
+                    ),
+                    "is_favorable": (
+                        analysis.pancha_pakshi.is_favorable_period
+                        if analysis.pancha_pakshi
+                        else False
+                    ),
                 },
                 "muhurtha": {
                     "tithi": analysis.muhurtha.tithi if analysis.muhurtha else None,
                     "rating": analysis.muhurtha.rating if analysis.muhurtha else 0,
-                    "is_favorable": analysis.muhurtha.is_favorable
-                    if analysis.muhurtha
-                    else False,
+                    "is_favorable": analysis.muhurtha.is_favorable if analysis.muhurtha else False,
                 },
             },
             "ashtakavarga": {
@@ -318,7 +310,7 @@ class EnhancedAstroOrchestrator:
             },
         }
 
-    def get_yoga_report(self, symbol: str) -> Dict[str, Any]:
+    def get_yoga_report(self, symbol: str) -> dict[str, Any]:
         """
         Get detailed Yoga report for asset.
         """
@@ -348,9 +340,7 @@ class EnhancedAstroOrchestrator:
             "strong_yogas": len([y for y in analysis.yogas if y.strength > 0.7]),
             "yogas": yoga_list,
             "top_wealth_yogas": [
-                y.name
-                for y in analysis.yogas
-                if "Dhana" in y.name or "Lakshmi" in y.name
+                y.name for y in analysis.yogas if "Dhana" in y.name or "Lakshmi" in y.name
             ],
         }
 
@@ -360,7 +350,7 @@ class EnhancedAstroOrchestrator:
         self._analysis_cache.clear()
         logger.info("Orchestrator cache cleared")
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Get orchestrator statistics."""
         return {
             "kundli_cached": len(self._kundli_cache),
@@ -370,9 +360,7 @@ class EnhancedAstroOrchestrator:
 
 
 # Convenience function for quick usage
-async def get_trading_recommendation(
-    symbol: str, current_price: Optional[float] = None
-) -> str:
+async def get_trading_recommendation(symbol: str, current_price: float | None = None) -> str:
     """
     Quick function to get trading recommendation.
 

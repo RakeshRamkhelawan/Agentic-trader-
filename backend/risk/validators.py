@@ -1,6 +1,5 @@
 import logging
 from datetime import date
-from typing import Optional
 
 from backend.schemas.orders import OrderRequest
 
@@ -28,7 +27,7 @@ class RiskValidator:
         self.max_daily_loss = max_daily_loss
         self.kill_switch_active = False
         self._daily_pnl: float = 0.0
-        self._pnl_date: Optional[date] = None
+        self._pnl_date: date | None = None
 
     def activate_kill_switch(self):
         self.kill_switch_active = True
@@ -79,8 +78,7 @@ class RiskValidator:
 
         if order_value > self.max_order_size:
             raise RiskViolationError(
-                "Order value %.2f exceeds limit %.2f"
-                % (order_value, self.max_order_size)
+                "Order value %.2f exceeds limit %.2f" % (order_value, self.max_order_size)
             )
 
         # Daily loss check

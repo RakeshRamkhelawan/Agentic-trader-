@@ -4,8 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps import get_current_tenant_id, get_db
 from backend.services.performance_analytics import PerformanceAnalytics
-from backend.services.trading_service import (TradingService,
-                                              get_trading_service)
+from backend.services.trading_service import TradingService, get_trading_service
 
 router = APIRouter(tags=["analytics"])
 

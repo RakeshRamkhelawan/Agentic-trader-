@@ -11,7 +11,6 @@ The speed of this calculation determines how quickly we can respond to danger.
 """
 
 import logging
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -221,7 +220,7 @@ def _calculate_sharpe_jit(returns: np.ndarray, risk_free_rate: float = 0.0) -> f
 
 
 @njit(cache=True, fastmath=True)
-def _calculate_max_drawdown_jit(returns: np.ndarray) -> Tuple[float, int, int]:
+def _calculate_max_drawdown_jit(returns: np.ndarray) -> tuple[float, int, int]:
     """
     JIT-compiled maximum drawdown calculation.
 
@@ -389,9 +388,7 @@ class VaRCalculatorOptimized:
 
         return returns_array
 
-    def calculate_historical_var(
-        self, returns: pd.Series, confidence_level: float = 0.95
-    ) -> float:
+    def calculate_historical_var(self, returns: pd.Series, confidence_level: float = 0.95) -> float:
         """
         Calculate Historical VaR using JIT-compiled function.
 
@@ -411,9 +408,7 @@ class VaRCalculatorOptimized:
         """
         # Input validation (Python side)
         if not 0 < confidence_level < 1:
-            raise VaRCalculationError(
-                "Confidence level must be between 0 and 1 (exclusive)."
-            )
+            raise VaRCalculationError("Confidence level must be between 0 and 1 (exclusive).")
 
         # Convert and validate input
         returns_array = self._validate_returns(returns)
@@ -428,9 +423,7 @@ class VaRCalculatorOptimized:
 
         return float(var)
 
-    def calculate_cvar(
-        self, returns: pd.Series, confidence_level: float = 0.95
-    ) -> float:
+    def calculate_cvar(self, returns: pd.Series, confidence_level: float = 0.95) -> float:
         """
         Calculate Conditional VaR (Expected Shortfall).
 
@@ -453,9 +446,7 @@ class VaRCalculatorOptimized:
         returns_array = self._validate_returns(returns)
         cvar = _calculate_cvar_jit(returns_array, float(confidence_level))
 
-        self.logger.info(
-            f"Calculated CVaR at {confidence_level*100}% confidence: {cvar:.4f}"
-        )
+        self.logger.info(f"Calculated CVaR at {confidence_level*100}% confidence: {cvar:.4f}")
 
         return float(cvar)
 

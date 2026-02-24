@@ -3,7 +3,7 @@ Agent Router - Categorizes agents by latency requirements and routes to optimal 
 
 Agent Categories:
 - HOT PATH (Real-time): Risk checks, order validation, execution (< 100ms)
-- FAST PATH: UI updates, quick sentiment (< 500ms)  
+- FAST PATH: UI updates, quick sentiment (< 500ms)
 - STANDARD PATH: Analysis, research, reports (> 2s) - USES OLLAMA GPU
 - BATCH PATH: Backtesting, bulk analysis - USES OLLAMA GPU
 """
@@ -11,7 +11,7 @@ Agent Categories:
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any
 
 from backend.llm.gateway import LatencyRequirement, LLMGateway, LLMRequest
 
@@ -20,20 +20,22 @@ logger = logging.getLogger(__name__)
 
 class AgentCategory(Enum):
     """Agent execution categories."""
-    HOT_PATH = "hot_path"           # Real-time trading decisions
-    FAST_PATH = "fast_path"         # Quick responses
-    STANDARD_PATH = "standard_path" # Analysis (Ollama)
-    BATCH_PATH = "batch_path"       # Bulk processing (Ollama)
+
+    HOT_PATH = "hot_path"  # Real-time trading decisions
+    FAST_PATH = "fast_path"  # Quick responses
+    STANDARD_PATH = "standard_path"  # Analysis (Ollama)
+    BATCH_PATH = "batch_path"  # Bulk processing (Ollama)
 
 
 @dataclass
 class AgentProfile:
     """Agent routing profile."""
+
     agent_id: str
     name: str
     category: AgentCategory
     default_latency: LatencyRequirement
-    preferred_ollama_model: Optional[str] = None
+    preferred_ollama_model: str | None = None
     can_use_cloud: bool = True
     can_use_local: bool = True
     batch_size: int = 1  # For batch processing
@@ -42,12 +44,12 @@ class AgentProfile:
 class AgentRouter:
     """
     Routes agent requests to optimal LLM path.
-    
+
     Design Philosophy:
     - Hot Path: Cloud APIs (consistent low latency)
     - Standard/Batch: Ollama GPU (cost-free, unlimited)
     """
-    
+
     # Predefined agent profiles
     DEFAULT_PROFILES = {
         # Hot Path Agents - Fast cloud APIs
@@ -60,14 +62,13 @@ class AgentRouter:
             can_use_local=False,  # Too slow for risk checks
         ),
         "execution_v1": AgentProfile(
-            agent_id="execution_v1", 
+            agent_id="execution_v1",
             name="Execution Agent",
             category=AgentCategory.HOT_PATH,
             default_latency=LatencyRequirement.REALTIME,
             can_use_cloud=True,
             can_use_local=False,
         ),
-        
         # Fast Path Agents - Cloud preferred, local fallback
         "news_v1": AgentProfile(
             agent_id="news_v1",
@@ -85,7 +86,6 @@ class AgentRouter:
             can_use_cloud=True,
             can_use_local=True,
         ),
-        
         # Standard Path - Ollama GPU optimal (RTX 4090 8GB)
         "sentiment_v1": AgentProfile(
             agent_id="sentiment_v1",
@@ -114,7 +114,6 @@ class AgentRouter:
             can_use_cloud=True,
             can_use_local=True,
         ),
-        
         # Batch Path - Ollama GPU, bulk processing (RTX 4090 8GB)
         "asset_discovery_v1": AgentProfile(
             agent_id="asset_discovery_v1",
@@ -137,25 +136,25 @@ class AgentRouter:
             batch_size=50,
         ),
     }
-    
+
     def __init__(self, llm_gateway: LLMGateway):
         self.gateway = llm_gateway
-        self.profiles: Dict[str, AgentProfile] = dict(self.DEFAULT_PROFILES)
-        
+        self.profiles: dict[str, AgentProfile] = dict(self.DEFAULT_PROFILES)
+
     def register_agent(self, profile: AgentProfile):
         """Register or update agent profile."""
         self.profiles[profile.agent_id] = profile
         logger.info(f"Registered agent {profile.name} as {profile.category.value}")
-        
-    def get_profile(self, agent_id: str) -> Optional[AgentProfile]:
+
+    def get_profile(self, agent_id: str) -> AgentProfile | None:
         """Get agent routing profile."""
         return self.profiles.get(agent_id)
-        
+
     async def route_request(
         self,
         agent_id: str,
         prompt: str,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         temperature: float = 0.3,
         max_tokens: int = 500,
         json_mode: bool = False,
@@ -174,7 +173,7 @@ class AgentRouter:
                 can_use_cloud=True,
                 can_use_local=True,
             )
-            
+
         # Determine optimal provider based on profile
         force_provider = None
         if not profile.can_use_cloud and profile.can_use_local:
@@ -182,7 +181,7 @@ class AgentRouter:
         elif not profile.can_use_local and profile.can_use_cloud:
             # Use cloud (first available)
             force_provider = None  # Let gateway decide
-            
+
         request = LLMRequest(
             prompt=prompt,
             latency_requirement=profile.default_latency,
@@ -191,29 +190,28 @@ class AgentRouter:
             max_tokens=max_tokens,
             json_mode=json_mode,
         )
-        
+
         response = await self.gateway.generate(request, force_provider)
-        
+
         logger.debug(
-            f"Agent {agent_id}: {response.provider.value} "
-            f"({response.latency_ms:.0f}ms)"
+            f"Agent {agent_id}: {response.provider.value} " f"({response.latency_ms:.0f}ms)"
         )
-        
+
         return response.content
-        
+
     async def route_batch(
         self,
         agent_id: str,
-        prompts: List[str],
-        system_prompt: Optional[str] = None,
-    ) -> List[str]:
+        prompts: list[str],
+        system_prompt: str | None = None,
+    ) -> list[str]:
         """
         Batch route requests (ideal for Ollama GPU batching).
         """
         profile = self.get_profile(agent_id)
         if not profile:
             profile = self.profiles.get("backtest_v1")  # Use batch defaults
-            
+
         requests = [
             LLMRequest(
                 prompt=prompt,
@@ -222,12 +220,11 @@ class AgentRouter:
             )
             for prompt in prompts
         ]
-        
+
         responses = await self.gateway.batch_generate(
-            requests,
-            max_concurrency=profile.batch_size if profile else 4
+            requests, max_concurrency=profile.batch_size if profile else 4
         )
-        
+
         results = []
         for resp in responses:
             if isinstance(resp, Exception):
@@ -235,15 +232,15 @@ class AgentRouter:
                 results.append("")
             else:
                 results.append(resp.content)
-                
+
         return results
-        
-    def get_agent_stats(self, agent_id: str) -> Dict[str, Any]:
+
+    def get_agent_stats(self, agent_id: str) -> dict[str, Any]:
         """Get routing statistics for agent."""
         profile = self.get_profile(agent_id)
         if not profile:
             return {}
-            
+
         return {
             "agent_id": agent_id,
             "category": profile.category.value,
@@ -252,8 +249,8 @@ class AgentRouter:
             "can_use_local": profile.can_use_local,
             "preferred_model": profile.preferred_ollama_model,
         }
-        
-    def get_category_summary(self) -> Dict[str, List[str]]:
+
+    def get_category_summary(self) -> dict[str, list[str]]:
         """Get summary of agents by category."""
         summary = {
             "hot_path": [],

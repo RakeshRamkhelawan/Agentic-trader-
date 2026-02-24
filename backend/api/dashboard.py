@@ -35,8 +35,9 @@ import statistics
 import threading
 from abc import ABC, abstractmethod
 from collections import deque
-from datetime import datetime, timedelta, timezone
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from collections.abc import AsyncGenerator
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -50,17 +51,17 @@ class MetricsProvider(ABC):
     """Abstraction for metrics from Phase 15 Hardware Metrics."""
 
     @abstractmethod
-    async def get_current_metrics(self) -> Dict[str, Any]:
+    async def get_current_metrics(self) -> dict[str, Any]:
         """Get current hardware and coherence metrics."""
         pass
 
     @abstractmethod
-    async def get_metrics_history(self, minutes: int) -> List[Dict[str, Any]]:
+    async def get_metrics_history(self, minutes: int) -> list[dict[str, Any]]:
         """Get historical metrics for the last N minutes."""
         pass
 
     @abstractmethod
-    async def subscribe_metrics(self) -> AsyncGenerator[Dict[str, Any], None]:
+    async def subscribe_metrics(self) -> AsyncGenerator[dict[str, Any]]:
         """Stream metrics updates in real-time."""
         pass
 
@@ -85,10 +86,10 @@ class RealMetricsProvider(MetricsProvider):
         self._subscribers = []
         self._last_sample_time = None
 
-    async def get_current_metrics(self) -> Dict[str, Any]:
+    async def get_current_metrics(self) -> dict[str, Any]:
         """Get latest metrics from Phase 15 MetricsIntegration."""
         with self._lock:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             metrics = {
                 "timestamp": now.isoformat(),
                 "hardware": self._get_hardware_metrics(),
@@ -100,7 +101,7 @@ class RealMetricsProvider(MetricsProvider):
             self._last_sample_time = now
             return metrics
 
-    def _get_hardware_metrics(self) -> Dict[str, Any]:
+    def _get_hardware_metrics(self) -> dict[str, Any]:
         """Extract hardware metrics from Phase 15."""
         try:
             return self.metrics_integration.get_current_metrics()
@@ -113,7 +114,7 @@ class RealMetricsProvider(MetricsProvider):
                 "network_latency_ms": 0.0,
             }
 
-    def _get_coherence_state(self) -> Dict[str, float]:
+    def _get_coherence_state(self) -> dict[str, float]:
         """Extract coherence from Phase 15."""
         try:
             return self.metrics_integration.get_coherence_state()
@@ -121,7 +122,7 @@ class RealMetricsProvider(MetricsProvider):
             logger.error(f"Error getting coherence: {e}")
             return {f"L{i}": 0.7 for i in range(32, 37)}
 
-    def _compute_layer_dynamics(self) -> Dict[str, Any]:
+    def _compute_layer_dynamics(self) -> dict[str, Any]:
         """Compute derived metrics from coherence state."""
         coherence = self._get_coherence_state()
         layer_values = [coherence.get(f"L{i}", 0.7) for i in range(32, 37)]
@@ -138,11 +139,7 @@ class RealMetricsProvider(MetricsProvider):
         if len(self.history) < 2:
             return 1.0
 
-        recent = (
-            list(self.history)[-100:]
-            if len(self.history) >= 100
-            else list(self.history)
-        )
+        recent = list(self.history)[-100:] if len(self.history) >= 100 else list(self.history)
 
         if len(recent) < 2:
             return 1.0
@@ -159,7 +156,7 @@ class RealMetricsProvider(MetricsProvider):
             return max(0.0, min(1.0, 1 - (variance / 0.25)))
         return 1.0
 
-    def _calculate_trends(self) -> Dict[str, str]:
+    def _calculate_trends(self) -> dict[str, str]:
         """Identify trending layers."""
         if len(self.history) < 10:
             return {f"L{i}": "INSUFFICIENT_DATA" for i in range(32, 37)}
@@ -182,7 +179,7 @@ class RealMetricsProvider(MetricsProvider):
 
         return trends
 
-    def _detect_anomalies(self, layer_values: List[float]) -> Dict[str, float]:
+    def _detect_anomalies(self, layer_values: list[float]) -> dict[str, float]:
         """Detect anomalous values using Z-score."""
         if len(layer_values) < 2:
             return {f"L{i}": 0.0 for i in range(32, 37)}
@@ -208,32 +205,22 @@ class RealMetricsProvider(MetricsProvider):
         disk_load = min(1.0, hw.get("disk_percent", 0.0) / 100.0)
 
         # Low coherence = high load (inverse relationship)
-        avg_coherence = statistics.mean(
-            [coherence.get(f"L{i}", 0.7) for i in range(32, 37)]
-        )
-        coherence_load = max(
-            0.0, (1.0 - avg_coherence) / 0.3
-        )  # 0.7 = 0 load, 0.4 = 1 load
+        avg_coherence = statistics.mean([coherence.get(f"L{i}", 0.7) for i in range(32, 37)])
+        coherence_load = max(0.0, (1.0 - avg_coherence) / 0.3)  # 0.7 = 0 load, 0.4 = 1 load
         coherence_load = min(1.0, coherence_load)
 
-        overall = (
-            cpu_load * 0.4 + mem_load * 0.3 + disk_load * 0.2 + coherence_load * 0.1
-        )
+        overall = cpu_load * 0.4 + mem_load * 0.3 + disk_load * 0.2 + coherence_load * 0.1
         return min(1.0, overall)
 
-    async def get_metrics_history(self, minutes: int) -> List[Dict[str, Any]]:
+    async def get_metrics_history(self, minutes: int) -> list[dict[str, Any]]:
         """Get historical metrics from memory buffer."""
         with self._lock:
-            cutoff = datetime.now(timezone.utc) - timedelta(minutes=minutes)
-            return [
-                m
-                for m in self.history
-                if datetime.fromisoformat(m["timestamp"]) > cutoff
-            ]
+            cutoff = datetime.now(UTC) - timedelta(minutes=minutes)
+            return [m for m in self.history if datetime.fromisoformat(m["timestamp"]) > cutoff]
 
-    async def subscribe_metrics(self) -> AsyncGenerator[Dict[str, Any], None]:
+    async def subscribe_metrics(self) -> AsyncGenerator[dict[str, Any]]:
         """Stream metrics updates in real-time."""
-        last_timestamp = datetime.now(timezone.utc)
+        last_timestamp = datetime.now(UTC)
 
         while True:
             try:
@@ -270,16 +257,16 @@ class DashboardAPI:
             "history_hours": 24,
         }
 
-    async def get_metrics(self) -> Dict[str, Any]:
+    async def get_metrics(self) -> dict[str, Any]:
         """GET /api/metrics - Current system metrics."""
         return await self.metrics_provider.get_current_metrics()
 
-    async def get_coherence(self) -> Dict[str, float]:
+    async def get_coherence(self) -> dict[str, float]:
         """GET /api/coherence - Mahabhutas coherence values."""
         metrics = await self.metrics_provider.get_current_metrics()
         return metrics.get("mahabhutas_coherence", {})
 
-    async def get_layer_status(self, layer_id: int) -> Dict[str, Any]:
+    async def get_layer_status(self, layer_id: int) -> dict[str, Any]:
         """GET /api/layer/{layer_id} - Detailed layer status."""
         if layer_id < 32 or layer_id > 36:
             return {"error": "Invalid layer ID. Must be 32-36."}
@@ -292,26 +279,22 @@ class DashboardAPI:
             "layer_id": layer_id,
             "coherence": coherence.get(f"L{layer_id}", 0.7),
             "trend": dynamics.get("layer_trends", {}).get(f"L{layer_id}", "STABLE"),
-            "anomaly_score": dynamics.get("anomaly_scores", {}).get(
-                f"L{layer_id}", 0.0
-            ),
+            "anomaly_score": dynamics.get("anomaly_scores", {}).get(f"L{layer_id}", 0.0),
             "timestamp": metrics.get("timestamp"),
         }
 
-    async def get_history(self, hours: int = 24) -> List[Dict[str, Any]]:
+    async def get_history(self, hours: int = 24) -> list[dict[str, Any]]:
         """GET /api/history - Historical metrics data."""
         return await self.metrics_provider.get_metrics_history(hours * 60)
 
-    async def get_health(self) -> Dict[str, Any]:
+    async def get_health(self) -> dict[str, Any]:
         """GET /api/health - Overall system health status."""
         metrics = await self.metrics_provider.get_current_metrics()
         coherence = metrics.get("mahabhutas_coherence", {})
         system_load = metrics.get("system_load", 0.5)
 
         # Determine health status
-        avg_coherence = statistics.mean(
-            [coherence.get(f"L{i}", 0.7) for i in range(32, 37)]
-        )
+        avg_coherence = statistics.mean([coherence.get(f"L{i}", 0.7) for i in range(32, 37)])
 
         if avg_coherence >= 0.8 and system_load < 0.5:
             status = "healthy"
@@ -324,24 +307,25 @@ class DashboardAPI:
             "status": status,
             "average_coherence": avg_coherence,
             "system_load": system_load,
-            "layers_healthy": sum(
-                1 for i in range(32, 37) if coherence.get(f"L{i}", 0.7) >= 0.7
-            ),
+            "layers_healthy": sum(1 for i in range(32, 37) if coherence.get(f"L{i}", 0.7) >= 0.7),
             "timestamp": metrics.get("timestamp"),
         }
 
-    async def update_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+    async def update_config(self, config: dict[str, Any]) -> dict[str, Any]:
         """POST /api/config - Update dashboard configuration."""
         allowed_keys = {"refresh_interval_ms", "alert_retention_hours", "history_hours"}
 
         for key, value in config.items():
             if key in allowed_keys:
                 # Validate ranges
-                if key == "refresh_interval_ms" and 100 <= value <= 10000:
-                    self.config[key] = value
-                elif key == "alert_retention_hours" and 1 <= value <= 168:
-                    self.config[key] = value
-                elif key == "history_hours" and 1 <= value <= 168:
+                if (
+                    key == "refresh_interval_ms"
+                    and 100 <= value <= 10000
+                    or key == "alert_retention_hours"
+                    and 1 <= value <= 168
+                    or key == "history_hours"
+                    and 1 <= value <= 168
+                ):
                     self.config[key] = value
 
         return self.config
@@ -402,9 +386,7 @@ class DashboardAPI:
 class RealtimeMetricsService:
     """Continuous metrics collection with validation and caching."""
 
-    def __init__(
-        self, metrics_provider: MetricsProvider, refresh_interval_ms: int = 1000
-    ):
+    def __init__(self, metrics_provider: MetricsProvider, refresh_interval_ms: int = 1000):
         """Initialize realtime metrics service.
 
         Args:
@@ -419,9 +401,9 @@ class RealtimeMetricsService:
         self._collection_task = None
         self._running = False
 
-    async def get_current_metrics(self, use_cache: bool = True) -> Dict[str, Any]:
+    async def get_current_metrics(self, use_cache: bool = True) -> dict[str, Any]:
         """Get current metrics snapshot with optional caching."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Check cache validity
         if use_cache and self.current_metrics and self.cache_timestamp:
@@ -437,7 +419,7 @@ class RealtimeMetricsService:
         self.cache_timestamp = now
         return metrics
 
-    def validate_coherence_values(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_coherence_values(self, metrics: dict[str, Any]) -> dict[str, Any]:
         """Validate and clamp coherence to [0.3, 1.0]."""
         coherence = metrics.get("mahabhutas_coherence", {})
 
@@ -458,7 +440,7 @@ class RealtimeMetricsService:
         metrics["mahabhutas_coherence"] = validated
         return metrics
 
-    def calculate_system_load(self, metrics: Dict[str, Any]) -> float:
+    def calculate_system_load(self, metrics: dict[str, Any]) -> float:
         """Calculate overall system load (0.0 to 1.0)."""
         hardware = metrics.get("hardware", {})
 
@@ -522,7 +504,7 @@ class AlertService:
         self.alert_counts = {}
         self._lock = threading.RLock()
 
-    def check_coherence_thresholds(self, coherence: Dict[str, float]) -> List[str]:
+    def check_coherence_thresholds(self, coherence: dict[str, float]) -> list[str]:
         """Check coherence values and generate alerts."""
         alerts = []
 
@@ -536,7 +518,7 @@ class AlertService:
 
         return alerts
 
-    def check_metric_thresholds(self, metrics: Dict[str, Any]) -> List[str]:
+    def check_metric_thresholds(self, metrics: dict[str, Any]) -> list[str]:
         """Check metrics against thresholds."""
         alerts = []
         hardware = metrics.get("hardware", {})
@@ -579,23 +561,23 @@ class AlertService:
             last_time = self.alert_counts.get(key)
 
             if last_time:
-                age = (datetime.now(timezone.utc) - last_time).total_seconds()
+                age = (datetime.now(UTC) - last_time).total_seconds()
                 if age < 60:
                     return  # Duplicate, skip
 
             alert = {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "message": message,
                 "severity": severity,
             }
 
             self.alerts.append(alert)
-            self.alert_counts[key] = datetime.now(timezone.utc)
+            self.alert_counts[key] = datetime.now(UTC)
             logger.info(f"Alert [{severity}]: {message}")
 
     def get_recent_alerts(
-        self, limit: int = 50, severity: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, limit: int = 50, severity: str | None = None
+    ) -> list[dict[str, Any]]:
         """Get recent alerts with optional severity filter."""
         with self._lock:
             alerts = list(self.alerts)
@@ -608,22 +590,18 @@ class AlertService:
         alerts.sort(key=lambda a: a["timestamp"], reverse=True)
         return alerts[:limit]
 
-    def clear_alerts(self, older_than_hours: Optional[int] = None) -> int:
+    def clear_alerts(self, older_than_hours: int | None = None) -> int:
         """Clear old alerts."""
         with self._lock:
             if older_than_hours is None:
                 older_than_hours = self.retention_hours
 
-            cutoff = datetime.now(timezone.utc) - timedelta(hours=older_than_hours)
+            cutoff = datetime.now(UTC) - timedelta(hours=older_than_hours)
             before_count = len(self.alerts)
 
             # Create new deque without old alerts
             new_alerts = deque(
-                (
-                    a
-                    for a in self.alerts
-                    if datetime.fromisoformat(a["timestamp"]) > cutoff
-                ),
+                (a for a in self.alerts if datetime.fromisoformat(a["timestamp"]) > cutoff),
                 maxlen=self.alerts.maxlen,
             )
             self.alerts = new_alerts
@@ -654,12 +632,12 @@ class HistoricalAnalyticsService:
         self.baseline = {}
         self._lock = threading.RLock()
 
-    def add_metrics_sample(self, metrics: Dict[str, Any]) -> None:
+    def add_metrics_sample(self, metrics: dict[str, Any]) -> None:
         """Add metrics sample to history."""
         with self._lock:
             self.metric_history.append(metrics)
 
-    def get_history(self, hours: Optional[int] = None) -> List[Dict[str, Any]]:
+    def get_history(self, hours: int | None = None) -> list[dict[str, Any]]:
         """Get metric history over time range."""
         with self._lock:
             history = list(self.metric_history)
@@ -667,7 +645,7 @@ class HistoricalAnalyticsService:
         if hours is None:
             return history
 
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=hours)
         return [m for m in history if datetime.fromisoformat(m["timestamp"]) > cutoff]
 
     def analyze_trend(self, metric_name: str, samples: int = 100) -> str:
@@ -710,7 +688,7 @@ class HistoricalAnalyticsService:
         else:
             return "stable"
 
-    def calculate_percentiles(self, metric_name: str) -> Dict[str, float]:
+    def calculate_percentiles(self, metric_name: str) -> dict[str, float]:
         """Calculate percentiles for metric."""
         with self._lock:
             history = list(self.metric_history)
@@ -783,9 +761,7 @@ class HistoricalAnalyticsService:
         z_score = abs((current_value - mean) / stdev)
         return min(1.0, z_score / 3.0)  # Normalize
 
-    def forecast_metric(
-        self, metric_name: str, minutes_ahead: int = 5
-    ) -> Dict[str, Any]:
+    def forecast_metric(self, metric_name: str, minutes_ahead: int = 5) -> dict[str, Any]:
         """Simple trend-based forecast."""
         with self._lock:
             history = list(self.metric_history)
@@ -824,9 +800,7 @@ class HistoricalAnalyticsService:
         x_mean = statistics.mean(x)
         y_mean = statistics.mean(values)
 
-        numerator = sum(
-            (x[i] - x_mean) * (values[i] - y_mean) for i in range(len(values))
-        )
+        numerator = sum((x[i] - x_mean) * (values[i] - y_mean) for i in range(len(values)))
         denominator = sum((x[i] - x_mean) ** 2 for i in range(len(values)))
 
         if denominator == 0:
@@ -840,9 +814,7 @@ class HistoricalAnalyticsService:
         predicted = intercept + slope * (len(values) + minutes_ahead / 10)
 
         # Confidence based on R-squared
-        ss_res = sum(
-            (values[i] - (intercept + slope * x[i])) ** 2 for i in range(len(values))
-        )
+        ss_res = sum((values[i] - (intercept + slope * x[i])) ** 2 for i in range(len(values)))
         ss_tot = sum((values[i] - y_mean) ** 2 for i in range(len(values)))
 
         r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
@@ -887,16 +859,14 @@ class DashboardIntegration:
             history_size: Rolling window of metrics
         """
         self.metrics_provider = metrics_provider
-        self.realtime_service = RealtimeMetricsService(
-            metrics_provider, refresh_interval_ms
-        )
+        self.realtime_service = RealtimeMetricsService(metrics_provider, refresh_interval_ms)
         self.alert_service = AlertService(alert_retention_hours)
         self.analytics_service = HistoricalAnalyticsService(history_size)
         self.api = DashboardAPI(metrics_provider)
         self._running = False
         self._collection_task = None
 
-    async def get_dashboard_data(self) -> Dict[str, Any]:
+    async def get_dashboard_data(self) -> dict[str, Any]:
         """Get all data needed for dashboard render."""
         current = await self.realtime_service.get_current_metrics()
 
@@ -922,9 +892,7 @@ class DashboardIntegration:
             "current_metrics": current,
             "health": health,
             "recent_alerts": self.alert_service.get_recent_alerts(limit=20),
-            "coherence_trends": current.get("layer_dynamics", {}).get(
-                "layer_trends", {}
-            ),
+            "coherence_trends": current.get("layer_dynamics", {}).get("layer_trends", {}),
             "system_load": current.get("system_load", 0.5),
             "stability": current.get("layer_dynamics", {}).get("stability_index", 1.0),
         }

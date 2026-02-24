@@ -16,7 +16,6 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -49,8 +48,8 @@ class ArbitrageDetector(ABC):
     @abstractmethod
     async def detect(
         self,
-        prices: Dict[str, Dict[str, float]],
-    ) -> List[ArbitrageOpportunity]:
+        prices: dict[str, dict[str, float]],
+    ) -> list[ArbitrageOpportunity]:
         """Detect arbitrage opportunities."""
         pass
 
@@ -73,8 +72,8 @@ class PriceDisparityDetector(ArbitrageDetector):
 
     async def detect(
         self,
-        prices: Dict[str, Dict[str, float]],
-    ) -> List[ArbitrageOpportunity]:
+        prices: dict[str, dict[str, float]],
+    ) -> list[ArbitrageOpportunity]:
         """
         Detect price disparity opportunities.
 
@@ -154,8 +153,8 @@ class LatencyArbitrageDetector(ArbitrageDetector):
 
     async def detect(
         self,
-        prices: Dict[str, Dict[str, float]],
-    ) -> List[ArbitrageOpportunity]:
+        prices: dict[str, dict[str, float]],
+    ) -> list[ArbitrageOpportunity]:
         """
         Detect latency arbitrage opportunities.
 
@@ -165,9 +164,7 @@ class LatencyArbitrageDetector(ArbitrageDetector):
         import time
 
         for symbol in self._get_common_symbols(prices):
-            symbol_prices = {
-                ex: data[symbol] for ex, data in prices.items() if symbol in data
-            }
+            symbol_prices = {ex: data[symbol] for ex, data in prices.items() if symbol in data}
 
             if len(symbol_prices) < 2:
                 continue
@@ -208,14 +205,12 @@ class LatencyArbitrageDetector(ArbitrageDetector):
 
         return opportunities[:5]  # Return top 5 only
 
-    def _get_common_symbols(self, prices: Dict[str, Dict[str, float]]) -> set:
+    def _get_common_symbols(self, prices: dict[str, dict[str, float]]) -> set:
         """Get symbols available on multiple exchanges."""
         symbol_sets = [set(p.keys()) for p in prices.values()]
         if not symbol_sets:
             return set()
-        return (
-            set.intersection(*symbol_sets) if len(symbol_sets) > 1 else symbol_sets[0]
-        )
+        return set.intersection(*symbol_sets) if len(symbol_sets) > 1 else symbol_sets[0]
 
 
 class TriangularArbitrageDetector(ArbitrageDetector):
@@ -235,8 +230,8 @@ class TriangularArbitrageDetector(ArbitrageDetector):
 
     async def detect(
         self,
-        prices: Dict[str, Dict[str, float]],
-    ) -> List[ArbitrageOpportunity]:
+        prices: dict[str, dict[str, float]],
+    ) -> list[ArbitrageOpportunity]:
         """
         Detect triangular arbitrage opportunities.
 
@@ -293,7 +288,7 @@ class ArbitrageExecutor:
     (atomic execution).
     """
 
-    def __init__(self, adapters: Dict[str, ExecutionInterface]):
+    def __init__(self, adapters: dict[str, ExecutionInterface]):
         self.adapters = adapters
         self.min_profit_threshold = 0.1  # 0.1%
 
@@ -301,7 +296,7 @@ class ArbitrageExecutor:
         self,
         opportunity: ArbitrageOpportunity,
         max_quantity: float = 1.0,
-    ) -> Tuple[bool, float]:
+    ) -> tuple[bool, float]:
         """
         Execute arbitrage opportunity.
 
@@ -352,9 +347,7 @@ class ArbitrageExecutor:
 
             # Check results
             if isinstance(buy_result, Exception) or isinstance(sell_result, Exception):
-                logger.error(
-                    f"Arbitrage execution failed: buy={buy_result}, sell={sell_result}"
-                )
+                logger.error(f"Arbitrage execution failed: buy={buy_result}, sell={sell_result}")
                 return False, 0.0
 
             # Calculate actual profit
@@ -384,7 +377,7 @@ class ArbitrageStrategy:
 
     def __init__(
         self,
-        adapters: Dict[str, ExecutionInterface],
+        adapters: dict[str, ExecutionInterface],
         enable_disparity: bool = True,
         enable_latency: bool = True,
         enable_triangular: bool = True,
@@ -393,7 +386,7 @@ class ArbitrageStrategy:
         self.executor = ArbitrageExecutor(adapters)
 
         # Initialize detectors
-        self.detectors: List[ArbitrageDetector] = []
+        self.detectors: list[ArbitrageDetector] = []
         if enable_disparity:
             self.detectors.append(PriceDisparityDetector())
         if enable_latency:
@@ -406,9 +399,7 @@ class ArbitrageStrategy:
         self.opportunities_executed = 0
         self.total_profit = 0.0
 
-    async def scan(
-        self, prices: Dict[str, Dict[str, float]]
-    ) -> List[ArbitrageOpportunity]:
+    async def scan(self, prices: dict[str, dict[str, float]]) -> list[ArbitrageOpportunity]:
         """
         Scan for arbitrage opportunities across all detectors.
 
@@ -436,9 +427,9 @@ class ArbitrageStrategy:
 
     async def execute_best(
         self,
-        opportunities: List[ArbitrageOpportunity],
+        opportunities: list[ArbitrageOpportunity],
         max_executions: int = 3,
-    ) -> List[Tuple[bool, float]]:
+    ) -> list[tuple[bool, float]]:
         """
         Execute best arbitrage opportunities.
 
@@ -467,7 +458,5 @@ class ArbitrageStrategy:
             "opportunities_found": self.opportunities_found,
             "opportunities_executed": self.opportunities_executed,
             "total_profit": self.total_profit,
-            "execution_rate": (
-                self.opportunities_executed / max(self.opportunities_found, 1)
-            ),
+            "execution_rate": (self.opportunities_executed / max(self.opportunities_found, 1)),
         }

@@ -1,6 +1,5 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -18,12 +17,10 @@ class UnifiedMarketEvent(BaseModel):
     Standardized market data event used across the platform.
     """
 
-    event_type: EventType = Field(
-        ..., description="Type of event: TRADE, QUOTE, TICKER"
-    )
+    event_type: EventType = Field(..., description="Type of event: TRADE, QUOTE, TICKER")
     symbol: str
     price: float
-    volume: Optional[float] = 0.0
+    volume: float | None = 0.0
     timestamp: datetime
     exchange: str = "unknown"
-    metadata: Optional[dict] = {}
+    metadata: dict | None = {}

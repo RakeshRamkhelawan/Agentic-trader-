@@ -46,9 +46,7 @@ class MigrationManager:
 
         # Haal alle .sql bestanden op en sorteer ze
         try:
-            files = sorted(
-                [f for f in os.listdir(self.migration_dir) if f.endswith(".sql")]
-            )
+            files = sorted([f for f in os.listdir(self.migration_dir) if f.endswith(".sql")])
         except Exception as e:
             raise MigrationError(f"Failed to list migration files: {str(e)}")
 
@@ -73,7 +71,7 @@ class MigrationManager:
         file_path = os.path.join(self.migration_dir, filename)
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 sql_content = f.read()
         except Exception as e:
             raise MigrationError(f"Failed to read migration file {filename}: {str(e)}")
@@ -83,6 +81,4 @@ class MigrationManager:
             self.db_client.execute(sql_content)
             self.db_client.update_version(version)
         except Exception as e:
-            raise MigrationError(
-                f"Database error during migration {filename}: {str(e)}"
-            )
+            raise MigrationError(f"Database error during migration {filename}: {str(e)}")

@@ -3,12 +3,12 @@ import pickle
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 
 class CacheAdapter(ABC):
     @abstractmethod
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         pass
 
     @abstractmethod
@@ -34,7 +34,7 @@ class MemoryAdapter(CacheAdapter):
         self._expiry: dict[str, datetime] = {}
         self._max_size = max_size
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         if key not in self._cache:
             return None
 
@@ -82,7 +82,7 @@ class RedisAdapter(CacheAdapter):
     def __init__(self, redis_client):
         self._redis = redis_client
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         try:
             value = await self._redis.get(key)
             if value is None:
@@ -125,7 +125,7 @@ class ClickHouseAdapter(CacheAdapter):
         self._client = clickhouse_client
         self._table = table_name
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         try:
             query = f"""
                 SELECT value, expires_at
@@ -151,9 +151,7 @@ class ClickHouseAdapter(CacheAdapter):
                 INSERT INTO {self._table} (key, value, expires_at, created_at)
                 VALUES (%(key)s, %(value)s, now() + INTERVAL %(ttl)s SECOND, now())
             """
-            await self._client.execute(
-                query, {"key": key, "value": value_json, "ttl": ttl}
-            )
+            await self._client.execute(query, {"key": key, "value": value_json, "ttl": ttl})
             return True
         except Exception:
             return False

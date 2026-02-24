@@ -2,8 +2,8 @@
 Database Verification - Async SQLAlchemy Setup.
 """
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from sqlalchemy import event, text
 from sqlalchemy.engine import Engine
@@ -38,7 +38,7 @@ class SessionManager:
 
     @staticmethod
     @asynccontextmanager
-    async def system_admin_session() -> AsyncGenerator[AsyncSession, None]:
+    async def system_admin_session() -> AsyncGenerator[AsyncSession]:
         """Provides a session with system_admin privileges (bypasses RLS)."""
         async with AsyncSessionLocal() as session:
             try:
@@ -50,7 +50,7 @@ class SessionManager:
 
     @staticmethod
     @asynccontextmanager
-    async def tenant_session(tenant_id: str) -> AsyncGenerator[AsyncSession, None]:
+    async def tenant_session(tenant_id: str) -> AsyncGenerator[AsyncSession]:
         """Provides a session scoped to a specific tenant."""
         async with AsyncSessionLocal() as session:
             try:
@@ -70,9 +70,7 @@ tenant_session = SessionManager.tenant_session
 
 
 @event.listens_for(Engine, "before_cursor_execute")
-def receive_before_cursor_execute(
-    conn, cursor, statement, parameters, context, executemany
-):
+def receive_before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
     """
     Inject tenant_id into the PostgreSQL session variable before any query.
     This enables Row Level Security (RLS) policies to filter data automatically.

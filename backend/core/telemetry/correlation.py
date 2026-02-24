@@ -14,23 +14,17 @@ import time
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 # Context variables (per-async-task storage)
 _trace_id: contextvars.ContextVar[str] = contextvars.ContextVar("trace_id")
 _span_id: contextvars.ContextVar[str] = contextvars.ContextVar("span_id")
-_user_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
-    "user_id", default=None
-)
-_tenant_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
-    "tenant_id", default=None
-)
-_request_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
-    "request_id", default=None
-)
-_parent_span_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+_user_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("user_id", default=None)
+_tenant_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("tenant_id", default=None)
+_request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("request_id", default=None)
+_parent_span_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "parent_span_id", default=None
 )
 
@@ -51,16 +45,16 @@ class CorrelationContext:
 
     trace_id: str
     span_id: str
-    user_id: Optional[str] = None
-    tenant_id: Optional[str] = None
-    request_id: Optional[str] = None
-    parent_span_id: Optional[str] = None
+    user_id: str | None = None
+    tenant_id: str | None = None
+    request_id: str | None = None
+    parent_span_id: str | None = None
 
     @classmethod
     def create(
         cls,
-        user_id: Optional[str] = None,
-        tenant_id: Optional[str] = None,
+        user_id: str | None = None,
+        tenant_id: str | None = None,
         parent_context: Optional["CorrelationContext"] = None,
     ) -> "CorrelationContext":
         """
@@ -112,7 +106,7 @@ class CorrelationContext:
         _request_id.set(self.request_id)
         _parent_span_id.set(self.parent_span_id)
 
-    def to_dict(self) -> Dict[str, Optional[str]]:
+    def to_dict(self) -> dict[str, str | None]:
         """Convert to dictionary for logging/headers."""
         return {
             "trace_id": self.trace_id,
@@ -123,7 +117,7 @@ class CorrelationContext:
             "parent_span_id": self.parent_span_id,
         }
 
-    def to_headers(self) -> Dict[str, str]:
+    def to_headers(self) -> dict[str, str]:
         """Convert to HTTP headers (excluding None values)."""
         headers = {
             "X-Trace-ID": self.trace_id,
@@ -140,14 +134,10 @@ class CorrelationContext:
         return headers
 
     @classmethod
-    def from_headers(cls, headers: Dict[str, str]) -> "CorrelationContext":
+    def from_headers(cls, headers: dict[str, str]) -> "CorrelationContext":
         """Create context from HTTP headers."""
         # Support both X-Trace-ID and X-Request-ID for trace_id
-        trace_id = (
-            headers.get("X-Trace-ID")
-            or headers.get("X-Request-ID")
-            or str(uuid.uuid4())
-        )
+        trace_id = headers.get("X-Trace-ID") or headers.get("X-Request-ID") or str(uuid.uuid4())
 
         return cls(
             trace_id=trace_id,
@@ -168,23 +158,21 @@ class CorrelationManager:
     """
 
     @staticmethod
-    def new_context(
-        user_id: Optional[str] = None, tenant_id: Optional[str] = None
-    ) -> CorrelationContext:
+    def new_context(user_id: str | None = None, tenant_id: str | None = None) -> CorrelationContext:
         """Create and activate new correlation context."""
         ctx = CorrelationContext.create(user_id, tenant_id)
         ctx.set_current()
         return ctx
 
     @staticmethod
-    def from_headers(headers: Dict[str, str]) -> CorrelationContext:
+    def from_headers(headers: dict[str, str]) -> CorrelationContext:
         """Create and activate context from HTTP headers."""
         ctx = CorrelationContext.from_headers(headers)
         ctx.set_current()
         return ctx
 
     @staticmethod
-    def to_headers() -> Dict[str, str]:
+    def to_headers() -> dict[str, str]:
         """Get current context as HTTP headers."""
         try:
             ctx = CorrelationContext.get_current()
@@ -224,9 +212,9 @@ class SpanContext:
     def __init__(self, ctx: CorrelationContext, name: str):
         self.ctx = ctx
         self.name = name
-        self.start_time: Optional[float] = None
-        self.tags: Dict[str, str] = {}
-        self.error: Optional[Exception] = None
+        self.start_time: float | None = None
+        self.tags: dict[str, str] = {}
+        self.error: Exception | None = None
 
     def set_tag(self, key: str, value: str) -> None:
         """Add metadata tag to span."""

@@ -6,8 +6,7 @@ import numpy as np
 import pytest
 
 from backend.core.decision_discriminator import DecisionDiscriminator
-from backend.core.frequency_analysis import (FrequencyDecomposition,
-                                             VibrationalAnalyzer)
+from backend.core.frequency_analysis import FrequencyDecomposition, VibrationalAnalyzer
 from backend.core.memory_system import MemorySystem
 from backend.core.sensory_processor import SensoryProcessor
 from backend.core.system_identity import SystemIdentity

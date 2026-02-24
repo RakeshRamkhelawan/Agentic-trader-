@@ -11,11 +11,10 @@ This replaces the previous C# pythonnet approach which had compilation issues.
 
 import asyncio
 import logging
-import math
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Swiss Ephemeris - industry standard astronomical calculations
 import swisseph as swe
@@ -39,7 +38,7 @@ class VedAstroConfig:
 class VedAstroConnector:
     """
     Real Vedic astrology calculations using Swiss Ephemeris.
-    
+
     No mock data - all calculations use actual astronomical positions.
     """
 
@@ -58,9 +57,18 @@ class VedAstroConnector:
 
     # Zodiac signs
     SIGNS = [
-        "Aries", "Taurus", "Gemini", "Cancer",
-        "Leo", "Virgo", "Libra", "Scorpio",
-        "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+        "Aries",
+        "Taurus",
+        "Gemini",
+        "Cancer",
+        "Leo",
+        "Virgo",
+        "Libra",
+        "Scorpio",
+        "Sagittarius",
+        "Capricorn",
+        "Aquarius",
+        "Pisces",
     ]
 
     # Exaltation signs for planets
@@ -103,14 +111,36 @@ class VedAstroConnector:
 
     # Nakshatras (27 lunar mansions)
     NAKSHATRAS = [
-        "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra",
-        "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni",
-        "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
-        "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha",
-        "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
+        "Ashwini",
+        "Bharani",
+        "Krittika",
+        "Rohini",
+        "Mrigashira",
+        "Ardra",
+        "Punarvasu",
+        "Pushya",
+        "Ashlesha",
+        "Magha",
+        "Purva Phalguni",
+        "Uttara Phalguni",
+        "Hasta",
+        "Chitra",
+        "Swati",
+        "Vishakha",
+        "Anuradha",
+        "Jyeshtha",
+        "Mula",
+        "Purva Ashadha",
+        "Uttara Ashadha",
+        "Shravana",
+        "Dhanishta",
+        "Shatabhisha",
+        "Purva Bhadrapada",
+        "Uttara Bhadrapada",
+        "Revati",
     ]
 
-    def __init__(self, config: Optional[VedAstroConfig] = None):
+    def __init__(self, config: VedAstroConfig | None = None):
         """
         Initialize VedAstro connector with Swiss Ephemeris.
 
@@ -118,34 +148,33 @@ class VedAstroConnector:
             config: VedAstro configuration
         """
         self.config = config or VedAstroConfig()
-        self._cache: Dict[str, Any] = {}
-        self._transit_cache: Dict[str, Any] = {}
+        self._cache: dict[str, Any] = {}
+        self._transit_cache: dict[str, Any] = {}
         self._executor = ThreadPoolExecutor(max_workers=self.config.max_workers)
-        
+
         logger.info("VedAstro connector initialized with Swiss Ephemeris (Lahiri Ayanamsa)")
 
     def _datetime_to_jd(self, dt: datetime) -> float:
         """Convert Python datetime to Julian Day."""
         return swe.julday(
-            dt.year, dt.month, dt.day,
-            dt.hour + dt.minute / 60.0 + dt.second / 3600.0
+            dt.year, dt.month, dt.day, dt.hour + dt.minute / 60.0 + dt.second / 3600.0
         )
 
     def _get_sidereal_position(self, jd: float, planet: int) -> tuple:
         """
         Get sidereal (Vedic) position for a planet.
-        
+
         Returns:
             (longitude, latitude, distance, speed)
         """
         # Calculate tropical position
         result = swe.calc_ut(jd, planet, swe.FLG_SIDEREAL)
         tropical_long = result[0][0]
-        
+
         # Convert to sidereal (Lahiri ayanamsa already set)
         ayanamsa = swe.get_ayanamsa_ut(jd)
         sidereal_long = (tropical_long - ayanamsa) % 360
-        
+
         return sidereal_long, result[0][1], result[0][2], result[0][3]
 
     def _longitude_to_sign(self, longitude: float) -> str:
@@ -156,17 +185,17 @@ class VedAstroConnector:
     def _longitude_to_nakshatra(self, longitude: float) -> tuple:
         """
         Convert longitude to nakshatra and pada.
-        
+
         Returns:
             (nakshatra_name, pada_number)
         """
         # Each nakshatra is 13°20' (13.333... degrees)
         nakshatra_index = int(longitude / (360 / 27)) % 27
         nakshatra = self.NAKSHATRAS[nakshatra_index]
-        
+
         # Each pada is 3°20' (3.333... degrees)
         pada = int((longitude % (360 / 27)) / (360 / 108)) + 1
-        
+
         return nakshatra, pada
 
     def _get_house(self, lagna_long: float, planet_long: float) -> int:
@@ -186,7 +215,7 @@ class VedAstroConnector:
         lat: float = 40.7128,
         lon: float = -74.0060,
         timezone_offset: int = -5,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calculate complete Kundli with real astronomical data.
 
@@ -208,24 +237,20 @@ class VedAstroConnector:
         # Run calculation in thread pool (swe is not async)
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
-            self._executor,
-            self._compute_kundli,
-            birth_date, lat, lon
+            self._executor, self._compute_kundli, birth_date, lat, lon
         )
 
         self._cache[cache_key] = result
         return result
 
-    def _compute_kundli(
-        self, birth_date: datetime, lat: float, lon: float
-    ) -> Dict[str, Any]:
+    def _compute_kundli(self, birth_date: datetime, lat: float, lon: float) -> dict[str, Any]:
         """Synchronous kundli calculation."""
         # Convert to Julian Day (UTC)
         jd = self._datetime_to_jd(birth_date)
 
         # Calculate Lagna (Ascendant)
         # swe.houses_ex calculates houses, ascendant is first house cusp
-        houses = swe.houses_ex(jd, lat, lon, b'P', swe.FLG_SIDEREAL)
+        houses = swe.houses_ex(jd, lat, lon, b"P", swe.FLG_SIDEREAL)
         lagna_long = houses[1][0]  # Ascendant longitude
         lagna_sign = self._longitude_to_sign(lagna_long)
 
@@ -241,9 +266,7 @@ class VedAstroConnector:
                 distance = 0
                 speed = -planets.get("Rahu", {}).get("speed", 0)
             else:
-                longitude, latitude, distance, speed = self._get_sidereal_position(
-                    jd, planet_id
-                )
+                longitude, latitude, distance, speed = self._get_sidereal_position(jd, planet_id)
 
             sign = self._longitude_to_sign(longitude)
             house = self._get_house(lagna_long, longitude)
@@ -270,14 +293,22 @@ class VedAstroConnector:
             # For airy signs, from Libra
             # For watery signs, from Capricorn
             sign_elemental_start = {
-                "Aries": 0, "Leo": 0, "Sagittarius": 0,
-                "Taurus": 3, "Virgo": 3, "Capricorn": 3,
-                "Gemini": 6, "Libra": 6, "Aquarius": 6,
-                "Cancer": 9, "Scorpio": 9, "Pisces": 9,
+                "Aries": 0,
+                "Leo": 0,
+                "Sagittarius": 0,
+                "Taurus": 3,
+                "Virgo": 3,
+                "Capricorn": 3,
+                "Gemini": 6,
+                "Libra": 6,
+                "Aquarius": 6,
+                "Cancer": 9,
+                "Scorpio": 9,
+                "Pisces": 9,
             }
             navamsa_sign_index = (sign_elemental_start.get(sign, 0) + navamsa_index) % 12
             navamsa_sign = self.SIGNS[navamsa_sign_index]
-            
+
             vargas["D9"][planet_name] = {
                 "sign": navamsa_sign,
                 "house": self._get_house(lagna_long, navamsa_sign_index * 30 + 15),
@@ -294,9 +325,7 @@ class VedAstroConnector:
             "ayanamsa": swe.get_ayanamsa_ut(jd),
         }
 
-    async def calculate_transits(
-        self, date: datetime, kundli: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def calculate_transits(self, date: datetime, kundli: dict[str, Any]) -> dict[str, Any]:
         """
         Calculate current transits vs birth chart.
 
@@ -314,9 +343,7 @@ class VedAstroConnector:
 
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
-            self._executor,
-            self._compute_transits_sync,
-            date, kundli
+            self._executor, self._compute_transits_sync, date, kundli
         )
 
         self._transit_cache[cache_key] = result
@@ -328,12 +355,10 @@ class VedAstroConnector:
 
         return result
 
-    def _compute_transits_sync(
-        self, date: datetime, kundli: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _compute_transits_sync(self, date: datetime, kundli: dict[str, Any]) -> dict[str, Any]:
         """Synchronous transit calculation."""
         jd = self._datetime_to_jd(date)
-        
+
         # Get lagna from kundli or recalculate
         lagna_long = kundli.get("lagna_longitude", 0)
 
@@ -358,7 +383,7 @@ class VedAstroConnector:
 
             house = self._get_house(lagna_long, longitude)
             sign = self._longitude_to_sign(longitude)
-            
+
             current_planets[planet_name] = {
                 "longitude": longitude,
                 "sign": sign,
@@ -385,7 +410,7 @@ class VedAstroConnector:
                 birth_pos = birth_planets[planet]
                 birth_long = birth_pos.get("longitude", 0)
                 curr_long = curr_pos["longitude"]
-                
+
                 angle = abs(curr_long - birth_long) % 360
 
                 aspect_type = None
@@ -439,7 +464,7 @@ class VedAstroConnector:
         self._transit_cache.clear()
         logger.info("VedAstro caches cleared")
 
-    def get_cache_stats(self) -> Dict[str, int]:
+    def get_cache_stats(self) -> dict[str, int]:
         """Get cache statistics."""
         return {
             "kundli_cache_size": len(self._cache),

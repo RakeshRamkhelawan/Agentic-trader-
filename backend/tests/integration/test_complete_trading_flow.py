@@ -5,7 +5,7 @@ Tests full pipeline: MarketTick → Agent Analysis → EventBus → Storage
 """
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -67,16 +67,14 @@ async def test_complete_trading_flow_market_tick_to_storage():
             await ch_client.connect()
 
             llm = MockLLMProvider(sentiment="bullish", confidence=0.92)
-            agent = SentimentAgent(
-                agent_name="sentiment_flow", llm_provider=llm, event_bus=bus
-            )
+            agent = SentimentAgent(agent_name="sentiment_flow", llm_provider=llm, event_bus=bus)
 
             # STEP 1: Market tick arrives
             tick = MarketTick(
                 symbol="BTC/USD",
                 price=52000.0,
                 volume=3.5,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
 
             # STEP 2: Agent analyzes tick
@@ -97,7 +95,7 @@ async def test_complete_trading_flow_market_tick_to_storage():
                 "reasoning": "Strong bullish momentum detected",
                 "confidence": 0.92,
                 "data": str(analysis),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             await ch_client.insert("agent_thoughts", [thought_data])
 
@@ -124,9 +122,7 @@ async def test_multiple_agents_parallel_processing():
         agents = [
             SentimentAgent(
                 agent_name=f"agent_{i}",
-                llm_provider=MockLLMProvider(
-                    sentiment=["bullish", "bearish", "neutral"][i % 3]
-                ),
+                llm_provider=MockLLMProvider(sentiment=["bullish", "bearish", "neutral"][i % 3]),
                 event_bus=bus,
             )
             for i in range(3)
@@ -166,9 +162,7 @@ async def test_trading_flow_with_event_sequence():
             await ch_client.connect()
 
             llm = MockLLMProvider()
-            agent = SentimentAgent(
-                agent_name="sequence_agent", llm_provider=llm, event_bus=bus
-            )
+            agent = SentimentAgent(agent_name="sequence_agent", llm_provider=llm, event_bus=bus)
 
             # Sequence of ticks
             ticks = [
@@ -218,9 +212,7 @@ async def test_trading_flow_error_recovery():
         await bus.connect()
 
         llm = MockLLMProvider()
-        agent = SentimentAgent(
-            agent_name="error_recovery", llm_provider=llm, event_bus=bus
-        )
+        agent = SentimentAgent(agent_name="error_recovery", llm_provider=llm, event_bus=bus)
 
         # First attempt
         result1 = await agent.analyze({"price": 50000.0}, {"symbol": "BTC/USD"})
@@ -246,22 +238,18 @@ async def test_end_to_end_flow_with_real_schemas():
         await bus.connect()
 
         llm = MockLLMProvider()
-        agent = SentimentAgent(
-            agent_name="schema_test", llm_provider=llm, event_bus=bus
-        )
+        agent = SentimentAgent(agent_name="schema_test", llm_provider=llm, event_bus=bus)
 
         # Create proper MarketTick
         tick = MarketTick(
             symbol="ETH/USD",
             price=3000.0,
             volume=10.5,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         # Agent processes
-        result = await agent.analyze(
-            features=tick.model_dump(), context={"symbol": tick.symbol}
-        )
+        result = await agent.analyze(features=tick.model_dump(), context={"symbol": tick.symbol})
 
         # Create AgentThought (if agent publishes via schema)
         thought = AgentThought(
@@ -269,7 +257,7 @@ async def test_end_to_end_flow_with_real_schemas():
             reasoning="Schema-based analysis",
             confidence=0.85,
             data=result,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         # Verify schemas work
@@ -289,9 +277,7 @@ async def test_trading_flow_state_management():
         await bus.connect()
 
         llm = MockLLMProvider()
-        agent = SentimentAgent(
-            agent_name="stateful_flow", llm_provider=llm, event_bus=bus
-        )
+        agent = SentimentAgent(agent_name="stateful_flow", llm_provider=llm, event_bus=bus)
 
         # First tick
         await agent.analyze({"price": 50000.0}, {"symbol": "BTC/USD"})
@@ -319,15 +305,11 @@ async def test_trading_flow_performance_metrics():
         await bus.connect()
 
         llm = MockLLMProvider()
-        agent = SentimentAgent(
-            agent_name="performance_test", llm_provider=llm, event_bus=bus
-        )
+        agent = SentimentAgent(agent_name="performance_test", llm_provider=llm, event_bus=bus)
 
         # Process multiple ticks
         for i in range(10):
-            await agent.analyze(
-                {"price": 50000.0 + i * 100, "volume": 1.0}, {"symbol": "BTC/USD"}
-            )
+            await agent.analyze({"price": 50000.0 + i * 100, "volume": 1.0}, {"symbol": "BTC/USD"})
             agent.record_activity(success=True)
 
         # Check health metrics
@@ -367,9 +349,7 @@ async def test_trading_flow_with_consumer_pattern():
             await ch_client.connect()
 
             llm = MockLLMProvider()
-            agent = SentimentAgent(
-                agent_name="producer", llm_provider=llm, event_bus=bus
-            )
+            agent = SentimentAgent(agent_name="producer", llm_provider=llm, event_bus=bus)
 
             # Producer: agent publishes
             result = await agent.analyze({"price": 50000.0}, {"symbol": "BTC/USD"})
@@ -409,7 +389,7 @@ async def test_complete_flow_with_multiple_event_types():
                 symbol="BTC/USD",
                 price=50000.0,
                 volume=1.5,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
             await bus.publish("market_ticks", tick.model_dump())
             await ch_client.insert("market_ticks", [tick.model_dump()])
@@ -420,7 +400,7 @@ async def test_complete_flow_with_multiple_event_types():
                 reasoning="Analysis complete",
                 confidence=0.9,
                 data={"sentiment": "bullish"},
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
             await bus.publish("agent_thoughts", thought.model_dump())
             await ch_client.insert("agent_thoughts", [thought.model_dump()])
@@ -441,9 +421,7 @@ async def test_trading_flow_reasoning_chain_tracking():
         await bus.connect()
 
         llm = MockLLMProvider()
-        agent = SentimentAgent(
-            agent_name="reasoning_flow", llm_provider=llm, event_bus=bus
-        )
+        agent = SentimentAgent(agent_name="reasoning_flow", llm_provider=llm, event_bus=bus)
 
         # Build reasoning chain
         agent.think("Observed market tick")

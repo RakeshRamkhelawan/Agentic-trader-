@@ -4,13 +4,12 @@ Tests for Event Schemas.
 TDD Test Suite - Write tests FIRST before implementation.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
 
-from backend.events.schemas import (AgentThought, EventBase, MarketTick,
-                                    TradeProposal)
+from backend.events.schemas import AgentThought, EventBase, MarketTick, TradeProposal
 
 
 @pytest.mark.unit
@@ -26,7 +25,7 @@ def test_market_tick_schema():
         symbol="BTC/USD",
         price=50000.0,
         volume=1.5,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
     assert tick.symbol == "BTC/USD"
@@ -43,7 +42,7 @@ def test_market_tick_validation():
             symbol="BTC/USD",
             price=-100.0,  # Invalid
             volume=1.0,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
 
@@ -55,7 +54,7 @@ def test_agent_thought_schema():
         reasoning="Market shows bullish signals based on social sentiment.",
         confidence=0.85,
         data={"sentiment_score": 0.75, "volume_surge": True},
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
     assert thought.agent_name == "SentimentAgent"
@@ -73,7 +72,7 @@ def test_agent_thought_confidence_bounds():
             reasoning="Test",
             confidence=1.5,  # Invalid
             data={},
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
 
@@ -90,7 +89,7 @@ def test_trade_proposal_schema():
         take_profit=3200.0,
         rationale="Support level confirmed at 2900",
         confidence=0.78,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
     assert proposal.action == "buy"
@@ -110,7 +109,7 @@ def test_trade_proposal_invalid_action():
             action="invalid_action",  # Should fail
             quantity=1.0,
             target_price=50000.0,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
 
@@ -121,7 +120,7 @@ def test_event_serialization():
         symbol="BTC/USD",
         price=50000.0,
         volume=1.5,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
     data = tick.model_dump()
@@ -138,7 +137,7 @@ def test_event_json_serialization():
         reasoning="Test reasoning",
         confidence=0.9,
         data={"key": "value"},
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
     json_str = thought.model_dump_json()

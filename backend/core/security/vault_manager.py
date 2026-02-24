@@ -10,7 +10,6 @@ Provides secure secret management with:
 import logging
 import os
 from functools import lru_cache
-from typing import List, Optional
 
 try:
     import hvac  # type: ignore[import-untyped]
@@ -35,10 +34,10 @@ class VaultManager:
 
     def __init__(
         self,
-        vault_addr: Optional[str] = None,
-        vault_token: Optional[str] = None,
-        role_id: Optional[str] = None,
-        secret_id: Optional[str] = None,
+        vault_addr: str | None = None,
+        vault_token: str | None = None,
+        role_id: str | None = None,
+        secret_id: str | None = None,
         mount_point: str = "secret",
         fallback_to_env: bool = True,
     ):
@@ -59,7 +58,7 @@ class VaultManager:
         self.secret_id = secret_id or os.getenv("VAULT_SECRET_ID")
         self.mount_point = mount_point
         self.fallback_to_env = fallback_to_env
-        self._client: Optional["hvac.Client"] = None
+        self._client: hvac.Client | None = None
         self._authenticated = False
 
         # Initialize client if hvac is available
@@ -135,12 +134,10 @@ class VaultManager:
                 return env_value
 
         # Return empty string as safe default (for dev/test)
-        logger.warning(
-            f"Vault: No value found for {path}/{key}, returning empty string"
-        )
+        logger.warning(f"Vault: No value found for {path}/{key}, returning empty string")
         return ""
 
-    def list_secrets(self, path: str) -> List[str]:
+    def list_secrets(self, path: str) -> list[str]:
         """
         List secret keys at a path.
 

@@ -28,9 +28,7 @@ async def t():
     try:
         # Try BTC-EUR
         print("Requesting tickers?symbols=BTC-EUR")
-        res = await adapter._request(
-            "GET", "/api/1.0/tickers", params={"symbols": "BTC-EUR"}
-        )
+        res = await adapter._request("GET", "/api/1.0/tickers", params={"symbols": "BTC-EUR"})
         print(f"Result for BTC-EUR: {res}")
     except Exception as e:
         print(f"Error for BTC-EUR: {e}")
@@ -38,9 +36,7 @@ async def t():
     try:
         # Try BTCEUR just in case
         print("Requesting tickers?symbols=BTCEUR")
-        res = await adapter._request(
-            "GET", "/api/1.0/tickers", params={"symbols": "BTCEUR"}
-        )
+        res = await adapter._request("GET", "/api/1.0/tickers", params={"symbols": "BTCEUR"})
         print(f"Result for BTCEUR: {res}")
     except Exception as e:
         print(f"Error for BTCEUR: {e}")

@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -11,9 +11,7 @@ from pydantic import BaseModel, Field
 class BaseEvent(BaseModel):
     schema_version: Literal["v1", "v2"] = "v1"
     event_id: str
-    timestamp: (
-        int  # Changed to int (unix timestamp) for higher perf serialization standard
-    )
+    timestamp: int  # Changed to int (unix timestamp) for higher perf serialization standard
 
 
 class TradeProposalV2(BaseEvent):
@@ -23,7 +21,7 @@ class TradeProposalV2(BaseEvent):
     size: float
     confidence: float
     strategy_id: str
-    reasoning: Dict[str, Any]
+    reasoning: dict[str, Any]
 
 
 # --- Legacy / Existing Schemas ---
@@ -62,7 +60,7 @@ class AgentDecision(BaseModel):
     rationale: str
     confidence: float = Field(ge=0.0, le=1.0)
     reversible: bool = True
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
 
 class TradeProposal(BaseModel):
@@ -75,7 +73,7 @@ class TradeProposal(BaseModel):
     take_profit: float = Field(gt=0)
     confidence: float = Field(ge=0.0, le=1.0)
     rationale: str
-    agent_debate: List[AgentDecision]
+    agent_debate: list[AgentDecision]
     timestamp: datetime
     session_id: str
 
@@ -97,8 +95,8 @@ class SessionState(BaseModel):
     current_loss: Decimal = Decimal("0.0")
     active_trades: int = 0
     risk_utilization_pct: float = 0.0
-    user_profile: Dict[str, Any] = {}
-    detected_biases: List[str] = []
+    user_profile: dict[str, Any] = {}
+    detected_biases: list[str] = []
     constraints: RiskConstraints = Field(default_factory=RiskConstraints)
 
 
@@ -111,7 +109,7 @@ class AuditEvent(BaseModel):
     decision: str
     rationale: str
     reversible: bool
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
 
 class VetoDecision(BaseModel):
@@ -119,7 +117,7 @@ class VetoDecision(BaseModel):
     vetoed: bool
     reason: str
     timestamp: datetime
-    violated_constraints: List[str] = []
+    violated_constraints: list[str] = []
     reversible: bool = True
 
 
@@ -128,8 +126,8 @@ class ReversibleAction(BaseModel):
     action_type: str
     timestamp: datetime
     agent_id: AgentRole
-    original_state: Dict[str, Any]
-    new_state: Dict[str, Any]
+    original_state: dict[str, Any]
+    new_state: dict[str, Any]
     can_undo: bool = True
     undo_executed: bool = False
 
@@ -161,7 +159,7 @@ class TattvaLayer(BaseModel):
     tattva_group: str  # "Shuddha", "Kanchukas", "Prakriti", etc.
     description: str
     key_function: str  # What this layer does
-    associated_file: Optional[str] = None  # Code file implementing this layer
+    associated_file: str | None = None  # Code file implementing this layer
     input_type: str = "any"  # Type of input this layer processes
     output_type: str = "any"  # Type of output this layer produces
     latency_us: float = 0.0  # Measured latency in microseconds
@@ -185,12 +183,10 @@ class TattvaConfig(BaseModel):
     # Core configuration
     active_tattvas: int = 36  # How many layers are active
     enable_tattva_traversal: bool = True  # Enable full 36-layer processing
-    traversal_direction: Literal[
-        "ascending", "descending", "bidirectional"
-    ] = "bidirectional"
+    traversal_direction: Literal["ascending", "descending", "bidirectional"] = "bidirectional"
 
     # Layer definitions (1-36)
-    layers: List[TattvaLayer] = Field(default_factory=list)
+    layers: list[TattvaLayer] = Field(default_factory=list)
 
     # Integration points (the 3 choke points)
     sensory_entry_latency_us: float = 0.0  # Time to enter system

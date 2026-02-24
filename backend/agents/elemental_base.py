@@ -10,7 +10,7 @@ It adds Samkhya philosophy properties to the standard BaseAgent:
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any
 
 from backend.agents.base_agent import BaseAgent
 from backend.governance.agent_gatekeeper import AgentRole
@@ -34,10 +34,10 @@ class ElementalBase(BaseAgent, ABC):
         agent_name: str,
         element: str,
         tattva_layer: int,
-        guna_balance: Dict[str, float],
-        llm_provider: Optional[Any] = None,
-        event_bus: Optional[Any] = None,
-        system_identity: Optional[Any] = None,
+        guna_balance: dict[str, float],
+        llm_provider: Any | None = None,
+        event_bus: Any | None = None,
+        system_identity: Any | None = None,
         agent_role: AgentRole = AgentRole.STRATEGIST,
         max_prana: float = 100.0,
         prana_decay_rate: float = 0.5,  # Prana loss per action
@@ -76,17 +76,13 @@ class ElementalBase(BaseAgent, ABC):
         self.guna_balance = guna_balance
 
         # Register with SystemIdentity if available
-        if self.system_identity and hasattr(
-            self.system_identity, "register_elemental_agent"
-        ):
+        if self.system_identity and hasattr(self.system_identity, "register_elemental_agent"):
             # Logic to register would go here - keeping it non-blocking for init
             self._register_with_identity()
 
-        logger.info(
-            f"Initialized {self.agent_name} ({self.element}) - Prana: {self.prana}"
-        )
+        logger.info(f"Initialized {self.agent_name} ({self.element}) - Prana: {self.prana}")
 
-    def _validate_gunas(self, balance: Dict[str, float]):
+    def _validate_gunas(self, balance: dict[str, float]):
         """Ensure Gunas sum to 1.0 within floating point tolerance."""
         total = sum(balance.values())
         if abs(total - 1.0) > 0.01:
@@ -109,7 +105,7 @@ class ElementalBase(BaseAgent, ABC):
         except Exception as e:
             logger.warning(f"Failed to register with SystemIdentity: {e}")
 
-    async def consume_prana(self, amount: Optional[float] = None) -> bool:
+    async def consume_prana(self, amount: float | None = None) -> bool:
         """
         Consume prana for an action.
 
@@ -164,7 +160,7 @@ class ElementalBase(BaseAgent, ABC):
         """Return the dominant Guna (sattva/rajas/tamas)."""
         return max(self.guna_balance, key=self.guna_balance.get)
 
-    def elemental_health_check(self) -> Dict[str, Any]:
+    def elemental_health_check(self) -> dict[str, Any]:
         """Extended health check with Elemental metrics."""
         base_health = self.health_check()
         base_health.update(
@@ -180,7 +176,7 @@ class ElementalBase(BaseAgent, ABC):
         return base_health
 
     @abstractmethod
-    async def process_signal(self, signal: Dict[str, Any]) -> Dict[str, Any]:
+    async def process_signal(self, signal: dict[str, Any]) -> dict[str, Any]:
         """
         Process an incoming signal according to elemental nature.
         Must be implemented by subclasses.
@@ -194,9 +190,7 @@ class ElementalBase(BaseAgent, ABC):
         pass
 
     # Implement BaseAgent abstract method
-    async def analyze(
-        self, features: Dict[str, Any], context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """
         Bridge method to support BaseAgent interface.
         Redirects to process_signal.

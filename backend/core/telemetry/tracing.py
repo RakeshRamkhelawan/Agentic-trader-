@@ -10,15 +10,13 @@ Provides distributed tracing for the Agentic Trader Platform with:
 
 import uuid
 from contextvars import ContextVar
-from typing import Optional
 
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import (BatchSpanProcessor,
-                                            ConsoleSpanExporter)
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.trace import SpanContext, TraceFlags
 
 # Optional instrumentation with version compatibility fallbacks
@@ -39,8 +37,8 @@ except (ImportError, TypeError):
     AsyncioInstrumentor = None
 
 # Context variable for trace propagation across async boundaries
-_current_trace_id: ContextVar[Optional[str]] = ContextVar("trace_id", default=None)
-_current_span_id: ContextVar[Optional[str]] = ContextVar("span_id", default=None)
+_current_trace_id: ContextVar[str | None] = ContextVar("trace_id", default=None)
+_current_span_id: ContextVar[str | None] = ContextVar("span_id", default=None)
 
 
 class TraceCorrelation:
@@ -72,12 +70,12 @@ class TraceCorrelation:
         return format(uuid.uuid4().int >> 96, "016x")
 
     @staticmethod
-    def get_current_trace_id() -> Optional[str]:
+    def get_current_trace_id() -> str | None:
         """Get current trace ID from context."""
         return _current_trace_id.get()
 
     @staticmethod
-    def set_current_trace(trace_id: str, span_id: Optional[str] = None) -> None:
+    def set_current_trace(trace_id: str, span_id: str | None = None) -> None:
         """Set current trace ID in context."""
         _current_trace_id.set(trace_id)
         if span_id:
@@ -90,7 +88,7 @@ class TraceCorrelation:
         _current_span_id.set(None)
 
     @staticmethod
-    def start_trace(operation: str, attributes: Optional[dict] = None) -> str:
+    def start_trace(operation: str, attributes: dict | None = None) -> str:
         """
         Start a new trace.
 
@@ -120,8 +118,8 @@ class HotPathTracer:
     def start_span(
         self,
         name: str,
-        context: Optional[trace.Context] = None,
-        attributes: Optional[dict] = None,
+        context: trace.Context | None = None,
+        attributes: dict | None = None,
     ) -> trace.Span:
         """
         Start a span optimized for hot path.
@@ -144,8 +142,8 @@ class HotPathTracer:
     def start_as_current_span(
         self,
         name: str,
-        context: Optional[trace.Context] = None,
-        attributes: Optional[dict] = None,
+        context: trace.Context | None = None,
+        attributes: dict | None = None,
     ):
         """Context manager for hot path spans."""
         return self._tracer.start_as_current_span(
@@ -158,7 +156,7 @@ class HotPathTracer:
 
 def setup_tracing(
     service_name: str = "agentic-trader",
-    jaeger_endpoint: Optional[str] = None,
+    jaeger_endpoint: str | None = None,
     console_export: bool = False,
 ) -> TracerProvider:
     """
@@ -248,9 +246,7 @@ def instrument_sqlalchemy(engine) -> None:
         except Exception as e:
             import logging
 
-            logging.getLogger(__name__).warning(
-                f"SQLAlchemy instrumentation failed: {e}"
-            )
+            logging.getLogger(__name__).warning(f"SQLAlchemy instrumentation failed: {e}")
 
 
 def get_tracer(name: str, version: str = "") -> trace.Tracer:

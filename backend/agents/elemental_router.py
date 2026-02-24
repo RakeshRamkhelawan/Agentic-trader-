@@ -10,7 +10,7 @@ Function:
 
 import asyncio
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 from backend.agents.elemental_base import ElementalBase
 
@@ -24,8 +24,8 @@ class ElementalRouter:
     """
 
     def __init__(self):
-        self.agents: Dict[str, ElementalBase] = {}
-        self.routes: Dict[str, List[str]] = {
+        self.agents: dict[str, ElementalBase] = {}
+        self.routes: dict[str, list[str]] = {
             "market_data": [
                 "air",
                 "water",
@@ -43,9 +43,7 @@ class ElementalRouter:
         self.agents[agent.element] = agent
         logger.info(f"Registered agent: {agent.agent_name} for element {agent.element}")
 
-    async def route_signal(
-        self, signal_type: str, payload: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def route_signal(self, signal_type: str, payload: dict[str, Any]) -> dict[str, Any]:
         """
         Route signal to subscribed agents and aggregate responses.
         """
@@ -74,7 +72,7 @@ class ElementalRouter:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         aggregated = {}
-        for element, result in zip(active_elements, results):
+        for element, result in zip(active_elements, results, strict=False):
             if isinstance(result, Exception):
                 logger.error(f"Error routing to {element}: {result}")
                 aggregated[element] = {"error": str(result)}
@@ -83,9 +81,6 @@ class ElementalRouter:
 
         return aggregated
 
-    def get_agent_status(self) -> Dict[str, Any]:
+    def get_agent_status(self) -> dict[str, Any]:
         """Get status of all registered agents."""
-        return {
-            element: agent.elemental_health_check()
-            for element, agent in self.agents.items()
-        }
+        return {element: agent.elemental_health_check() for element, agent in self.agents.items()}

@@ -11,15 +11,12 @@ NO GPU REQUIRED - runs on standard cloud instances.
 """
 
 import os
-import sys
-from functools import lru_cache
-from typing import Any, Dict, List, Optional, Tuple
-import asyncio
-import time
+from typing import Any
 
 # Only use NumPy - SaaS friendly
 try:
     import numpy as np
+
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
@@ -46,7 +43,7 @@ class UltraPerformanceMode:
     def __init__(self):
         self.numpy_available = NUMPY_AVAILABLE
 
-    def get_capabilities(self) -> Dict[str, bool]:
+    def get_capabilities(self) -> dict[str, bool]:
         """Get available optimization capabilities (SaaS friendly)."""
         return {
             "numpy": self.numpy_available,
@@ -60,12 +57,7 @@ class UltraPerformanceMode:
             "gpu_acceleration": False,
         }
 
-    def vectorized_position_sizes(
-        self,
-        portfolio_values,
-        vedastro_scores,
-        confidences=None
-    ):
+    def vectorized_position_sizes(self, portfolio_values, vedastro_scores, confidences=None):
         """
         NumPy vectorized position sizing (NO GPU needed).
 
@@ -73,9 +65,7 @@ class UltraPerformanceMode:
         """
         if not self.numpy_available:
             # Fallback to pure Python
-            return self._python_position_sizes(
-                portfolio_values, vedastro_scores, confidences
-            )
+            return self._python_position_sizes(portfolio_values, vedastro_scores, confidences)
 
         pv = np.array(portfolio_values)
         vs = np.array(vedastro_scores)
@@ -94,22 +84,14 @@ class UltraPerformanceMode:
         max_by_portfolio = pv * 0.02
         absolute_cap = 2000.0
 
-        position_sizes = np.minimum(
-            np.minimum(scaled_sizes, max_by_portfolio),
-            absolute_cap
-        )
+        position_sizes = np.minimum(np.minimum(scaled_sizes, max_by_portfolio), absolute_cap)
 
         return position_sizes.tolist()
 
-    def _python_position_sizes(
-        self,
-        portfolio_values,
-        vedastro_scores,
-        confidences=None
-    ):
+    def _python_position_sizes(self, portfolio_values, vedastro_scores, confidences=None):
         """Fallback pure Python implementation."""
         result = []
-        for i, (pv, vs) in enumerate(zip(portfolio_values, vedastro_scores)):
+        for i, (pv, vs) in enumerate(zip(portfolio_values, vedastro_scores, strict=False)):
             cf = confidences[i] if confidences else 0.7
 
             base_size = pv * 0.10 * cf
@@ -124,21 +106,14 @@ class UltraPerformanceMode:
 
         return result
 
-    def calculate_trailing_stops(
-        self,
-        entry_prices,
-        current_prices,
-        highest_prices
-    ):
+    def calculate_trailing_stops(self, entry_prices, current_prices, highest_prices):
         """
         Vectorized trailing stop calculation.
 
         NumPy is fast enough - no GPU needed for this scale.
         """
         if not self.numpy_available:
-            return self._python_trailing_stops(
-                entry_prices, current_prices, highest_prices
-            )
+            return self._python_trailing_stops(entry_prices, current_prices, highest_prices)
 
         ep = np.array(entry_prices)
         cp = np.array(current_prices)
@@ -163,7 +138,7 @@ class UltraPerformanceMode:
         should_exit = []
         exit_prices = []
 
-        for ep, cp, hp in zip(entry_prices, current_prices, highest_prices):
+        for ep, cp, hp in zip(entry_prices, current_prices, highest_prices, strict=False):
             if ep <= 0:
                 should_exit.append(False)
                 exit_prices.append(cp)
@@ -192,15 +167,16 @@ class IncrementalBacktest:
     def __init__(self, state_file: str = ".cache/incremental_state.json"):
         self.state_file = state_file
         self.processed_dates: set = set()
-        self.cached_results: Dict[str, Any] = {}
+        self.cached_results: dict[str, Any] = {}
         self._load_state()
 
     def _load_state(self) -> None:
         """Load previous state."""
         import json
+
         if os.path.exists(self.state_file):
             try:
-                with open(self.state_file, "r") as f:
+                with open(self.state_file) as f:
                     state = json.load(f)
                     self.processed_dates = set(state.get("dates", []))
                     self.cached_results = state.get("results", {})
@@ -210,14 +186,12 @@ class IncrementalBacktest:
     def _save_state(self) -> None:
         """Save current state."""
         import json
+
         os.makedirs(os.path.dirname(self.state_file), exist_ok=True)
         with open(self.state_file, "w") as f:
-            json.dump({
-                "dates": list(self.processed_dates),
-                "results": self.cached_results
-            }, f)
+            json.dump({"dates": list(self.processed_dates), "results": self.cached_results}, f)
 
-    def get_unprocessed_dates(self, start_date, end_date) -> List:
+    def get_unprocessed_dates(self, start_date, end_date) -> list:
         """Get dates that haven't been processed yet."""
         from datetime import timedelta
 
@@ -236,7 +210,7 @@ class IncrementalBacktest:
         self.processed_dates.add(date.strftime("%Y-%m-%d"))
         self._save_state()
 
-    def get_cached_result(self, key: str) -> Optional[Any]:
+    def get_cached_result(self, key: str) -> Any | None:
         """Get cached result."""
         return self.cached_results.get(key)
 

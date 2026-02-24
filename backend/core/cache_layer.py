@@ -4,7 +4,7 @@ Async Cache Layer - High-performance Redis-based caching.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import redis.asyncio as redis  # type: ignore[import-untyped]
 
@@ -21,9 +21,9 @@ class AsyncCacheLayer:
 
     _instance: Optional["AsyncCacheLayer"] = None
 
-    def __init__(self, redis_url: Optional[str] = None):
+    def __init__(self, redis_url: str | None = None):
         self.redis_url = redis_url or settings.REDIS_URL
-        self.client: Optional[redis.Redis] = None
+        self.client: redis.Redis | None = None
 
     @classmethod
     def get_instance(cls) -> "AsyncCacheLayer":
@@ -49,7 +49,7 @@ class AsyncCacheLayer:
             await self.client.aclose()
             self.client = None
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Get value from cache and deserialize from JSON."""
         if not self.client:
             await self.connect()
@@ -91,22 +91,20 @@ class AsyncCacheLayer:
 
     # --- Domain Specific Helpers ---
 
-    async def get_tickers(self, source: str = "aggregator") -> Optional[Dict[str, Any]]:
+    async def get_tickers(self, source: str = "aggregator") -> dict[str, Any] | None:
         """Get cached tickers."""
         return await self.get(f"tickers:{source}")
 
-    async def set_tickers(
-        self, tickers: Dict[str, Any], source: str = "aggregator", ttl: int = 60
-    ):
+    async def set_tickers(self, tickers: dict[str, Any], source: str = "aggregator", ttl: int = 60):
         """Cache tickers."""
         await self.set(f"tickers:{source}", tickers, ttl=ttl)
 
-    async def get_instruments(self, exchange: str) -> Optional[List[Dict[str, Any]]]:
+    async def get_instruments(self, exchange: str) -> list[dict[str, Any]] | None:
         """Get cached instruments list for an exchange."""
         return await self.get(f"instruments:{exchange}")
 
     async def set_instruments(
-        self, instruments: List[Dict[str, Any]], exchange: str, ttl: int = 3600
+        self, instruments: list[dict[str, Any]], exchange: str, ttl: int = 3600
     ):
         """Cache instruments list."""
         await self.set(f"instruments:{exchange}", instruments, ttl=ttl)

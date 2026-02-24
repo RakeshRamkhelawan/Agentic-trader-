@@ -11,10 +11,11 @@ Usage:
 import asyncio
 import functools
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Optional, TypeVar
+from typing import TypeVar
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
@@ -56,8 +57,8 @@ class CircuitBreaker:
         self.state = CircuitState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time: Optional[datetime] = None
-        self.state_change_time: Optional[datetime] = None
+        self.last_failure_time: datetime | None = None
+        self.state_change_time: datetime | None = None
         self.half_open_request_count = 0
         self._initialized = True
 
@@ -115,7 +116,9 @@ class CircuitBreaker:
                 self.state_change_time = datetime.utcnow()
             elif self.state == CircuitState.CLOSED:
                 if self.failure_count >= self.config.failure_threshold:
-                    logger.error(f"Circuit '{self.name}' opening after {self.failure_count} failures")
+                    logger.error(
+                        f"Circuit '{self.name}' opening after {self.failure_count} failures"
+                    )
                     self.state = CircuitState.OPEN
                     self.state_change_time = datetime.utcnow()
 
@@ -131,12 +134,15 @@ class CircuitBreaker:
             "state": self.state.value,
             "failure_count": self.failure_count,
             "success_count": self.success_count,
-            "last_failure_time": self.last_failure_time.isoformat() if self.last_failure_time else None,
+            "last_failure_time": (
+                self.last_failure_time.isoformat() if self.last_failure_time else None
+            ),
         }
 
 
 class CircuitBreakerOpenException(Exception):
     """Raised when circuit breaker is open."""
+
     pass
 
 
@@ -144,7 +150,7 @@ def circuit_breaker(
     failure_threshold: int = 5,
     failure_window_seconds: int = 60,
     timeout_seconds: int = 30,
-    reset_timeout_seconds: int = 60
+    reset_timeout_seconds: int = 60,
 ):
     """
     Decorator for adding circuit breaker to MCP tools.
@@ -155,13 +161,14 @@ def circuit_breaker(
         async def my_tool(params: dict) -> dict:
             ...
     """
+
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         breaker_name = f"cb_{func.__name__}"
         config = CircuitBreakerConfig(
             failure_threshold=failure_threshold,
             failure_window_seconds=failure_window_seconds,
             timeout_seconds=timeout_seconds,
-            reset_timeout_seconds=reset_timeout_seconds
+            reset_timeout_seconds=reset_timeout_seconds,
         )
         breaker = CircuitBreaker(breaker_name, config)
 
@@ -172,10 +179,11 @@ def circuit_breaker(
         # Attach circuit breaker to function for introspection
         wrapper._circuit_breaker = breaker
         return wrapper
+
     return decorator
 
 
-def get_circuit_state(tool_name: str) -> Optional[dict]:
+def get_circuit_state(tool_name: str) -> dict | None:
     """Get circuit breaker state for a tool."""
     breaker_name = f"cb_{tool_name}"
     if breaker_name in CircuitBreaker._instances:

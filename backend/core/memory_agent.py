@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 try:
     import chromadb
@@ -29,7 +29,7 @@ class MemoryAgent:
 
         self.base_collection_name = collection_name
         # Cache collections per tenant: {tenant_id: Collection}
-        self._collections: Dict[str, Any] = {}
+        self._collections: dict[str, Any] = {}
         self._lock = Lock()
 
         self.logger = logging.getLogger("MemoryAgent")
@@ -59,7 +59,7 @@ class MemoryAgent:
             self._collections[collection_name] = collection
             return collection
 
-    def store_thought(self, agent_id: str, text: str, metadata: Optional[Dict] = None):
+    def store_thought(self, agent_id: str, text: str, metadata: dict | None = None):
         """
         Store a reasoning trace in the vector DB.
         """
@@ -74,7 +74,7 @@ class MemoryAgent:
         collection.add(documents=[text], metadatas=[metadata], ids=[str(uuid.uuid4())])
         self.logger.debug(f"Stored thought for {agent_id}: {text[:50]}...")
 
-    def recall_thoughts(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
+    def recall_thoughts(self, query: str, limit: int = 3) -> list[dict[str, Any]]:
         """
         Retrieve most relevant past thoughts based on semantic similarity.
         """
@@ -88,9 +88,7 @@ class MemoryAgent:
                 parsed_results.append(
                     {
                         "document": results["documents"][0][i],
-                        "metadata": (
-                            results["metadatas"][0][i] if results["metadatas"] else {}
-                        ),
+                        "metadata": (results["metadatas"][0][i] if results["metadatas"] else {}),
                         "id": results["ids"][0][i],
                     }
                 )
