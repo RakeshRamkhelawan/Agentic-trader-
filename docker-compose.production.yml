@@ -1,120 +1,250 @@
 version: '3.8'
 
+# =============================================================================
+# PRODUCTION DOCKER COMPOSE — Agentic Trader Platform
+# =============================================================================
+# Usage:
+#   1. Copy .env.prod.example → .env.prod and fill in real values
+#   2. docker compose -f docker-compose.production.yml --env-file .env.prod up -d
+# =============================================================================
 # Load production secrets from .env.prod (gitignored — never commit that file)
-# Copy .env.prod.example → .env.prod and fill in real values before deploying.
 
 services:
-  api-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: agentic_trader_api_prod
-    env_file:
-      - .env.prod
-    ports:
-      - "8003:8000"
-    environment:
-      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - trader-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------------
 
   postgres:
-    image: postgres:15-alpine
+    image: timescale/timescaledb:latest-pg15
     container_name: agentic_trader_db_prod
+    restart: always
     environment:
       - POSTGRES_USER=${DB_USER:-trader}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD is required. Copy .env.prod.example to .env.prod}
       - POSTGRES_DB=${DB_NAME:-trading_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - trader-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-trader}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-trader} -d ${DB_NAME:-trading_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.2-alpine
     container_name: agentic_trader_redis_prod
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     networks:
       - trader-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 5s
+      timeout: 3s
       retries: 5
 
   clickhouse:
-    image: clickhouse/clickhouse-server:latest
+    image: clickhouse/clickhouse-server:24.3
     container_name: agentic_trader_clickhouse_prod
+    restart: always
+    environment:
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-trader}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:?CLICKHOUSE_PASSWORD is required}
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB:-trading_db}
     ports:
       - "8123:8123"
     volumes:
       - clickhouse_data:/var/lib/clickhouse
     networks:
       - trader-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Backend
+  # ---------------------------------------------------------------------------
+
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentic_trader_api_prod
+    restart: always
+    env_file:
+      - .env.prod
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=False
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-trader}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-trading_db}
+      - REDIS_URL=redis://redis:6379/0
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-trader}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["http://localhost:5173","http://localhost:3000"]}
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - WORKERS=4
+    ports:
+      - "8003:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - trader-network
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   trading-engine:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: agentic_trader_engine_prod
+    restart: always
     command: ["python", "-m", "backend.trading.engine"]
     env_file:
       - .env.prod
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-trader}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-trading_db}
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - trader-network
 
+  # ---------------------------------------------------------------------------
+  # Frontend (Nginx)
+  # ---------------------------------------------------------------------------
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: agentic_trader_frontend_prod
+    restart: always
+    environment:
+      - VITE_API_URL=${FRONTEND_API_URL:-http://api-server:8000}
+      - VITE_WS_URL=${FRONTEND_WS_URL:-ws://api-server:8000/ws/public}
+    env_file:
+      - .env.prod
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - trader-network
+    depends_on:
+      - api-server
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  # ---------------------------------------------------------------------------
+  # Monitoring
+  # ---------------------------------------------------------------------------
+
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.47.0
     container_name: agentic_trader_prometheus_prod
+    restart: always
     volumes:
-      - ./prometheus.prod.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
     networks:
       - trader-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
     depends_on:
       - api-server
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.2.2
     container_name: agentic_trader_grafana_prod
+    restart: always
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_SECURITY_ANGULAR_SUPPORT_ENABLED=false
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3000}
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
       - trader-network
     depends_on:
       - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
 
 networks:
   trader-network:
     name: trader-network
-    driver: bridge
+    external: true
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
   clickhouse_data:
+    driver: local
   prometheus_data:
+    driver: local
   grafana_data:
+    driver: local

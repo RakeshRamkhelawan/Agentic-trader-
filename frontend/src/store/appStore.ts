@@ -12,8 +12,9 @@ import {
   navagrahaApi,
   oodaApi,
   agentsApi,
+  providersApi,
 } from '@/lib/api';
-import type { Asset, Holding, Order, TradeHistory, AgentStrategy, AgentInfo, AgentTrade } from '@/lib/api';
+import type { Asset, Holding, Order, TradeHistory, AgentStrategy, AgentInfo, AgentTrade, ConnectedProvider, SupportedExchange } from '@/lib/api';
 
 export interface AppUser {
   id: string;
@@ -123,6 +124,17 @@ interface AppState {
   } | null;
   isLoadingOoda: boolean;
   fetchOodaState: () => Promise<void>;
+
+  // Connected Exchange Providers
+  connectedProviders: ConnectedProvider[];
+  supportedExchanges: Record<string, SupportedExchange>;
+  isLoadingProviders: boolean;
+  fetchProviders: () => Promise<void>;
+  fetchSupportedExchanges: () => Promise<void>;
+
+  // Portfolio exchange filter (null = show all exchanges)
+  portfolioExchangeFilter: string | null;
+  setPortfolioExchangeFilter: (filter: string | null) => void;
 
   // Bulk initializer – called once on login/app start
   initializeData: () => Promise<void>;
@@ -402,10 +414,45 @@ export const useAppStore = create<AppState>()(
         }
       },
 
+      // Connected Exchange Providers
+      connectedProviders: [],
+      supportedExchanges: {},
+      isLoadingProviders: false,
+      fetchProviders: async () => {
+        set({ isLoadingProviders: true });
+        try {
+          const providers = await providersApi.getConnected();
+          set({ connectedProviders: providers, isLoadingProviders: false });
+        } catch (error) {
+          console.error('Failed to fetch providers:', error);
+          set({ isLoadingProviders: false });
+        }
+      },
+      fetchSupportedExchanges: async () => {
+        try {
+          const exchanges = await providersApi.getSupported();
+          set({ supportedExchanges: exchanges });
+        } catch (error) {
+          console.error('Failed to fetch supported exchanges:', error);
+        }
+      },
+
+      // Portfolio exchange filter
+      portfolioExchangeFilter: null,
+      setPortfolioExchangeFilter: (filter) => set({ portfolioExchangeFilter: filter }),
+
       // Bulk initializer
       initializeData: async () => {
-        const { fetchAssets, fetchPortfolio, fetchOrders, fetchHoldings, fetchTradeHistory, fetchAgentsStatus } =
-          get();
+        const {
+          fetchAssets,
+          fetchPortfolio,
+          fetchOrders,
+          fetchHoldings,
+          fetchTradeHistory,
+          fetchAgentsStatus,
+          fetchProviders,
+          fetchSupportedExchanges,
+        } = get();
         await Promise.allSettled([
           fetchAssets(),
           fetchPortfolio(),
@@ -413,6 +460,8 @@ export const useAppStore = create<AppState>()(
           fetchHoldings(),
           fetchTradeHistory(),
           fetchAgentsStatus(),
+          fetchProviders(),
+          fetchSupportedExchanges(),
         ]);
       },
     }),

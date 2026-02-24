@@ -241,6 +241,32 @@ class CCXTAdapter(ExecutionInterface):
             logger.error(f"Get ticker failed: {e}")
             return {}
 
+    async def get_tickers(self, symbols: list[str]) -> dict[str, dict[str, Any]]:
+        """Get ticker data for multiple symbols (bulk)."""
+        if not symbols:
+            return {}
+        if not self._exchange:
+            return {
+                s: {"symbol": s, "bid": 45000.0, "ask": 45010.0, "last": 45005.0, "volume_24h": 0.0, "change_24h": 0.0}
+                for s in symbols
+            }
+        try:
+            raw = await asyncio.to_thread(self._exchange.fetch_tickers, symbols)
+            result = {}
+            for sym, t in raw.items():
+                result[sym] = {
+                    "symbol": sym,
+                    "bid": float(t.get("bid") or 0),
+                    "ask": float(t.get("ask") or 0),
+                    "last": float(t.get("last") or 0),
+                    "volume_24h": float(t.get("quoteVolume") or 0),
+                    "change_24h": float(t.get("percentage") or 0),
+                }
+            return result
+        except Exception as e:
+            logger.error(f"get_tickers failed: {e}")
+            return {}
+
     # ==================== DATA SCOUT COMPATIBLE METHODS ====================
 
     async def fetch_ticker(self, symbol: str) -> dict[str, Any]:
@@ -273,7 +299,7 @@ class CCXTAdapter(ExecutionInterface):
             }
         except Exception as e:
             logger.error(f"fetch_ticker failed for {symbol}: {e}")
-            raise ValueError(f"Failed to fetch ticker: {e}")
+            raise ValueError(f"Failed to fetch ticker: {e}") from e
 
     async def fetch_orderbook(self, symbol: str, limit: int = 10) -> dict[str, Any]:
         """

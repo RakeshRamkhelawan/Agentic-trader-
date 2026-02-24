@@ -898,8 +898,8 @@ export const wsClient = {
   disconnect: () => {
     // Deprecated - use WebSocketContext instead
   },
-  subscribe: (channel: string) => { 
-    console.warn('Subscribe to', channel, '- use WebSocketContext'); 
+  subscribe: (channel: string) => {
+    console.warn('Subscribe to', channel, '- use WebSocketContext');
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   unsubscribe: (_channel: string) => {
@@ -911,6 +911,85 @@ export const wsClient = {
     return () => {
       // Cleanup function
     };
+  },
+};
+
+// ============================================================================
+// Providers API — Exchange Connection Management
+// ============================================================================
+
+export interface SupportedExchange {
+  name: string;
+  type: string;
+  requires_private_key?: boolean;
+  website?: string;
+}
+
+export interface ConnectedProvider {
+  id: string;
+  exchange: string;
+  name: string;
+  api_key_masked: string;
+  created_at: string;
+  is_valid: boolean;
+}
+
+export interface ProviderStatus {
+  connected: boolean;
+  exchange_id: string;
+  balances?: Record<string, number>;
+  error?: string;
+}
+
+export const providersApi = {
+  getSupported: async (): Promise<Record<string, SupportedExchange>> => {
+    const response = await api.get('/providers/supported');
+    return response.data as Record<string, SupportedExchange>;
+  },
+
+  getConnected: async (): Promise<ConnectedProvider[]> => {
+    const response = await api.get('/providers');
+    return Array.isArray(response.data) ? (response.data as ConnectedProvider[]) : [];
+  },
+
+  connect: async (
+    exchangeId: string,
+    keys: { api_key: string; api_secret: string; passphrase?: string }
+  ): Promise<ConnectedProvider> => {
+    const response = await api.post(`/providers/${exchangeId}/connect`, keys);
+    return response.data as ConnectedProvider;
+  },
+
+  disconnect: async (exchangeId: string): Promise<void> => {
+    await api.delete(`/providers/${exchangeId}`);
+  },
+
+  getStatus: async (exchangeId: string): Promise<ProviderStatus> => {
+    const response = await api.get(`/providers/${exchangeId}/status`);
+    return response.data as ProviderStatus;
+  },
+};
+
+// ============================================================================
+// Best-Price API — Cross-exchange price comparison
+// ============================================================================
+
+export interface BestPriceEntry {
+  exchange_id: string;
+  bid: number;
+  ask: number;
+  last: number;
+  spread: number;
+  spread_pct: number;
+  recommended: boolean;
+}
+
+export const bestPriceApi = {
+  compare: async (symbol: string, side: 'buy' | 'sell' = 'buy'): Promise<BestPriceEntry[]> => {
+    // Normalise slash to dash for URL-safe symbol (BTC/EUR → BTC-EUR)
+    const urlSymbol = symbol.replace(/\//g, '-');
+    const response = await api.get(`/trading/best-price/${urlSymbol}`, { params: { side } });
+    return Array.isArray(response.data) ? (response.data as BestPriceEntry[]) : [];
   },
 };
 

@@ -27,10 +27,12 @@ class CurrencyType(str, Enum):
 class ExchangeType(str, Enum):
     """Supported exchanges."""
 
+    REVOLUT = "revolut"
     BINANCE = "binance"
     KRAKEN = "kraken"
     COINBASE = "coinbase"
     BITVAVO = "bitvavo"
+    BYBIT = "bybit"
 
 
 # ============================================================================

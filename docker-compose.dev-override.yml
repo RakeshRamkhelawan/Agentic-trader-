@@ -1,0 +1,14 @@
+# =============================================================================
+# LOCAL DEVELOPMENT OVERRIDE
+# =============================================================================
+# Apply on top of docker-compose.production.yml for local dev sessions.
+#
+# Usage:
+#   docker compose -f docker-compose.production.yml -f docker-compose.dev-override.yml --env-file .env.prod up -d --no-deps api-server
+# =============================================================================
+
+services:
+  api-server:
+    environment:
+      - AUTH_DISABLED=true
+      - ENVIRONMENT=development

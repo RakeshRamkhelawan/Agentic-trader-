@@ -49,16 +49,14 @@ class TradingService:
         if target_key:
             # 2. Decrypt user credentials
             creds = await self.settings_service.get_decrypted_api_key(db, tenant_id, target_key.id)
-        elif exchange_id == "revolut":
+        elif exchange_id == "revolut" and settings.REVOLUT_API_KEY and settings.REVOLUT_PRIVATE_KEY:
             # 2b. Fallback to System Credentials (defined in .env/settings)
-
-            if settings.REVOLUT_API_KEY and settings.REVOLUT_PRIVATE_KEY:
-                logger.info("Using System Credentials for Revolut")
-                creds = {
-                    "api_key": settings.REVOLUT_API_KEY,
-                    "api_secret": settings.REVOLUT_PRIVATE_KEY,  # Pass Private Key as secret
-                    "password": "",
-                }
+            logger.info("Using System Credentials for Revolut")
+            creds = {
+                "api_key": settings.REVOLUT_API_KEY,
+                "api_secret": settings.REVOLUT_PRIVATE_KEY,  # Pass Private Key as secret
+                "password": "",
+            }
 
         if not creds:
             return None
@@ -222,7 +220,7 @@ class TradingService:
                     else:
                         items = []
 
-                    for sym, detail in items:
+                    for sym, _detail in items:
                         if not sym:
                             continue
                         if any(x in sym.upper() for x in ["/EUR", "-EUR", "BTCEUR", "ETHEUR"]):
@@ -943,6 +941,91 @@ class TradingService:
             except Exception as e:
                 logger.error(f"Failed to fetch 24h reference prices: {e}")
                 return {}
+
+    async def get_best_price(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        symbol: str,
+        side: str = "buy",
+    ) -> list[dict[str, Any]]:
+        """
+        Compare the price of *symbol* across all exchanges the tenant has
+        connected credentials for.
+
+        Returns a list of dicts sorted by best execution price:
+          - buy  → lowest ask first
+          - sell → highest bid first
+
+        Each entry: {exchange_id, bid, ask, last, spread, spread_pct, recommended}
+        """
+        from backend.core.symbol_normalizer import SymbolNormalizer
+
+        # 1. Collect exchange IDs that have valid credentials
+        keys_list = await self.settings_service.get_api_keys(db, tenant_id)
+        active_exchanges: list[str] = [str(k.exchange) for k in keys_list if k.is_valid]
+
+        # Also include Revolut if system credentials are configured
+        from backend.core.config.settings import settings as _settings
+
+        if (
+            "revolut" not in active_exchanges
+            and getattr(_settings, "REVOLUT_API_KEY", None)
+            and getattr(_settings, "REVOLUT_PRIVATE_KEY", None)
+        ):
+            active_exchanges.insert(0, "revolut")
+
+        if not active_exchanges:
+            return []
+
+        # 2. Normalise the incoming symbol once
+        try:
+            canonical = SymbolNormalizer.to_canonical(symbol)
+        except (ValueError, TypeError):
+            logger.warning(f"get_best_price: cannot normalise symbol '{symbol}'")
+            return []
+
+        # 3. Fetch ticker from every active exchange in parallel
+        import asyncio
+
+        async def _fetch(exchange_id: str) -> dict[str, Any] | None:
+            try:
+                adapter = await self._get_exchange_adapter(db, tenant_id, exchange_id)
+                if adapter is None:
+                    return None
+                exchange_symbol = SymbolNormalizer.to_exchange(canonical, exchange_id)
+                ticker = await adapter.get_ticker(exchange_symbol)
+                if not ticker:
+                    return None
+                bid = float(ticker.get("bid") or 0)
+                ask = float(ticker.get("ask") or 0)
+                last = float(ticker.get("last") or 0)
+                spread = ask - bid if bid > 0 and ask > 0 else 0.0
+                return {
+                    "exchange_id": exchange_id,
+                    "bid": bid,
+                    "ask": ask,
+                    "last": last,
+                    "spread": round(spread, 8),
+                    "spread_pct": round((spread / last * 100) if last > 0 else 0, 4),
+                    "recommended": False,
+                }
+            except Exception as exc:
+                logger.warning(f"get_best_price: {exchange_id} failed — {exc}")
+                return None
+
+        raw_results = await asyncio.gather(*[_fetch(ex) for ex in active_exchanges])
+        results = [r for r in raw_results if r is not None]
+
+        # 4. Sort and mark the recommended exchange
+        if results:
+            if side.lower() == "buy":
+                results.sort(key=lambda x: x["ask"] if x["ask"] > 0 else float("inf"))
+            else:
+                results.sort(key=lambda x: x["bid"], reverse=True)
+            results[0]["recommended"] = True
+
+        return results
 
     async def store_market_candle(self, candle_data: dict[str, Any]):
         """

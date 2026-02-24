@@ -1,26 +1,32 @@
 """
-Trading API Routes - REAL Implementation
+Trading API Routes
 
-Endpoints for trading operations, portfolio, orders, and market data.
-Uses REAL data from:
-- Bitvavo exchange for market data
-- ShadowPortfolioManager for portfolio state
-- Real order history from trading services
+Thin router that delegates to TradingService for all market / portfolio / order
+operations.  Paper trading endpoints are preserved exactly from the previous
+implementation and remain self-contained.
 """
 
 import logging
 import os
+import random
+import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.api.deps import get_current_tenant_id, get_db
+from backend.services.trading_service import get_trading_service
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/trading", tags=["Trading"])
 
 
-# Models
+# ─── Shared response models ────────────────────────────────────────────────────
+
+
 class Candle(BaseModel):
     timestamp: datetime
     open: float
@@ -30,22 +36,14 @@ class Candle(BaseModel):
     volume: float
 
 
-class Portfolio(BaseModel):
-    total_value: float
-    cash: float
-    positions: list[dict]
-    pnl: float
-    pnl_percent: float
-
-
 class Order(BaseModel):
     id: str
     symbol: str
-    side: str  # buy/sell
-    type: str  # market/limit
+    side: str  # buy / sell
+    type: str  # market / limit
     quantity: float
     price: float | None
-    status: str  # active/filled/cancelled
+    status: str  # active / filled / cancelled
     created_at: datetime
 
 
@@ -56,55 +54,17 @@ class Asset(BaseModel):
     price: float
     change_24h: float
     volume_24h: float
+    exchange: str = ""
 
 
-# Real Portfolio Manager (Shadow Portfolio for paper trading)
-_real_portfolio = None
-
-
-def get_real_portfolio():
-    """Get or create real shadow portfolio."""
-    global _real_portfolio
-    if _real_portfolio is None:
-        try:
-            from backend.execution.shadow_portfolio import ShadowPortfolioManager
-
-            _real_portfolio = ShadowPortfolioManager(initial_cash=10000.0)
-            logger.info("✅ Real ShadowPortfolioManager initialized")
-        except Exception as e:
-            logger.error(f"Failed to initialize portfolio: {e}")
-            _real_portfolio = None
-    return _real_portfolio
-
-
-# Bitvavo adapter (lazy import to handle missing ccxt)
-_bitvavo_adapter = None
-
-
-async def get_bitvavo_adapter():
-    """Get or initialize Bitvavo adapter (if ccxt is available)."""
-    global _bitvavo_adapter
-    if _bitvavo_adapter is not None:
-        return _bitvavo_adapter
-
-    try:
-        from backend.execution.bitvavo_adapter import BitvavoAdapter
-
-        _bitvavo_adapter = BitvavoAdapter()
-        await _bitvavo_adapter.initialize()
-        return _bitvavo_adapter
-    except ImportError as e:
-        logger.warning(f"Bitvavo adapter not available: {e}")
-        return None
-    except Exception as e:
-        logger.error(f"Error initializing Bitvavo: {e}")
-        return None
+# ─── Paper trading log helpers (unchanged) ─────────────────────────────────────
 
 
 def get_paper_trading_logs():
     """Get real paper trading logs if they exist."""
     log_file = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "paper_trading_session.log"
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+        "paper_trading_session.log",
     )
     if os.path.exists(log_file):
         try:
@@ -121,24 +81,22 @@ def parse_paper_trades():
     trades = []
 
     for line in logs:
-        # Parse trade lines like: [HH:MM:SS] [Agent] BUY 0.1 BTC-EUR @ EUR 50000 = EUR 5000
         if "BUY" in line or "SELL" in line:
             try:
-                # Extract timestamp
                 ts_start = line.find("[")
                 ts_end = line.find("]", ts_start)
                 timestamp = line[ts_start + 1 : ts_end] if ts_start >= 0 else "00:00:00"
 
-                # Extract agent
                 agent_start = line.find("[", ts_end + 1)
                 agent_end = line.find("]", agent_start)
-                agent = line[agent_start + 1 : agent_end].strip() if agent_start >= 0 else "Unknown"
+                agent = (
+                    line[agent_start + 1 : agent_end].strip()
+                    if agent_start >= 0
+                    else "Unknown"
+                )
 
-                # Determine side
                 side = "buy" if "BUY" in line else "sell"
 
-                # Try to extract qty, symbol, price
-                # Format: BUY 0.1 BTC-EUR @ EUR 50000 = EUR 5000
                 parts = line.split()
                 for i, part in enumerate(parts):
                     if part in ["BUY", "SELL"] and i + 2 < len(parts):
@@ -169,227 +127,218 @@ def parse_paper_trades():
     return trades
 
 
-@router.get("/candles/{symbol}", response_model=list[Candle])
+# ─── Market endpoints ──────────────────────────────────────────────────────────
+
+
+@router.get("/candles/{symbol}")
 async def get_candles(
     symbol: str,
     timeframe: str = Query("1h", description="Timeframe: 1m, 5m, 15m, 1h, 4h, 1d"),
     limit: int = Query(100, ge=1, le=1000),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: str = Depends(get_current_tenant_id),
 ):
-    """Get REAL OHLCV candles for a symbol from Bitvavo."""
-    bitvavo_symbol = symbol.replace("-", "/")
-
-    timeframe_map = {
-        "1m": "1m",
-        "5m": "5m",
-        "15m": "15m",
-        "1h": "1h",
-        "4h": "4h",
-        "1d": "1d",
-        "1w": "1w",
-    }
-    bitvavo_timeframe = timeframe_map.get(timeframe, "1h")
-
+    """Get OHLCV candles for a symbol via TradingService."""
+    service = get_trading_service()
     try:
-        adapter = await get_bitvavo_adapter()
-        if adapter and adapter.exchange:
-            ohlcv = await adapter.fetch_ohlcv(bitvavo_symbol, bitvavo_timeframe, limit)
-            if ohlcv:
-                candles = []
-                for data in ohlcv:
-                    candles.append(
-                        Candle(
-                            timestamp=datetime.fromtimestamp(data[0] / 1000),
-                            open=float(data[1]),
-                            high=float(data[2]),
-                            low=float(data[3]),
-                            close=float(data[4]),
-                            volume=float(data[5]),
-                        )
-                    )
-                logger.info(f"✅ Fetched {len(candles)} REAL candles for {symbol}")
-                return candles
-    except Exception as e:
-        logger.error(f"Error fetching candles: {e}")
-
-    logger.warning(f"❌ Failed to get real candles for {symbol}")
-    return []
-
-
-@router.get("/portfolio", response_model=Portfolio)
-async def get_portfolio():
-    """Get REAL portfolio state from ShadowPortfolioManager."""
-    try:
-        portfolio = get_real_portfolio()
-        if portfolio:
-            # Get current prices for valuation
-            adapter = await get_bitvavo_adapter()
-            positions_value = 0.0
-            positions_list = []
-
-            for symbol, pos in portfolio.positions.items():
-                current_price = pos.get("entry_price", 0)
-
-                # Try to get real current price
-                if adapter and adapter.exchange:
-                    try:
-                        ticker = await adapter.fetch_ticker(symbol.replace("-", "/"))
-                        if ticker:
-                            current_price = float(ticker.get("last", current_price))
-                    except Exception:
-                        pass
-
-                qty = pos.get("quantity", 0)
-                value = qty * current_price
-                positions_value += value
-
-                positions_list.append(
-                    {
-                        "symbol": symbol,
-                        "quantity": qty,
-                        "avg_price": pos.get("entry_price", current_price),
-                        "current_price": current_price,
-                        "value": value,
-                    }
-                )
-
-            cash = portfolio.cash_balance
-            total_value = cash + positions_value
-            initial_capital = portfolio.initial_cash
-            pnl = total_value - initial_capital
-            pnl_percent = (pnl / initial_capital * 100) if initial_capital > 0 else 0
-
-            logger.info(f"✅ REAL Portfolio: €{total_value:,.2f} (PnL: {pnl_percent:+.2f}%)")
-            return Portfolio(
-                total_value=total_value,
-                cash=cash,
-                positions=positions_list,
-                pnl=pnl,
-                pnl_percent=pnl_percent,
+        candles = await service.get_candles(db, tenant_id, symbol, timeframe, limit)
+        result = []
+        for c in candles:
+            result.append(
+                {
+                    "timestamp": c.get("timestamp") or c.get("time"),
+                    "open": float(c.get("open", 0)),
+                    "high": float(c.get("high", 0)),
+                    "low": float(c.get("low", 0)),
+                    "close": float(c.get("close", 0)),
+                    "volume": float(c.get("volume") or c.get("value", 0)),
+                }
             )
+        return result
     except Exception as e:
-        logger.error(f"Error getting real portfolio: {e}")
-
-    # Return empty portfolio if nothing exists
-    logger.warning("❌ No real portfolio available, returning empty")
-    return Portfolio(total_value=10000.0, cash=10000.0, positions=[], pnl=0.0, pnl_percent=0.0)
+        logger.error(f"Error fetching candles for {symbol}: {e}")
+        return []
 
 
-@router.get("/orders/active", response_model=list[Order])
-async def get_active_orders():
-    """Get REAL active orders from paper trading."""
-    try:
-        portfolio = get_real_portfolio()
-        if portfolio and hasattr(portfolio, "active_orders"):
-            orders = []
-            for order_id, order in portfolio.active_orders.items():
-                orders.append(
-                    Order(
-                        id=str(order_id),
-                        symbol=order.get("symbol", ""),
-                        side=order.get("side", "buy"),
-                        type=order.get("order_type", "market"),
-                        quantity=order.get("qty", 0),
-                        price=order.get("price"),
-                        status="active",
-                        created_at=datetime.now(),
-                    )
-                )
-            return orders
-    except Exception as e:
-        logger.error(f"Error getting active orders: {e}")
-
-    return []
-
-
-@router.get("/orders", response_model=list[Order])
-async def get_all_orders(
-    status: str | None = Query(None, description="Filter by status: active, filled, cancelled")
-):
-    """Get REAL orders from paper trading logs."""
-    try:
-        trades = parse_paper_trades()
-        orders = []
-
-        for trade in trades:
-            orders.append(
-                Order(
-                    id=f"trade-{trade['timestamp']}",
-                    symbol=trade["symbol"],
-                    side=trade["side"],
-                    type="market",
-                    quantity=trade["qty"],
-                    price=trade["price"],
-                    status="filled",
-                    created_at=datetime.fromisoformat(trade["timestamp"]),
-                )
-            )
-
-        if status:
-            orders = [o for o in orders if o.status == status]
-
-        return orders
-    except Exception as e:
-        logger.error(f"Error parsing orders: {e}")
-
-    return []
-
-
-@router.get("/markets", response_model=list[Asset])
+@router.get("/markets")
 async def get_markets(
-    type: str | None = Query(None, description="Filter by type: crypto, stock, forex")
+    exchange_id: str | None = Query(None, description="Filter by exchange"),
+    type: str | None = Query(None, description="Filter by type: crypto"),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: str = Depends(get_current_tenant_id),
 ):
-    """Get REAL markets/assets from Bitvavo."""
+    """Get available markets via TradingService (multi-exchange)."""
+    service = get_trading_service()
     try:
-        adapter = await get_bitvavo_adapter()
-        if adapter and adapter.exchange:
-            tickers = await adapter.exchange.fetch_tickers()
-            assets = []
-
-            for symbol, ticker in tickers.items():
-                if symbol.endswith("/EUR"):
-                    base_symbol = symbol.replace("/", "-")
-                    last_price = ticker.get("last")
-                    percentage = ticker.get("percentage")
-                    quote_volume = ticker.get("quoteVolume")
-
-                    assets.append(
-                        Asset(
-                            symbol=base_symbol,
-                            name=symbol.split("/")[0],
-                            type="crypto",
-                            price=float(last_price) if last_price else 0.0,
-                            change_24h=float(percentage) if percentage else 0.0,
-                            volume_24h=float(quote_volume) if quote_volume else 0.0,
-                        )
-                    )
-
-            if assets:
-                logger.info(f"✅ Fetched {len(assets)} REAL markets from Bitvavo")
-                if type:
-                    assets = [a for a in assets if a.type == type]
-                return assets
+        markets = await service.get_markets(db, tenant_id)
+        if exchange_id:
+            markets = [m for m in markets if m.get("exchange") == exchange_id]
+        if type:
+            markets = [m for m in markets if m.get("type", "crypto") == type]
+        return markets
     except Exception as e:
         logger.error(f"Error fetching markets: {e}")
-
-    logger.warning("❌ Failed to get real markets")
-    return []
+        return []
 
 
-@router.get("/assets", response_model=list[Asset])
-async def get_assets():
-    """Alias for /markets - Get available assets."""
-    return await get_markets()
+@router.get("/assets")
+async def get_assets(
+    exchange_id: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: str = Depends(get_current_tenant_id),
+):
+    """Alias for /markets."""
+    return await get_markets(exchange_id=exchange_id, db=db, tenant_id=tenant_id)
+
+
+# ─── Portfolio endpoints ───────────────────────────────────────────────────────
+
+
+@router.get("/portfolio")
+async def get_portfolio(
+    exchange_id: str | None = Query(None, description="Filter holdings by exchange"),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: str = Depends(get_current_tenant_id),
+):
+    """Get portfolio state via TradingService."""
+    service = get_trading_service()
+    try:
+        portfolio = await service.get_portfolio(db, tenant_id)
+        if exchange_id and isinstance(portfolio, dict):
+            holdings = portfolio.get("holdings", [])
+            portfolio["holdings"] = [
+                h for h in holdings if h.get("exchange") == exchange_id
+            ]
+        return portfolio
+    except Exception as e:
+        logger.error(f"Error fetching portfolio: {e}")
+        return {"total_value": 0.0, "holdings": [], "recent_orders": []}
+
+
+@router.get("/history")
+async def get_history(
+    db: AsyncSession = Depends(get_db),
+    tenant_id: str = Depends(get_current_tenant_id),
+):
+    """Get trade history via TradingService."""
+    service = get_trading_service()
+    try:
+        return await service.get_history(db, tenant_id)
+    except Exception as e:
+        logger.error(f"Error fetching history: {e}")
+        return []
+
+
+# ─── Order endpoints ───────────────────────────────────────────────────────────
+
+
+@router.get("/orders/active")
+async def get_active_orders(
+    db: AsyncSession = Depends(get_db),
+    tenant_id: str = Depends(get_current_tenant_id),
+):
+    """Get active orders via TradingService."""
+    service = get_trading_service()
+    try:
+        return await service.get_active_orders(db, tenant_id)
+    except Exception as e:
+        logger.error(f"Error fetching active orders: {e}")
+        return []
+
+
+@router.get("/orders")
+async def get_all_orders(
+    status: str | None = Query(
+        None, description="Filter by status: active, filled, cancelled"
+    ),
+    limit: int = Query(50, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: str = Depends(get_current_tenant_id),
+):
+    """Get order history via TradingService."""
+    service = get_trading_service()
+    try:
+        orders = await service.get_order_history(db, tenant_id, limit)
+        if status:
+            orders = [o for o in orders if o.get("status") == status]
+        return orders
+    except Exception as e:
+        logger.error(f"Error fetching orders: {e}")
+        return []
+
+
+@router.post("/orders")
+async def create_order(
+    order_request: dict,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: str = Depends(get_current_tenant_id),
+):
+    """Place an order via TradingService."""
+    service = get_trading_service()
+    try:
+        return await service.execute_order(db, tenant_id, order_request)
+    except Exception as e:
+        logger.error(f"Error placing order: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/orders/{order_id}")
+async def cancel_order(
+    order_id: str,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: str = Depends(get_current_tenant_id),
+):
+    """Cancel an order via TradingService."""
+    service = get_trading_service()
+    try:
+        result = await service.cancel_order(db, tenant_id, order_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail=f"Order {order_id} not found")
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cancelling order {order_id}: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ─── Best-price routing (placeholder — implemented in Sectie 5) ───────────────
+
+
+@router.get("/best-price/{symbol}")
+async def get_best_price(
+    symbol: str,
+    side: str = Query("buy", description="buy or sell"),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: str = Depends(get_current_tenant_id),
+):
+    """
+    Compare prices for *symbol* across all connected exchanges.
+
+    Returns a list sorted by best execution price (lowest ask for buy,
+    highest bid for sell).  The recommended exchange is marked with
+    ``"recommended": true``.
+    """
+    service = get_trading_service()
+    try:
+        return await service.get_best_price(db, tenant_id, symbol, side)
+    except Exception as e:
+        logger.error(f"Error in get_best_price for {symbol}: {e}")
+        return []
+
+
+# ─── Recent trades (unchanged) ────────────────────────────────────────────────
 
 
 @router.get("/trades/recent")
 async def get_recent_trades(limit: int = 20):
-    """Get REAL recent trades from paper trading logs."""
+    """Get recent trades from paper trading logs."""
     trades = parse_paper_trades()
     return trades[-limit:]
 
 
 # ============================================================================
-# PAPER TRADING ENGINE - REAL-TIME TRADING WITH AGENTS
+# PAPER TRADING ENGINE — kept exactly from previous implementation
 # ============================================================================
 
 _paper_trading_engine = None
@@ -421,7 +370,6 @@ async def start_paper_trading(initial_capital: float = 10000.0, duration_hours: 
         _paper_trading_engine = RealPaperTradingV18(initial_capital=initial_capital)
         await _paper_trading_engine.initialize()
 
-        # Start trading in background
         import asyncio
 
         asyncio.create_task(_paper_trading_engine.run(duration_hours=duration_hours))
@@ -441,7 +389,7 @@ async def start_paper_trading(initial_capital: float = 10000.0, duration_hours: 
         logger.error(f"Failed to start paper trading: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         _paper_trading_engine = None
-        raise HTTPException(status_code=500, detail=f"Failed to start: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to start: {str(e)}") from e
 
 
 @router.post("/paper-trading/stop")
@@ -454,8 +402,6 @@ async def stop_paper_trading():
 
     try:
         _paper_trading_engine.running = False
-
-        # Get final stats
         state = _paper_trading_engine.state
 
         logger.info(f"✅ Paper trading STOPPED. Total trades: {state.total_trades}")
@@ -471,7 +417,7 @@ async def stop_paper_trading():
         }
     except Exception as e:
         logger.error(f"Error stopping paper trading: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to stop: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to stop: {str(e)}") from e
 
 
 @router.get("/paper-trading/status")
@@ -486,7 +432,6 @@ async def get_paper_trading_status():
         }
 
     try:
-        # Calculate current portfolio value
         portfolio_value = _paper_trading_engine.initial_capital
         if _paper_trading_engine.data_agent:
             prices = await _paper_trading_engine.data_agent.get_all_prices()
@@ -496,10 +441,11 @@ async def get_paper_trading_status():
         pnl = portfolio_value - initial
         pnl_pct = (pnl / initial * 100) if initial > 0 else 0
 
-        # Calculate duration
         duration = 0.0
         if _paper_trading_engine.start_time:
-            duration = (datetime.now() - _paper_trading_engine.start_time).total_seconds() / 3600
+            duration = (
+                datetime.now() - _paper_trading_engine.start_time
+            ).total_seconds() / 3600
 
         return {
             "is_running": _paper_trading_engine.running,
@@ -520,7 +466,7 @@ async def get_paper_trading_status():
         }
     except Exception as e:
         logger.error(f"Error getting paper trading status: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}") from e
 
 
 @router.post("/paper-trading/inject-test-trades")
@@ -530,12 +476,6 @@ async def inject_test_trades(count: int = 5):
 
     This bypasses all strategy conditions to test the full pipeline:
     portfolio tracking → WebSocket broadcast → frontend rendering
-
-    Args:
-        count: Number of test trades to inject (default: 5)
-
-    Returns:
-        dict: Number of trades injected
     """
     global _paper_trading_engine
 
@@ -543,23 +483,18 @@ async def inject_test_trades(count: int = 5):
         raise HTTPException(status_code=400, detail="Paper trading not active. Start it first.")
 
     try:
-        import random
-        import uuid
-        from datetime import datetime
-
         from backend.schemas.orders import OrderRequest, OrderSide, OrderType
         from backend.services.paper_trading_ws_broadcast import broadcast_trade
 
-        # Common trading pairs with realistic price ranges
         pairs = [
-            ("BTC/EUR", 40000, 45000),  # Bitcoin ~€40-45k
-            ("ETH/EUR", 2500, 3000),  # Ethereum ~€2.5-3k
-            ("SOL/EUR", 150, 200),  # Solana ~€150-200
-            ("ADA/EUR", 0.5, 0.8),  # Cardano ~€0.5-0.8
-            ("XRP/EUR", 0.5, 0.7),  # XRP ~€0.5-0.7
-            ("DOT/EUR", 10, 15),  # Polkadot ~€10-15
-            ("LINK/EUR", 15, 20),  # Chainlink ~€15-20
-            ("LTC/EUR", 70, 90),  # Litecoin ~€70-90
+            ("BTC/EUR", 40000, 45000),
+            ("ETH/EUR", 2500, 3000),
+            ("SOL/EUR", 150, 200),
+            ("ADA/EUR", 0.5, 0.8),
+            ("XRP/EUR", 0.5, 0.7),
+            ("DOT/EUR", 10, 15),
+            ("LINK/EUR", 15, 20),
+            ("LTC/EUR", 70, 90),
         ]
 
         injected = 0
@@ -567,21 +502,17 @@ async def inject_test_trades(count: int = 5):
         for i in range(count):
             symbol, price_min, price_max = random.choice(pairs)
 
-            # Alternate BUY/SELL, but first 2 must be BUY to build positions
             if i < 2 or random.random() > 0.5:
                 side = OrderSide.BUY
             else:
                 side = OrderSide.SELL
 
-            # Realistic price and small qty to stay within €10k budget
             price = random.uniform(price_min, price_max)
-            qty = random.uniform(0.01, 0.1)  # Small qty
+            qty = random.uniform(0.01, 0.1)
             value = price * qty
 
-            # Set market price in portfolio manager (required for order to succeed)
             _paper_trading_engine.portfolio.market_prices[symbol] = price
 
-            # Create and submit order
             order = OrderRequest(
                 symbol=symbol,
                 side=side,
@@ -590,7 +521,6 @@ async def inject_test_trades(count: int = 5):
                 client_order_id=uuid.uuid4(),
             )
 
-            # Submit to portfolio
             result = await _paper_trading_engine.portfolio.submit_order(order)
             logger.info(
                 f"[TEST TRADE] Order: {side.value} {qty} {symbol} @ €{price:.2f} = €{value:.2f}"
@@ -614,7 +544,6 @@ async def inject_test_trades(count: int = 5):
                     "reason": "Synthetic test trade",
                 }
 
-                # Update stats
                 _paper_trading_engine.stats["total_trades"] += 1
                 _paper_trading_engine.stats["symbols_traded"].add(symbol)
                 _paper_trading_engine.stats["agent_trades"]["TEST_AGENT"] = (
@@ -627,7 +556,6 @@ async def inject_test_trades(count: int = 5):
                 else:
                     _paper_trading_engine.stats["sell_trades"] += 1
 
-                # Broadcast
                 await broadcast_trade(trade)
                 injected += 1
 
@@ -641,8 +569,8 @@ async def inject_test_trades(count: int = 5):
         }
 
     except Exception as e:
-        logger.error(f"Error injecting test trades: {e}")
         import traceback
 
+        logger.error(f"Error injecting test trades: {e}")
         logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Failed to inject: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to inject: {str(e)}") from e

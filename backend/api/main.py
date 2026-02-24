@@ -39,6 +39,7 @@ from backend.api.routers import (
     health,
     navagraha,
     ooda,
+    providers,
     routing,
     trading,
 )
@@ -114,6 +115,7 @@ app.include_router(agents.router, prefix="/api/v1")
 app.include_router(navagraha.router, prefix="/api/v1")
 app.include_router(ooda.router, prefix="/api/v1")
 app.include_router(federated.router, prefix="/api/v1")
+app.include_router(providers.router, prefix="/api/v1")
 app.include_router(websocket_router)
 app.include_router(paper_trading_ws_router)
 

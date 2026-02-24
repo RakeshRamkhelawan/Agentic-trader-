@@ -122,6 +122,8 @@ ignore = [
     "N815",  # Variable in class scope should not be mixedCase
     "SIM105", # Use contextlib.suppress (too opinionated)
     "SIM108", # Use ternary operator (sometimes less readable)
+    "B008",   # FastAPI: Depends() in function signatures is required by the framework
+    "B904",   # raise-from-e: overly strict for HTTP exception re-raising in FastAPI handlers
 ]
 
 # Allow autofix for all enabled rules
