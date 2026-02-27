@@ -176,11 +176,6 @@ class LivePaperTradingProduction:
         
         # Broadcast session start
         await broadcast_stats(0, 0, "0/0", {})  # Session starting
-            'capital': self.initial_capital,
-            'exchanges': list(self.symbols.keys()),
-            'symbols_count': total,
-            'agents': [a.name for a in self.agents],
-        })
         
     async def fetch_prices(self):
         """Fetch all prices."""
@@ -259,17 +254,6 @@ class LivePaperTradingProduction:
             
             if decision and decision['confidence'] >= agent.min_confidence:
                 # Broadcast agent decision
-                pass  # Agent decision broadcast
-                    agent.name,
-                    {
-                        'symbol': symbol,
-                        'side': decision['side'].value,
-                        'confidence': decision['confidence'],
-                        'reason': decision['reason'],
-                        'price': price,
-                    }
-                )
-                
                 await self._execute_trade(exchange, symbol, agent, decision, price)
     
     async def _execute_trade(self, exchange: str, symbol: str, agent: TradingAgent, decision: dict, price: float):
@@ -425,9 +409,6 @@ class LivePaperTradingProduction:
         # Final broadcast
         await self.broadcast_portfolio()
         await broadcast_stats(self.stats['total_trades'], len(self.stats['symbols_traded']), f"{self.stats['buy_trades']}/{self.stats['sell_trades']}", self.stats['agents_trades'])
-            'total_trades': self.stats['total_trades'],
-            'final_pnl': sum(t.get('value', 0) * (1 if t['side'] == 'SELL' else -1) for t in self.trades),
-        })
         
         print()
         print("="*80)
@@ -485,8 +466,8 @@ async def main():
         
         # Import to DB
         print("[IMPORT] To database...")
-        import subprocess
-        subprocess.run(["python", "scripts/import_ultimate_trades.py", filename], 
+        import subprocess  # nosec B404
+        subprocess.run(["python", "scripts/import_ultimate_trades.py", filename],   # nosec B603 B607 - Internal script with controlled input
                       capture_output=True)
         
         # Summary

@@ -1,0 +1,137 @@
+# Flux GitOps Configuration
+---
+# Git Repository Source
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: agentic-trader
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  url: https://github.com/your-org/agentic-trader-platform
+  ref:
+    branch: main
+  secretRef:
+    name: github-token
+
+---
+# Helm Repository
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: bitnami
+  namespace: flux-system
+spec:
+  interval: 1h0s
+  url: https://charts.bitnami.com/bitnami
+
+---
+# Kustomization for Infrastructure
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./infrastructure/k8s
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: agentic-trader
+  timeout: 2m0s
+  wait: true
+
+---
+# Helm Release for Application
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: agentic-trader
+  namespace: agentic-trader
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: ./infrastructure/helm/agentic-trader
+      sourceRef:
+        kind: GitRepository
+        name: agentic-trader
+        namespace: flux-system
+      interval: 1m
+  values:
+    replicaCount: 3
+    image:
+      repository: agentic-trader
+      tag: v1.0.0
+    ingress:
+      enabled: true
+      hosts:
+        - host: trader.yourdomain.com
+          paths:
+            - path: /
+              pathType: Prefix
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+
+---
+# Image Update Automation
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: agentic-trader
+  namespace: flux-system
+spec:
+  image: ghcr.io/your-org/agentic-trader
+  interval: 1m0s
+  secretRef:
+    name: ghcr-token
+
+---
+# Image Policy for Semantic Versioning
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: agentic-trader
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: agentic-trader
+  policy:
+    semver:
+      range: '>=1.0.0 <2.0.0'
+
+---
+# Image Update Automation
+apiVersion: image.toolkit.fluxcd.io/v1beta1
+kind: ImageUpdateAutomation
+metadata:
+  name: agentic-trader
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  sourceRef:
+    kind: GitRepository
+    name: agentic-trader
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: Flux Bot
+        email: flux@yourdomain.com
+      messageTemplate: "[ci skip] Update image to {{.Image}}"
+    push:
+      branch: main
+  policy:
+    semver:
+      range: '>=1.0.0 <2.0.0'

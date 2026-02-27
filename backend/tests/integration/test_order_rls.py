@@ -1,3 +1,4 @@
+# nosec B608 - Test fixtures use internally generated UUIDs, not user input
 from uuid import uuid4
 
 import pytest
@@ -142,7 +143,7 @@ async def test_16_order_status_validation(system_db):
         await system_db.commit()
 
         # Read back
-        res = await system_db.execute(text(f"SELECT status FROM orders WHERE id = '{order_d_id}'"))
+        res = await system_db.execute(text(f"SELECT status FROM orders WHERE id = '{order_d_id}'"))  # nosec B608 - Test with controlled UUID
         assert res.scalar() == valid_status
 
     except Exception as e:

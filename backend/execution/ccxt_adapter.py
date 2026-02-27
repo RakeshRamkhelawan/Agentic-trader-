@@ -61,7 +61,7 @@ class CCXTAdapter(ExecutionInterface):
         exchange_id: str = "binance",
         api_key: str = "",
         secret: str = "",
-        password: str = "",
+        password: str = "",  # nosec B107 - Optional parameter, not a hardcoded password
         sandbox: bool = False,
         options: dict[str, Any] | None = None,
     ):

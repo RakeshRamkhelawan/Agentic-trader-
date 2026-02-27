@@ -1,0 +1,310 @@
+"""
+{{MODULE_NAME}} API Module - {{DESCRIPTION}}
+
+FastAPI routes for {{RESOURCE_NAME}} management with Redis event publishing.
+"""
+
+from datetime import UTC, datetime
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+
+from backend.api.deps import get_current_user, require_auth
+from backend.events.event_bus import EventBus
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/{{API_PREFIX}}", tags=["{{TAG_NAME}}"])
+
+
+# ============================================================================
+# Pydantic Models
+# ============================================================================
+
+class {{RESOURCE_NAME}}Create(BaseModel):
+    """Request model for creating a {{RESOURCE_NAME}}."""
+    # TODO: Add fields specific to your resource
+    symbol: str = Field(..., description="Trading symbol")
+    amount: float = Field(..., gt=0, description="Amount/value")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "symbol": "BTC-USD",
+                "amount": 1.5
+            }
+        }
+
+
+class {{RESOURCE_NAME}}Response(BaseModel):
+    """Response model for {{RESOURCE_NAME}}."""
+    id: str
+    symbol: str
+    amount: float
+    status: str
+    created_at: str
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "uuid-123",
+                "symbol": "BTC-USD",
+                "amount": 1.5,
+                "status": "active",
+                "created_at": "2026-02-25T16:00:00Z"
+            }
+        }
+
+
+# ============================================================================
+# Event Publishing Helper
+# ============================================================================
+
+event_bus = EventBus()
+
+async def publish_{{RESOURCE_LOWER}}_event(
+    event_type: str,
+    data: dict[str, Any]
+) -> str | None:
+    """
+    Publish {{RESOURCE_NAME}} event to Redis Streams.
+    
+    Args:
+        event_type: Type of event (created, updated, deleted)
+        data: Event payload
+        
+    Returns:
+        Message ID if published, None if failed
+    """
+    try:
+        event = {
+            "type": f"{{RESOURCE_LOWER}}_{event_type}",
+            "data": data,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+        message_id = await event_bus.publish("{{EVENT_STREAM}}", event)
+        logger.info(f"Published {event_type} event: {message_id}")
+        return message_id
+    except Exception as e:
+        logger.error(f"Failed to publish event: {e}")
+        return None
+
+
+# ============================================================================
+# API Routes
+# ============================================================================
+
+@router.get(
+    "/",
+    response_model=list[{{RESOURCE_NAME}}Response],
+    summary="List all {{RESOURCE_PLURAL}}",
+    description="Retrieve a list of all {{RESOURCE_PLURAL}} for the authenticated user."
+)
+async def list_{{RESOURCE_PLURAL}}(
+    user: dict = Depends(require_auth)
+):
+    """
+    List all {{RESOURCE_PLURAL}}.
+    
+    Returns:
+        List of {{RESOURCE_NAME}} objects
+    """
+    # TODO: Implement database query
+    # Example:
+    # async with get_db_session() as session:
+    #     result = await session.execute(select({{RESOURCE_NAME}}Model))
+    #     items = result.scalars().all()
+    
+    return []
+
+
+@router.post(
+    "/",
+    response_model={{RESOURCE_NAME}}Response,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new {{RESOURCE_NAME}}",
+    description="Create a new {{RESOURCE_NAME}} and publish event to Redis Streams."
+)
+async def create_{{RESOURCE_LOWER}}(
+    request: {{RESOURCE_NAME}}Create,
+    user: dict = Depends(require_auth)
+):
+    """
+    Create a new {{RESOURCE_NAME}}.
+    
+    - Validates input data
+    - Creates resource in database
+    - Publishes 'created' event to Redis
+    
+    Returns:
+        Created {{RESOURCE_NAME}} object
+    """
+    try:
+        # TODO: Implement creation logic
+        # 1. Validate symbol exists
+        # 2. Check user permissions
+        # 3. Create in database
+        
+        created_item = {
+            "id": "uuid-placeholder",
+            "symbol": request.symbol,
+            "amount": request.amount,
+            "status": "active",
+            "created_at": datetime.now(UTC).isoformat(),
+        }
+        
+        # Publish event to Redis Streams
+        await publish_{{RESOURCE_LOWER}}_event("created", created_item)
+        
+        return {{RESOURCE_NAME}}Response(**created_item)
+        
+    except Exception as e:
+        logger.error(f"Failed to create {{RESOURCE_LOWER}}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create {{RESOURCE_LOWER}}: {str(e)}"
+        )
+
+
+@router.get(
+    "/{item_id}",
+    response_model={{RESOURCE_NAME}}Response,
+    summary="Get {{RESOURCE_NAME}} by ID",
+    description="Retrieve a specific {{RESOURCE_NAME}} by its ID."
+)
+async def get_{{RESOURCE_LOWER}}(
+    item_id: str,
+    user: dict = Depends(require_auth)
+):
+    """
+    Get a specific {{RESOURCE_NAME}} by ID.
+    
+    Args:
+        item_id: Unique identifier
+        
+    Returns:
+        {{RESOURCE_NAME}} object
+        
+    Raises:
+        404: If {{RESOURCE_NAME}} not found
+    """
+    # TODO: Implement database lookup
+    # Example:
+    # async with get_db_session() as session:
+    #     item = await session.get({{RESOURCE_NAME}}Model, item_id)
+    #     if not item:
+    #         raise HTTPException(status_code=404, detail="Not found")
+    
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"{{RESOURCE_NAME}} {item_id} not found"
+    )
+
+
+@router.put(
+    "/{item_id}",
+    response_model={{RESOURCE_NAME}}Response,
+    summary="Update {{RESOURCE_NAME}}",
+    description="Update an existing {{RESOURCE_NAME}} and publish event."
+)
+async def update_{{RESOURCE_LOWER}}(
+    item_id: str,
+    request: {{RESOURCE_NAME}}Create,
+    user: dict = Depends(require_auth)
+):
+    """
+    Update an existing {{RESOURCE_NAME}}.
+    
+    - Validates input
+    - Updates in database
+    - Publishes 'updated' event
+    
+    Returns:
+        Updated {{RESOURCE_NAME}} object
+    """
+    # TODO: Implement update logic
+    
+    updated_item = {
+        "id": item_id,
+        "symbol": request.symbol,
+        "amount": request.amount,
+        "status": "active",
+        "created_at": datetime.now(UTC).isoformat(),
+    }
+    
+    await publish_{{RESOURCE_LOWER}}_event("updated", updated_item)
+    
+    return {{RESOURCE_NAME}}Response(**updated_item)
+
+
+@router.delete(
+    "/{item_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete {{RESOURCE_NAME}}",
+    description="Delete a {{RESOURCE_NAME}} and publish event."
+)
+async def delete_{{RESOURCE_LOWER}}(
+    item_id: str,
+    user: dict = Depends(require_auth)
+):
+    """
+    Delete a {{RESOURCE_NAME}}.
+    
+    - Removes from database
+    - Publishes 'deleted' event
+    
+    Returns:
+        204 No Content on success
+    """
+    # TODO: Implement deletion logic
+    
+    await publish_{{RESOURCE_LOWER}}_event("deleted", {"id": item_id})
+    
+    return None
+
+
+# ============================================================================
+# WebSocket Endpoint (Optional)
+# ============================================================================
+
+from fastapi import WebSocket, WebSocketDisconnect
+
+@router.websocket("/ws")
+async def {{RESOURCE_LOWER}}_websocket(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time {{RESOURCE_NAME}} updates.
+    
+    Usage:
+        const ws = new WebSocket('ws://localhost:8000/{{API_PREFIX}}/ws');
+        ws.onmessage = (event) => console.log(JSON.parse(event.data));
+    """
+    await websocket.accept()
+    
+    try:
+        while True:
+            # Receive message from client
+            data = await websocket.receive_json()
+            
+            # Process and respond
+            response = {
+                "type": "ack",
+                "received": data,
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+            await websocket.send_json(response)
+            
+    except WebSocketDisconnect:
+        logger.info("WebSocket disconnected")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        await websocket.close()
+
+
+# ============================================================================
+# Register in main.py
+# ============================================================================
+
+# Add this to backend/api/main.py:
+# 
+# from backend.api import {{MODULE_NAME}}
+# app.include_router({{MODULE_NAME}}.router)

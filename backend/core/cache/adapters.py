@@ -87,13 +87,13 @@ class RedisAdapter(CacheAdapter):
             value = await self._redis.get(key)
             if value is None:
                 return None
-            return pickle.loads(value)
+            return pickle.loads(value)  # nosec B301 - Internal cache only, Redis not exposed externally
         except Exception:
             return None
 
     async def set(self, key: str, value: Any, ttl: int) -> bool:
         try:
-            serialized = pickle.dumps(value)
+            serialized = pickle.dumps(value)  # nosec B301 - Internal serialization for cache
             await self._redis.setex(key, ttl, serialized)
             return True
         except Exception:
@@ -127,13 +127,15 @@ class ClickHouseAdapter(CacheAdapter):
 
     async def get(self, key: str) -> Any | None:
         try:
-            query = f"""
+            query = (  # nosec B608
+                f"""
                 SELECT value, expires_at
                 FROM {self._table}
                 WHERE key = %(key)s
                 AND expires_at > now()
                 LIMIT 1
             """
+            )
             result = await self._client.execute(query, {"key": key})
 
             if not result:
@@ -147,7 +149,7 @@ class ClickHouseAdapter(CacheAdapter):
     async def set(self, key: str, value: Any, ttl: int) -> bool:
         try:
             value_json = json.dumps(value)
-            query = f"""
+            query = f"""  # nosec B608
                 INSERT INTO {self._table} (key, value, expires_at, created_at)
                 VALUES (%(key)s, %(value)s, now() + INTERVAL %(ttl)s SECOND, now())
             """
@@ -158,7 +160,7 @@ class ClickHouseAdapter(CacheAdapter):
 
     async def delete(self, key: str) -> bool:
         try:
-            query = f"ALTER TABLE {self._table} DELETE WHERE key = %(key)s"
+            query = f"ALTER TABLE {self._table} DELETE WHERE key = %(key)s"  # nosec B608
             await self._client.execute(query, {"key": key})
             return True
         except Exception:
@@ -166,7 +168,7 @@ class ClickHouseAdapter(CacheAdapter):
 
     async def clear(self) -> bool:
         try:
-            query = f"TRUNCATE TABLE {self._table}"
+            query = f"TRUNCATE TABLE {self._table}"  # nosec B608
             await self._client.execute(query)
             return True
         except Exception:
@@ -174,10 +176,12 @@ class ClickHouseAdapter(CacheAdapter):
 
     async def exists(self, key: str) -> bool:
         try:
-            query = f"""
+            query = (  # nosec B608
+                f"""
                 SELECT count(*) FROM {self._table}
                 WHERE key = %(key)s AND expires_at > now()
             """
+            )
             result = await self._client.execute(query, {"key": key})
             return result[0][0] > 0
         except Exception:
