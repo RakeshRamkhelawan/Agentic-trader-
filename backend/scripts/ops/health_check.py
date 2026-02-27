@@ -14,7 +14,7 @@ except ImportError:
     print("Installing required dependencies...")
     import subprocess
 
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "redis", "psycopg", "httpx"])
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "redis", "psycopg", "httpx"])  # nosec B603 - Installing known dependencies
     import httpx
     import psycopg
     import redis.asyncio as aioredis

@@ -1,0 +1,97 @@
+# ArgoCD Application for GitOps Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: agentic-trader
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/agentic-trader-platform.git
+    targetRevision: HEAD
+    path: infrastructure/helm/agentic-trader
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-prod.yaml
+      parameters:
+        - name: replicaCount
+          value: "3"
+        - name: image.tag
+          value: "v1.0.0"
+        - name: ingress.hosts[0].host
+          value: trader.yourdomain.com
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: agentic-trader
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /data
+
+---
+# Application Set for Multi-Environment
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: agentic-trader-environments
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: staging
+            url: https://staging-k8s.example.com
+            valuesFile: values-staging.yaml
+            replicas: "2"
+          - cluster: production
+            url: https://prod-k8s.example.com
+            valuesFile: values-prod.yaml
+            replicas: "5"
+  template:
+    metadata:
+      name: "agentic-trader-{{cluster}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/your-org/agentic-trader-platform.git
+        targetRevision: HEAD
+        path: infrastructure/helm/agentic-trader
+        helm:
+          valueFiles:
+            - values.yaml
+            - "{{valuesFile}}"
+          parameters:
+            - name: replicaCount
+              value: "{{replicas}}"
+      destination:
+        server: "{{url}}"
+        namespace: agentic-trader
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

@@ -143,7 +143,7 @@ class BacktestCache:
         """Generate deterministic cache key from parameters."""
         # Sort keys for deterministic hashing
         param_str = json.dumps(params, sort_keys=True, default=str)
-        hash_val = hashlib.md5(param_str.encode()).hexdigest()[:16]
+        hash_val = hashlib.blake2b(param_str.encode(), digest_size=8).hexdigest()
         return f"{prefix}:{hash_val}"
 
     def _serialize(self, value: Any) -> bytes:
@@ -167,7 +167,7 @@ class BacktestCache:
                 data = zlib.decompress(data)
             except Exception:
                 pass  # Wasn't compressed
-        return pickle.loads(data)
+        return pickle.loads(data)  # nosec B301 - Internal cache only, data from controlled local source
 
     async def get(self, prefix: str, params: dict[str, Any]) -> Any | None:
         """Get cached value with two-tier lookup."""

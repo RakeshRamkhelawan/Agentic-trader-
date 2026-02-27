@@ -684,4 +684,4 @@ if __name__ == "__main__":
     app = create_gateway()
 
     # Run: uvicorn backend.api.gateway:app --reload
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)  # nosec B104 - Required for Docker/containerized deployment

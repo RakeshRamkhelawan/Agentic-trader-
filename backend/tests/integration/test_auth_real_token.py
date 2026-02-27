@@ -39,7 +39,7 @@ def get_real_auth0_token():
             "grant_type": "client_credentials",
         }
         print(f"Attempting Client Credentials usage for {client_id}...")
-        resp = requests.post(url, json=payload)
+        resp = requests.post(url, json=payload, timeout=30)
         if resp.status_code == 200:
             return resp.json().get("access_token")
         else:
@@ -60,7 +60,7 @@ def get_real_auth0_token():
             "scope": "openid profile email",
         }
         print(f"Attempting Password Login for {username}...")
-        resp = requests.post(url, json=payload)
+        resp = requests.post(url, json=payload, timeout=30)
         if resp.status_code == 200:
             return resp.json().get("access_token")
         else:

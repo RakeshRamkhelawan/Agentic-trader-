@@ -92,7 +92,7 @@ class VasanaCache:
         """Create deterministic hash for pattern."""
         # Round to reduce sensitivity to tiny floating point differences
         rounded = np.round(pattern, decimals=6)
-        return hashlib.md5(rounded.tobytes()).hexdigest()
+        return hashlib.blake2b(rounded.tobytes(), digest_size=16).hexdigest()
 
     def _cosine_similarity(self, a: np.ndarray, b: np.ndarray) -> float:
         """Calculate cosine similarity between two vectors."""

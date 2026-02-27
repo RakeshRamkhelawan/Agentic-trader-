@@ -33,7 +33,7 @@ class OAuthConfig:
             return {"sub": "mock_user", "scope": "read write"}
 
         # Mock validation
-        if token == "invalid":
+        if token == "invalid":  # nosec B105 - Test value for mock validation
             raise ValueError("Invalid token")
 
         return {"sub": "user_123", "tenant_id": "tenant_abc"}

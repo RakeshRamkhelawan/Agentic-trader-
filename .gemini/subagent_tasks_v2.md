@@ -7,3 +7,4 @@
 - [x] Epic 10: Standardized Data & Config Layer
 - [x] Epic 11: Security Hardening (AgentGatekeeper, PromptGuard)
 - [x] Phase 10: Samkhya Integration & Merge to main
+- [x] Security scan, create branch `chore/commit-security-fixes` en push

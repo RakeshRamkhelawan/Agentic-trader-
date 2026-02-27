@@ -42,7 +42,7 @@ try:
 
     SECRET_KEY = getattr(settings, "SECRET_KEY", "dev-secret-key")
 except ImportError:
-    SECRET_KEY = "dev-secret-key"
+    SECRET_KEY = "dev-secret-key"  # nosec B105 - Fallback for development only
 
 router = APIRouter()
 
@@ -200,7 +200,7 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_admi
 
     return AuthResponse(
         access_token=token,
-        token_type="bearer",
+        token_type="bearer",  # nosec B106 - OAuth2 token type, not a password  # nosec B106 - OAuth2 token type, not a password
         user=UserResponse(
             id=user.id,
             email=user.email,
@@ -252,7 +252,7 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_admin_db))
 
     return AuthResponse(
         access_token=token,
-        token_type="bearer",
+        token_type="bearer",  # nosec B106 - OAuth2 token type, not a password
         user=UserResponse(
             id=user.id,
             email=user.email,

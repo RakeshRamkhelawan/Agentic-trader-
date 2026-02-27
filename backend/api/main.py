@@ -117,6 +117,14 @@ app.include_router(federated.router, prefix="/api/v1")
 app.include_router(websocket_router)
 app.include_router(paper_trading_ws_router)
 
+# Include MCP ToolBroker router (if available)
+try:
+    from backend.api.mcp_api import router as mcp_router
+    app.include_router(mcp_router, prefix="/api/v1")
+    logger.info("MCP ToolBroker router registered")
+except ImportError:
+    logger.warning("MCP ToolBroker router not available")
+
 
 @app.get("/")
 async def root():
@@ -194,4 +202,4 @@ if __name__ == "__main__":
     import uvicorn
 
     logger.info("Starting Uvicorn server...")
-    uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
+    uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")  # nosec B104 - Required for Docker/containerized deployment

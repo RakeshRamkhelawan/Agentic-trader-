@@ -187,7 +187,7 @@ class EternalSoulService:
             current_price = self.price_history[-1]
 
         # Random change +/- 0.5%
-        import random
+        import random  # nosec B311 - Used for simulation only, not cryptography
 
         change = random.uniform(-0.005, 0.005)
         current_price *= 1 + change

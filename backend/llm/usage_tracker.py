@@ -167,16 +167,16 @@ class UsageTracker:
         try:
             # Query ClickHouse for today's usage
             # toYYYYMMDD(timestamp) = toYYYYMMDD(now('UTC'))
-            query = f"""
+            query = """
                 SELECT sum(cost_usd) as total_cost
                 FROM llm_usage_logs
-                WHERE tenant_id = '{tenant_id}'
+                WHERE tenant_id = %(tenant_id)s
                   AND toYYYYMMDD(timestamp) = toYYYYMMDD(now('UTC'))
             """
             # Use execute directly or query method if available
             # self.clickhouse is TenantAwareClickHouseClient which has execute/query
             # We need to query.
-            result = await self.clickhouse.execute(query)
+            result = await self.clickhouse.execute(query, {"tenant_id": tenant_id})
 
             # Result formatting depends on clickhouse-connect (usually list of tuples)
             # result.result_rows might be the way, or just result if it returns rows
