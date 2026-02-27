@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 
 @dataclass
@@ -11,10 +11,10 @@ class UserProfile:
     user_id: str
     display_name: str
     bio: str = ""
-    avatar_url: Optional[str] = None
+    avatar_url: str | None = None
     location: str = ""
-    website: Optional[str] = None
-    
+    website: str | None = None
+
     # Trading stats (synced from competitor)
     tier: str = "bronze"
     points: int = 0
@@ -22,24 +22,24 @@ class UserProfile:
     total_pnl: float = 0.0
     win_rate: float = 0.0
     total_trades: int = 0
-    
+
     # Social stats
     followers_count: int = 0
     following_count: int = 0
     strategies_count: int = 0
     tournaments_won: int = 0
     badges_count: int = 0
-    
+
     # Preferences
     is_public: bool = True
     show_trades: bool = True
     show_pnl: bool = True
     allow_messages: bool = True
-    
+
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "user_id": self.user_id,
@@ -77,17 +77,17 @@ class UserProfile:
 class ProfileManager:
     """
     Manages user profiles with social features.
-    
+
     Provides:
     - Profile CRUD operations
     - Profile search/discovery
     - Stats synchronization from competitions
     """
-    
+
     def __init__(self):
-        self._profiles: Dict[str, UserProfile] = {}
-        self._display_name_index: Dict[str, str] = {}  # display_name -> user_id
-    
+        self._profiles: dict[str, UserProfile] = {}
+        self._display_name_index: dict[str, str] = {}  # display_name -> user_id
+
     def create_profile(
         self,
         user_id: str,
@@ -102,54 +102,54 @@ class ProfileManager:
         while display_name in self._display_name_index:
             display_name = f"{base_name}_{counter}"
             counter += 1
-        
+
         profile = UserProfile(
             user_id=user_id,
             display_name=display_name,
             bio=bio,
             **kwargs
         )
-        
+
         self._profiles[user_id] = profile
         self._display_name_index[display_name] = user_id
-        
+
         return profile
-    
-    def get_profile(self, user_id: str) -> Optional[UserProfile]:
+
+    def get_profile(self, user_id: str) -> UserProfile | None:
         """Get profile by user ID."""
         return self._profiles.get(user_id)
-    
-    def get_profile_by_name(self, display_name: str) -> Optional[UserProfile]:
+
+    def get_profile_by_name(self, display_name: str) -> UserProfile | None:
         """Get profile by display name."""
         user_id = self._display_name_index.get(display_name)
         if user_id:
             return self._profiles.get(user_id)
         return None
-    
-    def update_profile(self, user_id: str, **kwargs) -> Optional[UserProfile]:
+
+    def update_profile(self, user_id: str, **kwargs) -> UserProfile | None:
         """Update profile fields."""
         profile = self._profiles.get(user_id)
         if not profile:
             return None
-        
+
         # Handle display name change
         if "display_name" in kwargs and kwargs["display_name"] != profile.display_name:
             new_name = kwargs["display_name"]
             if new_name in self._display_name_index:
                 return None  # Name already taken
-            
+
             # Update index
             del self._display_name_index[profile.display_name]
             self._display_name_index[new_name] = user_id
-        
+
         # Update fields
         for key, value in kwargs.items():
             if hasattr(profile, key):
                 setattr(profile, key, value)
-        
+
         profile.updated_at = datetime.utcnow()
         return profile
-    
+
     def delete_profile(self, user_id: str) -> bool:
         """Delete a profile."""
         profile = self._profiles.get(user_id)
@@ -158,7 +158,7 @@ class ProfileManager:
             del self._display_name_index[profile.display_name]
             return True
         return False
-    
+
     def sync_competitor_stats(
         self,
         user_id: str,
@@ -168,7 +168,7 @@ class ProfileManager:
         total_pnl: float,
         win_rate: float,
         total_trades: int,
-    ) -> Optional[UserProfile]:
+    ) -> UserProfile | None:
         """Synchronize stats from competition system."""
         profile = self._profiles.get(user_id)
         if profile:
@@ -180,16 +180,16 @@ class ProfileManager:
             profile.total_trades = total_trades
             profile.updated_at = datetime.utcnow()
         return profile
-    
+
     def update_social_stats(
         self,
         user_id: str,
-        followers: Optional[int] = None,
-        following: Optional[int] = None,
-        strategies: Optional[int] = None,
-        tournaments_won: Optional[int] = None,
-        badges: Optional[int] = None,
-    ) -> Optional[UserProfile]:
+        followers: int | None = None,
+        following: int | None = None,
+        strategies: int | None = None,
+        tournaments_won: int | None = None,
+        badges: int | None = None,
+    ) -> UserProfile | None:
         """Update social stats."""
         profile = self._profiles.get(user_id)
         if profile:
@@ -205,17 +205,17 @@ class ProfileManager:
                 profile.badges_count = badges
             profile.updated_at = datetime.utcnow()
         return profile
-    
+
     def search_profiles(
         self,
-        query: Optional[str] = None,
-        tier: Optional[str] = None,
-        min_points: Optional[int] = None,
+        query: str | None = None,
+        tier: str | None = None,
+        min_points: int | None = None,
         limit: int = 20,
-    ) -> List[UserProfile]:
+    ) -> list[UserProfile]:
         """Search profiles."""
         results = list(self._profiles.values())
-        
+
         # Filter by query (display name or bio)
         if query:
             query_lower = query.lower()
@@ -224,28 +224,28 @@ class ProfileManager:
                 if query_lower in p.display_name.lower()
                 or query_lower in p.bio.lower()
             ]
-        
+
         # Filter by tier
         if tier:
             results = [p for p in results if p.tier == tier]
-        
+
         # Filter by minimum points
         if min_points is not None:
             results = [p for p in results if p.points >= min_points]
-        
+
         # Sort by points (descending)
         results.sort(key=lambda p: p.points, reverse=True)
-        
+
         return results[:limit]
-    
-    def get_leaderboard_profiles(self, limit: int = 50) -> List[Dict]:
+
+    def get_leaderboard_profiles(self, limit: int = 50) -> list[dict]:
         """Get profiles formatted for leaderboard."""
         profiles = sorted(
             self._profiles.values(),
             key=lambda p: p.points,
             reverse=True,
         )[:limit]
-        
+
         return [
             {
                 "rank": i + 1,
@@ -259,13 +259,13 @@ class ProfileManager:
             }
             for i, p in enumerate(profiles)
         ]
-    
-    def get_public_profile(self, user_id: str) -> Optional[Dict]:
+
+    def get_public_profile(self, user_id: str) -> dict | None:
         """Get public profile view (respects privacy settings)."""
         profile = self._profiles.get(user_id)
         if not profile:
             return None
-        
+
         if not profile.is_public:
             return {
                 "user_id": profile.user_id,
@@ -273,26 +273,26 @@ class ProfileManager:
                 "tier": profile.tier,
                 "is_private": True,
             }
-        
+
         data = profile.to_dict()
-        
+
         # Respect privacy settings
         if not profile.show_pnl:
             data["stats"]["total_pnl"] = None
         if not profile.show_trades:
             data["stats"]["total_trades"] = None
             data["stats"]["win_rate"] = None
-        
+
         return data
-    
-    def get_stats(self) -> Dict:
+
+    def get_stats(self) -> dict:
         """Get profile system statistics."""
         return {
             "total_profiles": len(self._profiles),
             "by_tier": self._count_by_tier(),
         }
-    
-    def _count_by_tier(self) -> Dict[str, int]:
+
+    def _count_by_tier(self) -> dict[str, int]:
         """Count profiles by tier."""
         counts = {}
         for profile in self._profiles.values():

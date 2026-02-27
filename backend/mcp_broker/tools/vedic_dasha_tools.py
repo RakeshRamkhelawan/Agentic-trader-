@@ -56,22 +56,22 @@ async def vedic_calculate_vimshottari_dasha(
 ) -> dict[str, Any]:
     """
     Calculate Vimshottari Dasha for a birth chart.
-    
+
     Vimshottari Dasha is a 120-year planetary cycle system used in
     Vedic astrology to predict life events and timing.
-    
+
     Args:
         birth_nakshatra: Birth nakshatra (lunar mansion) name
         birth_nakshatra_pad: Pada (quarter) 1-4
         birth_date: Birth date (ISO format: YYYY-MM-DD)
         ctx: MCP context for logging
-        
+
     Returns:
         Dasha periods with timing and interpretations
     """
     if ctx:
         ctx.info(f"Calculating Vimshottari Dasha for {birth_nakshatra} pad {birth_nakshatra_pad}")
-    
+
     try:
         # Validate inputs
         if birth_nakshatra not in NAKSHATRAS:
@@ -79,43 +79,43 @@ async def vedic_calculate_vimshottari_dasha(
                 "success": False,
                 "error": f"Invalid nakshatra: {birth_nakshatra}. Valid: {', '.join(NAKSHATRAS[:5])}..."
             }
-        
+
         if birth_nakshatra_pad < 1 or birth_nakshatra_pad > 4:
             return {
                 "success": False,
                 "error": "Nakshatra pad must be 1-4"
             }
-        
+
         # Determine starting planet based on nakshatra lord
         start_planet = NAKSHATRA_LORDS.get(birth_nakshatra, "Moon")
-        
+
         # Calculate balance of first dasha based on pad
         # Each pad = 3 degrees 20 minutes = 1/4 of nakshatra
         # Balance = (4 - pad + 1) / 4 * full_period
         balance_factor = (5 - birth_nakshatra_pad) / 4
-        
+
         # Generate dasha sequence
         dasha_sequence = []
         planet_order = list(VIMSHOTTARI_PERIODS.keys())
         start_idx = planet_order.index(start_planet)
-        
+
         # Reorder to start from birth planet
         ordered_planets = planet_order[start_idx:] + planet_order[:start_idx]
-        
+
         # Calculate dates
         current_date = datetime.strptime(birth_date, "%Y-%m-%d")
-        
+
         for planet in ordered_planets:
             period_years = VIMSHOTTARI_PERIODS[planet]
-            
+
             # Apply balance factor only to first planet
             if planet == start_planet:
                 effective_years = period_years * balance_factor
             else:
                 effective_years = period_years
-            
+
             end_date = current_date.replace(year=current_date.year + int(effective_years))
-            
+
             dasha_sequence.append({
                 "planet": planet,
                 "years": effective_years,
@@ -123,9 +123,9 @@ async def vedic_calculate_vimshottari_dasha(
                 "end_date": end_date.strftime("%Y-%m-%d"),
                 "interpretation": _get_dasha_interpretation(planet)
             })
-            
+
             current_date = end_date
-        
+
         # Determine current dasha
         now = datetime.now()
         current_mahadasha = None
@@ -135,10 +135,10 @@ async def vedic_calculate_vimshottari_dasha(
             if start <= now <= end:
                 current_mahadasha = dasha
                 break
-        
+
         if ctx:
             ctx.info(f"Dasha calculation complete. Current: {current_mahadasha['planet'] if current_mahadasha else 'Unknown'}")
-        
+
         return {
             "success": True,
             "result": {
@@ -150,7 +150,7 @@ async def vedic_calculate_vimshottari_dasha(
                 "total_cycle_years": 120
             }
         }
-        
+
     except Exception as e:
         logger.error(f"Vimshottari Dasha calculation failed: {e}")
         return {
@@ -168,27 +168,27 @@ async def vedic_get_nakshatra_analysis(
 ) -> dict[str, Any]:
     """
     Get detailed analysis of a Nakshatra (lunar mansion).
-    
+
     Args:
         nakshatra: Nakshatra name
         pada: Quarter (1-4), optional
         ctx: MCP context for logging
-        
+
     Returns:
         Nakshatra characteristics and trading implications
     """
     if ctx:
         ctx.info(f"Analyzing nakshatra: {nakshatra}")
-    
+
     try:
         if nakshatra not in NAKSHATRAS:
             return {
                 "success": False,
                 "error": f"Invalid nakshatra. Valid options: {', '.join(NAKSHATRAS)}"
             }
-        
+
         lord = NAKSHATRA_LORDS.get(nakshatra, "Unknown")
-        
+
         # Nakshatra characteristics for trading
         nakshatra_traits = {
             "Ashwini": {"nature": "Mobile", "quality": "Swift", "trading": "Good for quick trades"},
@@ -219,16 +219,16 @@ async def vedic_get_nakshatra_analysis(
             "Uttara Bhadrapada": {"nature": "Fixed", "quality": "Water", "trading": "Emotional control needed"},
             "Revati": {"nature": "Soft", "quality": "Wealth", "trading": "Nurturing positions"}
         }
-        
+
         traits = nakshatra_traits.get(nakshatra, {"nature": "Unknown", "quality": "Unknown", "trading": "Unknown"})
-        
+
         pada_traits = {
             1: "Dharma - Purpose/Righteousness. Focus on fundamental value.",
             2: "Artha - Wealth/Resources. Focus on financial gain.",
             3: "Kama - Desires/Pleasure. Focus on momentum/trends.",
             4: "Moksha - Liberation. Focus on exit/take profits."
         }
-        
+
         return {
             "success": True,
             "result": {
@@ -243,7 +243,7 @@ async def vedic_get_nakshatra_analysis(
                 "best_for": _get_nakshatra_best_for(nakshatra)
             }
         }
-        
+
     except Exception as e:
         logger.error(f"Nakshatra analysis failed: {e}")
         return {
@@ -261,40 +261,40 @@ async def vedic_calculate_transits(
 ) -> dict[str, Any]:
     """
     Calculate planetary transits (Gochara) for a given date.
-    
+
     Analyzes current planetary positions and their aspects to predict
     market conditions.
-    
+
     Args:
         date: Date for transit calculation (YYYY-MM-DD)
         symbols: List of asset symbols to analyze (optional)
         ctx: MCP context for logging
-        
+
     Returns:
         Transit analysis with trading predictions
     """
     if ctx:
         ctx.info(f"Calculating transits for {date}")
-    
+
     try:
         # In production, this would use Swiss Ephemeris
         # For now, return mock data structure
-        
+
         planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
-        signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", 
+        signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
                 "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
-        
+
         # Generate mock transit data
         # In production: Use actual ephemeris calculation
         transit_data = []
-        
+
         import random
         random.seed(date)  # Deterministic for same date
-        
+
         for planet in planets:
             sign_idx = random.randint(0, 11)
             degree = random.uniform(0, 30)
-            
+
             transit_data.append({
                 "planet": planet,
                 "sign": signs[sign_idx],
@@ -303,16 +303,16 @@ async def vedic_calculate_transits(
                 "house": (sign_idx % 12) + 1,
                 "aspects": _calculate_mock_aspects(planet, sign_idx)
             })
-        
+
         # Calculate market prediction based on transits
         jupiter = next((t for t in transit_data if t["planet"] == "Jupiter"), None)
         saturn = next((t for t in transit_data if t["planet"] == "Saturn"), None)
-        
+
         market_sentiment = _analyze_market_sentiment(transit_data)
-        
+
         if ctx:
             ctx.info(f"Transit analysis complete. Sentiment: {market_sentiment['overall']}")
-        
+
         return {
             "success": True,
             "result": {
@@ -325,7 +325,7 @@ async def vedic_calculate_transits(
                 "symbols_analyzed": symbols or ["BTC", "ETH", "SPY"]
             }
         }
-        
+
     except Exception as e:
         logger.error(f"Transit calculation failed: {e}")
         return {
@@ -421,7 +421,7 @@ def _get_nakshatra_best_for(nakshatra: str) -> list[str]:
 def _calculate_mock_aspects(planet: str, sign_idx: int) -> list[dict]:
     """Calculate mock aspects for demonstration."""
     aspects = []
-    
+
     # Different planets have different aspect patterns
     if planet in ["Mars", "Jupiter", "Saturn"]:
         # These planets cast special aspects
@@ -432,7 +432,7 @@ def _calculate_mock_aspects(planet: str, sign_idx: int) -> list[dict]:
                 "aspect_type": f"{planet}_special",
                 "orb": 5.0
             })
-    
+
     # All planets aspect 7th house (opposition)
     opposition = (sign_idx + 6) % 12
     aspects.append({
@@ -440,7 +440,7 @@ def _calculate_mock_aspects(planet: str, sign_idx: int) -> list[dict]:
         "aspect_type": "opposition",
         "orb": 8.0
     })
-    
+
     return aspects
 
 
@@ -448,7 +448,7 @@ def _analyze_market_sentiment(transit_data: list[dict]) -> dict[str, Any]:
     """Analyze market sentiment based on transits."""
     bullish_indicators = 0
     bearish_indicators = 0
-    
+
     for planet in transit_data:
         # Simplified rules for demonstration
         if planet["planet"] == "Jupiter":
@@ -456,24 +456,24 @@ def _analyze_market_sentiment(transit_data: list[dict]) -> dict[str, Any]:
                 bullish_indicators += 2
             elif planet["sign"] in ["Capricorn", "Gemini", "Virgo"]:
                 bearish_indicators += 1
-        
+
         if planet["planet"] == "Saturn":
             if planet["sign"] in ["Capricorn", "Aquarius", "Libra"]:
                 bearish_indicators += 1
             elif planet["retrograde"]:
                 bullish_indicators += 1  # Retrograde Saturn less restrictive
-        
+
         if planet["planet"] == "Mars":
             if planet["sign"] in ["Aries", "Scorpio", "Capricorn"]:
                 bullish_indicators += 1  # Strong Mars
-    
+
     if bullish_indicators > bearish_indicators + 2:
         sentiment = "bullish"
     elif bearish_indicators > bullish_indicators + 2:
         sentiment = "bearish"
     else:
         sentiment = "neutral"
-    
+
     return {
         "overall": sentiment,
         "bullish_score": bullish_indicators,
@@ -486,7 +486,7 @@ def _analyze_market_sentiment(transit_data: list[dict]) -> dict[str, Any]:
 def _extract_key_aspects(transit_data: list[dict]) -> list[dict]:
     """Extract important aspects from transit data."""
     key_aspects = []
-    
+
     # Find conjunctions (planets in same sign)
     positions = {}
     for planet in transit_data:
@@ -494,7 +494,7 @@ def _extract_key_aspects(transit_data: list[dict]) -> list[dict]:
         if sign not in positions:
             positions[sign] = []
         positions[sign].append(planet["planet"])
-    
+
     for sign, planets in positions.items():
         if len(planets) > 1:
             key_aspects.append({
@@ -503,5 +503,5 @@ def _extract_key_aspects(transit_data: list[dict]) -> list[dict]:
                 "sign": sign,
                 "significance": "high" if len(planets) > 2 else "medium"
             })
-    
+
     return key_aspects[:5]  # Return top 5

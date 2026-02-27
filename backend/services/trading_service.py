@@ -931,7 +931,7 @@ class TradingService:
             placeholders = ', '.join([f':sym_{i}' for i in range(len(symbols))])
             params = {f'sym_{i}': sym for i, sym in enumerate(symbols)}
             params['target_time'] = target_time
-            
+
             sql = text(  # nosec B608
                 f"""
                 SELECT DISTINCT ON (symbol) symbol, price

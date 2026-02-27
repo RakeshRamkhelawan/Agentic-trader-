@@ -113,14 +113,14 @@ python scripts/vedastro_signal.py --batch --assets BTC,ETH,SOL,XAU --output repo
 class VedAstroAgent(BaseAgent):
     async def analyze(self, features, context):
         symbol = features['symbol']
-        
+
         # Get VedAstro signal
         signal = await self.orchestrator.process_market_tick(symbol, features)
-        
+
         # Check elemental alignment
         if signal['alignment_score'] < 0.6:
             return {'signal': 'hold', 'reason': 'Low alignment'}
-        
+
         return {
             'signal': signal['decision']['action'],
             'confidence': signal['decision']['confidence'],

@@ -8,7 +8,14 @@ Features:
 - Version management
 """
 
-from .marketplace_manager import MarketplaceManager, StrategyListing, ListingStatus, PricingType, Review, marketplace_manager
+from .marketplace_manager import (
+    ListingStatus,
+    MarketplaceManager,
+    PricingType,
+    Review,
+    StrategyListing,
+    marketplace_manager,
+)
 from .revenue_share import RevenueShareManager
 
 __all__ = [

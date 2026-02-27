@@ -91,14 +91,14 @@ class MyAgent(AgentWithTools):
             "external__sentiment_analysis",
             {"symbol": "BTC", "source": "news"}
         )
-        
+
         # Use VedAstro
         vedastro = await self.get_vedastro_signal("BTC", 45000)
-        
+
         # Make decision
         if sentiment["score"] > 0.6 and vedastro["signal"] == "buy":
             return {"signal": "buy", "confidence": 0.8}
-        
+
         return {"signal": "hold", "confidence": 0.5}
 ```
 

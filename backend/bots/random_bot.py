@@ -1,7 +1,7 @@
 """Random bot implementation for baseline testing."""
 
 import random
-from typing import Dict, List, Any
+from typing import Any
 
 from .base_bot import BaseTradingBot, BotConfig, TradeDecision
 
@@ -9,13 +9,13 @@ from .base_bot import BaseTradingBot, BotConfig, TradeDecision
 class RandomBot(BaseTradingBot):
     """
     Bot that makes random decisions.
-    
+
     Used for:
     - Baseline comparison
     - Testing tournament systems
     - Easy difficulty for beginners
     """
-    
+
     def __init__(self, config: BotConfig = None):
         if config is None:
             from .base_bot import BotDifficulty, BotPersonality
@@ -26,12 +26,12 @@ class RandomBot(BaseTradingBot):
                 trade_frequency=3,  # Lower frequency
             )
         super().__init__(config)
-    
-    async def analyze_market(self, symbol: str, price_data: List[float]) -> Dict[str, Any]:
+
+    async def analyze_market(self, symbol: str, price_data: list[float]) -> dict[str, Any]:
         """No real analysis - just return random signal."""
         # Random signal weighted towards hold
         rand = random.random()
-        
+
         if rand < 0.2:
             signal = "buy"
             confidence = random.uniform(0.3, 0.6)
@@ -41,25 +41,25 @@ class RandomBot(BaseTradingBot):
         else:
             signal = "hold"
             confidence = random.uniform(0.1, 0.3)
-        
+
         return {
             "signal": signal,
             "confidence": confidence,
             "random": True,
         }
-    
+
     async def make_trade_decision(
         self,
         symbol: str,
         current_price: float,
-        analysis: Dict[str, Any],
+        analysis: dict[str, Any],
     ) -> TradeDecision:
         """Make random trade decision."""
         signal = analysis.get("signal", "hold")
         confidence = analysis.get("confidence", 0)
-        
+
         has_position = symbol in self.positions
-        
+
         if signal == "buy" and not has_position:
             return TradeDecision(
                 action="buy",
@@ -76,7 +76,7 @@ class RandomBot(BaseTradingBot):
                 confidence=confidence,
                 reason="Random sell signal",
             )
-        
+
         return TradeDecision(
             action="hold",
             symbol=symbol,
@@ -84,7 +84,7 @@ class RandomBot(BaseTradingBot):
             confidence=0.1,
             reason="Random hold",
         )
-    
+
     def should_trade_now(self) -> bool:
         """Override with lower probability."""
         # Random bots trade less frequently

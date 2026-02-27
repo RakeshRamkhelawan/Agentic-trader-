@@ -106,23 +106,23 @@ config = VedAstroConfig(
 async def generate_signal(symbol: str, tick: dict):
     # 1. Get or create Kundli for asset
     kundli = await connector.get_kundli(symbol)
-    
+
     # 2. Calculate current transits
     transits = await connector.get_transits(datetime.now())
-    
+
     # 3. Extract 24-dim features
     features = extract_features(kundli, transits)
-    
+
     # 4. XGBoost prediction
     ml_signal = oracle.predict(features)
-    
+
     # 5. Elemental filter
     alignment = orchestrator.check_alignment(ml_signal, tattva_state)
-    
+
     # 6. Risk check
     if alignment < 0.6:
         return {'action': 'hold', 'reason': 'Low alignment'}
-    
+
     return {
         'action': ml_signal.action,
         'confidence': ml_signal.confidence,

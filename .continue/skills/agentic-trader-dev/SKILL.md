@@ -74,17 +74,17 @@ cp .continue/skills/agentic-trader-dev/templates/react_agent.py.template backend
 ```python
 class MyAgent(BaseAgent):
     """My specialized trading agent."""
-    
+
     async def analyze(self, features, context) -> dict:
         # 1. Reasoning (ReAct pattern)
         thought = await self._reason_about(features, context)
-        
+
         # 2. Action
         action = self._decide_action(thought)
-        
+
         # 3. Publish thought to event bus
         await self.publish_thought(thought.reasoning, thought.confidence, action)
-        
+
         return action
 ```
 

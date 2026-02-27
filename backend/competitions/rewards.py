@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 
 class BadgeType(Enum):
@@ -12,23 +12,23 @@ class BadgeType(Enum):
     PROFITABLE_TRADER = "profitable_trader"
     SHARPE_MASTER = "sharpe_master"
     WIN_STREAK = "win_streak"
-    
+
     # Competition badges
     TOURNAMENT_WINNER = "tournament_winner"
     TOURNAMENT_TOP_3 = "tournament_top_3"
     WEEKLY_CHAMPION = "weekly_champion"
-    
+
     # League badges
     BRONZE_LEAGUE = "bronze_league"
     SILVER_LEAGUE = "silver_league"
     GOLD_LEAGUE = "gold_league"
     DIAMOND_LEAGUE = "diamond_league"
-    
+
     # Strategy badges
     STRATEGY_CREATOR = "strategy_creator"
     POPULAR_STRATEGY = "popular_strategy"
     STRATEGY_MASTER = "strategy_master"
-    
+
     # Community badges
     HELPER = "helper"
     INFLUENCER = "influencer"
@@ -53,9 +53,9 @@ class Badge:
     rarity: BadgeRarity
     icon: str
     points_bonus: int = 0
-    requirements: Dict[str, Any] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    requirements: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "type": self.type.value,
             "name": self.name,
@@ -81,22 +81,22 @@ class Achievement:
     id: str
     name: str
     description: str
-    badge: Optional[Badge] = None
+    badge: Badge | None = None
     target_value: int = 1
     current_value: int = 0
     completed: bool = False
-    completed_at: Optional[datetime] = None
-    
+    completed_at: datetime | None = None
+
     def update_progress(self, value: int) -> bool:
         """Update achievement progress."""
         self.current_value = min(value, self.target_value)
-        
+
         if self.current_value >= self.target_value and not self.completed:
             self.completed = True
             self.completed_at = datetime.utcnow()
             return True  # Achievement completed
         return False
-    
+
     def get_progress_percent(self) -> float:
         """Get progress percentage."""
         return (self.current_value / self.target_value) * 100
@@ -105,7 +105,7 @@ class Achievement:
 class RewardsSystem:
     """
     Manages badges, achievements, and rewards.
-    
+
     Badge Collections:
     - Performance: Based on trading results
     - Competition: Based on tournament performance
@@ -113,14 +113,14 @@ class RewardsSystem:
     - Strategy: Based on strategy sharing
     - Community: Based on community engagement
     """
-    
+
     def __init__(self):
-        self._badges: Dict[BadgeType, Badge] = {}
-        self._earned_badges: Dict[str, List[EarnedBadge]] = {}  # competitor_id -> badges
-        self._achievements: Dict[str, List[Achievement]] = {}  # competitor_id -> achievements
-        
+        self._badges: dict[BadgeType, Badge] = {}
+        self._earned_badges: dict[str, list[EarnedBadge]] = {}  # competitor_id -> badges
+        self._achievements: dict[str, list[Achievement]] = {}  # competitor_id -> achievements
+
         self._init_badges()
-    
+
     def _init_badges(self) -> None:
         """Initialize all available badges."""
         # Performance badges
@@ -132,7 +132,7 @@ class RewardsSystem:
             icon="trending_up",
             points_bonus=100,
         )
-        
+
         self._badges[BadgeType.SHARPE_MASTER] = Badge(
             type=BadgeType.SHARPE_MASTER,
             name="Sharpe Master",
@@ -141,7 +141,7 @@ class RewardsSystem:
             icon="activity",
             points_bonus=500,
         )
-        
+
         self._badges[BadgeType.WIN_STREAK] = Badge(
             type=BadgeType.WIN_STREAK,
             name="Win Streak",
@@ -150,7 +150,7 @@ class RewardsSystem:
             icon="zap",
             points_bonus=250,
         )
-        
+
         # Competition badges
         self._badges[BadgeType.TOURNAMENT_WINNER] = Badge(
             type=BadgeType.TOURNAMENT_WINNER,
@@ -160,7 +160,7 @@ class RewardsSystem:
             icon="trophy",
             points_bonus=1000,
         )
-        
+
         self._badges[BadgeType.TOURNAMENT_TOP_3] = Badge(
             type=BadgeType.TOURNAMENT_TOP_3,
             name="Podium Finish",
@@ -169,7 +169,7 @@ class RewardsSystem:
             icon="award",
             points_bonus=500,
         )
-        
+
         self._badges[BadgeType.WEEKLY_CHAMPION] = Badge(
             type=BadgeType.WEEKLY_CHAMPION,
             name="Weekly Champion",
@@ -178,7 +178,7 @@ class RewardsSystem:
             icon="crown",
             points_bonus=2500,
         )
-        
+
         # League badges
         self._badges[BadgeType.BRONZE_LEAGUE] = Badge(
             type=BadgeType.BRONZE_LEAGUE,
@@ -188,7 +188,7 @@ class RewardsSystem:
             icon="star",
             points_bonus=50,
         )
-        
+
         self._badges[BadgeType.SILVER_LEAGUE] = Badge(
             type=BadgeType.SILVER_LEAGUE,
             name="Silver Trader",
@@ -197,7 +197,7 @@ class RewardsSystem:
             icon="star",
             points_bonus=200,
         )
-        
+
         self._badges[BadgeType.GOLD_LEAGUE] = Badge(
             type=BadgeType.GOLD_LEAGUE,
             name="Gold Trader",
@@ -206,7 +206,7 @@ class RewardsSystem:
             icon="star",
             points_bonus=500,
         )
-        
+
         self._badges[BadgeType.DIAMOND_LEAGUE] = Badge(
             type=BadgeType.DIAMOND_LEAGUE,
             name="Diamond Trader",
@@ -215,7 +215,7 @@ class RewardsSystem:
             icon="diamond",
             points_bonus=2500,
         )
-        
+
         # Strategy badges
         self._badges[BadgeType.STRATEGY_CREATOR] = Badge(
             type=BadgeType.STRATEGY_CREATOR,
@@ -225,7 +225,7 @@ class RewardsSystem:
             icon="code",
             points_bonus=100,
         )
-        
+
         self._badges[BadgeType.POPULAR_STRATEGY] = Badge(
             type=BadgeType.POPULAR_STRATEGY,
             name="Viral Strategy",
@@ -234,7 +234,7 @@ class RewardsSystem:
             icon="heart",
             points_bonus=500,
         )
-        
+
         self._badges[BadgeType.STRATEGY_MASTER] = Badge(
             type=BadgeType.STRATEGY_MASTER,
             name="Strategy Master",
@@ -243,7 +243,7 @@ class RewardsSystem:
             icon="git-branch",
             points_bonus=1000,
         )
-        
+
         # Community badges
         self._badges[BadgeType.HELPER] = Badge(
             type=BadgeType.HELPER,
@@ -253,7 +253,7 @@ class RewardsSystem:
             icon="helping_hand",
             points_bonus=200,
         )
-        
+
         self._badges[BadgeType.INFLUENCER] = Badge(
             type=BadgeType.INFLUENCER,
             name="Trading Influencer",
@@ -262,7 +262,7 @@ class RewardsSystem:
             icon="users",
             points_bonus=1000,
         )
-        
+
         self._badges[BadgeType.EARLY_ADOPTER] = Badge(
             type=BadgeType.EARLY_ADOPTER,
             name="Early Adopter",
@@ -271,45 +271,45 @@ class RewardsSystem:
             icon="rocket",
             points_bonus=500,
         )
-    
+
     def award_badge(
         self,
         competitor_id: str,
         badge_type: BadgeType,
         context: str = "",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Award a badge to a competitor."""
         badge = self._badges.get(badge_type)
         if not badge:
             return {"success": False, "error": "Badge not found"}
-        
+
         # Check if already earned
         existing = self._earned_badges.get(competitor_id, [])
         if any(e.badge_type == badge_type for e in existing):
             return {"success": False, "error": "Badge already earned"}
-        
+
         # Award badge
         earned = EarnedBadge(
             badge_type=badge_type,
             competitor_id=competitor_id,
             context=context,
         )
-        
+
         if competitor_id not in self._earned_badges:
             self._earned_badges[competitor_id] = []
         self._earned_badges[competitor_id].append(earned)
-        
+
         return {
             "success": True,
             "badge": badge.to_dict(),
             "points_bonus": badge.points_bonus,
             "message": f"Congratulations! You earned the {badge.name} badge!",
         }
-    
-    def get_competitor_badges(self, competitor_id: str) -> List[Dict[str, Any]]:
+
+    def get_competitor_badges(self, competitor_id: str) -> list[dict[str, Any]]:
         """Get all badges earned by a competitor."""
         earned = self._earned_badges.get(competitor_id, [])
-        
+
         return [
             {
                 **self._badges[e.badge_type].to_dict(),
@@ -319,24 +319,24 @@ class RewardsSystem:
             for e in earned
             if e.badge_type in self._badges
         ]
-    
-    def get_all_badges(self) -> List[Dict[str, Any]]:
+
+    def get_all_badges(self) -> list[dict[str, Any]]:
         """Get all available badges."""
         return [badge.to_dict() for badge in self._badges.values()]
-    
+
     def create_achievement(
         self,
         competitor_id: str,
         name: str,
         description: str,
         target_value: int,
-        badge_type: Optional[BadgeType] = None,
+        badge_type: BadgeType | None = None,
     ) -> str:
         """Create a new achievement for a competitor."""
         achievement_id = f"{competitor_id}_{name.lower().replace(' ', '_')}"
-        
+
         badge = self._badges.get(badge_type) if badge_type else None
-        
+
         achievement = Achievement(
             id=achievement_id,
             name=name,
@@ -344,28 +344,28 @@ class RewardsSystem:
             badge=badge,
             target_value=target_value,
         )
-        
+
         if competitor_id not in self._achievements:
             self._achievements[competitor_id] = []
         self._achievements[competitor_id].append(achievement)
-        
+
         return achievement_id
-    
+
     def update_achievement_progress(
         self,
         competitor_id: str,
         achievement_id: str,
         value: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Update achievement progress."""
         achievements = self._achievements.get(competitor_id, [])
         achievement = next((a for a in achievements if a.id == achievement_id), None)
-        
+
         if not achievement:
             return {"error": "Achievement not found"}
-        
+
         completed = achievement.update_progress(value)
-        
+
         result = {
             "achievement_id": achievement_id,
             "current_value": achievement.current_value,
@@ -373,17 +373,17 @@ class RewardsSystem:
             "progress_percent": achievement.get_progress_percent(),
             "completed": achievement.completed,
         }
-        
+
         if completed and achievement.badge:
             badge_result = self.award_badge(competitor_id, achievement.badge.type)
             result["badge_awarded"] = badge_result
-        
+
         return result
-    
-    def get_competitor_achievements(self, competitor_id: str) -> List[Dict[str, Any]]:
+
+    def get_competitor_achievements(self, competitor_id: str) -> list[dict[str, Any]]:
         """Get all achievements for a competitor."""
         achievements = self._achievements.get(competitor_id, [])
-        
+
         return [
             {
                 "id": a.id,
@@ -398,8 +398,8 @@ class RewardsSystem:
             }
             for a in achievements
         ]
-    
-    def get_leaderboard_by_badges(self, limit: int = 10) -> List[Dict[str, Any]]:
+
+    def get_leaderboard_by_badges(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get leaderboard sorted by badge count."""
         badge_counts = [
             {
@@ -412,9 +412,8 @@ class RewardsSystem:
             }
             for cid, badges in self._earned_badges.items()
         ]
-        
+
         # Sort by badge count, then legendary count
         badge_counts.sort(key=lambda x: (x["badge_count"], x["legendary_badges"]), reverse=True)
-        
-        return badge_counts[:limit]
 
+        return badge_counts[:limit]

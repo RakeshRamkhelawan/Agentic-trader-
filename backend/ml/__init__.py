@@ -8,9 +8,15 @@ Features:
 - Model training and inference
 """
 
-from .predictor import TradePredictor, PredictionResult, SignalDirection, ConfidenceLevel, trade_predictor
 from .features import FeatureEngineer
 from .models import ModelManager
+from .predictor import (
+    ConfidenceLevel,
+    PredictionResult,
+    SignalDirection,
+    TradePredictor,
+    trade_predictor,
+)
 
 __all__ = [
     "TradePredictor",

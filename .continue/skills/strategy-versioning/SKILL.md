@@ -104,7 +104,7 @@ Edit `backend/agents/elemental_agent_manager_v18.py`:
 ```python
 class ElementalAgentManagerV18(ElementalAgentManagerV17):
     """V18: Improved execute rate"""
-    
+
     def __init__(self):
         super().__init__()
         # Relax VedAstro filters for V18

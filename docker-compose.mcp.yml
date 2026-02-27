@@ -1,5 +1,5 @@
 # Docker Compose - MCP ToolBroker Service
-# 
+#
 # Usage:
 #   docker-compose -f docker-compose.yml -f docker-compose.mcp.yml up -d
 #

@@ -86,23 +86,23 @@ class SentimentAgent(AgentWithTools):  # Was: BaseAgent
     async def analyze(self, features, context):
         # Oude manier (indirect):
         # sentiment = await external_api.get_sentiment(...)
-        
+
         # Nieuwe manier (via ToolBroker):
         sentiment = await self.call_tool(
             "external__sentiment_analysis",
             {"symbol": features["symbol"], "source": "news"}
         )
-        
+
         # Combineer met VedAstro
         vedastro = await self.get_vedastro_signal(
-            features["symbol"], 
+            features["symbol"],
             features["price"]
         )
-        
+
         return self._combine_signals(sentiment, vedastro)
 ```
 
-**Training Sessie**: 
+**Training Sessie**:
 - 2 uur workshop voor dev teams
 - Hands-on: Een agent bouwen met tools
 
@@ -137,7 +137,7 @@ class EnhancedElementalAgent(AgentWithTools):
     async def analyze(self, features, context):
         # 1. Elemental analyse
         elemental_vote = await self._elemental_analysis(features)
-        
+
         # 2. Vedic versterking
         transit = await self.call_tool(
             "vedic__transit_prediction",
@@ -148,12 +148,12 @@ class EnhancedElementalAgent(AgentWithTools):
                 "longitude": context["user_longitude"]
             }
         )
-        
+
         # 3. Sade Sati check (Saturn transit)
         if transit["sade_sati"]["active"]:
             elemental_vote["confidence"] *= 0.8  # Reduceer confidence
             elemental_vote["warning"] = "Sade Sati period - extra caution"
-        
+
         return elemental_vote
 ```
 
@@ -224,7 +224,7 @@ class ToolRegistry:
     def __init__(self):
         self.tools = {}
         self.embeddings = {}  # Voor semantic search
-    
+
     def register(self, name: str, metadata: dict):
         """Register tool with semantic metadata"""
         self.tools[name] = {
@@ -237,20 +237,20 @@ class ToolRegistry:
             "success_rate": 0.95,
             "avg_latency_ms": 50
         }
-    
+
     async def find_tools(self, query: str, context: dict) -> list:
         """Semantic tool discovery"""
         # Gebruik embeddings om relevante tools te vinden
         # Voorbeeld: "bitcoin sentiment" -> external__sentiment_analysis
-        
+
         query_embedding = await self.embed(query)
         matches = []
-        
+
         for tool in self.tools.values():
             similarity = cosine_similarity(query_embedding, tool["embedding"])
             if similarity > 0.8:
                 matches.append((tool, similarity))
-        
+
         return sorted(matches, key=lambda x: x[1], reverse=True)
 
 # Agent gebruikt registry
@@ -261,14 +261,14 @@ class SmartAgent(AgentWithTools):
             f"Analyze {features['symbol']} for trading",
             context
         )
-        
+
         results = {}
         for tool, confidence in needed_tools[:3]:  # Top 3 tools
             results[tool["name"]] = await self.call_tool(
-                tool["name"], 
+                tool["name"],
                 self._build_params(tool, features)
             )
-        
+
         return self._synthesize(results)
 ```
 
@@ -308,18 +308,18 @@ class PriceFeedService:
     def __init__(self, tool_broker):
         self.tool_broker = tool_broker
         self.redis = Redis()
-        
+
     async def start(self):
         # Verbind met exchange
         bitvavo = BitvavoWebSocket()
-        
+
         async for update in bitvavo.stream():
             # 1. Publiceer naar Redis
             await self.redis.xadd(
                 f"prices:{update['symbol']}",
                 update
             )
-            
+
             # 2. Trigger tools automatisch
             if update["volume_24h"] > THRESHOLD:
                 await self.tool_broker.call_tool(
@@ -392,7 +392,7 @@ class RiskManagerAgent(AgentWithTools):
                 "data__get_portfolio_status",
                 {"account_id": "main"}
             )
-            
+
             # 2. Bereken VaR
             var = await self.call_tool(
                 "risk__calculate_var",
@@ -402,20 +402,20 @@ class RiskManagerAgent(AgentWithTools):
                     "method": "monte_carlo"
                 }
             )
-            
+
             # 3. Check correlaties
             correlations = await self.call_tool(
                 "risk__correlation_matrix",
                 {"assets": [p["symbol"] for p in portfolio["positions"]]}
             )
-            
+
             # 4. Actie als risico te hoog
             if var["value_at_risk"] > portfolio["value"] * 0.05:
                 await self.call_tool(
                     "execution__hedge_positions",
                     {"var_exposure": var}
                 )
-            
+
             await asyncio.sleep(60)  # Elke minuut
 ```
 

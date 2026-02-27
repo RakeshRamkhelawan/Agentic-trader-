@@ -9,12 +9,12 @@ from backend.mcp_broker.client import (
     SynchronousMCPClient,
     check_entry_allowed,
     check_exit_needed,
+    close_global_client,
     execute_paper_trade,
     get_client,
     get_elemental_consensus,
     get_position_size,
     get_vedastro_signal,
-    close_global_client,
 )
 
 __all__ = [

@@ -1,30 +1,30 @@
 """Report generator for comprehensive analytics reports."""
 
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 
 class ReportGenerator:
     """
     Generates comprehensive trading reports.
-    
+
     Report types:
     - Weekly summary
     - Monthly performance
     - Tournament recap
     - Strategy performance
     """
-    
+
     def __init__(self):
         pass
-    
+
     def generate_weekly_report(
         self,
         user_id: str,
         user_name: str,
-        trades: List[Dict[str, Any]],
-        tournaments: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        trades: list[dict[str, Any]],
+        tournaments: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Generate weekly trading report."""
         # Get trades from last 7 days
         week_ago = datetime.utcnow() - timedelta(days=7)
@@ -32,10 +32,10 @@ class ReportGenerator:
             t for t in trades
             if datetime.fromisoformat(t.get("timestamp", "2000-01-01")) > week_ago
         ]
-        
+
         # Calculate metrics
         pnls = [t.get("pnl", 0) for t in recent_trades]
-        
+
         report = {
             "type": "weekly",
             "period": {
@@ -62,23 +62,23 @@ class ReportGenerator:
             },
             "trades": recent_trades,
         }
-        
+
         return report
-    
+
     def generate_tournament_report(
         self,
         tournament_id: str,
         tournament_name: str,
-        entries: List[Dict[str, Any]],
-        trades: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        entries: list[dict[str, Any]],
+        trades: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Generate tournament recap report."""
         # Sort by rank
         sorted_entries = sorted(entries, key=lambda e: e.get("rank", 999))
-        
+
         # Calculate stats
         pnls = [e.get("pnl", 0) for e in entries]
-        
+
         report = {
             "type": "tournament",
             "tournament": {
@@ -103,21 +103,21 @@ class ReportGenerator:
                 for e in sorted_entries[:10]
             ],
         }
-        
+
         return report
-    
+
     def generate_strategy_report(
         self,
         strategy_id: str,
         strategy_name: str,
-        trades: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        trades: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Generate strategy performance report."""
         pnls = [t.get("pnl", 0) for t in trades]
-        
+
         winning = [p for p in pnls if p > 0]
         losing = [p for p in pnls if p <= 0]
-        
+
         report = {
             "type": "strategy",
             "strategy": {
@@ -136,13 +136,13 @@ class ReportGenerator:
             },
             "trades_by_symbol": self._aggregate_by_symbol(trades),
         }
-        
+
         return report
-    
-    def _aggregate_by_symbol(self, trades: List[Dict[str, Any]]) -> Dict[str, Any]:
+
+    def _aggregate_by_symbol(self, trades: list[dict[str, Any]]) -> dict[str, Any]:
         """Aggregate trades by symbol."""
         by_symbol = {}
-        
+
         for trade in trades:
             symbol = trade.get("symbol", "UNKNOWN")
             if symbol not in by_symbol:
@@ -151,17 +151,17 @@ class ReportGenerator:
                     "total_pnl": 0,
                     "winning_trades": 0,
                 }
-            
+
             by_symbol[symbol]["trades"] += 1
             by_symbol[symbol]["total_pnl"] += trade.get("pnl", 0)
             if trade.get("pnl", 0) > 0:
                 by_symbol[symbol]["winning_trades"] += 1
-        
+
         # Calculate win rates
         for symbol in by_symbol:
             data = by_symbol[symbol]
             data["win_rate"] = (data["winning_trades"] / data["trades"] * 100) if data["trades"] > 0 else 0
-        
+
         return by_symbol
 
 

@@ -31,17 +31,17 @@ async def create_order(
     # 1. Validate
     if order.amount <= 0:
         raise HTTPException(400, "Amount must be positive")
-    
+
     # 2. Create
     created = await create_in_db(order)
-    
+
     # 3. Publish event
     await event_bus.publish("orders", {
         "type": "created",
         "order_id": created.id,
         "user_id": user['id']
     })
-    
+
     return created
 ```
 
@@ -52,7 +52,7 @@ from backend.events.event_bus import EventBus
 
 async def process_trading_events():
     event_bus = EventBus()
-    
+
     async for event in event_bus.subscribe("trading.events"):
         if event['type'] == 'order_executed':
             await update_portfolio(event['data'])
@@ -73,7 +73,7 @@ async def start_analysis(
 ):
     # Return immediately, process in background
     background_tasks.add_task(run_analysis, request)
-    
+
     return {"status": "processing", "job_id": generate_id()}
 ```
 
@@ -128,7 +128,7 @@ async def execute_trade(request: TradeRequest):
 async def market_websocket(websocket: WebSocket):
     await websocket.accept()
     event_bus = EventBus()
-    
+
     # Subscribe to market events
     async for event in event_bus.subscribe("market.data"):
         await websocket.send_json(event)

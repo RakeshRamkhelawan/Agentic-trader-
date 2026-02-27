@@ -167,7 +167,7 @@ async def get_portfolio(user_id: str):
 ```python
 async def get_price_history(symbol: str, hours: int = 24):
     query = """
-    SELECT 
+    SELECT
         toStartOfInterval(timestamp, INTERVAL 1 MINUTE) as minute,
         argMax(price, timestamp) as close,
         min(price) as low,

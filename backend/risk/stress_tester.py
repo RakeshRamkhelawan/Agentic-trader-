@@ -3,7 +3,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Any
+
 import numpy as np
 
 
@@ -27,17 +28,17 @@ class StressTestResult:
     pnl: float
     pnl_percentage: float
     max_drawdown: float
-    
+
     # Risk metrics during stress
     var_95: float
     var_99: float
-    
+
     # Scenario details
-    scenario_params: Dict[str, Any]
-    
+    scenario_params: dict[str, Any]
+
     timestamp: datetime
-    
-    def to_dict(self) -> Dict:
+
+    def to_dict(self) -> dict:
         return {
             "scenario": self.scenario,
             "portfolio_value_before": round(self.portfolio_value_before, 2),
@@ -54,11 +55,11 @@ class StressTestResult:
 class StressTester:
     """
     Portfolio stress testing system.
-    
+
     Simulates portfolio performance under various stress scenarios
     to identify potential vulnerabilities.
     """
-    
+
     # Predefined scenario parameters
     SCENARIOS = {
         StressScenario.MARKET_CRASH_2008: {
@@ -101,26 +102,26 @@ class StressTester:
             "liquidity_dry_up": True,
         },
     }
-    
+
     def __init__(self):
-        self.test_history: List[StressTestResult] = []
-    
+        self.test_history: list[StressTestResult] = []
+
     def run_stress_test(
         self,
         portfolio_value: float,
         scenario: StressScenario,
-        custom_params: Optional[Dict] = None,
-        positions: Optional[List[Dict]] = None,
+        custom_params: dict | None = None,
+        positions: list[dict] | None = None,
     ) -> StressTestResult:
         """
         Run stress test for a portfolio.
-        
+
         Args:
             portfolio_value: Current portfolio value
             scenario: Stress scenario to simulate
             custom_params: Custom scenario parameters
             positions: Portfolio positions breakdown
-            
+
         Returns:
             Stress test result
         """
@@ -129,26 +130,26 @@ class StressTester:
             params = custom_params
         else:
             params = self.SCENARIOS.get(scenario, {})
-        
+
         # Calculate impact (simplified model)
         if positions:
             impact = self._calculate_position_impact(positions, params)
         else:
             impact = self._calculate_aggregate_impact(params)
-        
+
         # Apply impact to portfolio
         pnl_percentage = impact
         pnl = portfolio_value * pnl_percentage
         portfolio_value_after = portfolio_value + pnl
-        
+
         # Calculate max drawdown (worse case within scenario)
         max_drawdown = abs(min(impact * 1.2, -0.01))  # 20% worse than final
-        
+
         # Calculate VaR under stress
         stressed_volatility = 0.05 * params.get("volatility_spike", 1)
         var_95 = portfolio_value_after * 1.645 * stressed_volatility
         var_99 = portfolio_value_after * 2.326 * stressed_volatility
-        
+
         result = StressTestResult(
             scenario=scenario.value,
             portfolio_value_before=portfolio_value,
@@ -161,26 +162,26 @@ class StressTester:
             scenario_params=params,
             timestamp=datetime.utcnow(),
         )
-        
+
         self.test_history.append(result)
         return result
-    
+
     def _calculate_position_impact(
         self,
-        positions: List[Dict],
-        params: Dict,
+        positions: list[dict],
+        params: dict,
     ) -> float:
         """Calculate impact based on position breakdown."""
         total_impact = 0
         total_value = sum(p.get("value", 0) for p in positions)
-        
+
         if total_value == 0:
             return 0
-        
+
         for position in positions:
             asset_class = position.get("asset_class", "equity")
             weight = position.get("value", 0) / total_value
-            
+
             # Apply asset-class specific shocks
             if asset_class == "equity":
                 shock = params.get("equity_shock", -0.20)
@@ -192,24 +193,24 @@ class StressTester:
                 shock = params.get("commodity_boom", 0) if params.get("commodity_boom") else -0.15
             else:
                 shock = -0.10  # Default
-            
+
             total_impact += weight * shock
-        
+
         return total_impact
-    
-    def _calculate_aggregate_impact(self, params: Dict) -> float:
+
+    def _calculate_aggregate_impact(self, params: dict) -> float:
         """Calculate aggregate portfolio impact."""
         # Simplified: use equity shock as primary driver
         return params.get("equity_shock", -0.20)
-    
+
     def run_all_scenarios(
         self,
         portfolio_value: float,
-        positions: Optional[List[Dict]] = None,
-    ) -> Dict[str, StressTestResult]:
+        positions: list[dict] | None = None,
+    ) -> dict[str, StressTestResult]:
         """Run all predefined stress scenarios."""
         results = {}
-        
+
         for scenario in StressScenario:
             if scenario != StressScenario.CUSTOM:
                 results[scenario.value] = self.run_stress_test(
@@ -217,32 +218,32 @@ class StressTester:
                     scenario=scenario,
                     positions=positions,
                 )
-        
+
         return results
-    
+
     def get_worst_scenario(
         self,
-        results: Dict[str, StressTestResult],
+        results: dict[str, StressTestResult],
     ) -> tuple:
         """Find worst performing scenario."""
         if not results:
             return None, None
-        
+
         worst = min(results.values(), key=lambda r: r.pnl_percentage)
         worst_name = [k for k, v in results.items() if v == worst][0]
-        
+
         return worst_name, worst
-    
-    def generate_report(self, results: Dict[str, StressTestResult]) -> Dict:
+
+    def generate_report(self, results: dict[str, StressTestResult]) -> dict:
         """Generate comprehensive stress test report."""
         worst_name, worst_result = self.get_worst_scenario(results)
-        
+
         total_scenarios = len(results)
         negative_scenarios = sum(1 for r in results.values() if r.pnl < 0)
-        
+
         avg_loss = np.mean([r.pnl for r in results.values()])
         max_loss = min([r.pnl for r in results.values()])
-        
+
         return {
             "summary": {
                 "scenarios_tested": total_scenarios,
@@ -258,33 +259,33 @@ class StressTester:
             "recommendations": self._generate_recommendations(results),
             "details": {k: v.to_dict() for k, v in results.items()},
         }
-    
+
     def _generate_recommendations(
         self,
-        results: Dict[str, StressTestResult],
-    ) -> List[str]:
+        results: dict[str, StressTestResult],
+    ) -> list[str]:
         """Generate risk management recommendations."""
         recommendations = []
-        
+
         worst_name, worst = self.get_worst_scenario(results)
-        
+
         if worst and worst.pnl_percentage < -0.30:
             recommendations.append(
                 f"CRITICAL: {worst_name} shows losses >30%. Consider reducing exposure."
             )
-        
+
         negative_count = sum(1 for r in results.values() if r.pnl < 0)
         if negative_count > len(results) * 0.7:
             recommendations.append(
                 "Portfolio shows vulnerability in most scenarios. Diversification recommended."
             )
-        
+
         high_var_count = sum(1 for r in results.values() if r.var_95 / r.portfolio_value_before > 0.05)
         if high_var_count > 3:
             recommendations.append(
                 "High VaR in multiple scenarios. Consider hedging strategies."
             )
-        
+
         return recommendations
 
 

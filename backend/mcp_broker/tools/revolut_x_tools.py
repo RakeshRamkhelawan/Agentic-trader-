@@ -350,9 +350,9 @@ async def revolutx_get_account_info(ctx=None) -> dict[str, Any]:
         ctx.info("Checking Revolut X account status")
 
     try:
-        from backend.integrations.revolut_x_client import RevolutXClient
-
         import os
+
+        from backend.integrations.revolut_x_client import RevolutXClient
 
         api_key = os.getenv("REVOLUT_API_KEY")
         key_path = os.getenv("REVOLUT_PRIVATE_KEY_PATH")

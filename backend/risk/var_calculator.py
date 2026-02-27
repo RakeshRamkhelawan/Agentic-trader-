@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+
 import numpy as np
 from scipy import stats
 
@@ -24,14 +24,14 @@ class VaRResult:
     method: VaRMethod
     portfolio_value: float
     var_percentage: float  # VaR as % of portfolio
-    
+
     # Additional metrics
     expected_shortfall: float  # CVaR / Expected Shortfall
     max_loss: float
-    
+
     timestamp: datetime
-    
-    def to_dict(self) -> Dict:
+
+    def to_dict(self) -> dict:
         return {
             "var": round(self.value, 2),
             "confidence_level": f"{self.confidence_level * 100:.0f}%",
@@ -48,17 +48,17 @@ class VaRResult:
 class VaRCalculator:
     """
     Value at Risk calculator using multiple methods.
-    
+
     VaR estimates the maximum potential loss over a specific time
     period at a given confidence level.
     """
-    
+
     def __init__(self):
-        self.calculation_history: List[VaRResult] = []
-    
+        self.calculation_history: list[VaRResult] = []
+
     def calculate(
         self,
-        returns: List[float],
+        returns: list[float],
         portfolio_value: float,
         confidence_level: float = 0.95,
         time_horizon_days: int = 1,
@@ -66,20 +66,20 @@ class VaRCalculator:
     ) -> VaRResult:
         """
         Calculate VaR for a portfolio.
-        
+
         Args:
             returns: Historical return series (daily)
             portfolio_value: Current portfolio value
             confidence_level: Confidence level (e.g., 0.95 for 95%)
             time_horizon_days: VaR time horizon
             method: Calculation method
-            
+
         Returns:
             VaR calculation result
         """
         if not returns or len(returns) < 30:
             raise ValueError("Need at least 30 returns for VaR calculation")
-        
+
         if method == VaRMethod.HISTORICAL:
             var_value, es_value = self._historical_var(returns, confidence_level)
         elif method == VaRMethod.PARAMETRIC:
@@ -88,23 +88,23 @@ class VaRCalculator:
             var_value, es_value = self._monte_carlo_var(returns, confidence_level)
         else:
             raise ValueError(f"Unknown VaR method: {method}")
-        
+
         # Scale to time horizon (square root rule)
         if time_horizon_days > 1:
             scaling_factor = np.sqrt(time_horizon_days)
             var_value *= scaling_factor
             es_value *= scaling_factor
-        
+
         # Scale to portfolio value
         var_value *= portfolio_value
         es_value *= portfolio_value
-        
+
         # Calculate percentage
         var_percentage = abs(var_value) / portfolio_value if portfolio_value > 0 else 0
-        
+
         # Max loss (absolute historical maximum)
         max_loss = abs(min(returns)) * portfolio_value
-        
+
         result = VaRResult(
             value=abs(var_value),  # Always positive for VaR
             confidence_level=confidence_level,
@@ -116,89 +116,89 @@ class VaRCalculator:
             max_loss=max_loss,
             timestamp=datetime.utcnow(),
         )
-        
+
         self.calculation_history.append(result)
         return result
-    
+
     def _historical_var(
         self,
-        returns: List[float],
+        returns: list[float],
         confidence_level: float,
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """
         Historical VaR using empirical quantile.
         """
         returns_array = np.array(returns)
-        
+
         # VaR is the quantile at (1 - confidence) level
         var_quantile = 1 - confidence_level
         var = np.percentile(returns_array, var_quantile * 100)
-        
+
         # Expected Shortfall (CVaR) - average of returns beyond VaR
         shortfall_returns = returns_array[returns_array <= var]
         es = np.mean(shortfall_returns) if len(shortfall_returns) > 0 else var
-        
+
         return var, es
-    
+
     def _parametric_var(
         self,
-        returns: List[float],
+        returns: list[float],
         confidence_level: float,
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """
         Parametric VaR assuming normal distribution.
         """
         mean = np.mean(returns)
         std = np.std(returns)
-        
+
         # Z-score for confidence level
         z_score = stats.norm.ppf(1 - confidence_level)
-        
+
         # VaR = mean + z_score * std (z_score is negative)
         var = mean + z_score * std
-        
+
         # Expected Shortfall for normal distribution
         # ES = mean - std * phi(z) / (1 - confidence)
         # where phi is PDF of standard normal
         pdf_z = stats.norm.pdf(z_score)
         es = mean - std * (pdf_z / (1 - confidence_level))
-        
+
         return var, es
-    
+
     def _monte_carlo_var(
         self,
-        returns: List[float],
+        returns: list[float],
         confidence_level: float,
         simulations: int = 10000,
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """
         Monte Carlo VaR simulation.
         """
         mean = np.mean(returns)
         std = np.std(returns)
-        
+
         # Generate simulated returns
         simulated_returns = np.random.normal(mean, std, simulations)
-        
+
         # Calculate VaR from simulations
         var_quantile = 1 - confidence_level
         var = np.percentile(simulated_returns, var_quantile * 100)
-        
+
         # Expected Shortfall
         shortfall_returns = simulated_returns[simulated_returns <= var]
         es = np.mean(shortfall_returns) if len(shortfall_returns) > 0 else var
-        
+
         return var, es
-    
+
     def compare_methods(
         self,
-        returns: List[float],
+        returns: list[float],
         portfolio_value: float,
         confidence_level: float = 0.95,
-    ) -> Dict[str, VaRResult]:
+    ) -> dict[str, VaRResult]:
         """Compare VaR across all methods."""
         results = {}
-        
+
         for method in VaRMethod:
             try:
                 results[method.value] = self.calculate(
@@ -209,18 +209,18 @@ class VaRCalculator:
                 )
             except Exception as e:
                 results[method.value] = {"error": str(e)}
-        
+
         return results
-    
+
     def get_var_breach_history(
         self,
-        returns: List[float],
-        var_results: List[VaRResult],
-    ) -> Dict:
+        returns: list[float],
+        var_results: list[VaRResult],
+    ) -> dict:
         """Analyze historical VaR breaches."""
         breaches = 0
         breach_details = []
-        
+
         for i, ret in enumerate(returns):
             if i < len(var_results):
                 var = var_results[i].var_percentage
@@ -232,10 +232,10 @@ class VaRCalculator:
                         "var": var,
                         "excess_loss": abs(ret) - var,
                     })
-        
+
         total_observations = len(returns)
         breach_rate = breaches / total_observations if total_observations > 0 else 0
-        
+
         return {
             "total_observations": total_observations,
             "breaches": breaches,

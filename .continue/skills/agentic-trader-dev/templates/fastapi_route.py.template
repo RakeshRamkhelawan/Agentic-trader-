@@ -26,7 +26,7 @@ class {{RESOURCE_NAME}}Create(BaseModel):
     # TODO: Add fields specific to your resource
     symbol: str = Field(..., description="Trading symbol")
     amount: float = Field(..., gt=0, description="Amount/value")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -43,7 +43,7 @@ class {{RESOURCE_NAME}}Response(BaseModel):
     amount: float
     status: str
     created_at: str
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -68,11 +68,11 @@ async def publish_{{RESOURCE_LOWER}}_event(
 ) -> str | None:
     """
     Publish {{RESOURCE_NAME}} event to Redis Streams.
-    
+
     Args:
         event_type: Type of event (created, updated, deleted)
         data: Event payload
-        
+
     Returns:
         Message ID if published, None if failed
     """
@@ -105,7 +105,7 @@ async def list_{{RESOURCE_PLURAL}}(
 ):
     """
     List all {{RESOURCE_PLURAL}}.
-    
+
     Returns:
         List of {{RESOURCE_NAME}} objects
     """
@@ -114,7 +114,7 @@ async def list_{{RESOURCE_PLURAL}}(
     # async with get_db_session() as session:
     #     result = await session.execute(select({{RESOURCE_NAME}}Model))
     #     items = result.scalars().all()
-    
+
     return []
 
 
@@ -131,11 +131,11 @@ async def create_{{RESOURCE_LOWER}}(
 ):
     """
     Create a new {{RESOURCE_NAME}}.
-    
+
     - Validates input data
     - Creates resource in database
     - Publishes 'created' event to Redis
-    
+
     Returns:
         Created {{RESOURCE_NAME}} object
     """
@@ -144,7 +144,7 @@ async def create_{{RESOURCE_LOWER}}(
         # 1. Validate symbol exists
         # 2. Check user permissions
         # 3. Create in database
-        
+
         created_item = {
             "id": "uuid-placeholder",
             "symbol": request.symbol,
@@ -152,12 +152,12 @@ async def create_{{RESOURCE_LOWER}}(
             "status": "active",
             "created_at": datetime.now(UTC).isoformat(),
         }
-        
+
         # Publish event to Redis Streams
         await publish_{{RESOURCE_LOWER}}_event("created", created_item)
-        
+
         return {{RESOURCE_NAME}}Response(**created_item)
-        
+
     except Exception as e:
         logger.error(f"Failed to create {{RESOURCE_LOWER}}: {e}")
         raise HTTPException(
@@ -178,13 +178,13 @@ async def get_{{RESOURCE_LOWER}}(
 ):
     """
     Get a specific {{RESOURCE_NAME}} by ID.
-    
+
     Args:
         item_id: Unique identifier
-        
+
     Returns:
         {{RESOURCE_NAME}} object
-        
+
     Raises:
         404: If {{RESOURCE_NAME}} not found
     """
@@ -194,7 +194,7 @@ async def get_{{RESOURCE_LOWER}}(
     #     item = await session.get({{RESOURCE_NAME}}Model, item_id)
     #     if not item:
     #         raise HTTPException(status_code=404, detail="Not found")
-    
+
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"{{RESOURCE_NAME}} {item_id} not found"
@@ -214,16 +214,16 @@ async def update_{{RESOURCE_LOWER}}(
 ):
     """
     Update an existing {{RESOURCE_NAME}}.
-    
+
     - Validates input
     - Updates in database
     - Publishes 'updated' event
-    
+
     Returns:
         Updated {{RESOURCE_NAME}} object
     """
     # TODO: Implement update logic
-    
+
     updated_item = {
         "id": item_id,
         "symbol": request.symbol,
@@ -231,9 +231,9 @@ async def update_{{RESOURCE_LOWER}}(
         "status": "active",
         "created_at": datetime.now(UTC).isoformat(),
     }
-    
+
     await publish_{{RESOURCE_LOWER}}_event("updated", updated_item)
-    
+
     return {{RESOURCE_NAME}}Response(**updated_item)
 
 
@@ -249,17 +249,17 @@ async def delete_{{RESOURCE_LOWER}}(
 ):
     """
     Delete a {{RESOURCE_NAME}}.
-    
+
     - Removes from database
     - Publishes 'deleted' event
-    
+
     Returns:
         204 No Content on success
     """
     # TODO: Implement deletion logic
-    
+
     await publish_{{RESOURCE_LOWER}}_event("deleted", {"id": item_id})
-    
+
     return None
 
 
@@ -273,18 +273,18 @@ from fastapi import WebSocket, WebSocketDisconnect
 async def {{RESOURCE_LOWER}}_websocket(websocket: WebSocket):
     """
     WebSocket endpoint for real-time {{RESOURCE_NAME}} updates.
-    
+
     Usage:
         const ws = new WebSocket('ws://localhost:8000/{{API_PREFIX}}/ws');
         ws.onmessage = (event) => console.log(JSON.parse(event.data));
     """
     await websocket.accept()
-    
+
     try:
         while True:
             # Receive message from client
             data = await websocket.receive_json()
-            
+
             # Process and respond
             response = {
                 "type": "ack",
@@ -292,7 +292,7 @@ async def {{RESOURCE_LOWER}}_websocket(websocket: WebSocket):
                 "timestamp": datetime.now(UTC).isoformat()
             }
             await websocket.send_json(response)
-            
+
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected")
     except Exception as e:
@@ -305,6 +305,6 @@ async def {{RESOURCE_LOWER}}_websocket(websocket: WebSocket):
 # ============================================================================
 
 # Add this to backend/api/main.py:
-# 
+#
 # from backend.api import {{MODULE_NAME}}
 # app.include_router({{MODULE_NAME}}.router)

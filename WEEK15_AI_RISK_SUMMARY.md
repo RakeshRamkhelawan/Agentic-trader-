@@ -208,12 +208,12 @@ if prediction.risk_score < 0.7:
         returns=portfolio_returns,
         portfolio_value=portfolio_value,
     )
-    
+
     max_position = portfolio_value * 0.02 / var_result.var_percentage
-    
+
     # 4. Execute trade
     trade = await execute_trade(symbol, prediction.direction, max_position)
-    
+
     # 5. Log to audit
     audit_logger.log(
         action=AuditAction.TRADE_EXECUTE,
@@ -221,7 +221,7 @@ if prediction.risk_score < 0.7:
         resource_id=trade.id,
         after_state=trade.to_dict(),
     )
-    
+
     # 6. Run stress test on updated portfolio
     stress_results = stress_tester.run_all_scenarios(
         portfolio_value=portfolio_value + trade.pnl,

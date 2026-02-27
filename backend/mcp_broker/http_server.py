@@ -5,7 +5,6 @@ Provides HTTP endpoints for agents to call tools via the ToolBroker.
 This allows easy integration with the existing FastAPI-based architecture.
 """
 
-import json
 import logging
 import sys
 from contextlib import asynccontextmanager
@@ -24,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 # Import MCP server
 from backend.mcp_broker.server import mcp
-
 
 # ============================================================================
 # Pydantic Models
@@ -112,13 +110,13 @@ async def list_tools():
 async def call_tool(request: ToolCallRequest):
     """
     Call an MCP tool via HTTP.
-    
+
     This endpoint allows agents to call tools via HTTP instead of MCP protocol.
     """
     import time
-    
+
     start_time = time.time()
-    
+
     try:
         # Get the tool
         tool = mcp._tool_manager._tools.get(request.tool_name)
@@ -127,21 +125,21 @@ async def call_tool(request: ToolCallRequest):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Tool '{request.tool_name}' not found"
             )
-        
+
         # Call the tool
         logger.info(f"Calling tool: {request.tool_name}")
-        
+
         # The tool is an async function, call it with params
         result = await tool(**request.params)
-        
+
         execution_time = (time.time() - start_time) * 1000
-        
+
         return ToolCallResponse(
             success=True,
             result=result if isinstance(result, dict) else {"result": result},
             execution_time_ms=execution_time,
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -157,12 +155,12 @@ async def call_tool(request: ToolCallRequest):
 async def call_tool_by_path(tool_name: str, params: dict[str, Any] = None):
     """
     Call a tool by path.
-    
+
     Example: POST /tools/call/vedastro__generate_signal
     """
     if params is None:
         params = {}
-    
+
     request = ToolCallRequest(tool_name=tool_name, params=params)
     return await call_tool(request)
 
@@ -176,7 +174,7 @@ async def get_tool_info(tool_name: str):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Tool '{tool_name}' not found"
         )
-    
+
     # Extract parameter info from the function signature
     import inspect
     sig = inspect.signature(tool)
@@ -188,7 +186,7 @@ async def get_tool_info(tool_name: str):
             "default": str(param.default) if param.default is not inspect.Parameter.empty else None,
             "annotation": str(param.annotation) if param.annotation is not inspect.Parameter.empty else "Any",
         }
-    
+
     return {
         "name": tool_name,
         "description": getattr(tool, "description", "No description"),
@@ -254,9 +252,9 @@ async def position_size(
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     host = "0.0.0.0"  # nosec B104 - Required for Docker/containerized deployment
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8001
-    
+
     logger.info(f"Starting MCP HTTP Server on {host}:{port}")
     uvicorn.run(app, host=host, port=port)

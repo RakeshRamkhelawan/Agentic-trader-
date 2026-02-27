@@ -8,8 +8,8 @@ Features:
 - Enterprise SSO providers
 """
 
-from .sso_manager import SSOManager, SAMLProvider, OIDCProvider, sso_manager
 from .jwt_handler import JWTHandler, jwt_handler
+from .sso_manager import OIDCProvider, SAMLProvider, SSOManager, sso_manager
 
 __all__ = [
     "SSOManager",

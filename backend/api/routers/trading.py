@@ -503,15 +503,15 @@ async def get_paper_trading_status():
 
         # Get trades from state
         trades = _paper_trading_engine.state.trades if hasattr(_paper_trading_engine.state, 'trades') else []
-        
+
         # Get logs
         logs = get_paper_trading_logs()
-        
+
         # Build stats
         buy_trades = len([t for t in trades if t.get('side') == 'buy'])
         sell_trades = len([t for t in trades if t.get('side') == 'sell'])
         avg_trade_value = sum([t.get('value', 0) for t in trades]) / len(trades) if trades else 0
-        
+
         # Calculate uptime
         uptime_seconds = 0
         if _paper_trading_engine.start_time:

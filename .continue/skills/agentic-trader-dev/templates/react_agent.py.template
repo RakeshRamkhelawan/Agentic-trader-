@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 class {{AGENT_CLASS_NAME}}(BaseAgent):
     """
     {{AGENT_DESCRIPTION}}
-    
+
     Features:
     - ReAct reasoning pattern
     - {{KEY_FEATURE_1}}
     - {{KEY_FEATURE_2}}
     """
-    
+
     def __init__(
         self,
         agent_name: str = "{{AGENT_NAME}}",
@@ -34,7 +34,7 @@ class {{AGENT_CLASS_NAME}}(BaseAgent):
     ):
         """
         Initialize {{AGENT_NAME}} Agent.
-        
+
         Args:
             agent_name: Unique name for this agent instance
             llm_provider: LLM provider for reasoning
@@ -48,53 +48,53 @@ class {{AGENT_CLASS_NAME}}(BaseAgent):
             agent_role=agent_role,
             **kwargs
         )
-        
+
         # Agent-specific configuration
         self.confidence_threshold = 0.7
         self.lookback_period = 20
-        
+
         logger.info(f"{{AGENT_NAME}} initialized")
-    
+
     async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """
         Analyze market features using ReAct pattern.
-        
+
         ReAct Flow:
         1. Observation - Process input features
         2. Thought - Reason about market conditions
         3. Action - Generate trading decision
-        
+
         Args:
             features: Market features (price, volume, indicators)
             context: Additional context (portfolio, market regime)
-            
+
         Returns:
             Decision dict with signal, confidence, and metadata
         """
         # === OBSERVATION ===
         symbol = features.get('symbol', 'UNKNOWN')
         price = features.get('price', 0.0)
-        
+
         # === THOUGHT (Reasoning) ===
         reasoning_prompt = f"""
         Analyze {symbol} at price {price}.
         Features: {features}
         Context: {context}
-        
+
         Provide:
         1. Market regime assessment
         2. Key factors driving the decision
         3. Confidence level (0.0 to 1.0)
         """
-        
+
         thought = await self.ask_llm(reasoning_prompt)
-        
+
         # Parse confidence from LLM response or calculate
         confidence = self._extract_confidence(thought)
-        
+
         # === ACTION (Decision) ===
         signal = self._generate_signal(features, thought, confidence)
-        
+
         decision = {
             'agent': self.agent_name,
             'symbol': symbol,
@@ -107,7 +107,7 @@ class {{AGENT_CLASS_NAME}}(BaseAgent):
                 'lookback': self.lookback_period,
             }
         }
-        
+
         # Publish thought to event bus for monitoring
         if confidence >= self.confidence_threshold:
             await self.publish_thought(
@@ -115,7 +115,7 @@ class {{AGENT_CLASS_NAME}}(BaseAgent):
                 confidence=confidence,
                 data=decision
             )
-        
+
         # Store in reasoning history
         self.reasoning_history.append({
             'timestamp': decision['timestamp'],
@@ -123,9 +123,9 @@ class {{AGENT_CLASS_NAME}}(BaseAgent):
             'signal': signal,
             'confidence': confidence
         })
-        
+
         return decision
-    
+
     def _extract_confidence(self, thought: str) -> float:
         """Extract confidence score from LLM reasoning."""
         # Simple heuristic - override with more sophisticated logic
@@ -136,16 +136,16 @@ class {{AGENT_CLASS_NAME}}(BaseAgent):
         elif 'low' in thought.lower() or 'uncertain' in thought.lower():
             return 0.45
         return 0.7  # default
-    
+
     def _generate_signal(
-        self, 
-        features: dict[str, Any], 
-        thought: str, 
+        self,
+        features: dict[str, Any],
+        thought: str,
         confidence: float
     ) -> str:
         """
         Generate trading signal based on features and reasoning.
-        
+
         Returns: 'buy', 'sell', or 'hold'
         """
         # TODO: Implement signal generation logic
@@ -153,19 +153,19 @@ class {{AGENT_CLASS_NAME}}(BaseAgent):
         # - Use technical indicators from features
         # - Parse sentiment from LLM thought
         # - Apply confidence threshold
-        
+
         if confidence < 0.5:
             return 'hold'
-        
+
         # Parse direction from thought
         thought_lower = thought.lower()
         if any(word in thought_lower for word in ['bullish', 'buy', 'long', 'up']):
             return 'buy'
         elif any(word in thought_lower for word in ['bearish', 'sell', 'short', 'down']):
             return 'sell'
-        
+
         return 'hold'
-    
+
     async def health_check(self) -> dict[str, Any]:
         """Return agent health status."""
         return {
@@ -181,10 +181,10 @@ class {{AGENT_CLASS_NAME}}(BaseAgent):
 # Example usage for testing
 if __name__ == '__main__':
     import asyncio
-    
+
     async def test():
         agent = {{AGENT_CLASS_NAME}}()
-        
+
         # Test features
         features = {
             'symbol': 'BTC-USD',
@@ -193,13 +193,13 @@ if __name__ == '__main__':
             'rsi': 65,
             'sma_20': 44000,
         }
-        
+
         context = {
             'portfolio_value': 100000,
             'market_regime': 'trending',
         }
-        
+
         decision = await agent.analyze(features, context)
         print(f"Decision: {decision}")
-    
+
     asyncio.run(test())

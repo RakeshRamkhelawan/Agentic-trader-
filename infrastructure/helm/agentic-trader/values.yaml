@@ -11,19 +11,19 @@ global:
 api:
   enabled: true
   replicaCount: 2
-  
+
   image:
     repository: ghcr.io/agentic-trader/platform
     pullPolicy: IfNotPresent
     tag: "latest"
-  
+
   imagePullSecrets: []
-  
+
   service:
     type: ClusterIP
     port: 8000
     metricsPort: 9090
-  
+
   ingress:
     enabled: true
     className: nginx
@@ -39,7 +39,7 @@ api:
       - secretName: api-tls
         hosts:
           - api.agentic-trader.local
-  
+
   resources:
     limits:
       cpu: 2000m
@@ -47,28 +47,28 @@ api:
     requests:
       cpu: 500m
       memory: 512Mi
-  
+
   autoscaling:
     enabled: true
     minReplicas: 2
     maxReplicas: 10
     targetCPUUtilizationPercentage: 70
     targetMemoryUtilizationPercentage: 80
-  
+
   livenessProbe:
     httpGet:
       path: /health
       port: 8000
     initialDelaySeconds: 30
     periodSeconds: 10
-  
+
   readinessProbe:
     httpGet:
       path: /health
       port: 8000
     initialDelaySeconds: 5
     periodSeconds: 5
-  
+
   env:
     - name: LOG_LEVEL
       value: "INFO"
@@ -76,7 +76,7 @@ api:
       value: "2"
     - name: METRICS_PORT
       value: "9090"
-  
+
   secrets:
     bitvavoApiKey: ""
     bitvavoApiSecret: ""
@@ -87,16 +87,16 @@ api:
 frontend:
   enabled: true
   replicaCount: 2
-  
+
   image:
     repository: ghcr.io/agentic-trader/platform-frontend
     pullPolicy: IfNotPresent
     tag: "latest"
-  
+
   service:
     type: ClusterIP
     port: 80
-  
+
   ingress:
     enabled: true
     className: nginx
@@ -111,7 +111,7 @@ frontend:
       - secretName: frontend-tls
         hosts:
           - app.agentic-trader.local
-  
+
   resources:
     limits:
       cpu: 500m

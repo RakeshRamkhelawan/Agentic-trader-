@@ -24,7 +24,7 @@ class ServiceStatus:
     health_status: str = "unknown"
     ports: list[str] = field(default_factory=list)
     issues: list[str] = field(default_factory=list)
-    
+
     @property
     def is_healthy(self) -> bool:
         return self.health_status == "healthy" or (
@@ -62,23 +62,23 @@ def get_service_status(service_name: str) -> ServiceStatus:
     """Get status of a specific service."""
     status = ServiceStatus(name=service_name)
     compose_file = get_compose_file()
-    
+
     # Get container status
     exit_code, stdout, stderr = run_command([
-        "docker", "compose", "-f", compose_file, 
+        "docker", "compose", "-f", compose_file,
         "ps", service_name, "--format", "json"
     ])
-    
+
     if exit_code == 0 and stdout:
         try:
             # Handle both single JSON object and array
             data = json.loads(stdout)
             if isinstance(data, list):
                 data = data[0] if data else {}
-            
+
             status.container_status = data.get("State", "unknown")
             status.health_status = data.get("Health", "unknown")
-            
+
             # Get ports
             publishers = data.get("Publishers", [])
             status.ports = [f"{p.get('PublishedPort', '?')}->{p.get('TargetPort', '?')}"
@@ -87,14 +87,14 @@ def get_service_status(service_name: str) -> ServiceStatus:
             # Fallback for non-JSON output
             if "running" in stdout.lower():
                 status.container_status = "running"
-    
+
     # Check for common issues
     if status.container_status != "running":
         status.issues.append(f"Container not running: {status.container_status}")
-    
+
     if status.health_status == "unhealthy":
         status.issues.append("Health check failing")
-    
+
     return status
 
 
@@ -104,7 +104,7 @@ def get_all_services() -> list[str]:
     exit_code, stdout, _ = run_command([
         "docker", "compose", "-f", compose_file, "config", "--services"
     ])
-    
+
     if exit_code == 0:
         return [s.strip() for s in stdout.strip().split("\n") if s.strip()]
     return []
@@ -114,7 +114,7 @@ def get_logs(service_name: str, tail: int = 20) -> str:
     """Get recent logs for a service."""
     compose_file = get_compose_file()
     exit_code, stdout, _ = run_command([
-        "docker", "compose", "-f", compose_file, 
+        "docker", "compose", "-f", compose_file,
         "logs", service_name, "--tail", str(tail)
     ])
     return stdout if exit_code == 0 else "Failed to get logs"
@@ -125,20 +125,20 @@ def check_port_usage(port: int) -> list[dict]:
     exit_code, stdout, _ = run_command([
         "netstat", "-ano", "|", "findstr", f":{port}"
     ])
-    
+
     # Fallback for different systems
     if exit_code != 0 or not stdout:
         exit_code, stdout, _ = run_command([
             "lsof", "-i", f":{port}"
         ])
-    
+
     return stdout
 
 
 def diagnose_service(service_name: str, fix: bool = False) -> ServiceStatus:
     """Diagnose a specific service and optionally fix issues."""
     status = get_service_status(service_name)
-    
+
     print(f"\n{'='*70}")
     print(f"Service: {service_name}")
     print(f"{'='*70}")
@@ -146,18 +146,18 @@ def diagnose_service(service_name: str, fix: bool = False) -> ServiceStatus:
     print(f"Health:    {status.health_status}")
     if status.ports:
         print(f"Ports:     {', '.join(status.ports)}")
-    
+
     if status.issues:
         print(f"\n⚠️  Issues Found:")
         for issue in status.issues:
             print(f"   - {issue}")
-        
+
         if fix:
             print(f"\n🔧 Attempting fixes...")
             fix_service(service_name, status)
     else:
         print(f"\n✅ Service is healthy")
-    
+
     # Show recent logs if unhealthy
     if not status.is_healthy:
         print(f"\n📋 Recent Logs (last 10 lines):")
@@ -165,31 +165,31 @@ def diagnose_service(service_name: str, fix: bool = False) -> ServiceStatus:
         for line in logs.split("\n")[-10:]:
             if line.strip():
                 print(f"   {line}")
-    
+
     return status
 
 
 def fix_service(service_name: str, status: ServiceStatus):
     """Attempt to fix common issues with a service."""
     compose_file = get_compose_file()
-    
+
     for issue in status.issues:
         if "curl not found" in issue.lower() or "health check" in issue.lower():
             print(f"   Rebuilding {service_name}...")
             run_command([
-                "docker", "compose", "-f", compose_file, 
+                "docker", "compose", "-f", compose_file,
                 "build", "--no-cache", service_name
             ])
             run_command([
-                "docker", "compose", "-f", compose_file, 
+                "docker", "compose", "-f", compose_file,
                 "up", "-d", "--build", service_name
             ])
             print(f"   ✅ Rebuilt {service_name}")
-            
+
         elif "not running" in issue.lower():
             print(f"   Starting {service_name}...")
             run_command([
-                "docker", "compose", "-f", compose_file, 
+                "docker", "compose", "-f", compose_file,
                 "up", "-d", service_name
             ])
             print(f"   ✅ Started {service_name}")
@@ -198,13 +198,13 @@ def fix_service(service_name: str, status: ServiceStatus):
 def check_infrastructure():
     """Check infrastructure services (PostgreSQL, Redis, etc.)."""
     infra_services = ["db", "postgres", "redis", "clickhouse", "chromadb", "redpanda"]
-    
+
     print(f"\n{'='*70}")
     print("Infrastructure Services")
     print(f"{'='*70}")
-    
+
     all_services = get_all_services()
-    
+
     for service in infra_services:
         if service in all_services:
             status = get_service_status(service)
@@ -235,46 +235,46 @@ def main():
         action='store_true',
         help='Check all services'
     )
-    
+
     args = parser.parse_args()
-    
+
     # Check docker is running
     exit_code, _, _ = run_command(["docker", "version"])
     if exit_code != 0:
         print("❌ Docker is not running or not installed")
         sys.exit(1)
-    
+
     if args.service:
         diagnose_service(args.service, fix=args.fix)
-    
+
     elif args.infrastructure:
         check_infrastructure()
-    
+
     elif args.all:
         services = get_all_services()
         unhealthy_count = 0
-        
+
         for service in services:
             status = diagnose_service(service, fix=args.fix)
             if not status.is_healthy:
                 unhealthy_count += 1
-        
+
         print(f"\n{'='*70}")
         print(f"Summary: {len(services) - unhealthy_count}/{len(services)} services healthy")
         print(f"{'='*70}")
-    
+
     else:
         # Default: check common services
         common_services = ["api-server", "frontend", "postgres", "redis"]
         all_services = get_all_services()
-        
+
         for service in common_services:
             if service in all_services:
                 diagnose_service(service, fix=args.fix)
-        
+
         # Also show quick infrastructure status
         check_infrastructure()
-        
+
         print(f"\n💡 Tip: Use --all to check all services, --fix to auto-fix issues")
 
 

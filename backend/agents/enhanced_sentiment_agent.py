@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class EnhancedSentimentAgent(AgentWithTools):
     """
     Enhanced sentiment agent that uses external tools for analysis.
-    
+
     Tool Usage:
     - external__sentiment_analysis: Get sentiment from news/social
     - external__macro_indicators: Get macro economic context
@@ -37,7 +37,7 @@ class EnhancedSentimentAgent(AgentWithTools):
     - vedastro__generate_signal: Get astrological signal
     - elemental__ether_consensus: Get elemental consensus
     """
-    
+
     def __init__(
         self,
         llm_provider: Any = None,
@@ -52,10 +52,10 @@ class EnhancedSentimentAgent(AgentWithTools):
             agent_role=agent_role,
             tool_broker_url=tool_broker_url,
         )
-        
+
         self.sentiment_threshold = 0.6
         self.confidence_threshold = 0.7
-        
+
     async def analyze(
         self,
         features: dict[str, Any],
@@ -63,11 +63,11 @@ class EnhancedSentimentAgent(AgentWithTools):
     ) -> dict[str, Any]:
         """
         Analyze market using external tools.
-        
+
         Args:
             features: Market features including symbol, price, history
             context: Trading context including portfolio value
-            
+
         Returns:
             Trading decision with confidence and reasoning
         """
@@ -75,11 +75,11 @@ class EnhancedSentimentAgent(AgentWithTools):
         price = features.get("price", 0.0)
         price_history = features.get("history", [])
         portfolio_value = context.get("portfolio_value", 100000)
-        
+
         self.logger.info(f"Analyzing {symbol} at ${price}")
-        
+
         # === STEP 1: Get External Data via ToolBroker ===
-        
+
         # 1.1 Sentiment Analysis
         sentiment_result = await self.call_tool(
             "tool__external_sentiment_analysis",
@@ -87,7 +87,7 @@ class EnhancedSentimentAgent(AgentWithTools):
         )
         sentiment_score = sentiment_result.get("sentiment_score", 0.0)
         sentiment_confidence = sentiment_result.get("confidence", 0.5)
-        
+
         # 1.2 Technical Indicators
         tech_result = await self.call_tool(
             "tool__external_technical_indicators",
@@ -99,7 +99,7 @@ class EnhancedSentimentAgent(AgentWithTools):
         )
         tech_signal = tech_result.get("overall_signal", "neutral")
         tech_indicators = tech_result.get("indicators", {})
-        
+
         # 1.3 Market News
         news_result = await self.call_tool(
             "tool__external_market_news",
@@ -107,40 +107,40 @@ class EnhancedSentimentAgent(AgentWithTools):
         )
         articles = news_result.get("articles", [])
         news_sentiment = self._aggregate_news_sentiment(articles)
-        
+
         # 1.4 Macro Context
         macro_result = await self.call_tool(
             "tool__external_macro_indicators",
             {"indicator": "all"}
         )
         macro_trend = self._assess_macro_trend(macro_result)
-        
+
         # === STEP 2: Get VedAstro Signal ===
-        
+
         vedastro_result = await self.get_vedastro_signal(symbol, price)
         vedastro_signal = vedastro_result.get("signal", "hold")
         vedastro_confidence = vedastro_result.get("confidence", 0.5)
-        
+
         # === STEP 3: Elemental Consensus ===
-        
+
         # Convert signals to votes
         sentiment_vote = self._sentiment_to_vote(sentiment_score)
         tech_vote = self._tech_signal_to_vote(tech_signal)
         news_vote = self._sentiment_to_vote(news_sentiment)
         macro_vote = macro_trend
-        
+
         consensus_result = await self.get_elemental_consensus(
             fire_vote=sentiment_vote,
             earth_vote=tech_vote,
             water_vote=news_vote,
             air_vote=macro_vote,
         )
-        
+
         consensus_signal = consensus_result.get("consensus", "neutral")
         harmony_score = consensus_result.get("harmony_score", 0.5)
-        
+
         # === STEP 4: Final Decision ===
-        
+
         # Weight different signals
         final_score = (
             sentiment_score * 0.25 +
@@ -150,7 +150,7 @@ class EnhancedSentimentAgent(AgentWithTools):
             (1 if vedastro_signal == "buy" else -1 if vedastro_signal == "sell" else 0) * vedastro_confidence * 0.15 +
             self._vote_to_score(macro_vote) * 0.10
         )
-        
+
         # Determine signal
         if final_score > 0.3 and consensus_signal == "approved":
             signal = "buy"
@@ -161,13 +161,13 @@ class EnhancedSentimentAgent(AgentWithTools):
         else:
             signal = "hold"
             confidence = 0.5
-        
+
         # === STEP 5: Position Sizing (if buy signal) ===
-        
+
         position_size = None
         if signal == "buy" and confidence >= self.confidence_threshold:
             dominant_planet = vedastro_result.get("dominant_planet", "SUN")
-            
+
             size_result = await self.calculate_position_size(
                 symbol=symbol,
                 portfolio_value=portfolio_value,
@@ -176,7 +176,7 @@ class EnhancedSentimentAgent(AgentWithTools):
                 price_history=price_history,
             )
             position_size = size_result.get("position_eur")
-        
+
         # Build reasoning
         reasoning = self._build_reasoning(
             symbol=symbol,
@@ -187,14 +187,14 @@ class EnhancedSentimentAgent(AgentWithTools):
             consensus=consensus_signal,
             final_score=final_score,
         )
-        
+
         # Publish thought
         await self.publish_thought(reasoning, confidence, {
             "symbol": symbol,
             "signal": signal,
             "sentiment": sentiment_score,
         })
-        
+
         return {
             "agent": self.agent_name,
             "symbol": symbol,
@@ -212,7 +212,7 @@ class EnhancedSentimentAgent(AgentWithTools):
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         }
-    
+
     def _sentiment_to_vote(self, sentiment: float) -> float:
         """Convert sentiment score to elemental vote."""
         if sentiment > 0.5:
@@ -225,7 +225,7 @@ class EnhancedSentimentAgent(AgentWithTools):
             return -0.5  # Weak sell
         else:
             return 0.0  # Neutral
-    
+
     def _tech_signal_to_vote(self, signal: str) -> float:
         """Convert technical signal to vote."""
         mapping = {
@@ -236,16 +236,16 @@ class EnhancedSentimentAgent(AgentWithTools):
             "strong_sell": -1.0,
         }
         return mapping.get(signal, 0.0)
-    
+
     def _vote_to_score(self, vote: float) -> float:
         """Convert vote to score."""
         return vote
-    
+
     def _aggregate_news_sentiment(self, articles: list[dict]) -> float:
         """Aggregate sentiment from news articles."""
         if not articles:
             return 0.0
-        
+
         scores = []
         for article in articles:
             sentiment = article.get("sentiment", "neutral")
@@ -255,15 +255,15 @@ class EnhancedSentimentAgent(AgentWithTools):
                 scores.append(-0.7)
             else:
                 scores.append(0.0)
-        
+
         return sum(scores) / len(scores) if scores else 0.0
-    
+
     def _assess_macro_trend(self, macro: dict) -> float:
         """Assess macro trend for vote."""
         # Simplified macro assessment
         inflation = macro.get("inflation", {}).get("cpi_yoy", 3.0)
         rates = macro.get("rates", {}).get("fed_funds", 5.0)
-        
+
         # High inflation + high rates = bearish
         if inflation > 4.0 and rates > 5.0:
             return -0.5
@@ -272,7 +272,7 @@ class EnhancedSentimentAgent(AgentWithTools):
             return 0.5
         else:
             return 0.0
-    
+
     def _build_reasoning(
         self,
         symbol: str,
@@ -293,9 +293,9 @@ class EnhancedSentimentAgent(AgentWithTools):
             f"- Elemental Consensus: {consensus}",
             f"- Final Score: {final_score:+.2f}",
         ]
-        
+
         return "\n".join(parts)
-    
+
     def _sentiment_label(self, score: float) -> str:
         """Get label for sentiment score."""
         if score > 0.5:
@@ -316,20 +316,20 @@ class EnhancedSentimentAgent(AgentWithTools):
 
 async def example():
     """Example of using EnhancedSentimentAgent."""
-    
+
     # Create agent
     agent = EnhancedSentimentAgent(
         tool_broker_url="http://localhost:8001"
     )
-    
+
     # Check ToolBroker health
     health = await agent.check_toolbroker_health()
     print(f"ToolBroker health: {health}")
-    
+
     # List available tools
     tools = await agent.list_available_tools()
     print(f"Available tools: {tools}")
-    
+
     # Analyze
     result = await agent.analyze(
         features={
@@ -341,11 +341,11 @@ async def example():
             "portfolio_value": 100000.0,
         }
     )
-    
+
     print(f"\nDecision: {result['signal']}")
     print(f"Confidence: {result['confidence']}")
     print(f"Reasoning:\n{result['reasoning']}")
-    
+
     # Cleanup
     await agent.close()
 

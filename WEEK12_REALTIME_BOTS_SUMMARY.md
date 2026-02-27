@@ -307,7 +307,7 @@ const ws = new WebSocket(`ws://api/ws/tournament/${tournamentId}`);
 
 ws.onmessage = (event) => {
   const msg = JSON.parse(event.data);
-  
+
   switch (msg.type) {
     case 'leaderboard_update':
       updateLeaderboard(msg.leaderboard);

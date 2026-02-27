@@ -47,7 +47,7 @@ def compare_backtest_files(file1, file2):
         b1 = json.load(f)
     with open(file2) as f:
         b2 = json.load(f)
-    
+
     return {
         'return_diff': b2['total_return'] - b1['total_return'],
         'sharpe_diff': b2['sharpe_ratio'] - b1['sharpe_ratio'],
@@ -62,12 +62,12 @@ from collections import defaultdict
 
 def top_symbols(trades_csv, top_n=5):
     symbol_pnl = defaultdict(float)
-    
+
     with open(trades_csv) as f:
         reader = csv.DictReader(f)
         for row in reader:
             symbol_pnl[row['symbol']] += float(row['pnl'])
-    
+
     return sorted(symbol_pnl.items(), key=lambda x: x[1], reverse=True)[:top_n]
 ```
 

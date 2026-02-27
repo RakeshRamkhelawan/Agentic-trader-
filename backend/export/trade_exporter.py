@@ -3,42 +3,42 @@
 import csv
 import json
 from datetime import datetime
-from typing import List, Dict, Any, Optional
-from io import StringIO, BytesIO
+from io import StringIO
+from typing import Any
 
 
 class TradeExporter:
     """
     Exports trade history in various formats.
-    
+
     Supported formats:
     - CSV
     - JSON
     - Excel (XLSX)
     """
-    
+
     def __init__(self):
         self.supported_formats = ["csv", "json", "xlsx"]
-    
+
     def export_trades(
         self,
-        trades: List[Dict[str, Any]],
+        trades: list[dict[str, Any]],
         format: str = "csv",
         include_header: bool = True,
     ) -> bytes:
         """
         Export trades to specified format.
-        
+
         Args:
             trades: List of trade dictionaries
             format: Export format (csv, json, xlsx)
             include_header: Include header row for CSV
-            
+
         Returns:
             Exported data as bytes
         """
         format = format.lower()
-        
+
         if format == "csv":
             return self._export_csv(trades, include_header)
         elif format == "json":
@@ -47,27 +47,27 @@ class TradeExporter:
             return self._export_xlsx(trades)
         else:
             raise ValueError(f"Unsupported format: {format}")
-    
+
     def _export_csv(
         self,
-        trades: List[Dict[str, Any]],
+        trades: list[dict[str, Any]],
         include_header: bool,
     ) -> bytes:
         """Export trades to CSV format."""
         output = StringIO()
         writer = csv.writer(output)
-        
+
         if include_header and trades:
             headers = self._get_csv_headers(trades[0])
             writer.writerow(headers)
-        
+
         for trade in trades:
             row = self._trade_to_row(trade)
             writer.writerow(row)
-        
+
         return output.getvalue().encode("utf-8")
-    
-    def _get_csv_headers(self, trade: Dict[str, Any]) -> List[str]:
+
+    def _get_csv_headers(self, trade: dict[str, Any]) -> list[str]:
         """Get CSV headers from trade data."""
         field_mapping = {
             "timestamp": "Date/Time",
@@ -81,14 +81,14 @@ class TradeExporter:
             "status": "Status",
             "strategy": "Strategy",
         }
-        
+
         headers = []
-        for key in trade.keys():
+        for key in trade:
             headers.append(field_mapping.get(key, key.title()))
-        
+
         return headers
-    
-    def _trade_to_row(self, trade: Dict[str, Any]) -> List[Any]:
+
+    def _trade_to_row(self, trade: dict[str, Any]) -> list[Any]:
         """Convert trade dict to CSV row."""
         row = []
         for value in trade.values():
@@ -99,8 +99,8 @@ class TradeExporter:
             else:
                 row.append(value)
         return row
-    
-    def _export_json(self, trades: List[Dict[str, Any]]) -> bytes:
+
+    def _export_json(self, trades: list[dict[str, Any]]) -> bytes:
         """Export trades to JSON format."""
         # Convert datetime objects to strings
         serializable_trades = []
@@ -110,30 +110,30 @@ class TradeExporter:
                 if isinstance(value, datetime):
                     trade_copy[key] = value.isoformat()
             serializable_trades.append(trade_copy)
-        
+
         data = {
             "exported_at": datetime.utcnow().isoformat(),
             "trade_count": len(trades),
             "trades": serializable_trades,
         }
-        
+
         return json.dumps(data, indent=2).encode("utf-8")
-    
-    def _export_xlsx(self, trades: List[Dict[str, Any]]) -> bytes:
+
+    def _export_xlsx(self, trades: list[dict[str, Any]]) -> bytes:
         """
         Export trades to Excel format.
-        
+
         Note: This is a placeholder. In production, use openpyxl or xlsxwriter.
         """
         # For now, return CSV with .xlsx extension note
         # In production, implement actual Excel export
         csv_data = self._export_csv(trades, True)
         return csv_data
-    
+
     def generate_summary(
         self,
-        trades: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        trades: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Generate trade summary statistics."""
         if not trades:
             return {
@@ -146,11 +146,11 @@ class TradeExporter:
                 "best_trade": 0.0,
                 "worst_trade": 0.0,
             }
-        
+
         pnls = [t.get("pnl", 0) for t in trades]
         winning = [p for p in pnls if p > 0]
         losing = [p for p in pnls if p <= 0]
-        
+
         return {
             "total_trades": len(trades),
             "winning_trades": len(winning),
@@ -161,16 +161,16 @@ class TradeExporter:
             "best_trade": max(pnls),
             "worst_trade": min(pnls),
         }
-    
+
     def export_with_summary(
         self,
-        trades: List[Dict[str, Any]],
+        trades: list[dict[str, Any]],
         format: str = "csv",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Export trades with summary statistics."""
         data = self.export_trades(trades, format)
         summary = self.generate_summary(trades)
-        
+
         return {
             "data": data,
             "summary": summary,

@@ -7,8 +7,8 @@ Features:
 - Tenant-scoped permissions
 """
 
-from .roles import Role, RoleManager, Permission, role_manager
-from .access_control import AccessControl, require_permission, TenantResourceAccess
+from .access_control import AccessControl, TenantResourceAccess, require_permission
+from .roles import Permission, Role, RoleManager, role_manager
 
 __all__ = [
     "Role",

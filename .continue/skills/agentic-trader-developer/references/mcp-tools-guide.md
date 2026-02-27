@@ -6,8 +6,8 @@ Guide for developing MCP tools in the Agentic Trader platform.
 
 The MCP (Model Context Protocol) Broker exposes trading tools to AI agents via a standardized protocol.
 
-**Location:** `backend/mcp_broker/`  
-**Server:** `backend/mcp_broker/server.py`  
+**Location:** `backend/mcp_broker/`
+**Server:** `backend/mcp_broker/server.py`
 **Tools:** `backend/mcp_broker/tools/`
 
 ## Available Tools
@@ -65,22 +65,22 @@ async def my_tool(
 ) -> dict[str, Any]:
     """
     Brief description of what the tool does.
-    
+
     Args:
         symbol: Asset symbol (e.g., "BTC", "AAPL")
         param: Description of parameter
         ctx: MCP context for logging
-        
+
     Returns:
         Dictionary with results
     """
     if ctx:
         ctx.info(f"Processing {symbol} with param={param}")
-    
+
     try:
         # Implementation
         result = await _internal_logic(symbol, param)
-        
+
         return {
             "success": True,
             "result": result,
@@ -119,7 +119,7 @@ async def analyze(self, features, context):
         "my__tool",
         {"symbol": "BTC", "param": 0.5}
     )
-    
+
     if result.get("success"):
         return {"action": "buy", "confidence": result["result"]}
     else:
@@ -196,7 +196,7 @@ async def test_my_tool():
 # Test via MCP client
 async def test_mcp_tool():
     from backend.mcp_broker.client import ToolBrokerClient
-    
+
     client = ToolBrokerClient()
     result = await client.call_tool("my__tool", {
         "symbol": "BTC",
@@ -226,13 +226,13 @@ All tool calls must be logged for SOC2 compliance:
 async def audited_tool(symbol: str, ctx=None) -> dict:
     """Tool with audit logging."""
     start_time = time.time()
-    
+
     try:
         result = await _process(symbol)
-        
+
         # Audit log
         logger.info(f"TOOL_CALL: {symbol}, success=True, duration={time.time()-start_time}")
-        
+
         return {"success": True, "result": result}
     except Exception as e:
         # Audit log failure

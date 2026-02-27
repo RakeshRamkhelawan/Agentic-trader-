@@ -9,7 +9,7 @@ Always state the main goal clearly at the top.
 
 ```markdown
 ## Primary Objective
-Implement V18 strategy with relaxed VedAstro filters to improve 
+Implement V18 strategy with relaxed VedAstro filters to improve
 execute rate from 6.34% to 15-25%.
 ```
 
