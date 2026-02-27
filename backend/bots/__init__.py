@@ -9,11 +9,11 @@ Provides algorithmic competitors with different strategies:
 """
 
 from .base_bot import BaseTradingBot, BotConfig, BotDifficulty, BotPersonality, TradeDecision
-from .trend_bot import TrendFollowerBot
+from .bot_manager import BotManager
 from .mean_reversion_bot import MeanReversionBot
 from .momentum_bot import MomentumBot
 from .random_bot import RandomBot
-from .bot_manager import BotManager
+from .trend_bot import TrendFollowerBot
 
 __all__ = [
     "BaseTradingBot",

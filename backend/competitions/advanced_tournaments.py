@@ -1,11 +1,10 @@
 """Advanced tournament types with special rules."""
 
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Dict, Any
+from typing import Any
 
-from .models.tournament import Tournament, TournamentType, TournamentStatus
+from .models.tournament import Tournament, TournamentType
 from .tournament_engine import TournamentEngine
 
 
@@ -26,14 +25,14 @@ class TournamentVariant(Enum):
 @dataclass
 class TournamentRules:
     """Special rules for tournament variants."""
-    allowed_symbols: Optional[List[str]] = None
-    blocked_symbols: Optional[List[str]] = None
-    allowed_sides: Optional[List[str]] = None  # "buy", "sell"
+    allowed_symbols: list[str] | None = None
+    blocked_symbols: list[str] | None = None
+    allowed_sides: list[str] | None = None  # "buy", "sell"
     max_leverage: float = 1.0
     min_leverage: float = 1.0
     max_position_size: float = 0.2  # 20% of balance
     require_stop_loss: bool = False
-    max_trades_per_day: Optional[int] = None
+    max_trades_per_day: int | None = None
     allow_bots: bool = True
     allow_humans: bool = True
     entry_fee_multiplier: float = 1.0
@@ -43,14 +42,14 @@ class TournamentRules:
 class AdvancedTournamentEngine(TournamentEngine):
     """
     Extended tournament engine with variant support.
-    
+
     Supports specialized tournaments like:
     - Crypto-only for digital asset specialists
     - Short-only for bear market strategies
     - Algorithmic for bot competitions
     """
-    
-    VARIANT_SYMBOLS: Dict[TournamentVariant, List[str]] = {
+
+    VARIANT_SYMBOLS: dict[TournamentVariant, list[str]] = {
         TournamentVariant.CRYPTO_ONLY: [
             "BTC-EUR", "ETH-EUR", "XRP-EUR", "ADA-EUR", "SOL-EUR",
             "DOT-EUR", "LINK-EUR", "MATIC-EUR", "UNI-EUR", "AAVE-EUR",
@@ -67,8 +66,8 @@ class AdvancedTournamentEngine(TournamentEngine):
             "GOLD", "SILVER", "OIL", "NATGAS", "COPPER",
         ],
     }
-    
-    VARIANT_RULES: Dict[TournamentVariant, TournamentRules] = {
+
+    VARIANT_RULES: dict[TournamentVariant, TournamentRules] = {
         TournamentVariant.SHORT_ONLY: TournamentRules(
             allowed_sides=["sell"],
             max_position_size=0.15,
@@ -99,18 +98,18 @@ class AdvancedTournamentEngine(TournamentEngine):
             entry_fee_multiplier=0.5,
         ),
     }
-    
+
     def __init__(self):
         super().__init__()
-        self._tournament_variants: Dict[str, TournamentVariant] = {}
-        self._tournament_rules: Dict[str, TournamentRules] = {}
-    
+        self._tournament_variants: dict[str, TournamentVariant] = {}
+        self._tournament_rules: dict[str, TournamentRules] = {}
+
     def create_variant_tournament(
         self,
         name: str,
         description: str,
         variant: TournamentVariant,
-        base_rules: Optional[TournamentRules] = None,
+        base_rules: TournamentRules | None = None,
         **kwargs
     ) -> Tournament:
         """Create a tournament with special rules."""
@@ -121,10 +120,10 @@ class AdvancedTournamentEngine(TournamentEngine):
             tournament_type=TournamentType.SPECIAL,
             **kwargs
         )
-        
+
         # Store variant info
         self._tournament_variants[tournament.id] = variant
-        
+
         # Merge rules
         rules = self._get_rules_for_variant(variant)
         if base_rules:
@@ -132,24 +131,24 @@ class AdvancedTournamentEngine(TournamentEngine):
             for key, value in vars(base_rules).items():
                 if value is not None:
                     setattr(rules, key, value)
-        
+
         self._tournament_rules[tournament.id] = rules
-        
+
         return tournament
-    
+
     def _get_rules_for_variant(self, variant: TournamentVariant) -> TournamentRules:
         """Get default rules for variant."""
         if variant in self.VARIANT_RULES:
             return self.VARIANT_RULES[variant]
-        
+
         # For symbol-only variants
         if variant in self.VARIANT_SYMBOLS:
             return TournamentRules(
                 allowed_symbols=self.VARIANT_SYMBOLS[variant],
             )
-        
+
         return TournamentRules()
-    
+
     def validate_trade(
         self,
         tournament_id: str,
@@ -157,69 +156,69 @@ class AdvancedTournamentEngine(TournamentEngine):
         side: str,
         leverage: float = 1.0,
         is_bot: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Validate trade against tournament rules."""
         rules = self._tournament_rules.get(tournament_id)
         if not rules:
             return {"valid": True}
-        
+
         # Check symbol restrictions
         if rules.allowed_symbols and symbol not in rules.allowed_symbols:
             return {
                 "valid": False,
                 "error": f"Symbol {symbol} not allowed in this tournament",
             }
-        
+
         if rules.blocked_symbols and symbol in rules.blocked_symbols:
             return {
                 "valid": False,
                 "error": f"Symbol {symbol} is blocked in this tournament",
             }
-        
+
         # Check side restrictions
         if rules.allowed_sides and side not in rules.allowed_sides:
             return {
                 "valid": False,
                 "error": f"Side {side} not allowed. Allowed: {', '.join(rules.allowed_sides)}",
             }
-        
+
         # Check leverage
         if leverage > rules.max_leverage:
             return {
                 "valid": False,
                 "error": f"Leverage {leverage}x exceeds maximum {rules.max_leverage}x",
             }
-        
+
         if leverage < rules.min_leverage:
             return {
                 "valid": False,
                 "error": f"Leverage {leverage}x below minimum {rules.min_leverage}x",
             }
-        
+
         # Check bot/human restrictions
         if is_bot and not rules.allow_bots:
             return {
                 "valid": False,
                 "error": "Bots not allowed in this tournament",
             }
-        
+
         if not is_bot and not rules.allow_humans:
             return {
                 "valid": False,
                 "error": "Human trading not allowed in this tournament (bot-only)",
             }
-        
+
         return {"valid": True}
-    
-    def get_tournament_info(self, tournament_id: str) -> Dict[str, Any]:
+
+    def get_tournament_info(self, tournament_id: str) -> dict[str, Any]:
         """Get tournament info including variant rules."""
         tournament = self._tournaments.get(tournament_id)
         if not tournament:
             return {"error": "Tournament not found"}
-        
+
         variant = self._tournament_variants.get(tournament_id)
         rules = self._tournament_rules.get(tournament_id)
-        
+
         info = {
             "id": tournament.id,
             "name": tournament.name,
@@ -228,7 +227,7 @@ class AdvancedTournamentEngine(TournamentEngine):
             "variant": variant.value if variant else None,
             "participants": len(tournament.entries),
         }
-        
+
         if rules:
             info["rules"] = {
                 "allowed_symbols": rules.allowed_symbols,
@@ -241,17 +240,17 @@ class AdvancedTournamentEngine(TournamentEngine):
                 "allow_bots": rules.allow_bots,
                 "allow_humans": rules.allow_humans,
             }
-        
+
         return info
-    
-    def list_variant_types(self) -> List[Dict[str, Any]]:
+
+    def list_variant_types(self) -> list[dict[str, Any]]:
         """List all available tournament variants."""
         variants = []
-        
+
         for variant in TournamentVariant:
             rules = self._get_rules_for_variant(variant)
             symbols = self.VARIANT_SYMBOLS.get(variant, [])
-            
+
             variants.append({
                 "id": variant.value,
                 "name": variant.value.replace("_", " ").title(),
@@ -263,9 +262,9 @@ class AdvancedTournamentEngine(TournamentEngine):
                     "allow_humans": rules.allow_humans,
                 },
             })
-        
+
         return variants
-    
+
     def _get_variant_description(self, variant: TournamentVariant) -> str:
         """Get human-readable description for variant."""
         descriptions = {

@@ -289,7 +289,7 @@ class RealPaperTradingV18:
         # 2. Other symbols (entry check) - prioritize by VedAstro potential
         open_position_symbols = [s for s in self.state.open_positions.keys() if s in prices]
         other_symbols = [s for s in prices.keys() if s not in self.state.open_positions]
-        
+
         # Limit other symbols to analyze per cycle to prevent overload
         # But rotate through them faster (every symbol gets checked every few cycles)
         max_new_symbols_per_cycle = 100
@@ -298,12 +298,12 @@ class RealPaperTradingV18:
         for i in range(min(max_new_symbols_per_cycle, len(other_symbols))):
             idx = (cycle_offset + i) % len(other_symbols)
             new_symbols_to_check.append(other_symbols[idx])
-        
+
         # Combine: open positions first (critical), then new opportunities
         to_analyze = open_position_symbols + new_symbols_to_check
 
         trades_this_cycle = 0
-        
+
         logger.debug(f"Cycle {self._cycle_count}: Checking {len(open_position_symbols)} positions + {len(new_symbols_to_check)} new symbols")
 
         for symbol in to_analyze:
@@ -321,7 +321,7 @@ class RealPaperTradingV18:
                     # Entry check - get price history only when needed
                     price_history_data = await self.data_agent.get_price_history(symbol, lookback=30)
                     price_history = [p.price for p in price_history_data]
-                    
+
                     entry_triggered = await self._evaluate_entry(
                         symbol, current_price, price_history
                     )

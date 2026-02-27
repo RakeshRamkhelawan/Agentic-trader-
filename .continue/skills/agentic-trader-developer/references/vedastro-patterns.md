@@ -6,7 +6,7 @@ Guide for working with Vedic astrology (VedAstro) in the Agentic Trader platform
 
 VedAstro provides astrological signals for trading decisions based on planetary positions.
 
-**Location:** `backend/vedastro/`  
+**Location:** `backend/vedastro/`
 **Key Components:**
 - `EnhancedAstroOrchestrator` - Main entry point
 - `TradingSignalGenerator` - Signal generation
@@ -128,11 +128,11 @@ for transit in transits:
 ```python
 async def conservative_signal(symbol, price):
     signal = await get_vedastro_signal(symbol, price)
-    
+
     # Only trade high confidence + low risk
     if signal["confidence"] > 0.7 and signal["risk_level"] == "low":
         return signal["signal"]
-    
+
     return "hold"
 ```
 
@@ -141,11 +141,11 @@ async def conservative_signal(symbol, price):
 ```python
 async def aggressive_signal(symbol, price):
     signal = await get_vedastro_signal(symbol, price)
-    
+
     # Trade on medium confidence
     if signal["confidence"] > 0.5:
         return signal["signal"]
-    
+
     return "hold"
 ```
 
@@ -154,11 +154,11 @@ async def aggressive_signal(symbol, price):
 ```python
 async def combined_signal(symbol, price, technical_signal):
     vedastro = await get_vedastro_signal(symbol, price)
-    
+
     # Only trade when both agree
     if vedastro["signal"] == technical_signal and vedastro["confidence"] > 0.6:
         return vedastro["signal"]
-    
+
     return "hold"
 ```
 
@@ -186,9 +186,9 @@ except Exception as e:
 @pytest.mark.asyncio
 async def test_vedastro_signal():
     orchestrator = EnhancedAstroOrchestrator()
-    
+
     signal = await orchestrator.analyze_asset("BTC", 45000.0)
-    
+
     assert signal.trading_signal.signal in ["buy", "sell", "hold"]
     assert 0.0 <= signal.trading_signal.confidence <= 1.0
 ```
@@ -203,14 +203,14 @@ async def test_vedastro_signal():
 @circuit_breaker(failure_threshold=3)
 async def cached_vedastro_signal(symbol, price):
     cache_key = f"vedastro:{symbol}:{int(price/100)}"
-    
+
     cached = await cache.get(cache_key)
     if cached:
         return cached
-    
+
     signal = await orchestrator.analyze_asset(symbol, price)
     await cache.set(cache_key, signal, ttl=300)  # 5 min cache
-    
+
     return signal
 ```
 
@@ -225,10 +225,10 @@ VedAstro signals are used for trading decisions. Ensure:
 async def audited_vedastro_signal(symbol, price):
     """Get signal with audit logging for SOC2."""
     signal = await orchestrator.analyze_asset(symbol, price)
-    
+
     # Audit log for compliance
     logger.info(f"VEDASTRO_SIGNAL: {symbol}, signal={signal.signal}, confidence={signal.confidence}")
-    
+
     return signal
 ```
 

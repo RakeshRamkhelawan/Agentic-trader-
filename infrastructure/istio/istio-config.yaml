@@ -7,7 +7,7 @@ spec:
   profile: default
   hub: docker.io/istio
   tag: 1.20.0
-  
+
   components:
     pilot:
       k8s:
@@ -23,7 +23,7 @@ spec:
               resource:
                 name: cpu
                 targetAverageUtilization: 80
-    
+
     ingressGateways:
       - name: istio-ingressgateway
         enabled: true
@@ -54,7 +54,7 @@ spec:
               patches:
                 - path: spec.template.spec.containers.[name:istio-proxy].securityContext.capabilities.drop
                   value: ["ALL"]
-    
+
     egressGateways:
       - name: istio-egressgateway
         enabled: true
@@ -63,7 +63,7 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-  
+
   meshConfig:
     defaultConfig:
       proxyMetadata:
@@ -75,7 +75,7 @@ spec:
     enableAutoMtls: true
     outboundTrafficPolicy:
       mode: REGISTRY_ONLY
-    
+
   values:
     global:
       proxy:

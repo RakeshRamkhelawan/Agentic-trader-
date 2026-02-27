@@ -8,12 +8,12 @@ Provides gamification features:
 - Strategy sharing
 """
 
-from .league_system import LeagueSystem, LeagueTier
-from .tournament_engine import TournamentEngine
-from .models.tournament import TournamentStatus
 from .leaderboard import LeaderboardService
+from .league_system import LeagueSystem, LeagueTier
+from .models.tournament import TournamentStatus
+from .rewards import BadgeRarity, BadgeType, RewardsSystem
 from .strategy_share import StrategySharingService
-from .rewards import RewardsSystem, BadgeType, BadgeRarity
+from .tournament_engine import TournamentEngine
 
 __all__ = [
     "LeagueSystem",

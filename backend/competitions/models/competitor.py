@@ -3,7 +3,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 
 class LeagueTier(Enum):
@@ -48,23 +47,23 @@ class Competitor:
     created_at: datetime = field(default_factory=datetime.utcnow)
     last_active: datetime = field(default_factory=datetime.utcnow)
     is_active: bool = True
-    
+
     def calculate_win_rate(self) -> float:
         """Calculate win rate percentage."""
         if self.stats.total_trades == 0:
             return 0.0
         return (self.stats.winning_trades / self.stats.total_trades) * 100
-    
+
     def add_points(self, points: int) -> None:
         """Add points to competitor."""
         self.points += points
         self.last_active = datetime.utcnow()
-    
+
     def update_stats(self, pnl: float, is_win: bool) -> None:
         """Update statistics after a trade."""
         self.stats.total_trades += 1
         self.stats.total_pnl += pnl
-        
+
         if is_win:
             self.stats.winning_trades += 1
             if pnl > self.stats.best_trade_pnl:
@@ -73,10 +72,10 @@ class Competitor:
             self.stats.losing_trades += 1
             if pnl < self.stats.worst_trade_pnl:
                 self.stats.worst_trade_pnl = pnl
-        
+
         self.stats.win_rate = self.calculate_win_rate()
         self.stats.avg_trade_pnl = self.stats.total_pnl / self.stats.total_trades
-        
+
         # Update reputation score
         self.stats.reputation_score = (
             self.stats.total_pnl * 0.4 +
@@ -84,5 +83,5 @@ class Competitor:
             self.stats.sharpe_ratio * 10 * 0.2 +
             self.stats.followers * 10 * 0.1
         )
-        
+
         self.last_active = datetime.utcnow()

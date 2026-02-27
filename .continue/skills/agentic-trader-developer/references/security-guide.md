@@ -152,7 +152,7 @@ skips:
   # Acceptable false positives
   - B101  # Assert statements in tests
   - B311  # Random for simulation
-  
+
 exclude_dirs:
   - backend/tests
   - backend/**/test_*.py

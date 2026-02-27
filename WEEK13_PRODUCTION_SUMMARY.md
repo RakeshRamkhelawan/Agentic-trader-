@@ -255,10 +255,10 @@ tournament = await tournament_scheduler.create_tournament_from_schedule(
 @rate_limit(requests=10, window=60)
 async def enter_tournament(user_id, tournament_id):
     result = await competitions_enter_tournament(user_id, tournament_id)
-    
+
     # 3. Log activity
     activity_feed.add_tournament_entered_activity(user_id, tournament.name)
-    
+
     return result
 
 # 3. Leaderboard cached

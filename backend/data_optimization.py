@@ -284,7 +284,7 @@ class OptimizedQueries:
         keys = list(items[0].keys())
         # Generate parameterized placeholders for safety
         placeholders = [f"({', '.join(['%s'] * len(keys))})" for _ in items]
-        
+
         return f"INSERT INTO table ({', '.join(keys)}) VALUES {', '.join(placeholders)}"  # nosec B608 - Returns parameterized query, values passed separately
 
     @staticmethod

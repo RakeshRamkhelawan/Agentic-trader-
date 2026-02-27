@@ -1,9 +1,9 @@
 """Competition data models."""
 
 from .competitor import Competitor, CompetitorStats
-from .tournament import Tournament, TournamentEntry
-from .strategy import SharedStrategy, StrategyFork
 from .league import League, LeaguePromotion
+from .strategy import SharedStrategy, StrategyFork
+from .tournament import Tournament, TournamentEntry
 
 __all__ = [
     "Competitor",

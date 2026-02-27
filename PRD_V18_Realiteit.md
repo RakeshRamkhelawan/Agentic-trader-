@@ -1,11 +1,11 @@
 # PRD: Agentic Trader V18 - Realistische Implementatie
 
-**Auteur:** Kimi Code CLI  
-**Datum:** 25 Feb 2026  
-**Versie:** V18  
-**Status:** IN DEVELOPMENT  
+**Auteur:** Kimi Code CLI
+**Datum:** 25 Feb 2026
+**Versie:** V18
+**Status:** IN DEVELOPMENT
 
-**Wijzigingen na Reality Check:**  
+**Wijzigingen na Reality Check:**
 > Na analyse bleek dat veel "gaps" al bestonden. Dit document beschrijft de ECHTE werkzaamheden die nog nodig zijn om bestaande componenten te verbinden en stabiliseren.
 
 ---
@@ -73,9 +73,9 @@
 class AgentWithTools(BaseAgent):
     """
     Base agent with ToolBroker integration.
-    
+
     Agents kunnen nu tools aanroepen via MCP:
-    
+
     Usage:
         class MyAgent(AgentWithTools):
             async def analyze(self, features, context):
@@ -85,7 +85,7 @@ class AgentWithTools(BaseAgent):
                 )
                 return {"action": signal["recommendation"]}
     """
-    
+
     async def call_tool(self, tool_name: str, params: dict) -> dict:
         """Call any MCP tool via ToolBroker."""
         return await self.tool_broker.call_tool(tool_name, params)
@@ -94,7 +94,7 @@ class AgentWithTools(BaseAgent):
 **Test Resultaten:**
 ```
 ✅ AgentWithTools Import
-✅ Agent Instantiation  
+✅ Agent Instantiation
 ✅ VedAstro Tools Import
 ✅ MCP Server Imports
 ✅ Bestaande VedAstro Module
@@ -130,14 +130,14 @@ class AgentWithTools(BaseAgent):
 @circuit_breaker(failure_threshold=5, timeout_seconds=30)
 @vedastro_retry
 async def vedastro_generate_signal(
-    symbol: str, 
-    current_price: float, 
+    symbol: str,
+    current_price: float,
     ctx: Context = None
 ) -> dict[str, Any]:
     """Generate trading signal from astrological data."""
     orchestrator = _get_astro_orchestrator()
     astro_analysis = await orchestrator.analyze_asset(
-        symbol=symbol, 
+        symbol=symbol,
         current_price=current_price
     )
     return {
@@ -158,7 +158,7 @@ async def vedastro_generate_signal(
 1. **Server registratie verifiëren** in `backend/mcp_broker/server.py`:
    ```python
    mcp = FastMCP("AgenticTraderBroker")
-   
+
    @mcp.tool(name="vedastro__generate_signal")
    async def vedastro_generate_signal_tool(...):
        return await vedastro_generate_signal(...)
@@ -193,7 +193,7 @@ find backend -name "*price*" -o -name "*feed*" | head -20
 # Snelle implementatie
 class PriceFeedService:
     """Unified price feed from multiple sources."""
-    
+
     async def get_price(self, symbol: str, source: str = "primary") -> float:
         """Get latest price for symbol."""
         # Priority: live feed → cache → fetch
@@ -235,7 +235,7 @@ async def revolut_place_order_tool(...):
 
 ### 5.2 Paper Trading Check
 
-**Bestaat al:** `backend/execution/paper_trading.py`  
+**Bestaat al:** `backend/execution/paper_trading.py`
 **Nodig:** Integratie met MCP broker zodat agents paper trades kunnen uitvoeren
 
 ---
@@ -244,7 +244,7 @@ async def revolut_place_order_tool(...):
 
 ### 6.1 22 Open Security Issues
 
-**Prioriteit:** HIGH  
+**Prioriteit:** HIGH
 **Bron:** GitHub Security Alerts (Dependabot)
 
 **Actieplan:**
@@ -300,11 +300,11 @@ alerts:
   - name: MCPBrokerDown
     condition: up{mcp_broker} == 0
     severity: critical
-    
+
   - name: HighToolErrorRate
     condition: rate(tool_errors[5m]) > 0.1
     severity: warning
-    
+
   - name: VedAstroCircuitOpen
     condition: vedastro_circuit_breaker_state == 1
     severity: warning
@@ -316,10 +316,10 @@ alerts:
 
 ### 8.1 Weekelijkse Flow
 
-**Maandag:** Planning + enkele deep-focus uren  
-**Dinsdag-Woensdag:** Implementatie (tools/agent/logica)  
-**Donderdag:** Testen + fixen  
-**Vrijdag:** Documentatie + deployment prep  
+**Maandag:** Planning + enkele deep-focus uren
+**Dinsdag-Woensdag:** Implementatie (tools/agent/logica)
+**Donderdag:** Testen + fixen
+**Vrijdag:** Documentatie + deployment prep
 **Weekend:** Rust + achtergrond denken
 
 ### 8.2 Automatische Gates
@@ -342,8 +342,8 @@ repos:
 # .github/workflows/ci.yml
 - name: Test Real Gaps
   run: python scripts/test_real_gaps.py
-  
-- name: Security Scan  
+
+- name: Security Scan
   run: |
     bandit -r backend/ -f json -o bandit.json
     safety check
@@ -419,16 +419,16 @@ docs/week-3-vedastro-expose.md
 # scripts/test_critical_path.py
 async def test_full_flow():
     """Test: Agent → MCP → VedAstro → Signal"""
-    
+
     # 1. Start agent
     agent = VedAstroSignalAgent()
-    
+
     # 2. Analyze calls tool
     result = await agent.analyze(
         features={"symbol": "BTC", "price": 45000},
         context={}
     )
-    
+
     # 3. Verify signal received
     assert "signal" in result
     assert "confidence" in result
@@ -459,6 +459,6 @@ Start Week 1 met **concrete agent implementaties** die de `AgentWithTools` base 
 
 ---
 
-**Document Versie:** 1.0  
-**Laatste Update:** 2026-02-25  
+**Document Versie:** 1.0
+**Laatste Update:** 2026-02-25
 **Status:** Reality check complete, implementatie gestart

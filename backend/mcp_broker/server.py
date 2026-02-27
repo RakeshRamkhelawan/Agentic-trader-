@@ -25,6 +25,17 @@ logger = logging.getLogger(__name__)
 
 # Import tools
 from backend.mcp_broker.resilience import get_circuit_state
+from backend.mcp_broker.tools.competitions_tools import (
+    competitions_enter_tournament,
+    competitions_get_available_badges,
+    competitions_get_badges,
+    competitions_get_leaderboard,
+    competitions_get_league_info,
+    competitions_get_tournaments,
+    competitions_register_competitor,
+    competitions_search_strategies,
+    competitions_share_strategy,
+)
 from backend.mcp_broker.tools.data_tools import (
     data_get_historical_prices,
     data_get_market_regime,
@@ -43,22 +54,22 @@ from backend.mcp_broker.tools.execution_tools import (
     execution_get_open_positions,
     execution_get_trade_history,
 )
-from backend.mcp_broker.tools.vedastro_tools import (
-    vedastro_generate_signal,
-    vedastro_get_dasha,
-    vedastro_get_transits,
+from backend.mcp_broker.tools.external_tools import (
+    external__macro_indicators as ext_macro_indicators,
 )
-from backend.mcp_broker.tools.vedic_dasha_tools import (
-    vedic_calculate_transits,
-    vedic_calculate_vimshottari_dasha,
-    vedic_get_nakshatra_analysis,
+from backend.mcp_broker.tools.external_tools import (
+    external__market_correlation as ext_market_correlation,
+)
+from backend.mcp_broker.tools.external_tools import (
+    external__market_news as ext_market_news,
 )
 from backend.mcp_broker.tools.external_tools import (
     external__sentiment_analysis as ext_sentiment_analysis,
+)
+from backend.mcp_broker.tools.external_tools import (
     external__social_sentiment as ext_social_sentiment,
-    external__macro_indicators as ext_macro_indicators,
-    external__market_correlation as ext_market_correlation,
-    external__market_news as ext_market_news,
+)
+from backend.mcp_broker.tools.external_tools import (
     external__technical_indicators as ext_technical_indicators,
 )
 from backend.mcp_broker.tools.live_trading_tools import (
@@ -93,16 +104,15 @@ from backend.mcp_broker.tools.revolut_x_tools import (
     revolutx_get_ticker,
     revolutx_place_order,
 )
-from backend.mcp_broker.tools.competitions_tools import (
-    competitions_enter_tournament,
-    competitions_get_badges,
-    competitions_get_available_badges,
-    competitions_get_leaderboard,
-    competitions_get_league_info,
-    competitions_get_tournaments,
-    competitions_register_competitor,
-    competitions_search_strategies,
-    competitions_share_strategy,
+from backend.mcp_broker.tools.vedastro_tools import (
+    vedastro_generate_signal,
+    vedastro_get_dasha,
+    vedastro_get_transits,
+)
+from backend.mcp_broker.tools.vedic_dasha_tools import (
+    vedic_calculate_transits,
+    vedic_calculate_vimshottari_dasha,
+    vedic_get_nakshatra_analysis,
 )
 
 # Initialize FastMCP server
@@ -198,12 +208,12 @@ async def vedic__calculate_vimshottari_dasha(
 ) -> dict[str, Any]:
     """
     Calculate Vimshottari Dasha planetary periods for birth chart analysis.
-    
+
     Args:
         birth_nakshatra: Birth nakshatra (lunar mansion) name
         birth_nakshatra_pad: Pada (quarter) 1-4
         birth_date: Birth date (YYYY-MM-DD)
-        
+
     Returns:
         Complete 120-year dasha cycle with current period
     """
@@ -212,7 +222,7 @@ async def vedic__calculate_vimshottari_dasha(
             logger.info(msg)
         def error(self, msg):
             logger.error(msg)
-    
+
     ctx = MinimalContext()
     return await vedic_calculate_vimshottari_dasha(
         birth_nakshatra, birth_nakshatra_pad, birth_date, ctx
@@ -226,18 +236,18 @@ async def vedic__get_nakshatra_analysis(
 ) -> dict[str, Any]:
     """
     Get detailed analysis of a Nakshatra (lunar mansion).
-    
+
     Args:
         nakshatra: Nakshatra name (e.g., "Ashwini", "Rohini")
         pada: Quarter (1-4), default 1
-        
+
     Returns:
         Nakshatra characteristics and trading implications
     """
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
-    
+
     ctx = MinimalContext()
     return await vedic_get_nakshatra_analysis(nakshatra, pada, ctx)
 
@@ -249,18 +259,18 @@ async def vedic__calculate_transits(
 ) -> dict[str, Any]:
     """
     Calculate planetary transits (Gochara) for market timing.
-    
+
     Args:
         date: Date for transit calculation (YYYY-MM-DD)
         symbols: List of asset symbols to analyze (optional)
-        
+
     Returns:
         Transit analysis with market predictions
     """
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
-    
+
     ctx = MinimalContext()
     return await vedic_calculate_transits(date, symbols, ctx)
 
@@ -1253,20 +1263,20 @@ async def competitions__register_competitor(
 ) -> dict[str, Any]:
     """
     Register a new competitor in the trading competitions.
-    
+
     New competitors start in BRONZE league with 0 points.
-    
+
     Args:
         name: Competitor display name
         email: Email address
-        
+
     Returns:
         Registration result with competitor ID and league assignment
     """
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
-    
+
     ctx = MinimalContext()
     return await competitions_register_competitor(name, email, ctx)
 
@@ -1278,24 +1288,24 @@ async def competitions__get_leaderboard(
 ) -> dict[str, Any]:
     """
     Get competition leaderboard.
-    
+
     View global rankings or filter by league tier:
     - bronze: 0-1,000 points
     - silver: 1,000-10,000 points
     - gold: 10,000-50,000 points
     - diamond: 50,000+ points
-    
+
     Args:
         tier: League tier filter (optional)
         limit: Number of results (default 20)
-        
+
     Returns:
         Ranked list of competitors
     """
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
-    
+
     ctx = MinimalContext()
     return await competitions_get_leaderboard(tier, limit, ctx)
 
@@ -1304,7 +1314,7 @@ async def competitions__get_leaderboard(
 async def competitions__get_league_info() -> dict[str, Any]:
     """
     Get information about all competition leagues.
-    
+
     Returns details about each tier including:
     - Point thresholds
     - Promotion requirements
@@ -1313,7 +1323,7 @@ async def competitions__get_league_info() -> dict[str, Any]:
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
-    
+
     ctx = MinimalContext()
     return await competitions_get_league_info(ctx)
 
@@ -1324,21 +1334,21 @@ async def competitions__get_tournaments(
 ) -> dict[str, Any]:
     """
     Get available trading tournaments.
-    
+
     Weekly tournaments start every Monday.
     Competitors start with 10,000 paper balance.
     Top 10 win points and badges.
-    
+
     Args:
         status: Tournament status (active, upcoming)
-        
+
     Returns:
         List of tournaments
     """
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
-    
+
     ctx = MinimalContext()
     return await competitions_get_tournaments(status, ctx)
 
@@ -1350,23 +1360,23 @@ async def competitions__enter_tournament(
 ) -> dict[str, Any]:
     """
     Enter a competitor into a tournament.
-    
+
     Requires:
     - Sufficient competition points for entry fee
     - Tournament must be in PENDING status
     - Competitor not already entered
-    
+
     Args:
         competitor_id: Competitor UUID
         tournament_id: Tournament UUID
-        
+
     Returns:
         Entry confirmation with starting balance
     """
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
-    
+
     ctx = MinimalContext()
     return await competitions_enter_tournament(competitor_id, tournament_id, ctx)
 
@@ -1383,12 +1393,12 @@ async def competitions__share_strategy(
 ) -> dict[str, Any]:
     """
     Share a trading strategy with the community.
-    
+
     Strategies can be:
     - public: Visible to everyone
     - league_only: Visible to same-tier competitors
     - private: Only visible to author
-    
+
     Args:
         competitor_id: Author competitor UUID
         name: Strategy name
@@ -1397,14 +1407,14 @@ async def competitions__share_strategy(
         language: Code language (python, javascript)
         visibility: Visibility level
         tags: List of tags for discovery
-        
+
     Returns:
         Strategy sharing confirmation
     """
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
-    
+
     ctx = MinimalContext()
     return await competitions_share_strategy(
         competitor_id, name, description, code, language, visibility, tags, ctx
@@ -1420,26 +1430,26 @@ async def competitions__search_strategies(
 ) -> dict[str, Any]:
     """
     Search for shared trading strategies.
-    
+
     Sort options:
     - score: Overall strategy score
     - likes: Most liked
     - newest: Recently added
     - downloads: Most downloaded
-    
+
     Args:
         query: Search query (name/description)
         tags: Filter by tags
         sort_by: Sort method
         limit: Number of results
-        
+
     Returns:
         Matching strategies
     """
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
-    
+
     ctx = MinimalContext()
     return await competitions_search_strategies(query, tags, sort_by, limit, ctx)
 
@@ -1450,23 +1460,23 @@ async def competitions__get_badges(
 ) -> dict[str, Any]:
     """
     Get badges earned by a competitor.
-    
+
     Returns all badges earned including:
     - Performance badges (Profitable Trader, Win Streak)
     - Competition badges (Champion, Podium Finish)
     - League badges (Bronze, Silver, Gold, Diamond)
     - Strategy badges (Strategy Creator, Viral Strategy)
-    
+
     Args:
         competitor_id: Competitor UUID
-        
+
     Returns:
         List of earned badges with timestamps
     """
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
-    
+
     ctx = MinimalContext()
     return await competitions_get_badges(competitor_id, ctx)
 
@@ -1475,21 +1485,21 @@ async def competitions__get_badges(
 async def competitions__get_available_badges() -> dict[str, Any]:
     """
     Get all available badges that can be earned.
-    
+
     View all 15 badge types with their requirements:
     - Common badges: Easy to earn
     - Uncommon badges: Moderate difficulty
     - Rare badges: Challenging
     - Epic badges: Expert level
     - Legendary badges: Elite achievements
-    
+
     Returns:
         Complete list of badges with requirements
     """
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
-    
+
     ctx = MinimalContext()
     return await competitions_get_available_badges(ctx)
 

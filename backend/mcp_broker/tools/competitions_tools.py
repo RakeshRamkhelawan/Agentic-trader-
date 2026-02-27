@@ -1,21 +1,19 @@
 """Competition tools for MCP broker."""
 
-from typing import Any, Optional
-from datetime import datetime
+from typing import Any
 
-from backend.competitions.league_system import LeagueSystem, LeagueTier
-from backend.competitions.tournament_engine import TournamentEngine
 from backend.competitions.leaderboard import LeaderboardService
+from backend.competitions.league_system import LeagueSystem, LeagueTier
+from backend.competitions.rewards import RewardsSystem
 from backend.competitions.strategy_share import StrategySharingService
-from backend.competitions.rewards import RewardsSystem, BadgeType, BadgeRarity
-
+from backend.competitions.tournament_engine import TournamentEngine
 
 # Global instances
-_league_system: Optional[LeagueSystem] = None
-_tournament_engine: Optional[TournamentEngine] = None
-_leaderboard_service: Optional[LeaderboardService] = None
-_strategy_service: Optional[StrategySharingService] = None
-_rewards_system: Optional[RewardsSystem] = None
+_league_system: LeagueSystem | None = None
+_tournament_engine: TournamentEngine | None = None
+_leaderboard_service: LeaderboardService | None = None
+_strategy_service: StrategySharingService | None = None
+_rewards_system: RewardsSystem | None = None
 
 
 def _get_league_system() -> LeagueSystem:
@@ -67,11 +65,11 @@ async def competitions_register_competitor(
     try:
         league = _get_league_system()
         competitor = league.register_competitor(name, email)
-        
+
         # Also register with leaderboard
         leaderboard = _get_leaderboard_service()
         leaderboard.register_competitor(competitor)
-        
+
         return {
             "success": True,
             "competitor_id": competitor.id,
@@ -85,14 +83,14 @@ async def competitions_register_competitor(
 
 
 async def competitions_get_leaderboard(
-    tier: Optional[str] = None,
+    tier: str | None = None,
     limit: int = 20,
     ctx: Any = None,
 ) -> dict[str, Any]:
     """Get competition leaderboard."""
     try:
         leaderboard = _get_leaderboard_service()
-        
+
         if tier:
             try:
                 tier_enum = LeagueTier(tier.lower())
@@ -114,11 +112,11 @@ async def competitions_enter_tournament(
     try:
         league = _get_league_system()
         tournament = _get_tournament_engine()
-        
+
         competitor = league.get_competitor(competitor_id)
         if not competitor:
             return {"success": False, "error": "Competitor not found"}
-        
+
         result = tournament.enter_tournament(tournament_id, competitor)
         return result
     except Exception as e:
@@ -132,14 +130,14 @@ async def competitions_get_tournaments(
     """Get available tournaments."""
     try:
         tournament = _get_tournament_engine()
-        
+
         if status == "active":
             tournaments = tournament.get_active_tournaments()
         elif status == "upcoming":
             tournaments = tournament.get_upcoming_tournaments()
         else:
             return {"error": f"Invalid status: {status}"}
-        
+
         return {
             "tournaments": tournaments,
             "count": len(tournaments),
@@ -155,33 +153,31 @@ async def competitions_share_strategy(
     code: str,
     language: str = "python",
     visibility: str = "public",
-    tags: Optional[list] = None,
+    tags: list | None = None,
     ctx: Any = None,
 ) -> dict[str, Any]:
     """Share a trading strategy with the community."""
     try:
         league = _get_league_system()
         strategy = _get_strategy_service()
-        
+
         competitor = league.get_competitor(competitor_id)
         if not competitor:
             return {"success": False, "error": "Competitor not found"}
-        
-        from backend.competitions.models.strategy import (
-            StrategyLanguage, StrategyVisibility
-        )
-        
+
+        from backend.competitions.models.strategy import StrategyLanguage, StrategyVisibility
+
         # Parse enums
         try:
             lang_enum = StrategyLanguage(language.lower())
         except ValueError:
             lang_enum = StrategyLanguage.PYTHON
-        
+
         try:
             vis_enum = StrategyVisibility(visibility.lower())
         except ValueError:
             vis_enum = StrategyVisibility.PUBLIC
-        
+
         result = strategy.share_strategy(
             author=competitor,
             name=name,
@@ -197,8 +193,8 @@ async def competitions_share_strategy(
 
 
 async def competitions_search_strategies(
-    query: Optional[str] = None,
-    tags: Optional[list] = None,
+    query: str | None = None,
+    tags: list | None = None,
     sort_by: str = "score",
     limit: int = 20,
     ctx: Any = None,
@@ -206,7 +202,7 @@ async def competitions_search_strategies(
     """Search for shared strategies."""
     try:
         strategy = _get_strategy_service()
-        
+
         result = strategy.search_strategies(
             query=query,
             tags=tags,

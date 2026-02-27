@@ -32,22 +32,22 @@ async def {tool_func}(
 ) -> dict[str, Any]:
     """
     Brief description of what this tool does.
-    
+
     Args:
         param1: Description of param1
         param2: Description of param2
         ctx: MCP context for logging
-        
+
     Returns:
         Dictionary with results
     """
     if ctx:
         ctx.info(f"Processing {{param1}} with {{param2}}")
-    
+
     try:
         # TODO: Implement tool logic
         result = {{"processed": param1, "value": param2}}
-        
+
         return {{
             "success": True,
             "result": result,
@@ -78,23 +78,23 @@ async def {tool_func}_wrapper(
 
 def create_tool(name: str, category: str):
     """Create MCP tool files."""
-    
+
     tool_lower = name.lower().replace(" ", "_")
     tool_upper = name.title().replace(" ", "")
     tool_func = f"{tool_lower}_tool"
-    
+
     # Project root
     root = Path(__file__).parent.parent.parent.parent
     tools_dir = root / "backend" / "mcp_broker" / "tools"
-    
+
     # Create or append to category file
     tool_file = tools_dir / f"{category}_tools.py"
-    
+
     tool_content = TOOL_TEMPLATE.format(
         tool_name=tool_upper,
         tool_func=tool_func
     )
-    
+
     if tool_file.exists():
         # Append to existing file
         with open(tool_file, "a") as f:
@@ -106,7 +106,7 @@ def create_tool(name: str, category: str):
         with open(tool_file, "w") as f:
             f.write(tool_content)
         print(f"Created: {tool_file}")
-    
+
     # Print registration code
     print("\n" + "="*60)
     print("Add this to backend/mcp_broker/server.py:")
@@ -117,7 +117,7 @@ def create_tool(name: str, category: str):
         tool_name=tool_lower,
         category=category
     ))
-    
+
     print("\n" + "="*60)
     print("Usage from AgentWithTools:")
     print("="*60)
@@ -143,9 +143,9 @@ def main():
         choices=["data", "elemental", "execution", "vedastro", "external"],
         help="Tool category"
     )
-    
+
     args = parser.parse_args()
-    
+
     create_tool(args.name, args.category)
 
 

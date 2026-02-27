@@ -8,9 +8,9 @@ Features:
 - Billing overview
 """
 
-from .tenant_admin import TenantAdmin, TenantAdminAPI
+from .dashboard_data import ChartDataProvider, DashboardDataProvider
 from .platform_admin import PlatformAdmin, PlatformAdminAPI
-from .dashboard_data import DashboardDataProvider, ChartDataProvider
+from .tenant_admin import TenantAdmin, TenantAdminAPI
 
 __all__ = [
     "TenantAdmin",

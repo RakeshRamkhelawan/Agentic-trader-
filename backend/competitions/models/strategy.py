@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 
 class StrategyVisibility(Enum):
@@ -41,7 +41,7 @@ class StrategyFork:
     forked_by: str
     forked_at: datetime = field(default_factory=datetime.utcnow)
     modifications: str = ""  # Description of changes
-    improved_performance: Optional[float] = None  # % improvement
+    improved_performance: float | None = None  # % improvement
 
 
 @dataclass
@@ -52,43 +52,43 @@ class SharedStrategy:
     description: str
     author_id: str
     author_name: str
-    
+
     # Strategy details
     code: str
     language: StrategyLanguage
     visibility: StrategyVisibility = StrategyVisibility.PUBLIC
-    tags: List[str] = field(default_factory=list)
-    
+    tags: list[str] = field(default_factory=list)
+
     # Performance
     metrics: StrategyMetrics = field(default_factory=StrategyMetrics)
-    
+
     # Engagement
-    forks: List[StrategyFork] = field(default_factory=list)
+    forks: list[StrategyFork] = field(default_factory=list)
     likes: int = 0
     views: int = 0
     downloads: int = 0
-    
+
     # Metadata
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
     is_active: bool = True
-    
+
     def add_fork(self, fork: StrategyFork) -> None:
         """Add a fork to this strategy."""
         self.forks.append(fork)
-    
+
     def increment_views(self) -> None:
         """Increment view count."""
         self.views += 1
-    
+
     def increment_likes(self) -> None:
         """Increment like count."""
         self.likes += 1
-    
+
     def increment_downloads(self) -> None:
         """Increment download count."""
         self.downloads += 1
-    
+
     def calculate_score(self) -> float:
         """Calculate overall strategy score."""
         # Weighted scoring
@@ -100,8 +100,8 @@ class SharedStrategy:
             min(self.likes * 0.5, 10) * 0.1  # Cap likes contribution
         )
         return max(0, score)  # Ensure non-negative
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "id": self.id,

@@ -1,10 +1,10 @@
 """Notification system for competitions."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any, Callable
-import asyncio
+from typing import Any
 
 
 class NotificationType(Enum):
@@ -37,11 +37,11 @@ class Notification:
     title: str
     message: str
     priority: NotificationPriority = NotificationPriority.MEDIUM
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     read: bool = False
     created_at: datetime = field(default_factory=datetime.utcnow)
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "type": self.type.value,
@@ -57,20 +57,20 @@ class Notification:
 class NotificationManager:
     """
     Manages notifications for competition events.
-    
+
     Features:
     - In-app notifications
     - Email notifications (optional)
     - Push notifications (optional)
     - Notification preferences
     """
-    
+
     def __init__(self):
-        self._notifications: Dict[str, List[Notification]] = {}  # user_id -> notifications
-        self._handlers: Dict[NotificationType, List[Callable]] = {}
-        self._preferences: Dict[str, Dict[NotificationType, bool]] = {}
+        self._notifications: dict[str, list[Notification]] = {}  # user_id -> notifications
+        self._handlers: dict[NotificationType, list[Callable]] = {}
+        self._preferences: dict[str, dict[NotificationType, bool]] = {}
         self._counter = 0
-    
+
     def register_handler(
         self,
         notification_type: NotificationType,
@@ -80,20 +80,20 @@ class NotificationManager:
         if notification_type not in self._handlers:
             self._handlers[notification_type] = []
         self._handlers[notification_type].append(handler)
-    
+
     def set_preferences(
         self,
         user_id: str,
-        preferences: Dict[NotificationType, bool],
+        preferences: dict[NotificationType, bool],
     ) -> None:
         """Set notification preferences for a user."""
         self._preferences[user_id] = preferences
-    
+
     def should_notify(self, user_id: str, notification_type: NotificationType) -> bool:
         """Check if user should receive this notification type."""
         prefs = self._preferences.get(user_id, {})
         return prefs.get(notification_type, True)  # Default to enabled
-    
+
     async def send_notification(
         self,
         user_id: str,
@@ -101,12 +101,12 @@ class NotificationManager:
         title: str,
         message: str,
         priority: NotificationPriority = NotificationPriority.MEDIUM,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> Notification:
         """Send a notification to a user."""
         if not self.should_notify(user_id, notification_type):
             return None
-        
+
         self._counter += 1
         notification = Notification(
             id=f"notif_{self._counter}",
@@ -117,12 +117,12 @@ class NotificationManager:
             priority=priority,
             data=data or {},
         )
-        
+
         # Store notification
         if user_id not in self._notifications:
             self._notifications[user_id] = []
         self._notifications[user_id].append(notification)
-        
+
         # Call handlers
         handlers = self._handlers.get(notification_type, [])
         for handler in handlers:
@@ -130,9 +130,9 @@ class NotificationManager:
                 await handler(notification)
             except Exception:
                 pass  # Log error but continue
-        
+
         return notification
-    
+
     async def notify_tournament_start(
         self,
         user_id: str,
@@ -148,7 +148,7 @@ class NotificationManager:
             priority=NotificationPriority.HIGH,
             data={"tournament_id": tournament_id, "tournament_name": tournament_name},
         )
-    
+
     async def notify_tournament_end(
         self,
         user_id: str,
@@ -158,7 +158,7 @@ class NotificationManager:
     ) -> Notification:
         """Notify user that tournament ended."""
         result = "profit" if pnl > 0 else "loss"
-        
+
         return await self.send_notification(
             user_id=user_id,
             notification_type=NotificationType.TOURNAMENT_END,
@@ -167,7 +167,7 @@ class NotificationManager:
             priority=NotificationPriority.HIGH,
             data={"rank": rank, "pnl": pnl},
         )
-    
+
     async def notify_rank_change(
         self,
         user_id: str,
@@ -184,7 +184,7 @@ class NotificationManager:
             title = "Rank Update"
             message = f"Your rank changed from #{old_rank} to #{new_rank} in '{tournament_name}'"
             priority = NotificationPriority.LOW
-        
+
         return await self.send_notification(
             user_id=user_id,
             notification_type=NotificationType.RANK_CHANGE,
@@ -193,7 +193,7 @@ class NotificationManager:
             priority=priority,
             data={"old_rank": old_rank, "new_rank": new_rank},
         )
-    
+
     async def notify_badge_earned(
         self,
         user_id: str,
@@ -209,7 +209,7 @@ class NotificationManager:
             priority=NotificationPriority.HIGH,
             data={"badge_name": badge_name, "badge_icon": badge_icon},
         )
-    
+
     async def notify_tier_promotion(
         self,
         user_id: str,
@@ -225,7 +225,7 @@ class NotificationManager:
             priority=NotificationPriority.URGENT,
             data={"old_tier": old_tier, "new_tier": new_tier},
         )
-    
+
     async def notify_trade_filled(
         self,
         user_id: str,
@@ -233,14 +233,14 @@ class NotificationManager:
         side: str,
         quantity: float,
         price: float,
-        pnl: Optional[float] = None,
+        pnl: float | None = None,
     ) -> Notification:
         """Notify user of trade fill."""
         message = f"{side.upper()} {quantity} {symbol} @ {price:.2f}"
         if pnl is not None:
             pnl_str = f"+{pnl:.2f}" if pnl > 0 else f"{pnl:.2f}"
             message += f" (P&L: {pnl_str} EUR)"
-        
+
         return await self.send_notification(
             user_id=user_id,
             notification_type=NotificationType.TRADE_FILLED,
@@ -249,7 +249,7 @@ class NotificationManager:
             priority=NotificationPriority.MEDIUM,
             data={"symbol": symbol, "side": side, "quantity": quantity, "price": price, "pnl": pnl},
         )
-    
+
     async def notify_strategy_forked(
         self,
         user_id: str,
@@ -265,24 +265,24 @@ class NotificationManager:
             priority=NotificationPriority.LOW,
             data={"strategy_name": strategy_name, "forker_name": forker_name},
         )
-    
+
     def get_notifications(
         self,
         user_id: str,
         unread_only: bool = False,
         limit: int = 50,
-    ) -> List[Notification]:
+    ) -> list[Notification]:
         """Get notifications for a user."""
         notifications = self._notifications.get(user_id, [])
-        
+
         if unread_only:
             notifications = [n for n in notifications if not n.read]
-        
+
         # Sort by created_at desc
         notifications = sorted(notifications, key=lambda n: n.created_at, reverse=True)
-        
+
         return notifications[:limit]
-    
+
     def mark_as_read(self, user_id: str, notification_id: str) -> bool:
         """Mark notification as read."""
         notifications = self._notifications.get(user_id, [])
@@ -291,7 +291,7 @@ class NotificationManager:
                 notif.read = True
                 return True
         return False
-    
+
     def mark_all_as_read(self, user_id: str) -> int:
         """Mark all notifications as read."""
         notifications = self._notifications.get(user_id, [])
@@ -301,17 +301,17 @@ class NotificationManager:
                 notif.read = True
                 count += 1
         return count
-    
+
     def get_unread_count(self, user_id: str) -> int:
         """Get unread notification count."""
         notifications = self._notifications.get(user_id, [])
         return sum(1 for n in notifications if not n.read)
-    
+
     def clear_old_notifications(self, days: int = 30) -> int:
         """Clear notifications older than specified days."""
         cutoff = datetime.utcnow() - timedelta(days=days)
         total_cleared = 0
-        
+
         for user_id in self._notifications:
             original_count = len(self._notifications[user_id])
             self._notifications[user_id] = [
@@ -319,7 +319,7 @@ class NotificationManager:
                 if n.created_at > cutoff
             ]
             total_cleared += original_count - len(self._notifications[user_id])
-        
+
         return total_cleared
 
 

@@ -8,9 +8,9 @@ Features:
 - Direct messaging
 """
 
+from .activity_feed import ActivityFeed, ActivityType, activity_feed
 from .follow_system import FollowSystem, follow_system
 from .profile_manager import ProfileManager, UserProfile, profile_manager
-from .activity_feed import ActivityFeed, ActivityType, activity_feed
 
 __all__ = [
     "FollowSystem",

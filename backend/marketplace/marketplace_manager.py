@@ -1,10 +1,10 @@
 """Strategy marketplace management."""
 
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any
-from collections import defaultdict
+from typing import Any
 
 
 class ListingStatus(Enum):
@@ -33,34 +33,34 @@ class StrategyListing:
     description: str
     author_id: str
     author_name: str
-    
+
     # Strategy details
     strategy_code: str
     language: str  # python, javascript, etc.
-    tags: List[str] = field(default_factory=list)
-    
+    tags: list[str] = field(default_factory=list)
+
     # Status and pricing
     status: ListingStatus = ListingStatus.DRAFT
     pricing_type: PricingType = PricingType.FREE
     price: float = 0.0  # For one-time or subscription
     performance_fee_percent: float = 0.0  # For performance-based
-    
+
     # Stats
     downloads: int = 0
     active_users: int = 0
     total_revenue: float = 0.0
-    
+
     # Ratings
     rating_avg: float = 0.0
     rating_count: int = 0
-    
+
     # Metadata
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
-    published_at: Optional[datetime] = None
+    published_at: datetime | None = None
     version: str = "1.0.0"
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "name": self.name,
@@ -107,20 +107,20 @@ class Review:
 class MarketplaceManager:
     """
     Strategy marketplace for developers.
-    
+
     Allows developers to:
     - Publish trading strategies
     - Set pricing (free, one-time, subscription, performance-based)
     - Track downloads and revenue
     - Receive ratings and reviews
     """
-    
+
     def __init__(self):
-        self._listings: Dict[str, StrategyListing] = {}
-        self._reviews: Dict[str, List[Review]] = defaultdict(list)
-        self._author_listings: Dict[str, List[str]] = defaultdict(list)
-        self._tag_index: Dict[str, List[str]] = defaultdict(list)
-    
+        self._listings: dict[str, StrategyListing] = {}
+        self._reviews: dict[str, list[Review]] = defaultdict(list)
+        self._author_listings: dict[str, list[str]] = defaultdict(list)
+        self._tag_index: dict[str, list[str]] = defaultdict(list)
+
     def create_listing(
         self,
         name: str,
@@ -129,15 +129,15 @@ class MarketplaceManager:
         author_name: str,
         strategy_code: str,
         language: str,
-        tags: List[str],
+        tags: list[str],
         pricing_type: PricingType = PricingType.FREE,
         price: float = 0.0,
     ) -> StrategyListing:
         """Create a new strategy listing."""
         import uuid
-        
+
         listing_id = str(uuid.uuid4())
-        
+
         listing = StrategyListing(
             id=listing_id,
             name=name,
@@ -150,35 +150,35 @@ class MarketplaceManager:
             pricing_type=pricing_type,
             price=price,
         )
-        
+
         self._listings[listing_id] = listing
         self._author_listings[author_id].append(listing_id)
-        
+
         # Index by tags
         for tag in tags:
             self._tag_index[tag.lower()].append(listing_id)
-        
+
         return listing
-    
-    def get_listing(self, listing_id: str) -> Optional[StrategyListing]:
+
+    def get_listing(self, listing_id: str) -> StrategyListing | None:
         """Get listing by ID."""
         return self._listings.get(listing_id)
-    
+
     def search_listings(
         self,
-        query: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        pricing_type: Optional[PricingType] = None,
+        query: str | None = None,
+        tags: list[str] | None = None,
+        pricing_type: PricingType | None = None,
         min_rating: float = 0.0,
         sort_by: str = "downloads",
         limit: int = 20,
-    ) -> List[StrategyListing]:
+    ) -> list[StrategyListing]:
         """Search marketplace listings."""
         results = list(self._listings.values())
-        
+
         # Filter by status (only show published)
         results = [l for l in results if l.status == ListingStatus.PUBLISHED]
-        
+
         # Filter by query
         if query:
             query_lower = query.lower()
@@ -187,7 +187,7 @@ class MarketplaceManager:
                 if query_lower in l.name.lower()
                 or query_lower in l.description.lower()
             ]
-        
+
         # Filter by tags
         if tags:
             tag_set = set(t.lower() for t in tags)
@@ -195,15 +195,15 @@ class MarketplaceManager:
                 l for l in results
                 if tag_set & set(t.lower() for t in l.tags)
             ]
-        
+
         # Filter by pricing
         if pricing_type:
             results = [l for l in results if l.pricing_type == pricing_type]
-        
+
         # Filter by rating
         if min_rating > 0:
             results = [l for l in results if l.rating_avg >= min_rating]
-        
+
         # Sort
         if sort_by == "downloads":
             results.sort(key=lambda l: l.downloads, reverse=True)
@@ -213,10 +213,10 @@ class MarketplaceManager:
             results.sort(key=lambda l: l.created_at, reverse=True)
         elif sort_by == "revenue":
             results.sort(key=lambda l: l.total_revenue, reverse=True)
-        
+
         return results[:limit]
-    
-    def publish_listing(self, listing_id: str) -> Optional[StrategyListing]:
+
+    def publish_listing(self, listing_id: str) -> StrategyListing | None:
         """Publish a listing (after review)."""
         listing = self._listings.get(listing_id)
         if listing and listing.status == ListingStatus.PENDING_REVIEW:
@@ -224,7 +224,7 @@ class MarketplaceManager:
             listing.published_at = datetime.utcnow()
             return listing
         return None
-    
+
     def record_download(self, listing_id: str, user_id: str) -> bool:
         """Record a strategy download."""
         listing = self._listings.get(listing_id)
@@ -233,7 +233,7 @@ class MarketplaceManager:
             listing.active_users += 1
             return True
         return False
-    
+
     def add_review(
         self,
         listing_id: str,
@@ -242,12 +242,12 @@ class MarketplaceManager:
         rating: int,
         title: str,
         content: str,
-    ) -> Optional[Review]:
+    ) -> Review | None:
         """Add a review to a listing."""
         listing = self._listings.get(listing_id)
         if not listing:
             return None
-        
+
         import uuid
         review = Review(
             id=str(uuid.uuid4()),
@@ -258,21 +258,21 @@ class MarketplaceManager:
             title=title,
             content=content,
         )
-        
+
         self._reviews[listing_id].append(review)
-        
+
         # Update listing rating
         reviews = self._reviews[listing_id]
         listing.rating_count = len(reviews)
         listing.rating_avg = sum(r.rating for r in reviews) / len(reviews)
-        
+
         return review
-    
-    def get_author_stats(self, author_id: str) -> Dict[str, Any]:
+
+    def get_author_stats(self, author_id: str) -> dict[str, Any]:
         """Get marketplace stats for an author."""
         listing_ids = self._author_listings.get(author_id, [])
         listings = [self._listings[lid] for lid in listing_ids]
-        
+
         return {
             "author_id": author_id,
             "total_listings": len(listings),
@@ -284,11 +284,11 @@ class MarketplaceManager:
                 if listings else 0
             ),
         }
-    
-    def get_marketplace_stats(self) -> Dict[str, Any]:
+
+    def get_marketplace_stats(self) -> dict[str, Any]:
         """Get overall marketplace statistics."""
         listings = list(self._listings.values())
-        
+
         return {
             "total_listings": len(listings),
             "published_listings": len([l for l in listings if l.status == ListingStatus.PUBLISHED]),
@@ -303,8 +303,8 @@ class MarketplaceManager:
             ),
             "top_tags": self._get_top_tags(),
         }
-    
-    def _get_top_tags(self, limit: int = 10) -> List[tuple]:
+
+    def _get_top_tags(self, limit: int = 10) -> list[tuple]:
         """Get most popular tags."""
         tag_counts = [(tag, len(listings)) for tag, listings in self._tag_index.items()]
         tag_counts.sort(key=lambda x: x[1], reverse=True)

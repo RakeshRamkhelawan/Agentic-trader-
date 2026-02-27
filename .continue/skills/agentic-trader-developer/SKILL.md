@@ -100,14 +100,14 @@ from backend.governance.agent_gatekeeper import AgentRole
 
 class MyAgent(BaseAgent):
     """My specialized agent."""
-    
+
     def __init__(self, config: AgentConfig):
         super().__init__(
             agent_name="my_agent",
             agent_role=AgentRole.STRATEGIST,
             **config
         )
-    
+
     async def analyze(self, features: dict, context: dict) -> dict:
         # Implementation
         return {"action": "hold"}
@@ -225,7 +225,7 @@ import { useState } from 'react';
 
 export function MyComponent({ data }: { data: MyType }) {
   const [value, setValue] = useState('');
-  
+
   return (
     <div className="p-4 bg-card rounded-lg">
       {/* Implementation */}

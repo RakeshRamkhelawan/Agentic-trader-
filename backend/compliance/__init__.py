@@ -8,9 +8,9 @@ Features:
 - Compliance monitoring
 """
 
-from .audit_logger import AuditLogger, AuditEvent, AuditAction, audit_logger
-from .regulatory_reports import RegulatoryReportGenerator
+from .audit_logger import AuditAction, AuditEvent, AuditLogger, audit_logger
 from .compliance_monitor import ComplianceMonitor
+from .regulatory_reports import RegulatoryReportGenerator
 
 __all__ = [
     "AuditLogger",

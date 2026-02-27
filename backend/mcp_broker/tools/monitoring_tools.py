@@ -27,7 +27,6 @@ async def monitoring_get_metrics(ctx=None) -> dict[str, Any]:
         ctx.info("Fetching trading metrics")
 
     try:
-        from backend.observability.trading_metrics import trading_metrics
 
         # Note: This is a simplified summary - in production, you'd query Prometheus
         metrics = {

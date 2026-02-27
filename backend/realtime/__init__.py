@@ -8,8 +8,8 @@ Features:
 - Price tick streaming
 """
 
-from .websocket_manager import WebSocketManager, TournamentStream, websocket_manager
 from .event_publisher import EventPublisher, EventType, event_publisher
+from .websocket_manager import TournamentStream, WebSocketManager, websocket_manager
 
 __all__ = [
     "WebSocketManager",

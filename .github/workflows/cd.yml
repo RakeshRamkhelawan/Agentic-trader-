@@ -111,13 +111,13 @@ jobs:
         run: |
           export KUBECONFIG=kubeconfig
           cd infrastructure/k8s
-          
+
           # Update image tags
           kustomize edit set image agentic-trader-api=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          
+
           # Apply manifests
           kustomize build . | kubectl apply -f -
-          
+
           # Wait for rollout
           kubectl rollout status deployment/api -n agentic-trader --timeout=300s
           kubectl rollout status deployment/postgres -n agentic-trader --timeout=300s
@@ -173,13 +173,13 @@ jobs:
         run: |
           export KUBECONFIG=kubeconfig
           cd infrastructure/k8s
-          
+
           # Update image tags
           kustomize edit set image agentic-trader-api=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          
+
           # Apply manifests
           kustomize build . | kubectl apply -f -
-          
+
           # Wait for rollout
           kubectl rollout status deployment/api -n agentic-trader --timeout=300s
 
@@ -187,7 +187,7 @@ jobs:
         run: |
           export KUBECONFIG=kubeconfig
           kubectl get pods -n agentic-trader
-          
+
           # Health check
           kubectl port-forward svc/api 8000:8000 -n agentic-trader &
           sleep 5

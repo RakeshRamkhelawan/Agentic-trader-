@@ -1,8 +1,8 @@
 # Gecorrigeerd Implementatieplan - Solo Developer Reality Check
 
-> **Status**: Realistische herziening na repo-analyse  
-> **Scope**: Solo developer (geen "2 backend devs", geen "trading desk")  
-> **Focus**: Wat ECHT ontbreekt vs wat al bestaat  
+> **Status**: Realistische herziening na repo-analyse
+> **Scope**: Solo developer (geen "2 backend devs", geen "trading desk")
+> **Focus**: Wat ECHT ontbreekt vs wat al bestaat
 > **Timeline**: 8 weken (was 12)
 
 ---
@@ -31,8 +31,8 @@
 ## Echte Gaps (Dit Moet Je Bouwen)
 
 ### Gap 1: AgentWithTools Base Class
-**Bestand**: `backend/agents/agent_with_tools.py`  
-**Status**: ❌ Niet aanwezig  
+**Bestand**: `backend/agents/agent_with_tools.py`
+**Status**: ❌ Niet aanwezig
 **Impact**: Agents kunnen nu geen tools aanroepen
 
 **Wat het moet doen**:
@@ -40,18 +40,18 @@
 class AgentWithTools(BaseAgent):
     def __init__(self, tool_broker_url="http://localhost:8001"):
         self.tool_broker = ToolBrokerClient(tool_broker_url)
-    
+
     async def call_tool(self, name, params):
         return await self.tool_broker.call_tool(name, params)
-    
+
     # Convenience methods
     async def get_vedastro_signal(self, symbol, price):
         return await self.call_tool("vedastro__generate_signal", {...})
 ```
 
 ### Gap 2: VedAstro → MCP Tool Wrappers
-**Bestanden**: `backend/mcp_broker/tools/vedastro_tools.py` + `vedic_jyotish_tools.py`  
-**Status**: ⚠️ Partial (bestaat maar niet in MCP server geregistreerd)  
+**Bestanden**: `backend/mcp_broker/tools/vedastro_tools.py` + `vedic_jyotish_tools.py`
+**Status**: ⚠️ Partial (bestaat maar niet in MCP server geregistreerd)
 **Impact**: VedAstro werkt niet via ToolBroker
 
 **Wat er al is**:
@@ -68,7 +68,7 @@ async def vedastro__generate_signal(symbol, price):
 ```
 
 ### Gap 3: Security Issues (22 openstaand)
-**Status**: ❌ Kritiek  
+**Status**: ❌ Kritiek
 **Impact**: Productie onveilig
 
 **Issues uit .github/security** (geschat):
@@ -78,15 +78,15 @@ async def vedastro__generate_signal(symbol, price):
 - Onveilige dependencies
 
 ### Gap 4: Elemental Manager Locatie
-**Bestand**: `backend/mcp_broker/elemental_manager_v18.py`  
-**Status**: ⚠️ Verkeerde plek  
+**Bestand**: `backend/mcp_broker/elemental_manager_v18.py`
+**Status**: ⚠️ Verkeerde plek
 **Impact**: Verwarrende structuur
 
 **Fix**: Verplaats naar `backend/agents/`
 
 ### Gap 5: Revolut X MCP Wrapper
-**Bestand**: Niet aanwezig  
-**Status**: ❌ Volledig ontbrekend  
+**Bestand**: Niet aanwezig
+**Status**: ❌ Volledig ontbrekend
 **Impact**: Revolut X niet bruikbaar via MCP
 
 ---

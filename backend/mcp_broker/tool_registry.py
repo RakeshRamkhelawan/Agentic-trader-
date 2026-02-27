@@ -4,8 +4,6 @@ Tool Registry - Semantic search and discovery for MCP tools.
 Provides natural language tool discovery and intelligent tool recommendations.
 """
 
-import asyncio
-import json
 import logging
 from typing import Any
 
@@ -25,18 +23,18 @@ logger = logging.getLogger(__name__)
 class ToolRegistry:
     """
     Registry for MCP tools with semantic search capabilities.
-    
+
     Features:
     - Natural language tool discovery
     - Tool description embeddings
     - Category-based organization
     - Tool recommendation based on context
     """
-    
+
     def __init__(self, use_embeddings: bool = True):
         """
         Initialize tool registry.
-        
+
         Args:
             use_embeddings: Whether to use vector embeddings (requires ChromaDB)
         """
@@ -45,7 +43,7 @@ class ToolRegistry:
         self.use_embeddings = use_embeddings and CHROMADB_AVAILABLE
         self.chroma_client = None
         self.collection = None
-        
+
         if self.use_embeddings:
             try:
                 self.chroma_client = chromadb.Client()
@@ -59,7 +57,7 @@ class ToolRegistry:
                 self.use_embeddings = False
         else:
             logger.info("ToolRegistry initialized with keyword fallback")
-    
+
     def register_tool(
         self,
         name: str,
@@ -70,7 +68,7 @@ class ToolRegistry:
     ) -> None:
         """
         Register a tool in the registry.
-        
+
         Args:
             name: Tool name (e.g., "vedastro__generate_signal")
             description: Human-readable description
@@ -86,15 +84,15 @@ class ToolRegistry:
             "examples": examples or [],
             "search_text": f"{name} {description} {category}".lower()
         }
-        
+
         self.tools[name] = tool_info
-        
+
         # Add to category
         if category not in self.categories:
             self.categories[category] = []
         if name not in self.categories[category]:
             self.categories[category].append(name)
-        
+
         # Add to vector DB if available
         if self.use_embeddings and self.collection:
             try:
@@ -105,47 +103,47 @@ class ToolRegistry:
                 )
             except Exception as e:
                 logger.warning(f"Failed to add tool to embeddings: {e}")
-        
+
         logger.debug(f"Registered tool: {name} (category: {category})")
-    
+
     def unregister_tool(self, name: str) -> bool:
         """
         Remove a tool from the registry.
-        
+
         Args:
             name: Tool name to remove
-            
+
         Returns:
             True if removed, False if not found
         """
         if name not in self.tools:
             return False
-        
+
         tool_info = self.tools.pop(name)
         category = tool_info["category"]
-        
+
         # Remove from category
         if category in self.categories and name in self.categories[category]:
             self.categories[category].remove(name)
-        
+
         # Remove from vector DB
         if self.use_embeddings and self.collection:
             try:
                 self.collection.delete(ids=[name])
             except Exception as e:
                 logger.warning(f"Failed to remove tool from embeddings: {e}")
-        
+
         logger.debug(f"Unregistered tool: {name}")
         return True
-    
+
     def find_tool(self, query: str, top_k: int = 3) -> list[dict[str, Any]]:
         """
         Find tools matching a natural language query.
-        
+
         Args:
             query: Natural language query (e.g., "get astrology signal")
             top_k: Maximum number of results
-            
+
         Returns:
             List of matching tools with scores
         """
@@ -153,7 +151,7 @@ class ToolRegistry:
             return self._search_embeddings(query, top_k)
         else:
             return self._search_keywords(query, top_k)
-    
+
     def _search_embeddings(self, query: str, top_k: int) -> list[dict[str, Any]]:
         """Search using vector embeddings."""
         try:
@@ -162,15 +160,15 @@ class ToolRegistry:
                 n_results=min(top_k, len(self.tools)),
                 include=["metadatas", "distances"]
             )
-            
+
             matches = []
             for i, name in enumerate(results["ids"][0]):
                 metadata = results["metadatas"][0][i]
                 distance = results["distances"][0][i]
-                
+
                 # Convert distance to similarity score (0-1)
                 similarity = 1.0 / (1.0 + distance)
-                
+
                 tool_info = self.tools.get(name, {})
                 matches.append({
                     "name": name,
@@ -179,40 +177,40 @@ class ToolRegistry:
                     "similarity": round(similarity, 3),
                     "match_type": "semantic"
                 })
-            
+
             return matches
-            
+
         except Exception as e:
             logger.error(f"Embedding search failed: {e}")
             return self._search_keywords(query, top_k)
-    
+
     def _search_keywords(self, query: str, top_k: int) -> list[dict[str, Any]]:
         """Fallback keyword search."""
         query_words = query.lower().split()
         scores = []
-        
+
         for name, tool_info in self.tools.items():
             search_text = tool_info["search_text"]
-            
+
             # Calculate score based on word matches
             score = 0
             for word in query_words:
                 if len(word) < 3:  # Skip very short words
                     continue
-                    
+
                 if word in search_text:
                     score += 1
-                    
+
                     # Bonus for exact matches in name
                     if word in name.lower():
                         score += 2
-            
+
             if score > 0:
                 scores.append((name, score))
-        
+
         # Sort by score descending
         scores.sort(key=lambda x: x[1], reverse=True)
-        
+
         # Format results
         matches = []
         for name, score in scores[:top_k]:
@@ -224,38 +222,38 @@ class ToolRegistry:
                 "similarity": round(min(score / 5, 1.0), 3),  # Normalize to 0-1
                 "match_type": "keyword"
             })
-        
+
         return matches
-    
+
     def get_tools_by_category(self, category: str) -> list[dict[str, Any]]:
         """
         Get all tools in a category.
-        
+
         Args:
             category: Tool category
-            
+
         Returns:
             List of tools in the category
         """
         tool_names = self.categories.get(category, [])
         return [self.tools[name] for name in tool_names if name in self.tools]
-    
+
     def get_all_categories(self) -> list[str]:
         """Get list of all categories."""
         return list(self.categories.keys())
-    
+
     def get_tool_info(self, name: str) -> dict[str, Any] | None:
         """
         Get detailed information about a tool.
-        
+
         Args:
             name: Tool name
-            
+
         Returns:
             Tool information or None if not found
         """
         return self.tools.get(name)
-    
+
     def recommend_tools(
         self,
         context: dict[str, Any],
@@ -263,7 +261,7 @@ class ToolRegistry:
     ) -> list[dict[str, Any]]:
         """
         Recommend tools based on current context.
-        
+
         Args:
             context: Context dict with keys like:
                     - "intent": Trading intent ("buy", "sell", "analyze")
@@ -274,10 +272,10 @@ class ToolRegistry:
             List of recommended tools
         """
         recommendations = []
-        
+
         # Build query from context
         query_parts = []
-        
+
         if "intent" in context:
             intent_queries = {
                 "buy": "buy entry signal",
@@ -286,10 +284,10 @@ class ToolRegistry:
                 "hedge": "hedge risk protection"
             }
             query_parts.append(intent_queries.get(context["intent"], context["intent"]))
-        
+
         if "asset_type" in context:
             query_parts.append(context["asset_type"])
-        
+
         if "timeframe" in context:
             timeframe_queries = {
                 "scalp": "short term quick",
@@ -298,35 +296,35 @@ class ToolRegistry:
                 "longterm": "long term investment"
             }
             query_parts.append(timeframe_queries.get(context["timeframe"], context["timeframe"]))
-        
+
         if "needs_risk_check" in context and context["needs_risk_check"]:
             query_parts.append("risk management position sizing")
-        
+
         if "needs_astrology" in context and context["needs_astrology"]:
             query_parts.append("vedic astrology")
-        
+
         query = " ".join(query_parts)
-        
+
         # Search for matching tools
         matches = self.find_tool(query, top_k=top_k * 2)  # Get more for diversity
-        
+
         # Ensure diversity across categories
         seen_categories = set()
         for match in matches:
             if len(recommendations) >= top_k:
                 break
-            
+
             cat = match["category"]
             if cat not in seen_categories or len(seen_categories) >= 3:
                 recommendations.append(match)
                 seen_categories.add(cat)
-        
+
         return recommendations
-    
+
     def list_all_tools(self) -> list[dict[str, Any]]:
         """List all registered tools."""
         return list(self.tools.values())
-    
+
     def get_stats(self) -> dict[str, Any]:
         """Get registry statistics."""
         return {
@@ -354,16 +352,16 @@ def get_tool_registry(use_embeddings: bool = True) -> ToolRegistry:
 def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry:
     """
     Register default MCP tools in the registry.
-    
+
     Args:
         registry: ToolRegistry instance (creates new if None)
-        
+
     Returns:
         Registry with default tools
     """
     if registry is None:
         registry = get_tool_registry()
-    
+
     # VedAstro tools
     registry.register_tool(
         name="vedastro__generate_signal",
@@ -377,7 +375,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             {"symbol": "BTC", "current_price": 45000}
         ]
     )
-    
+
     registry.register_tool(
         name="vedastro__get_dasha",
         description="Get Vimshottari Dasha planetary period information for timing analysis",
@@ -386,7 +384,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "symbol": {"type": "string", "description": "Asset symbol"}
         }
     )
-    
+
     registry.register_tool(
         name="vedastro__get_transits",
         description="Get current planetary transits (Gochara) for market timing",
@@ -395,7 +393,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "symbol": {"type": "string", "description": "Asset symbol"}
         }
     )
-    
+
     registry.register_tool(
         name="vedic__calculate_vimshottari_dasha",
         description="Calculate complete Vimshottari Dasha cycle for birth chart analysis",
@@ -406,7 +404,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "birth_date": {"type": "string", "description": "Birth date (YYYY-MM-DD)"}
         }
     )
-    
+
     registry.register_tool(
         name="vedic__get_nakshatra_analysis",
         description="Analyze nakshatra (lunar mansion) characteristics and trading implications",
@@ -416,7 +414,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "pada": {"type": "integer", "description": "Pad/quarter (1-4)"}
         }
     )
-    
+
     registry.register_tool(
         name="vedic__calculate_transits",
         description="Calculate planetary transits for a specific date with market predictions",
@@ -426,7 +424,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "symbols": {"type": "array", "description": "List of asset symbols"}
         }
     )
-    
+
     # Elemental tools
     registry.register_tool(
         name="elemental__fire_position_size",
@@ -439,7 +437,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "dominant_planet": {"type": "string"}
         }
     )
-    
+
     registry.register_tool(
         name="elemental__earth_entry_check",
         description="Check if entry is allowed using Earth element (Prithvi) - stability and timing",
@@ -449,7 +447,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "trade_history": {"type": "array"}
         }
     )
-    
+
     registry.register_tool(
         name="elemental__earth_exit_check",
         description="Check if position should be exited using Earth element - trailing stops and hold limits",
@@ -463,7 +461,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "peak_price": {"type": "number"}
         }
     )
-    
+
     registry.register_tool(
         name="elemental__water_regime_check",
         description="Check market regime using Water element (Apas) - trend following and adaptability",
@@ -473,7 +471,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "recent_closes": {"type": "array"}
         }
     )
-    
+
     registry.register_tool(
         name="elemental__ether_consensus",
         description="Calculate final consensus from all four elements (Akasha) - integration and balance",
@@ -485,7 +483,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "air_vote": {"type": "number", "description": "Air element score (-1 to 1)"}
         }
     )
-    
+
     # Execution tools
     registry.register_tool(
         name="execution__execute_paper_trade",
@@ -498,19 +496,19 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "price": {"type": "number"}
         }
     )
-    
+
     registry.register_tool(
         name="execution__get_open_positions",
         description="Get all currently open positions in portfolio",
         category="execution"
     )
-    
+
     registry.register_tool(
         name="execution__get_trade_history",
         description="Get historical trade execution records",
         category="execution"
     )
-    
+
     registry.register_tool(
         name="execution__close_position",
         description="Close an existing open position",
@@ -519,7 +517,7 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "position_id": {"type": "string"}
         }
     )
-    
+
     # Data tools
     registry.register_tool(
         name="data__get_historical_prices",
@@ -532,13 +530,13 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "timeframe": {"type": "string", "enum": ["1m", "5m", "15m", "1h", "4h", "1d"]}
         }
     )
-    
+
     registry.register_tool(
         name="data__get_portfolio_status",
         description="Get current portfolio status including positions and P&L",
         category="data"
     )
-    
+
     registry.register_tool(
         name="data__get_market_regime",
         description="Analyze current market regime (trending, ranging, volatile)",
@@ -547,6 +545,6 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "symbol": {"type": "string"}
         }
     )
-    
+
     logger.info(f"Registered {len(registry.list_all_tools())} default tools")
     return registry
