@@ -1,6 +1,3 @@
-# NOTE: Legacy imports removed during Week 8 cleanup
-# See: docs/adr/ADR-008-unified-execution-schema.md
-
 """
 Exchange Factory for creating and managing exchange connectors.
 
