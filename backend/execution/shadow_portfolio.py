@@ -1,6 +1,16 @@
 import uuid
+import warnings
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
+
+# Deprecation warning
+warnings.warn(
+    "ShadowPortfolioManager is deprecated. Use PortfolioManager from "
+    "backend.execution.portfolio_manager instead. "
+    "See ADR-008 for migration guide.",
+    DeprecationWarning,
+    stacklevel=2
+)
 from backend.schemas.orders import OrderRequest, OrderSide, OrderStatus
 
 
