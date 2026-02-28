@@ -8,8 +8,15 @@ import numpy as np
 from scipy import stats
 
 
+class VaRCalculationError(Exception):
+    """Raised when VaR calculation fails."""
+
+    pass
+
+
 class VaRMethod(Enum):
     """VaR calculation methods."""
+
     HISTORICAL = "historical"
     PARAMETRIC = "parametric"
     MONTE_CARLO = "monte_carlo"
@@ -18,6 +25,7 @@ class VaRMethod(Enum):
 @dataclass
 class VaRResult:
     """VaR calculation result."""
+
     value: float  # VaR value (positive = loss)
     confidence_level: float  # e.g., 0.95 for 95%
     time_horizon_days: int
@@ -226,12 +234,14 @@ class VaRCalculator:
                 var = var_results[i].var_percentage
                 if ret < -var:  # Loss exceeds VaR
                     breaches += 1
-                    breach_details.append({
-                        "index": i,
-                        "return": ret,
-                        "var": var,
-                        "excess_loss": abs(ret) - var,
-                    })
+                    breach_details.append(
+                        {
+                            "index": i,
+                            "return": ret,
+                            "var": var,
+                            "excess_loss": abs(ret) - var,
+                        }
+                    )
 
         total_observations = len(returns)
         breach_rate = breaches / total_observations if total_observations > 0 else 0
