@@ -1,0 +1,11 @@
+symbol,baseAsset,quoteAsset,name,status
+BTC-EUR,BTC,EUR,Bitcoin,active
+ETH-EUR,ETH,EUR,Ethereum,active
+SOL-EUR,SOL,EUR,Solana,active
+ADA-EUR,ADA,EUR,Cardano,active
+DOT-EUR,DOT,EUR,Polkadot,active
+XRP-EUR,XRP,EUR,XRP,active
+LINK-EUR,LINK,EUR,Chainlink,active
+DOGE-EUR,DOGE,EUR,Dogecoin,active
+LTC-EUR,LTC,EUR,Litecoin,active
+XLM-EUR,XLM,EUR,Stellar,active
