@@ -3,21 +3,65 @@
 > **Guide for AI Coding Agents**  
 > This document provides essential information for AI agents working on the Agentic Trader Platform. It covers the project architecture, development workflow, testing strategies, and conventions specific to this codebase.
 
+> **⚠️ CRITICAL: Before any network/port configuration task, read [PORT_ALLOCATION_SSOT.md](PORT_ALLOCATION_SSOT.md)**
+
 ---
 
 ## Table of Contents
 
-1. [Project Overview](#project-overview)
-2. [Architecture](#architecture)
-3. [Technology Stack](#technology-stack)
-4. [Project Structure](#project-structure)
-5. [Development Setup](#development-setup)
-6. [Build and Test Commands](#build-and-test-commands)
-7. [Code Style Guidelines](#code-style-guidelines)
-8. [Testing Strategy](#testing-strategy)
-9. [Security Considerations](#security-considerations)
-10. [Common Patterns](#common-patterns)
-11. [Troubleshooting](#troubleshooting)
+1. [⚠️ Mandatory Reading (CRITICAL)](#-mandatory-reading-critical)
+2. [Project Overview](#project-overview)
+3. [Architecture](#architecture)
+4. [Technology Stack](#technology-stack)
+5. [Project Structure](#project-structure)
+6. [Development Setup](#development-setup)
+7. [Build and Test Commands](#build-and-test-commands)
+8. [Code Style Guidelines](#code-style-guidelines)
+9. [Testing Strategy](#testing-strategy)
+10. [Security Considerations](#security-considerations)
+11. [Common Patterns](#common-patterns)
+12. [Troubleshooting](#troubleshooting)
+
+---
+
+## ⚠️ Mandatory Reading (CRITICAL)
+
+### Before Starting Any Task
+
+**YOU MUST READ these documents FIRST:**
+
+| Priority | Document | When Required |
+|----------|----------|---------------|
+| 🔴 **CRITICAL** | [PORT_ALLOCATION_README.md](PORT_ALLOCATION_README.md) | Gateway naar poortallocatie docs |
+| 🔴 **CRITICAL** | [PORT_ALLOCATION_SSOT.md](PORT_ALLOCATION_SSOT.md) | Enige bron van waarheid voor poorten |
+| 🟡 HIGH | [AGENTS.md](AGENTS.md) (this file) | Alle taken |
+
+### Port/Nework Tasks - Required Checklist
+
+For any task involving:
+- Docker Compose configuration
+- Environment variables (.env)
+- Port mappings
+- Service URLs
+- Infrastructure setup
+
+**YOU MUST:**
+1. Read `PORT_ALLOCATION_SSOT.md` completely
+2. Follow the port allocation table exactly
+3. Use only allowed ports (8000, 8001, 5432, 6379, 5000, 5001, 6000, 6001, 8100, 9000, 9090, 3000, 3080)
+4. **NEVER** use forbidden ports (8123, 9092, 9644 for host mapping)
+5. Add the verification checklist to your PR
+
+### Quick Port Reference
+
+```
+Core:      API=8000, MCP=8001, Postgres=5432, Redis=6379
+Extended:  ClickHouse=5000/5001, Redpanda=6000/6001, ChromaDB=8100
+Monitoring: Grafana=9000, Prometheus=9090
+Frontend:  Dev=3000, Prod=3080
+```
+
+**Full details:** [PORT_ALLOCATION_SSOT.md](PORT_ALLOCATION_SSOT.md)
 
 ---
 

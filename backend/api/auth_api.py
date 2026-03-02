@@ -36,13 +36,10 @@ except ImportError:
 # Database
 from backend.api.deps import get_admin_db
 
-# Try to import settings
-try:
-    from backend.core.config.settings import settings
+# Settings - SECRET_KEY is required, no fallback
+from backend.core.config.settings import settings
 
-    SECRET_KEY = getattr(settings, "SECRET_KEY", "dev-secret-key")
-except ImportError:
-    SECRET_KEY = "dev-secret-key"  # nosec B105 - Fallback for development only
+SECRET_KEY: str = settings.JWT_SECRET_KEY
 
 router = APIRouter()
 
@@ -53,36 +50,23 @@ router = APIRouter()
 
 
 def hash_password(password: str) -> str:
-    """Hash password using bcrypt."""
-    if PASSLIB_AVAILABLE:
-        try:
-            return pwd_context.hash(password)
-        except Exception:
-            # Fallback if passlib/bcrypt fails (common on Windows without binary)
-            import hashlib
-
-            return hashlib.sha256(password.encode()).hexdigest()
-    else:
-        # Fallback for testing (NOT secure for production!)
-        import hashlib
-
-        return hashlib.sha256(password.encode()).hexdigest()
+    """Hash password using bcrypt - SHA256 fallback removed for security."""
+    if not PASSLIB_AVAILABLE:
+        raise RuntimeError(
+            "Passlib/bcrypt is required for secure password hashing. "
+            "Install with: pip install passlib[bcrypt]"
+        )
+    return pwd_context.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash."""
-    if PASSLIB_AVAILABLE:
-        try:
-            return pwd_context.verify(plain_password, hashed_password)
-        except Exception:
-            # Fallback check
-            import hashlib
-
-            return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
-    else:
-        import hashlib
-
-        return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
+    """Verify password against hash - SHA256 fallback removed for security."""
+    if not PASSLIB_AVAILABLE:
+        raise RuntimeError(
+            "Passlib/bcrypt is required for secure password verification. "
+            "Install with: pip install passlib[bcrypt]"
+        )
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 def create_jwt_token(user: User) -> str:

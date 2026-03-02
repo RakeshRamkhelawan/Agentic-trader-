@@ -121,21 +121,25 @@ class RedisAdapter(CacheAdapter):
 
 
 class ClickHouseAdapter(CacheAdapter):
+    # Whitelist of allowed table names to prevent SQL injection
+    ALLOWED_TABLES = {"cache_store", "analytics_cache", "session_cache"}
+    
     def __init__(self, clickhouse_client, table_name: str = "cache_store"):
         self._client = clickhouse_client
+        # Validate table name against whitelist to prevent SQL injection
+        if table_name not in self.ALLOWED_TABLES:
+            raise ValueError(f"Invalid table name: {table_name}. Must be one of: {self.ALLOWED_TABLES}")
         self._table = table_name
 
     async def get(self, key: str) -> Any | None:
         try:
-            query = (  # nosec B608
-                f"""
+            query = """
                 SELECT value, expires_at
-                FROM {self._table}
+                FROM {table}
                 WHERE key = %(key)s
                 AND expires_at > now()
                 LIMIT 1
-            """
-            )
+            """.format(table=self._table)
             result = await self._client.execute(query, {"key": key})
 
             if not result:
@@ -149,10 +153,10 @@ class ClickHouseAdapter(CacheAdapter):
     async def set(self, key: str, value: Any, ttl: int) -> bool:
         try:
             value_json = json.dumps(value)
-            query = f"""  # nosec B608
-                INSERT INTO {self._table} (key, value, expires_at, created_at)
+            query = """
+                INSERT INTO {table} (key, value, expires_at, created_at)
                 VALUES (%(key)s, %(value)s, now() + INTERVAL %(ttl)s SECOND, now())
-            """
+            """.format(table=self._table)
             await self._client.execute(query, {"key": key, "value": value_json, "ttl": ttl})
             return True
         except Exception:
@@ -160,7 +164,7 @@ class ClickHouseAdapter(CacheAdapter):
 
     async def delete(self, key: str) -> bool:
         try:
-            query = f"ALTER TABLE {self._table} DELETE WHERE key = %(key)s"  # nosec B608
+            query = "ALTER TABLE {table} DELETE WHERE key = %(key)s".format(table=self._table)
             await self._client.execute(query, {"key": key})
             return True
         except Exception:
@@ -168,7 +172,7 @@ class ClickHouseAdapter(CacheAdapter):
 
     async def clear(self) -> bool:
         try:
-            query = f"TRUNCATE TABLE {self._table}"  # nosec B608
+            query = "TRUNCATE TABLE {table}".format(table=self._table)
             await self._client.execute(query)
             return True
         except Exception:

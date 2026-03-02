@@ -7,34 +7,54 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/trader
-      - REDIS_URL=redis://redis:6379/0
-      - BITVAVO_API_KEY=${BITVAVO_API_KEY:-placeholder}
-      - BITVAVO_API_SECRET=${BITVAVO_API_SECRET:-placeholder}
-      - REVOLUT_API_KEY=${REVOLUT_API_KEY:-placeholder}
-      - AUTH_DISABLED=true
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://trader:change_me_in_env@db:5432/trading_db}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - BITVAVO_API_KEY=${BITVAVO_API_KEY}
+      - BITVAVO_API_SECRET=${BITVAVO_API_SECRET}
+      - REVOLUT_API_KEY=${REVOLUT_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      # AUTH_DISABLED should NEVER be true in production
+      - AUTH_DISABLED=${AUTH_DISABLED:-false}
     depends_on:
       - db
       - redis
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   db:
     image: postgres:15-alpine
     container_name: agentic_trader_db
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
-      - POSTGRES_DB=trader
+      - POSTGRES_USER=${POSTGRES_USER:-trader}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change_me_in_env}
+      - POSTGRES_DB=${POSTGRES_DB:-trading_db}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trader} -d ${POSTGRES_DB:-trading_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     container_name: agentic_trader_redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-change_me_in_env}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 networks:
   agentic_trader_network:
@@ -42,3 +62,4 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:

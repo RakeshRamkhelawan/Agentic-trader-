@@ -207,7 +207,49 @@ jobs:
         continue-on-error: true
 
   # ============================================================================
-  # JOB 5: Code Quality (Non-blocking)
+  # JOB 5: Container Security Scan (Trivy)
+  # ============================================================================
+  container-security:
+    name: Container Security Scan
+    needs: docker-build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image for scanning
+        run: docker build -t agentic-trader:scan .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'agentic-trader:scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'  # Don't fail yet, informational
+
+      - name: Upload Trivy scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-scan-results
+          path: trivy-results.sarif
+          retention-days: 7
+
+      - name: Fail on critical vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'agentic-trader:scan'
+          severity: 'CRITICAL'
+          exit-code: '1'  # Fail on CRITICAL vulnerabilities only
+
+  # ============================================================================
+  # JOB 6: Code Quality (Non-blocking)
   # ============================================================================
   code-quality:
     name: Code Quality Check

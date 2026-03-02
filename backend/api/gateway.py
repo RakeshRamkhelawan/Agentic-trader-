@@ -136,7 +136,15 @@ class RateLimiter:
 
         if self.redis_url:
             try:
-                self.redis = redis.from_url(self.redis_url, encoding="utf-8", decode_responses=True)
+                self.redis = redis.from_url(
+                    self.redis_url, 
+                    encoding="utf-8", 
+                    decode_responses=True,
+                    max_connections=50,
+                    socket_connect_timeout=5,
+                    socket_timeout=5,
+                    health_check_interval=30,
+                )
             except Exception as e:
                 _logger.error(f"Failed to initialize Redis Rate Limiter: {e}")
 

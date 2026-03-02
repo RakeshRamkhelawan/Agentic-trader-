@@ -310,21 +310,26 @@ class EventBus:
                 metadata = message["data"].get("_metadata", {})
                 retry_count = metadata.get("retry_count", 0)
 
-                if retry_count < self.retry_config.max_retries:
-                    # Retry with exponential backoff
-                    await self._schedule_retry(stream, message["data"], str(e))
-                    logger.warning(
-                        f"Message {message['id']} failed, scheduling retry {retry_count + 1}/"
-                        f"{self.retry_config.max_retries}"
-                    )
-                else:
-                    # Max retries exhausted - send to DLQ
-                    await self._send_to_dlq(stream, message["data"], str(e))
-                    logger.error(f"Message {message['id']} exhausted all retries, sent to DLQ")
+                try:
+                    if retry_count < self.retry_config.max_retries:
+                        # Retry with exponential backoff
+                        # FIX: Use atomic pipeline for retry + ack to prevent message loss
+                        await self._schedule_retry_and_ack(stream, group, message["id"], message["data"], str(e))
+                        logger.warning(
+                            f"Message {message['id']} failed, scheduling retry {retry_count + 1}/"
+                            f"{self.retry_config.max_retries}"
+                        )
+                    else:
+                        # Max retries exhausted - send to DLQ
+                        # FIX: Use atomic pipeline for DLQ + ack to prevent message loss
+                        await self._send_to_dlq_and_ack(stream, group, message["id"], message["data"], str(e))
+                        logger.error(f"Message {message['id']} exhausted all retries, sent to DLQ")
 
-                # Acknowledge original message (we've either retried or DLQ'd)
-                await self.ack(stream, group, message["id"])
-                results.append({"message_id": message["id"], "error": str(e), "success": False})
+                    results.append({"message_id": message["id"], "error": str(e), "success": False})
+                except Exception as pipeline_error:
+                    # If pipeline fails, don't ACK - message will be redelivered
+                    logger.error(f"Failed to process failed message {message['id']}: {pipeline_error}")
+                    raise  # Re-raise to prevent ACK
 
         return results
 
@@ -374,6 +379,83 @@ class EventBus:
 
         await self.publish(dlq_stream, event_data)
         logger.info(f"Message sent to DLQ: {dlq_stream}")
+
+    async def _schedule_retry_and_ack(
+        self, original_stream: str, group: str, message_id: str, event_data: dict, error: str
+    ) -> None:
+        """
+        Atomically schedule retry and ACK message to prevent message loss.
+        
+        Uses Redis pipeline to ensure both operations succeed or both fail.
+        """
+        if not self.client:
+            return
+            
+        # Prepare retry data
+        metadata = event_data.get("_metadata", {})
+        retry_count = metadata.get("retry_count", 0)
+        metadata["retry_count"] = retry_count + 1
+        metadata["error_info"] = error
+        metadata["original_stream"] = original_stream
+        event_data["_metadata"] = metadata
+        
+        delay = self.retry_config.calculate_delay(retry_count)
+        event_data["_scheduled_time"] = datetime.now(UTC).timestamp() + delay
+        
+        retry_stream = f"{original_stream}{self.RETRY_SUFFIX}"
+        
+        # Use pipeline for atomic operations
+        pipe = self.client.pipeline()
+        
+        # Add to retry stream
+        pipe.xadd(retry_stream, {"data": json.dumps(event_data)})
+        
+        # ACK original message
+        pipe.xack(original_stream, group, message_id)
+        
+        # Execute atomically
+        await pipe.execute()
+        
+        logger.debug(f"Atomically scheduled retry and ACKed message {message_id}")
+
+    async def _send_to_dlq_and_ack(
+        self, original_stream: str, group: str, message_id: str, event_data: dict, error: str
+    ) -> None:
+        """
+        Atomically send to DLQ and ACK message to prevent message loss.
+        
+        Uses Redis pipeline to ensure both operations succeed or both fail.
+        """
+        if not self.client:
+            return
+            
+        if not self.enable_dlq:
+            # Just ACK if DLQ disabled
+            await self.ack(original_stream, group, message_id)
+            logger.error(f"DLQ disabled, ACKing and dropping failed message from {original_stream}")
+            return
+            
+        # Prepare DLQ data
+        dlq_stream = f"{original_stream}{self.DLQ_SUFFIX}"
+        metadata = event_data.get("_metadata", {})
+        metadata["error_info"] = error
+        metadata["original_stream"] = original_stream
+        metadata["dlq_timestamp"] = datetime.now(UTC).isoformat()
+        event_data["_metadata"] = metadata
+        
+        # Use pipeline for atomic operations
+        pipe = self.client.pipeline()
+        
+        # Add to DLQ stream
+        pipe.xadd(dlq_stream, {"data": json.dumps(event_data)})
+        
+        # ACK original message
+        pipe.xack(original_stream, group, message_id)
+        
+        # Execute atomically
+        await pipe.execute()
+        
+        logger.info(f"Atomically sent to DLQ and ACKed message {message_id}")
 
     async def process_retries(self, original_stream: str) -> int:
         """
