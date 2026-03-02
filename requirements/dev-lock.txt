@@ -417,7 +417,7 @@ python-dotenv==1.2.1
     #   -r requirements/base.txt
     #   pydantic-settings
     #   uvicorn
-python-jose[cryptography]==3.3.0
+python-jose[cryptography]==3.5.0
     # via -r requirements/base.txt
 python-multipart==0.0.22
     # via mcp
