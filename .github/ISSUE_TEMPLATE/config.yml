@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/RakeshRamkhelawan/Agentic-trader-/discussions
+    about: Please ask and answer questions here
+  - name: Documentation
+    url: https://github.com/RakeshRamkhelawan/Agentic-trader-/blob/main/README.md
+    about: Check the documentation before creating an issue
+  - name: Security Email
+    url: mailto:security@agentictrader.com
+    about: Report security vulnerabilities via email
