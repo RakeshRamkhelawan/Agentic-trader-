@@ -12,7 +12,7 @@ import { Portfolio } from '@/pages/Portfolio';
 import { Terminal } from '@/pages/Terminal';
 import { History } from '@/pages/History';
 import { Settings } from '@/pages/Settings';
-import LivePaperTradingPage from '@/pages/LivePaperTrading';
+import PaperTradingPage from '@/pages/paper-trading';
 import { Login } from '@/pages/auth/Login';
 import { Register } from '@/pages/auth/Register';
 import { KYC } from '@/pages/auth/KYC';
@@ -126,7 +126,7 @@ function MainLayout() {
             <Route path="/terminal" element={<Terminal />} />
             <Route path="/history" element={<History />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/paper-trading" element={<LivePaperTradingPage />} />
+            <Route path="/paper-trading" element={<PaperTradingPage />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
@@ -263,7 +263,7 @@ function AppRoutesInternal() {
                     <Route path="/terminal" element={<Terminal />} />
                     <Route path="/history" element={<History />} />
                     <Route path="/settings" element={<Settings />} />
-                    <Route path="/paper-trading" element={<LivePaperTradingPage />} />
+                    <Route path="/paper-trading" element={<PaperTradingPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </main>
