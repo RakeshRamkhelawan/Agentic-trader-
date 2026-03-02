@@ -94,7 +94,7 @@ class RevolutXClient:
         self._private_key: Ed25519PrivateKey | None = None
         self._authenticated = False
 
-        logger.info("✅ RevolutXClient initialized")
+        logger.info("[OK] RevolutXClient initialized")
         logger.info(f"   Base URL: {self.BASE_URL}")
 
     def _load_private_key(self) -> Ed25519PrivateKey:
@@ -114,7 +114,7 @@ class RevolutXClient:
         if not isinstance(private_key, Ed25519PrivateKey):
             raise ValueError("Private key is not an Ed25519 key")
 
-        logger.info("✅ Ed25519 private key loaded")
+        logger.info("[OK] Ed25519 private key loaded")
         return private_key
 
     def _sign_request(
@@ -165,14 +165,14 @@ class RevolutXClient:
         """
         try:
             if not self.api_key:
-                logger.error("❌ REVOLUT_API_KEY not configured")
+                logger.error("[ERROR] REVOLUT_API_KEY not configured")
                 return False
 
             # Load private key
             try:
                 self._private_key = self._load_private_key()
             except Exception as e:
-                logger.error(f"❌ Failed to load private key: {str(e)}")
+                logger.error(f"[ERROR] Failed to load private key: {str(e)}")
                 return False
 
             # Create HTTP session
@@ -185,7 +185,7 @@ class RevolutXClient:
                 },
             )
 
-            logger.info("🔍 Testing connection to Revolut X...")
+            logger.info("[TEST] Testing connection to Revolut X...")
 
             # Test with GET /orders/active (requires authentication)
             # Use current UTC time in milliseconds with offset
@@ -213,11 +213,11 @@ class RevolutXClient:
             if response.status_code == 200:
                 self._authenticated = True
                 data = response.json()
-                logger.info("✅ Connected to Revolut X!")
+                logger.info("[OK] Connected to Revolut X!")
                 logger.info(f"   Active orders: {len(data.get('data', []))}")
                 return True
             elif response.status_code == 401:
-                logger.error("❌ Authentication failed (401)")
+                logger.error("[ERROR] Authentication failed (401)")
                 try:
                     error_data = response.json()
                     logger.error(f"   Error: {error_data}")
@@ -225,7 +225,7 @@ class RevolutXClient:
                     logger.error(f"   Response: {response.text[:200]}")
                 return False
             elif response.status_code == 409:
-                logger.warning("⚠️ Conflict (409) - API key may not be activated")
+                logger.warning("[WARN] Conflict (409) - API key may not be activated")
                 try:
                     error_data = response.json()
                     logger.warning(f"   Error details: {error_data}")
@@ -233,7 +233,7 @@ class RevolutXClient:
                     logger.warning(f"   Response: {response.text}")
                 return False
             else:
-                logger.warning(f"⚠️ Unexpected response: {response.status_code}")
+                logger.warning(f"[WARN] Unexpected response: {response.status_code}")
                 try:
                     logger.warning(f"   Response: {response.json()}")
                 except Exception:
@@ -241,7 +241,7 @@ class RevolutXClient:
                 return False
 
         except Exception as e:
-            logger.error(f"❌ Connection failed: {str(e)}")
+            logger.error(f"[ERROR] Connection failed: {str(e)}")
             import traceback
 
             logger.debug(traceback.format_exc())
@@ -294,10 +294,10 @@ class RevolutXClient:
         if response.status_code == 200:
             data = response.json()
             orders = [Order(**order_data) for order_data in data.get("data", [])]
-            logger.info(f"✅ Retrieved {len(orders)} active orders")
+            logger.info(f"[OK] Retrieved {len(orders)} active orders")
             return orders
         else:
-            logger.error(f"❌ Failed to get orders: {response.status_code}")
+            logger.error(f"[ERROR] Failed to get orders: {response.status_code}")
             logger.error(f"   Response: {response.text[:200]}")
             return []
 
@@ -374,7 +374,7 @@ class RevolutXClient:
             data = response.json()
             if data.get("data"):
                 order_data = data["data"][0]
-                logger.info(f"✅ Order placed: {order_data.get('venue_order_id')}")
+                logger.info(f"[OK] Order placed: {order_data.get('venue_order_id')}")
                 # Return basic order info (full details need separate GET)
                 return Order(
                     id=order_data.get("venue_order_id"),
@@ -393,7 +393,7 @@ class RevolutXClient:
                     updated_date=timestamp,
                 )
         else:
-            logger.error(f"❌ Failed to place order: {response.status_code}")
+            logger.error(f"[ERROR] Failed to place order: {response.status_code}")
             logger.error(f"   Response: {response.text}")
 
         return None
@@ -546,53 +546,80 @@ class RevolutXClient:
             logger.error(f"[ERROR] Orderbook fetch failed for {symbol}: {e}")
             raise
 
+    # Known Revolut X trading pairs (fallback when API doesn't provide symbols endpoint)
+    KNOWN_SYMBOLS = [
+        "BTC-USD", "ETH-USD", "SOL-USD", "ADA-USD", "DOT-USD",
+        "XRP-USD", "LINK-USD", "LTC-USD", "BCH-USD", "XLM-USD",
+        "DOGE-USD", "AVAX-USD", "ATOM-USD", "ALGO-USD", "VET-USD",
+        "FIL-USD", "TRX-USD", "ETC-USD", "AAVE-USD", "UNI-USD",
+        "MKR-USD", "COMP-USD", "SNX-USD", "YFI-USD", "BAT-USD",
+        "ZRX-USD", "ENJ-USD", "CHZ-USD", "MANA-USD", "SAND-USD",
+        "AXS-USD", "LRC-USD", "CRV-USD", "KNC-USD", "GRT-USD",
+        "UMA-USD", "OCEAN-USD", "SUSHI-USD", "1INCH-USD", "STORJ-USD",
+        "FET-USD", "SKL-USD", "APT-USD", "ARB-USD", "OP-USD",
+        "NEAR-USD", "FTM-USD", "GALA-USD", "SUI-USD", "SEI-USD",
+    ]
+
     async def get_symbols(self) -> list[str]:
         """
-        Get list of available trading symbols (PUBLIC endpoint)
+        Get list of available trading symbols.
 
         Returns:
             List of symbol strings (e.g., ['BTC-USD', 'ETH-USD'])
         """
-        if not self._session:
+        if not self._session or not self._authenticated:
             raise RuntimeError("Client not connected. Call connect() first.")
 
         try:
-            response = await self._session.get("/symbols")
+            # Try to fetch from API (endpoint may vary)
+            timestamp = int(time.time() * 1000) - self.TIMESTAMP_OFFSET_MS
+            path = "/api/1.0/symbols"
+            method = "GET"
+
+            signature = self._sign_request(timestamp, method, path)
+
+            headers = {
+                "X-Revx-API-Key": self.api_key,
+                "X-Revx-Timestamp": str(timestamp),
+                "X-Revx-Signature": signature,
+            }
+
+            response = await self._session.get("/symbols", headers=headers)
 
             if response.status_code == 200:
                 data = response.json()
                 symbols = [s["symbol"] for s in data.get("data", [])]
-                logger.info(f"[SUCCESS] Found {len(symbols)} trading symbols")
+                logger.info(f"[OK] Found {len(symbols)} trading symbols")
                 return symbols
             else:
-                logger.error(f"[ERROR] Failed to get symbols: {response.status_code}")
-                return []
+                logger.warning(f"[WARN] Symbols endpoint returned {response.status_code}, using known pairs")
+                return self.KNOWN_SYMBOLS
 
         except Exception as e:
-            logger.error(f"[ERROR] Symbols fetch failed: {e}")
-            return []
+            logger.warning(f"[WARN] Symbols fetch failed: {e}, using known pairs")
+            return self.KNOWN_SYMBOLS
 
 
 async def test_revolut_x_connection():
     """Test Revolut X API connection"""
     print("=" * 70)
-    print("🔗 REVOLUT X API CONNECTION TEST")
+    print("REVOLUT X API CONNECTION TEST")
     print("=" * 70)
 
     client = RevolutXClient()
 
-    print("\n1️⃣ Connecting to Revolut X...")
+    print("\n[1] Connecting to Revolut X...")
     connected = await client.connect()
 
     if not connected:
-        print("❌ Connection failed. Check your API key and private key.")
+        print("[ERROR] Connection failed. Check your API key and private key.")
         print("\n📋 Setup instructions:")
         print("1. Generate Ed25519 key pair: python scripts/setup_revolut_keys.py")
         print("2. Add public key to Revolut X: https://exchange.revolut.com/ → Profile")
         print("3. Copy API key to .env file (REVOLUT_API_KEY)")
         return
 
-    print("\n2️⃣ Getting active orders...")
+    print("\n[2] Getting active orders...")
     orders = await client.get_active_orders()
     print(f"   Found {len(orders)} active orders")
 
@@ -600,7 +627,7 @@ async def test_revolut_x_connection():
         for order in orders[:3]:
             print(f"   - {order.symbol} {order.side} {order.quantity} @ {order.price}")
 
-    print("\n3️⃣ Test order placement (simulated - not executed)")
+    print("\n[3] Test order placement (simulated - not executed)")
     print("   To place real orders, uncomment the code below")
     # Uncomment to test real order placement:
     # order = await client.place_order(
@@ -616,7 +643,7 @@ async def test_revolut_x_connection():
     await client.disconnect()
 
     print("\n" + "=" * 70)
-    print("✅ REVOLUT X API TEST COMPLETED")
+    print("[OK] REVOLUT X API TEST COMPLETED")
     print("=" * 70)
 
 

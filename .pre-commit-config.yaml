@@ -18,7 +18,7 @@ fail_fast: false
 
 repos:
   # ============================================================================
-  # Basic File Checks
+  # Basic File Checks (Blocking)
   # ============================================================================
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -34,7 +34,7 @@ repos:
       # Check for broken symlinks
       - id: check-symlinks
 
-      # Check JSON syntax (exclude tsconfig which uses JSONC with comments)
+      # Check JSON syntax
       - id: check-json
         files: \.(json)$
         exclude: tsconfig
@@ -59,56 +59,67 @@ repos:
       - id: end-of-file-fixer
         exclude: ^(frontend/|\.min\.|\.lock$)
 
+      # Check for private keys
+      - id: detect-private-key
+
   # ============================================================================
-  # Python - Basic Checks Only (Non-blocking)
+  # Python - Code Quality (Blocking)
   # ============================================================================
-  - repo: local
+  - repo: https://github.com/psf/black
+    rev: 24.1.0
     hooks:
       - id: black
-        name: Python Formatting
-        entry: bash -c 'black --check --diff "$@" || true' --
-        language: system
+        name: Python Formatting (Black)
         files: ^backend/.*\.py$
         exclude: ^backend/tests/
-        # Non-blocking - just shows diff
-        verbose: true
+        args: [--line-length=100]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.0
     hooks:
       - id: ruff
-        name: Python Linting
-        args: [--fix, --exit-zero]
+        name: Python Linting (Ruff)
         files: ^backend/.*\.py$
-        # exit-zero makes it non-blocking
+        args: [--fix, --exit-non-zero-on-fix]
 
-  # ============================================================================
-  # Security Scans (Non-blocking)
-  # ============================================================================
-  - repo: local
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
     hooks:
-      - id: bandit
-        name: Security Scan
-        entry: bash -c 'bandit -c pyproject.toml -f json -o bandit-report.json "$@" || true' --
-        language: system
+      - id: mypy
+        name: Python Type Checking
         files: ^backend/.*\.py$
         exclude: ^backend/tests/
-        # Non-blocking - just generates report
-        verbose: true
+        args: [--ignore-missing-imports]
+        additional_dependencies:
+          - pydantic
+          - sqlalchemy
+          - types-redis
 
   # ============================================================================
-  # Frontend - Basic Checks
+  # Import Sorting (Blocking)
+  # ============================================================================
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: Python Import Sorting
+        files: ^backend/.*\.py$
+        exclude: ^backend/tests/
+        args: [--profile=black, --line-length=100]
+
+  # ============================================================================
+  # Security Scans (Non-blocking - informational only)
   # ============================================================================
   - repo: local
     hooks:
-      - id: frontend-type-check
-        name: Frontend Type Check
-        entry: bash -c 'cd frontend && npx tsc --noEmit 2>/dev/null || echo "Type issues found (non-blocking)"'
+      - id: bandit-security
+        name: Bandit Security Scan (Info)
+        entry: bash -c 'bandit -r backend/ --exclude backend/tests -f json -o bandit-report.json || echo "Bandit issues found - review report"'
         language: system
-        files: ^frontend/.*\.(ts|tsx)$
+        files: ^backend/.*\.py$
         pass_filenames: false
-        # Non-blocking
+        verbose: true
 
-# Skip hooks in CI environment (GitHub Actions handles this)
+# Skip hooks in CI environment
 ci:
   skip: [no-commit-to-branch]

@@ -12,7 +12,7 @@ services:
     env_file:
       - .env.prod
     ports:
-      - "8003:8000"
+      - "8000:8000"  # Standaard API poort
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
     depends_on:
@@ -60,7 +60,7 @@ services:
     image: clickhouse/clickhouse-server:latest
     container_name: agentic_trader_clickhouse_prod
     ports:
-      - "8123:8123"
+      - "5000:8123"  # ClickHouse HTTP, zie PORT_ALLOCATION.md
     volumes:
       - clickhouse_data:/var/lib/clickhouse
     networks:
@@ -97,7 +97,7 @@ services:
     image: grafana/grafana:latest
     container_name: agentic_trader_grafana_prod
     ports:
-      - "3000:3000"
+      - "9000:3000"  # Grafana, zie PORT_ALLOCATION.md
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     volumes:

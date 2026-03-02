@@ -1,0 +1,34 @@
+apiVersion: v2
+name: agentic-trader
+description: A Helm chart for Agentic Trader Platform - Multi-exchange AI trading system
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - trading
+  - crypto
+  - ai
+  - multi-exchange
+home: https://github.com/agentic-trader/platform
+sources:
+  - https://github.com/agentic-trader/platform
+maintainers:
+  - name: Agentic Trader Team
+    email: dev@agentic-trader.com
+dependencies:
+  - name: postgresql
+    version: 15.1.0
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: 18.12.0
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: grafana
+    version: 7.3.0
+    repository: https://grafana.github.io/helm-charts
+    condition: grafana.enabled
+  - name: prometheus
+    version: 25.8.0
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: prometheus.enabled

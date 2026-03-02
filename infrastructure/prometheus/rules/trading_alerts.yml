@@ -1,0 +1,108 @@
+groups:
+  - name: trading_alerts
+    interval: 30s
+    rules:
+      # Exchange Health Alerts
+      - alert: ExchangeDown
+        expr: trading_exchange_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Exchange {{ $labels.exchange }} is down"
+          description: "Exchange {{ $labels.exchange }} has been down for more than 1 minute"
+
+      - alert: HighExchangeLatency
+        expr: trading_exchange_latency_seconds > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency on {{ $labels.exchange }}"
+          description: "Exchange {{ $labels.exchange }} latency is {{ $value }}s"
+
+      # Order Execution Alerts
+      - alert: HighOrderLatency
+        expr: histogram_quantile(0.95, rate(trading_order_latency_seconds_bucket[5m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High order execution latency"
+          description: "95th percentile order latency is {{ $value }}s"
+
+      - alert: OrderRejectionRate
+        expr: rate(trading_orders_total{status="rejected"}[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High order rejection rate"
+          description: "Order rejection rate is {{ $value }} orders/sec"
+
+      # Price Discrepancy Alerts
+      - alert: PriceDiscrepancy
+        expr: trading_price_discrepancy_pct > 1
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Price discrepancy for {{ $labels.symbol }}"
+          description: "Price discrepancy of {{ $value }}% detected for {{ $labels.symbol }}"
+
+      - alert: ArbitrageOpportunity
+        expr: trading_price_discrepancy_pct > 0.5
+        for: 1m
+        labels:
+          severity: info
+        annotations:
+          summary: "Arbitrage opportunity for {{ $labels.symbol }}"
+          description: "Potential arbitrage with {{ $value }}% spread for {{ $labels.symbol }}"
+
+      # Risk Alerts
+      - alert: HighExposure
+        expr: trading_exposure_eur > 40000
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "High exposure for {{ $labels.symbol }}"
+          description: "Exposure of €{{ $value }} exceeds threshold for {{ $labels.symbol }}"
+
+      - alert: TotalExposureHigh
+        expr: sum(trading_exposure_eur) > 45000
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Total exposure approaching limit"
+          description: "Total exposure of €{{ $value }} is near the €50,000 limit"
+
+      # P&L Alerts
+      - alert: LargeUnrealizedLoss
+        expr: trading_unrealized_pnl_eur < -1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Large unrealized loss for {{ $labels.symbol }}"
+          description: "Unrealized loss of €{{ $value }} for {{ $labels.symbol }}"
+
+      - alert: LargeRealizedLoss
+        expr: increase(trading_realized_pnl_eur_total[1h]) < -500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Large realized loss in last hour"
+          description: "Realized loss of €{{ $value }} in the last hour"
+
+      # System Alerts
+      - alert: NoOrderActivity
+        expr: rate(trading_orders_total[10m]) == 0
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "No order activity detected"
+          description: "No orders have been placed in the last 10 minutes"

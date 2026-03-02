@@ -16,8 +16,16 @@ class Settings(BaseSettings):
 
     # --- APP INFO ---
     APP_NAME: str = "Agentic Trader Platform"
-    ENV: str = "development"  # development, production, test
-    DEBUG: bool = True
+    ENV: str = Field(
+        default="production",
+        validation_alias="ENV",
+        description="Environment: development, production, test",
+    )
+    DEBUG: bool = Field(
+        default=False,
+        validation_alias="DEBUG",
+        description="DEBUG mode - NEVER enable in production!",
+    )
 
     # --- VAULT CONFIGURATION ---
     VAULT_ENABLED: bool = False
@@ -27,18 +35,27 @@ class Settings(BaseSettings):
     VAULT_SECRET_ID: str | None = None
 
     # --- INFRASTRUCTURE URLs ---
-    KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
+    KAFKA_BOOTSTRAP_SERVERS: str = "localhost:6000"  # Zie PORT_ALLOCATION.md
     CLICKHOUSE_HOST: str = "localhost"
-    CLICKHOUSE_PORT: int = 8123
+    CLICKHOUSE_PORT: int = 5000  # HTTP port, was 8123, zie PORT_ALLOCATION.md
+    CLICKHOUSE_HTTP_PORT: int = 5000  # Nieuw
+    CLICKHOUSE_NATIVE_PORT: int = 5001  # Nieuw
     CLICKHOUSE_USER: str = "default"
     CLICKHOUSE_PASSWORD: str = ""
     CLICKHOUSE_DB: str = "trading_db"
     REDIS_URL: str = "redis://localhost:6379/0"
     CHROMA_HOST: str = "localhost"
-    CHROMA_PORT: int = 8000
+    CHROMA_PORT: int = 8100  # Was 8000, zie PORT_ALLOCATION.md
+    CHROMA_DB_HOST: str = "localhost"  # Nieuw
+    CHROMA_DB_PORT: int = 8100  # Nieuw
 
-    # --- SECURITY (Non-sensitive defaults) ---
-    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    # --- SECURITY ---
+    # CORS origins - restricted by default for security
+    BACKEND_CORS_ORIGINS: list[str] = Field(
+        default=[],
+        validation_alias="BACKEND_CORS_ORIGINS",
+        description="Allowed CORS origins. In dev: ["http://localhost:3000"]. In prod: specific domains only.",
+    )
     ALLOWED_ORIGINS: list[str] = Field(
         default=["http://localhost:3000", "http://127.0.0.1:3000"],
         description="CORS allowed origins. Override via ALLOWED_ORIGINS env var (JSON list).",
@@ -51,11 +68,42 @@ class Settings(BaseSettings):
     REVOLUT_API_KEY_ENV: str | None = Field(None, validation_alias="REVOLUT_API_KEY")
     REVOLUT_PRIVATE_KEY_PATH: str = "revolut_private.pem"
     REVOLUT_SANDBOX: bool = True
-    _jwt_secret_key: str | None = None  # Deprecated, use env field below
-    JWT_SECRET_KEY_ENV: str | None = Field(None, validation_alias="JWT_SECRET_KEY")
+    # JWT Secret - REQUIRED, no fallback for security
+    JWT_SECRET_KEY: str = Field(
+        ...,  # Required field, no default
+        validation_alias="JWT_SECRET_KEY",
+        description="JWT signing secret - MUST be set via environment variable (min 32 chars)",
+        min_length=32,
+    )
 
     _database_url: str | None = None  # Deprecated, use env field below
     DATABASE_URL_ENV: str | None = Field(None, validation_alias="DATABASE_URL")
+    
+    # --- DATABASE CONNECTION POOLING ---
+    DB_POOL_SIZE: int = Field(
+        default=10, 
+        ge=5, 
+        le=50,
+        description="Database connection pool size"
+    )
+    DB_MAX_OVERFLOW: int = Field(
+        default=20, 
+        ge=0, 
+        le=30,
+        description="Max overflow connections beyond pool_size"
+    )
+    DB_POOL_TIMEOUT: int = Field(
+        default=30, 
+        ge=5, 
+        le=60,
+        description="Seconds to wait for connection from pool"
+    )
+    DB_POOL_RECYCLE: int = Field(
+        default=3600,  # 1 hour
+        ge=300,
+        le=7200,
+        description="Seconds after which to recycle connections"
+    )
 
     # --- AUTH0 CONFIGURATION ---
     # Use environment variables - NO hardcoded values for security
@@ -80,7 +128,7 @@ class Settings(BaseSettings):
     )
 
     # --- METRICS ---
-    METRICS_SERVER_PORT: int = 8001
+    METRICS_SERVER_PORT: int = 9090  # Was 8001 (nu MCP Broker), zie PORT_ALLOCATION.md
 
     # --- RISK LIMITS (Hardcoded defaults for safety) ---
     MAX_ORDER_SIZE_EUR: float = 1000.0

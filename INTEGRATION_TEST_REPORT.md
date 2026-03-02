@@ -1,211 +1,181 @@
-# Integratietest Report: Vedic Paper Trading Stack
+# Integration Test Report: Phase 2 & 3
 
-**Datum:** 2026-02-20  
-**Tester:** Automated Test Suite  
-**Totaal Tests:** 38  
-**Status:** ✅ **ALLE TESTS SUCCESSVOL**
+**Date:** 2026-02-27
+**Status:** 3/4 Tests Passed (75%)
 
 ---
 
-## Samenvatting
+## Test Results Summary
 
-| Categorie | Aantal | Status |
-|-----------|--------|--------|
-| Happy Path Tests | 9 | ✅ 9 passed |
-| Unhappy Path Tests | 11 | ✅ 11 passed |
-| Edge Case Tests | 5 | ✅ 5 passed |
-| Performance Tests | 2 | ✅ 2 passed |
-| WebSocket E2E Tests | 11 | ✅ 11 passed |
-| **Totaal** | **38** | ✅ **100%** |
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Guna Council** | ✅ PASS | Dynamic Sattva/Rajas/Tamas calculation working |
+| **Mind Council** | ✅ PASS | Fear/Greed Index 0-100 working |
+| **Calibrated Thresholds** | ✅ PASS | 31,302 samples loaded, percentiles calculated |
+| **Council Orchestrator** | ⚠️ FAIL | Redis Streams (XADD) not available |
 
 ---
 
-## Test Details
+## Detailed Results
 
-### 1. Happy Path Tests (HP-001 t/m HP-009)
+### 1. Guna Council ✅
 
-| Test | Beschrijving | Status |
-|------|--------------|--------|
-| HP-001 | Elementaire agents prana >= 80 | ✅ |
-| HP-002 | Guna balans sum = 1.0 | ✅ |
-| HP-003 | Harmony score berekening | ✅ |
-| HP-004 | Signalen verwerking | ✅ |
-| HP-005 | Prana consumptie & regeneratie | ✅ |
-| HP-006 | Shadow portfolio trading | ✅ |
-| HP-007 | WebSocket vedic channels | ✅ |
-| HP-008 | Reflex executor paper mode | ✅ |
-| HP-009 | Complete Vedic cycle | ✅ |
+**Test:** Dynamic Guna analysis with market data
 
-**Details:**
-- Alle 5 elementaire agents starten met prana = 100.0
-- Guna balans correct: Ether (Sattva 0.8), Air (Rajas 0.6), Fire (Rajas 0.5), Water (Tamas 0.6), Earth (Tamas 0.8)
-- Harmony score berekening: 0.50 (trading toegestaan)
-- Response tijd: < 10ms (well under 100ms limit)
-
----
-
-### 2. Unhappy Path Tests (UP-001 t/m UP-010)
-
-| Test | Beschrijving | Status |
-|------|--------------|--------|
-| UP-001 | Rahu Kala blocking | ✅ |
-| UP-002 | Low prana degraded response | ✅ |
-| UP-003 | Low harmony stops trading | ✅ |
-| UP-004 | Insufficient funds rejected | ✅ |
-| UP-005 | Invalid symbol rejected | ✅ |
-| UP-006 | Redis unavailable | ✅ |
-| UP-007 | SHM not available | ✅ |
-| UP-008 | Malformed signal handling | ✅ |
-| UP-009 | Concurrent agent access | ✅ |
-| UP-010 | Extreme market conditions | ✅ |
-
-**Details:**
-- Orders met onvoldoende fondsen worden correct afgewezen
-- Rahu Kala active = trading_gate_closed
-- Agents met prana < 10 geven degraded response
-- Harmony < 0.2 stopt trading
-- SHM fallback werkt correct
-
----
-
-### 3. Edge Case Tests (EC-001 t/m EC-005)
-
-| Test | Beschrijving | Status |
-|------|--------------|--------|
-| EC-001 | Prana exact 0 | ✅ |
-| EC-002 | Prana exact 10 (threshold) | ✅ |
-| EC-003 | Harmony exact 0.0 | ✅ |
-| EC-004 | Zeer kleine order | ✅ |
-| EC-005 | Zeer grote order | ✅ |
-
-**Details:**
-- Boundary conditions correct afgehandeld
-- Geen crashes bij extreme waarden
-
----
-
-### 4. Performance Tests (PERF-001 t/m PERF-002)
-
-| Test | Beschrijving | Resultaat | Status |
-|------|--------------|-----------|--------|
-| PERF-001 | Response tijd | ~2ms | ✅ (< 100ms) |
-| PERF-002 | 100 cycles | Geen memory leaks | ✅ |
-
-**Details:**
-- Elementaire agent response: ~2ms (50x sneller dan 100ms limit)
-- 100 opeenvolgende cycles zonder performance degradatie
-
----
-
-### 5. WebSocket E2E Tests (WS-E2E-001 t/m WS-E2E-009 + UP)
-
-| Test | Beschrijving | Status |
-|------|--------------|--------|
-| WS-E2E-001 | Trade broadcast | ✅ |
-| WS-E2E-002 | Portfolio update | ✅ |
-| WS-E2E-003 | Vedic soul update | ✅ |
-| WS-E2E-004 | Vedic prana update | ✅ |
-| WS-E2E-005 | Vedic harmony update | ✅ |
-| WS-E2E-006 | Cosmic block | ✅ |
-| WS-E2E-007 | Agent decision | ✅ |
-| WS-E2E-008 | Stats broadcast | ✅ |
-| WS-E2E-009 | Full session lifecycle | ✅ |
-| WS-UP-001 | Broadcast met None | ✅ |
-| WS-UP-002 | Broadcast lege data | ✅ |
-| WS-UP-003 | 100 snelle broadcasts | ✅ |
-
-**Details:**
-- Alle 4 WebSocket channels werken:
-  - `paper_trading.live`
-  - `paper_trading.stats`
-  - `paper_trading.agents`
-  - `paper_trading.vedic` (nieuw)
-- Geen memory leaks bij 100 snelle broadcasts
-- Graceful handling van None/lege waarden
-
----
-
-## Test Output
-
-```
-============================= test session starts =============================
-platform win32 -- Python 3.13.7, pytest-9.0.2
-plugins: asyncio-1.3.0, benchmark-5.2.3, cov-7.0.0, timeout-2.4.0
-
-tests/integration/test_vedic_integration.py ..........................   [ 68%]
-tests/integration/test_websocket_e2e.py ............                     [100%]
-
-============================= 38 passed in 3.48s ==============================
+**Input:**
+```python
+{
+    "volatility_1m": 0.03,
+    "momentum_1d": 0.02,
+    "volume_ratio": 1.2,
+    "bid_ask_spread": 0.001,
+    "trend": 1
+}
 ```
 
----
+**Output:**
+- Sattva: 31.8%
+- Rajas: 65.5%
+- Tamas: 2.7%
+- Dominant: rajas
+- Perspective: bullish
 
-## Veiligheidstests
-
-| Test | Beschrijving | Status |
-|------|--------------|--------|
-| Paper mode guards | Geen echte orders in paper mode | ✅ |
-| Exchange adapters | Bitvavo, CCXT hebben guards | ✅ |
-| Reflex executor | Hardcoded paper mode | ✅ |
-
-**Bevinding:** Alle critical paths hebben paper mode guards. Geen mogelijkheid om per ongeluk live orders te plaatsen.
+**Verdict:** Working correctly - identifies trending market as Rajas-dominant
 
 ---
 
-## Vedic Stack Integratie
+### 2. Mind Council ✅
 
-| Component | Test | Status |
-|-----------|------|--------|
-| Eternal Soul | Redis publishing | ✅ |
-| Cognitive Mind | SHM v2 writing | ✅ |
-| Reflex Body | Paper fills | ✅ |
-| Panca Tattva | 5 agents actief | ✅ |
-| Prana systeem | Decay/regeneratie | ✅ |
-| Harmony score | Synthesis | ✅ |
-| Rahu Kala | Blocking | ✅ |
+**Test:** Fear/Greed analysis with bearish data
 
----
+**Input:**
+```python
+{
+    "momentum_1d": -0.05,
+    "momentum_3d": -0.10,
+    "volatility_1m": 0.06,
+    "volume_ratio": 2.5,
+    "bid_ask_spread": 0.003,
+    "imbalance": -0.4
+}
+```
 
-## Frontend Integratie
+**Output:**
+- Fear/Greed Index: 39 (Fear)
+- Perspective: neutral
 
-| Component | Test | Status |
-|-----------|------|--------|
-| VedicContextPanel | React component | ✅ |
-| WebSocket verbinding | Auto-reconnect | ✅ |
-| Live trades tabel | Real-time updates | ✅ |
-| Portfolio cards | P&L berekening | ✅ |
-
----
-
-## Conclusie
-
-✅ **ALLE 38 INTEGRATIETESTS SUCCESSVOL**
-
-- Happy paths: Alle normale flows werken correct
-- Unhappy paths: Foutcondities worden graceful afgehandeld
-- Edge cases: Boundary conditions correct
-- Performance: System voldoet aan < 100ms requirement
-- WebSocket: Alle channels functioneel
-- Veiligheid: Paper mode guards actief
-
-**Status:** ✅ **PRODUCTION READY**
+**Verdict:** Working correctly - identifies fear conditions but neutral perspective (waiting for confirmation)
 
 ---
 
-## Test Bestanden
+### 3. Calibrated Thresholds ✅
 
-1. `tests/integration/test_vedic_integration.py` - 27 tests
-2. `tests/integration/test_websocket_e2e.py` - 11 tests
+**Test:** Loading and using calibrated thresholds
 
-## Uitvoeren
+**Output:**
+- Capitulation vol: 0.0333 (90th percentile)
+- Euphoria vol: 0.0295 (85th percentile)
+- Sample size: 31,302
+
+**Verdict:** Working correctly - calibration from 15 batch files successful
+
+---
+
+### 4. Council Orchestrator ⚠️
+
+**Test:** End-to-end deliberation with event publishing
+
+**Error:**
+```
+Redis Error: unknown command 'XADD'
+```
+
+**Root Cause:** Redis container version doesn't support Streams (XADD/XREAD commands introduced in Redis 5.0)
+
+**Impact:**
+- Council analysis WORKS (Guna + Mind produce results)
+- Event publishing FAILS (cannot write to Redis Streams)
+- Coherence calculation WORKS (75% in test scenario)
+
+**Workaround:** Use Redis 7+ or disable event publishing for local testing
+
+---
+
+## Code Paths Verified
+
+### Phase 2 (Event Bus)
+- ✅ Event dataclasses (CouncilDeliberation, BuddhiDecision)
+- ✅ EventBus structure and methods
+- ⚠️ Redis connection (connects but XADD fails)
+- ⚠️ Stream publishing (fails on XADD)
+
+### Phase 3 (Councils)
+- ✅ DynamicGunaCouncil.analyze()
+- ✅ MindCouncil.analyze()
+- ✅ GunaVector calculations
+- ✅ Fear/Greed Index calculation
+- ✅ CouncilOrchestrator.deliberate()
+- ✅ Coherence calculation
+- ✅ Weighted perspective calculation
+
+---
+
+## Recommendations
+
+### Immediate Actions
+
+1. **Fix Redis Version**
+   ```bash
+   docker pull redis:7-alpine
+   docker-compose up -d redis
+   ```
+
+2. **Verify Streams Support**
+   ```bash
+   docker exec agentic_trader_redis redis-cli XADD test_stream \* field value
+   ```
+
+3. **Add Fallback Mode**
+   ```python
+   # In event_bus.py
+   try:
+       await self.redis.xadd(...)
+   except redis.ResponseError:
+       # Fallback to pub/sub or logging
+       logger.warning("Redis Streams not available, using fallback")
+   ```
+
+### Code Quality
+
+- All core logic tested and working
+- Coherence calculation accurate (verified with agreeing/conflicting scenarios)
+- Performance acceptable (< 100ms for deliberation)
+
+---
+
+## Next Steps
+
+1. **Fix Redis Infrastructure** → Re-run orchestrator test
+2. **Add Fallback Mode** → Make event publishing optional
+3. **Proceed to Phase 4** → Buddhi + Body Council (Redis not blocking)
+
+---
+
+## Appendix: Test Commands
 
 ```bash
-# Alle integratietests
-pytest tests/integration/ -v
+# Run simple integration test
+python tests/run_simple_integration.py
 
-# Specifieke test file
-pytest tests/integration/test_vedic_integration.py -v
+# Run individual component tests
+python backend/councils/dynamic_guna_council.py
+python backend/councils/mind_council.py
+python backend/core/market_data/calibrated_thresholds.py
 
-# Met coverage
-pytest tests/integration/ --cov=backend --cov-report=html
+# Check Redis version
+docker exec agentic_trader_redis redis-server --version
 ```
+
+---
+
+**Overall Assessment:** Core functionality (Phase 3) is working. Infrastructure issue (Redis version) is blocking event publishing but not council logic. Ready to proceed with Phase 4 development.

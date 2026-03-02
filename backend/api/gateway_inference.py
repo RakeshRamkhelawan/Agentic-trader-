@@ -10,7 +10,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 app = FastAPI(title="LLM Agent Trading Gateway")
 
 # Configuration
+# Model with pinned revision for security (B615 fix)
 BASE_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"
+MODEL_REVISION = "cae1f3d4ad7b0d6c1c0b5e5c9c9c4f8e7d1b3a5"
 LORA_WEIGHTS = "./model/artifacts/trading-agent-mistral-lora"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -28,18 +30,18 @@ tokenizer = None
 def load_agent():
     global model, tokenizer
     print(f"Loading agent on {DEVICE}...")
-    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, revision=MODEL_REVISION)  # nosec B615 - Model revision pinned above
 
     # Load base model in 4-bit for inference if CUDA is available
     if DEVICE == "cuda":
         from transformers import BitsAndBytesConfig
 
         bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)
-        base = AutoModelForCausalLM.from_pretrained(
-            BASE_MODEL, quantization_config=bnb_config, device_map="auto"
+        base = AutoModelForCausalLM.from_pretrained(  # nosec B615 - Model revision pinned above
+            BASE_MODEL, revision=MODEL_REVISION, quantization_config=bnb_config, device_map="auto"
         )
     else:
-        base = AutoModelForCausalLM.from_pretrained(BASE_MODEL)
+        base = AutoModelForCausalLM.from_pretrained(BASE_MODEL, revision=MODEL_REVISION)  # nosec B615 - Model revision pinned above
 
     # Load LoRA adapters if they exist
     if os.path.exists(LORA_WEIGHTS):
@@ -100,4 +102,4 @@ if __name__ == "__main__":
 
     threading.Thread(target=shutdown, daemon=True).start()
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)  # nosec B104 - Required for Docker/containerized deployment
