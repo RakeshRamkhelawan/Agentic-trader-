@@ -1,6 +1,7 @@
 """JWT token handling for authentication."""
 
-from datetime import datetime, timedelta
+import os
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
@@ -18,12 +19,22 @@ class JWTHandler:
 
     def __init__(
         self,
-        secret_key: str = "your-secret-key-change-in-production",
+        secret_key: str | None = None,
         algorithm: str = "HS256",
         access_token_expire_minutes: int = 30,
         refresh_token_expire_days: int = 7,
     ):
-        self.secret_key = secret_key
+        # Get from parameter, env var, or raise error - NEVER use hardcoded default
+        self.secret_key = secret_key or os.getenv("JWT_SECRET_KEY")
+        if not self.secret_key:
+            raise ValueError(
+                "JWT secret key is required. Set JWT_SECRET_KEY environment variable "
+                "or pass secret_key parameter."
+            )
+        if len(self.secret_key) < 32:
+            raise ValueError(
+                "JWT secret key must be at least 32 characters long for security."
+            )
         self.algorithm = algorithm
         self.access_token_expire_minutes = access_token_expire_minutes
         self.refresh_token_expire_days = refresh_token_expire_days
@@ -36,7 +47,7 @@ class JWTHandler:
         additional_claims: dict | None = None,
     ) -> str:
         """Create JWT access token."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expires = now + timedelta(minutes=self.access_token_expire_minutes)
 
         payload = {
@@ -55,7 +66,7 @@ class JWTHandler:
 
     def create_refresh_token(self, user_id: str, tenant_id: str) -> str:
         """Create JWT refresh token."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expires = now + timedelta(days=self.refresh_token_expire_days)
 
         payload = {

@@ -1,6 +1,6 @@
 """Redis caching implementation for competitions."""
 
-import pickle
+import json
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from functools import wraps
@@ -90,12 +90,12 @@ class RedisCache:
         self._redis = MockRedis()  # Replace with redis.Redis() in production
 
     def _serialize(self, value: Any) -> bytes:
-        """Serialize value to bytes."""
-        return pickle.dumps(value)
+        """Serialize value to bytes using JSON (safe, no code execution)."""
+        return json.dumps(value, default=str).encode('utf-8')
 
     def _deserialize(self, value: bytes) -> Any:
-        """Deserialize bytes to value."""
-        return pickle.loads(value)
+        """Deserialize bytes to value using JSON (safe, no code execution)."""
+        return json.loads(value.decode('utf-8'))
 
     def get(self, key: str) -> Any | None:
         """Get value from cache."""

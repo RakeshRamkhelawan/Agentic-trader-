@@ -163,19 +163,19 @@ class JWTValidator:
         signing_key = await self._get_signing_key(token)
 
         try:
-            if signing_key:
-                # Verify with JWKS key
-                payload = jwt.decode(
-                    token,
-                    signing_key,
-                    algorithms=self.algorithms,
-                    audience=self.audience,
-                    issuer=self.issuer,
-                )
-            else:
-                # Fallback: decode without signature verification (dev mode)
-                logger.warning("No signing key found, decoding without verification")
-                payload = jwt.get_unverified_claims(token)
+            if not signing_key:
+                # NEVER allow unverified tokens in production
+                logger.error("No signing key found for token validation")
+                raise InvalidSignatureError("Unable to verify token signature: no signing key available")
+            
+            # Verify with JWKS key
+            payload = jwt.decode(
+                token,
+                signing_key,
+                algorithms=self.algorithms,
+                audience=self.audience,
+                issuer=self.issuer,
+            )
 
             return self._extract_payload(payload)
 
