@@ -92,7 +92,7 @@ services:
   clickhouse:
     ports:
       - "5000:8123"  # ✅ Host:5000 → Container:8123
-  
+
   redpanda:
     ports:
       - "6000:9092"  # ✅ Host:6000 → Container:9092
@@ -194,6 +194,6 @@ Bij vragen over poortallocatie:
 
 ---
 
-**Laatst bijgewerkt:** 28 februari 2026  
-**Versie:** 3.0  
+**Laatst bijgewerkt:** 28 februari 2026
+**Versie:** 3.0
 **Status:** CRITICAL

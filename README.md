@@ -11,7 +11,7 @@
 [![Tests](https://img.shields.io/badge/tests-734+-success.svg)](docs/TESTING.md)
 [![Coverage](https://img.shields.io/badge/coverage-88%25-brightgreen.svg)](docs/TESTING.md)
 [![Security](https://img.shields.io/badge/security-88%2F100-brightgreen.svg)](docs/SECURITY_RUNBOOK.md)
-[![Docker](https://img.shields.io/badge/docker-ready-blue.svg?logo=docker)](DOCKER.md)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg?logo=docker)](docs/operations/DOCKER.md)
 
 [🚀 Quick Start](#quick-start) • [📚 Documentation](#documentation) • [🧪 Testing](#testing) • [🔒 Security](#security) • [🤝 Contributing](#contributing)
 
@@ -97,7 +97,7 @@ npm install
 npm run dev
 ```
 
-📖 **Detailed Setup**: [QUICK_START.md](QUICK_START.md) | [DOCKER.md](DOCKER.md)
+📖 **Detailed Setup**: [Quick Start](docs/guides/QUICK_START.md) | [Docker Guide](docs/operations/DOCKER.md)
 
 ---
 

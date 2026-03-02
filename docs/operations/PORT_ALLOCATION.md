@@ -1,7 +1,7 @@
 # Agentic Trader Platform - Complete Port Allocation Reference
 
-> **Laatst bijgewerkt:** 28 februari 2026  
-> **Versie:** 2.1  
+> **Laatst bijgewerkt:** 28 februari 2026
+> **Versie:** 2.1
 > **Status:** Production Ready
 
 ---
@@ -612,11 +612,11 @@ services:
   api:
     ports:
       - "8001:8000"  # Host:8001 → Container:8000
-  
+
   postgres:
     ports:
       - "5433:5432"  # Host:5433 → Container:5432
-  
+
   redis:
     ports:
       - "6380:6379"  # Host:6380 → Container:6379
@@ -642,5 +642,5 @@ REDIS_URL=redis://localhost:6380/0
 
 ---
 
-*Document aangemaakt: 28 februari 2026*  
+*Document aangemaakt: 28 februari 2026*
 *Auteur: Agentic Trader Platform Team*

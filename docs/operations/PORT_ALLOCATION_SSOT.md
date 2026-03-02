@@ -1,9 +1,9 @@
 # 🔒 PORT ALLOCATION - SINGLE SOURCE OF TRUTH (SSoT)
 
-> **⚠️ VERPLICHT DOCUMENT**  
-> **Status:** CRITICAL  
-> **Versie:** 3.0  
-> **Laatst bijgewerkt:** 28 februari 2026  
+> **⚠️ VERPLICHT DOCUMENT**
+> **Status:** CRITICAL
+> **Versie:** 3.0
+> **Laatst bijgewerkt:** 28 februari 2026
 > **Leeswijze:** ELKE AI agent/LLM MOET dit document volledig doornemen voor elke taak met betrekking tot:
 > - Docker Compose configuratie
 > - Environment variables
@@ -97,7 +97,7 @@ ports:
 clickhouse:
   ports:
     - "5000:8123"  # Host:5000 → Container:8123
-  
+
 # ✅ CORRECT: Grafana
 grafana:
   ports:
@@ -376,6 +376,6 @@ Poort wijziging volgens PORT_ALLOCATION_SSOT.md v3.0
 
 **⚠️ BELANGRIJK:** Dit document is de **enige bron van waarheid**. Bij twijfel, raadpleeg dit document. Bij conflicten, wijzig dit document niet zonder goedkeuring.
 
-*Laatst bijgewerkt: 28 februari 2026*  
-*Auteur: Agentic Trader Platform Team*  
+*Laatst bijgewerkt: 28 februari 2026*
+*Auteur: Agentic Trader Platform Team*
 *Status: CRITICAL - VERPLICHT*

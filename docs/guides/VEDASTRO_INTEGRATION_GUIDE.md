@@ -97,19 +97,19 @@ async def main():
         min_coherence=0.6,
         tamas_threshold=0.5
     )
-    
+
     # Pre-calculate Kundli's (one-time at startup)
     await orchestrator.initialize(assets=['BTC', 'ETH'])
-    
+
     # Process market tick
     tick = {
         'symbol': 'BTC',
         'price': 43250.50,
         'volume': 1234567
     }
-    
+
     result = await orchestrator.process_market_tick('BTC', tick)
-    
+
     print(f"Decision: {result['decision']['action']}")
     print(f"Confidence: {result['decision']['confidence']:.2f}")
     print(f"Alignment: {result['alignment_score']:.2f}")
