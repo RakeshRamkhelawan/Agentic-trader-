@@ -27,26 +27,35 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Relationships
+    # Relationships - using selectin loading to prevent N+1 query issues.
+    # selectin is preferred over joined for async SQLAlchemy and multiple collections.
     profile = relationship(
         "UserProfile",
         back_populates="user",
         uselist=False,
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
     security = relationship(
         "UserSecurity",
         back_populates="user",
         uselist=False,
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
     preferences = relationship(
         "UserPreferences",
         back_populates="user",
         uselist=False,
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
-    api_keys = relationship("APIKey", back_populates="user", cascade="all, delete-orphan")
+    api_keys = relationship(
+        "APIKey",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
 
 class UserProfile(Base):

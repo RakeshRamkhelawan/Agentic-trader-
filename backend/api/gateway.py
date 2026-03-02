@@ -115,10 +115,20 @@ class TokenCacheEntry:
 
 class RateLimiter:
     """
-    Redis-backed rate limiter per API key (Fixed Window).
+    Redis-backed rate limiter per API key (Fixed Window) with Circuit Breaker.
+
     Uses Redis pipeline for batch operations.
-    Falls back to in-memory if Redis is not configured.
+    Falls back to a STRICT local limit when Redis is unavailable (circuit breaker).
+
+    Circuit Breaker States:
+    - CLOSED: Normal operation via Redis
+    - OPEN: Redis unavailable, using strict local limit (25% of normal rate)
+    - HALF_OPEN: Trying Redis again after cooldown period
     """
+
+    # Circuit breaker configuration
+    CIRCUIT_OPEN_DURATION = 30  # seconds before trying Redis again
+    MAX_FAILURES = 3  # failures before opening circuit
 
     def __init__(
         self,
@@ -131,14 +141,18 @@ class RateLimiter:
         self.use_pipeline = use_pipeline
         self.redis: redis.Redis | None = None
         self._local_history: dict[str, list[float]] = {}
-        self._pipeline_buffer: list[tuple] = []
-        self._pipeline_batch_size = 10
+
+        # Circuit breaker state
+        self._failure_count = 0
+        self._circuit_open_until = 0.0
+        # Degraded limit: 25% of normal, minimum 10 requests/min
+        self._degraded_limit = max(10, requests_per_minute // 4)
 
         if self.redis_url:
             try:
                 self.redis = redis.from_url(
-                    self.redis_url, 
-                    encoding="utf-8", 
+                    self.redis_url,
+                    encoding="utf-8",
                     decode_responses=True,
                     max_connections=50,
                     socket_connect_timeout=5,
@@ -148,50 +162,106 @@ class RateLimiter:
             except Exception as e:
                 _logger.error(f"Failed to initialize Redis Rate Limiter: {e}")
 
-    async def is_allowed(self, api_key: str) -> bool:
-        """Check if API key can make a request (Async)."""
-        if self.redis:
-            try:
-                key = f"rate_limit:{api_key}"
+    def _get_circuit_state(self) -> str:
+        """Get current circuit breaker state."""
+        if self._failure_count < self.MAX_FAILURES:
+            return "CLOSED"
+        if time.time() < self._circuit_open_until:
+            return "OPEN"
+        return "HALF_OPEN"
 
-                if self.use_pipeline:
-                    # Use pipeline for atomic operations
-                    pipe = self.redis.pipeline()
-                    pipe.incr(key)
-                    pipe.ttl(key)
-                    results = await pipe.execute()
-                    count = results[0]
-                    ttl = results[1]
+    def _on_redis_success(self):
+        """Reset circuit breaker on successful Redis operation."""
+        if self._failure_count > 0:
+            _logger.info("Rate limiter circuit breaker: Redis recovered, closing circuit")
+        self._failure_count = 0
+        self._circuit_open_until = 0.0
 
-                    # Set expiry if new key or TTL is -1 (no expiry)
-                    if count == 1 or ttl == -1:
-                        await self.redis.expire(key, 60)
-                else:
-                    # Atomic INCR
-                    count = await self.redis.incr(key)
+    def _on_redis_failure(self, error: Exception):
+        """Track Redis failure and potentially open circuit."""
+        self._failure_count += 1
+        if self._failure_count >= self.MAX_FAILURES:
+            self._circuit_open_until = time.time() + self.CIRCUIT_OPEN_DURATION
+            _logger.warning(
+                "Rate limiter circuit breaker OPEN: Redis failed %d times. "
+                "Using degraded local limit (%d req/min) for %ds. Error: %s",
+                self._failure_count,
+                self._degraded_limit,
+                self.CIRCUIT_OPEN_DURATION,
+                error,
+            )
 
-                    # Set expiry on first request
-                    if count == 1:
-                        await self.redis.expire(key, 60)
+    async def _check_redis(self, api_key: str) -> bool | None:
+        """Try Redis rate limiting. Returns None if Redis unavailable."""
+        if not self.redis:
+            return None
 
-                return count <= self.requests_per_minute
-            except Exception as e:
-                _logger.error(f"Redis rate limit check failed: {e}. Falling back to in-memory.")
+        try:
+            key = f"rate_limit:{api_key}"
 
-        # In-memory fallback (Same logic as before)
+            if self.use_pipeline:
+                pipe = self.redis.pipeline()
+                pipe.incr(key)
+                pipe.ttl(key)
+                results = await pipe.execute()
+                count = results[0]
+                ttl = results[1]
+
+                if count == 1 or ttl == -1:
+                    await self.redis.expire(key, 60)
+            else:
+                count = await self.redis.incr(key)
+                if count == 1:
+                    await self.redis.expire(key, 60)
+
+            self._on_redis_success()
+            return count <= self.requests_per_minute
+        except Exception as e:
+            self._on_redis_failure(e)
+            return None
+
+    def _check_local(self, api_key: str, limit: int) -> bool:
+        """Local in-memory rate limiting with specified limit."""
         current_time = time.time()
         cutoff_time = current_time - 60
 
         if api_key not in self._local_history:
             self._local_history[api_key] = []
 
-        self._local_history[api_key] = [t for t in self._local_history[api_key] if t > cutoff_time]
+        self._local_history[api_key] = [
+            t for t in self._local_history[api_key] if t > cutoff_time
+        ]
 
-        if len(self._local_history[api_key]) >= self.requests_per_minute:
+        if len(self._local_history[api_key]) >= limit:
             return False
 
         self._local_history[api_key].append(current_time)
         return True
+
+    async def is_allowed(self, api_key: str) -> bool:
+        """Check if API key can make a request (Async) with circuit breaker."""
+        circuit_state = self._get_circuit_state()
+
+        if circuit_state == "CLOSED":
+            # Normal operation: try Redis
+            result = await self._check_redis(api_key)
+            if result is not None:
+                return result
+            # Redis failed, fall through to degraded local limit
+            return self._check_local(api_key, self._degraded_limit)
+
+        elif circuit_state == "OPEN":
+            # Circuit open: use strict local limit only
+            return self._check_local(api_key, self._degraded_limit)
+
+        else:  # HALF_OPEN
+            # Try Redis once to see if it recovered
+            _logger.info("Rate limiter circuit breaker HALF_OPEN: testing Redis...")
+            result = await self._check_redis(api_key)
+            if result is not None:
+                return result
+            # Still failing, back to degraded
+            return self._check_local(api_key, self._degraded_limit)
 
 
 # ============================================
