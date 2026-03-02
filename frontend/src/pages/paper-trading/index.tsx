@@ -18,6 +18,8 @@ import {
   PaperPortfolioStats,
   PaperTradeHistory,
   PaperSessionControls,
+  PaperOrderPanel,
+  PaperActiveOrders,
 } from '@/components/paper-trading';
 import usePaperTradingStore from '@/store/paper-trading';
 import { usePaperTradingWebSocket } from '@/hooks/paper-trading/usePaperTradingWebSocket';
@@ -72,27 +74,31 @@ export default function PaperTradingPage() {
         <>
           <PaperPortfolioStats />
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <PaperTradeHistory />
-            
-            {/* Placeholder for future components */}
-            <Card className="border-dashed">
-              <CardHeader>
-                <CardTitle>Coming Soon</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  More features will be added in upcoming updates:
-                </p>
-                <ul className="list-disc list-inside mt-2 text-sm text-muted-foreground">
-                  <li>Trading Chart with real-time prices</li>
-                  <li>Manual Order Placement</li>
-                  <li>Active Orders Management</li>
-                  <li>AI Advisor Integration</li>
-                  <li>Agent Status Monitor</li>
-                </ul>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <PaperTradeHistory />
+              <PaperActiveOrders />
+            </div>
+            <div className="space-y-6">
+              <PaperOrderPanel />
+              
+              {/* Placeholder for future components */}
+              <Card className="border-dashed">
+                <CardHeader>
+                  <CardTitle>Coming Soon</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-sm">
+                    More features coming:
+                  </p>
+                  <ul className="list-disc list-inside mt-2 text-xs text-muted-foreground">
+                    <li>Trading Chart</li>
+                    <li>AI Advisor</li>
+                    <li>Agent Status</li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </>
       )}
