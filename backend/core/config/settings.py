@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: list[str] = Field(
         default=[],
         validation_alias="BACKEND_CORS_ORIGINS",
-        description="Allowed CORS origins. In dev: ["http://localhost:3000"]. In prod: specific domains only.",
+        description="Allowed CORS origins. In dev: ['http://localhost:3000']. In prod: specific domains only.",
     )
     ALLOWED_ORIGINS: list[str] = Field(
         default=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -69,32 +69,34 @@ class Settings(BaseSettings):
     REVOLUT_PRIVATE_KEY_PATH: str = "revolut_private.pem"
     REVOLUT_SANDBOX: bool = True
     # JWT Secret - REQUIRED, no fallback for security
-    JWT_SECRET_KEY: str = Field(
+    # Named jwt_secret_key_raw to avoid conflict with the @property JWT_SECRET_KEY
+    jwt_secret_key_raw: str = Field(
         ...,  # Required field, no default
         validation_alias="JWT_SECRET_KEY",
         description="JWT signing secret - MUST be set via environment variable (min 32 chars)",
         min_length=32,
     )
 
-    _database_url: str | None = None  # Deprecated, use env field below
+
+
     DATABASE_URL_ENV: str | None = Field(None, validation_alias="DATABASE_URL")
-    
+
     # --- DATABASE CONNECTION POOLING ---
     DB_POOL_SIZE: int = Field(
-        default=10, 
-        ge=5, 
+        default=10,
+        ge=5,
         le=50,
         description="Database connection pool size"
     )
     DB_MAX_OVERFLOW: int = Field(
-        default=20, 
-        ge=0, 
+        default=20,
+        ge=0,
         le=30,
         description="Max overflow connections beyond pool_size"
     )
     DB_POOL_TIMEOUT: int = Field(
-        default=30, 
-        ge=5, 
+        default=30,
+        ge=5,
         le=60,
         description="Seconds to wait for connection from pool"
     )
@@ -211,8 +213,8 @@ class Settings(BaseSettings):
             value = self._vault_manager.get_secret("auth", "jwt_secret")
             if value:
                 return value
-        # No fallback default - must be explicitly set in .env or Vault
-        return self.JWT_SECRET_KEY_ENV or self._jwt_secret_key or ""
+        # Use the Pydantic-validated field (required, min 32 chars)
+        return self.jwt_secret_key_raw
 
     @property
     def DATABASE_URL(self) -> str:
@@ -223,7 +225,6 @@ class Settings(BaseSettings):
                 return value
         return (
             self.DATABASE_URL_ENV
-            or self._database_url
             or "postgresql+asyncpg://localhost:5432/agentic_trader"
         )
 
