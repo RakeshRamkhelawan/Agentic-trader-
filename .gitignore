@@ -29,6 +29,7 @@ venv/
 env/
 ENV/
 .venv/
+.venv*/
 
 # ============================================================================
 # IDE / EDITORS
@@ -43,11 +44,16 @@ Thumbs.db
 desktop.ini
 
 # ============================================================================
-# LOGS
+# LOGS & TEMP
 # ============================================================================
 *.log
 logs/
 *.out
+*.tmp
+*.temp
+*.bak
+*.orig
+nul
 
 # ============================================================================
 # TESTING & COVERAGE
@@ -59,6 +65,7 @@ htmlcov/
 .benchmarks/
 .tox/
 .nox/
+.hypothesis/
 
 # ============================================================================
 # CACHE
@@ -84,6 +91,7 @@ __pycache__/
 *.db
 *.sqlite
 *.sqlite3
+*.duckdb
 
 # ============================================================================
 # SECRETS - NEVER COMMIT THESE!
@@ -98,6 +106,7 @@ id_rsa
 id_dsa
 id_ecdsa
 id_ed25519
+*.env
 
 # ============================================================================
 # SSL CERTIFICATES
@@ -106,37 +115,35 @@ ssl/
 *.csr
 
 # ============================================================================
-# BACKTEST RESULTS & LOGS
+# ML MODELS & BINARIES (managed by Git LFS)
+# ============================================================================
+*.pt
+*.pth
+*.h5
+*.pb
+*.onnx
+*.mlmodel
+*.pkl
+*.pickle
+*.joblib
+models/*.pt
+models/*.pth
+models/*.h5
+
+# ============================================================================
+# BACKTEST & SESSION DATA
 # ============================================================================
 backtest_results/
 backtest_logs/
 backtest_results/*.csv
 backtest_results/*.json
-backtest_results/*.pt
-backtest_results/*.joblib
-
-# ============================================================================
-# PAPER TRADING SESSIONS
-# ============================================================================
 paper_trading_session_*.json
 real_paper_session_*.json
 realtime_paper_session_*.json
 paper_trading_analytics/
-paper_trading_*.log
 
 # ============================================================================
-# MODEL TRAINING
-# ============================================================================
-models/production/history_*.json
-models/production/*.log
-models/production/*.log.error
-*.pt
-*.joblib
-*.pkl
-*.pickle
-
-# ============================================================================
-# DATA DIRECTORIES
+# DATA DIRECTORIES (only keep essential schema files)
 # ============================================================================
 data/backup/
 data/processed/
@@ -144,25 +151,17 @@ data/episodic_memory/
 data/ab_testing/
 
 # ============================================================================
-# REPORTS
+# REPORTS & OUTPUTS
 # ============================================================================
 reports/
+*.pdf
+analysis/
 
 # ============================================================================
 # SECURITY SCANS
 # ============================================================================
 bandit*.json
-bandit-report.json
 safety_report.json
-
-# ============================================================================
-# TEMPORARY FILES
-# ============================================================================
-*.tmp
-*.temp
-*.bak
-*.orig
-*.session
 
 # ============================================================================
 # NODE.JS / FRONTEND
@@ -173,90 +172,27 @@ yarn-debug.log*
 yarn-error.log*
 frontend/dist/
 frontend/build/
+frontend/.cache/
 
 # ============================================================================
-# AI / DEV TOOLS
+# AI / DEV TOOLS (personal preference)
 # ============================================================================
+.claude/
 .continue/
 .gemini/
-.claude/
 .mcp-debug-tools/
 .qoder/
 .serena/
 
 # ============================================================================
-# TEST ARTIFACTS (root level)
-# ============================================================================
-test_*.log
-test_*.py
-verify_*.log
-verify_*.py
-verification*.log
-trading_engine*.log
-training_output.log
-v*_full_output.log
-epic*_full.txt
-fase*_full.txt
-handover_full.txt
-
-# ============================================================================
-# ANALYSIS SCRIPTS (root level - dev only)
-# ============================================================================
-analyze_*.py
-generate_*.py
-check_*.py
-diagnose_*.py
-extract_*.py
-read_*.py
-verify_*.py
-reproduce_*.py
-import_*.py
-force_apply_*.py
-setup_app_user.py
-start_*.py
-run_*.py
-
-# ============================================================================
-# OLD/DEPRECATED
+# DEPRECATED / OLD
 # ============================================================================
 frontend_old/
 prediction-market-analysis/
 prompts/
-libs/
-analysis/
-cache/
-downloads/
-logs/
-model/
-tests/
-
-# ============================================================================
-# DOCUMENTATION ARCHIVE (historical docs - keep locally but not in git)
-# ============================================================================
-WEEK*_IMPLEMENTATION_SUMMARY.md
-FASE*_IMPLEMENTATION_SUMMARY.md
-V*_RESULTS_SUMMARY.md
-*_AUDIT_REPORT.md
-*_FIXES_SUMMARY.md
-*_IMPLEMENTATION_PLAN.md
-MASTERPROMPT*.md
-MASTER_PROMPTS_INDEX.md
-PRD_*.md
-PROMPTS_*.md
-GTM_*.md
-BELANGRIJK*
-
-# ============================================================================
-# PDF AND BINARY REPORTS
-# ============================================================================
-*.pdf
-*.xlsx
-*.xls
 
 # ============================================================================
 # MISC
 # ============================================================================
-nul
 installed_packages.txt
 project_files_list.txt
-REPOSITORY_CLEANUP_PROPOSAL.md

@@ -31,9 +31,9 @@ if (!API_URL) {
 
 if (isDevMode) {
   console.warn(
-    '[DEVELOPMENT MODE] Missing Auth0 configuration.\n' +
-    'Running in development mode without authentication.\n' +
-    'Set AUTH_DISABLED=true in backend .env for full dev mode.'
+    '[DEVELOPMENT MODE] Running in Vite dev server without Auth0.\n' +
+    'Authentication is bypassed for local development.\n' +
+    'This mode is impossible in production builds (guard in config.ts).'
   );
 }
 
@@ -41,13 +41,13 @@ if (isDevMode) {
 const auth0Config = isDevMode
   ? null
   : {
-      domain: AUTH0_DOMAIN,
-      clientId: AUTH0_CLIENT_ID,
-      authorizationParams: {
-        redirect_uri: window.location.origin,
-        audience: AUTH0_AUDIENCE,
-      },
-    };
+    domain: AUTH0_DOMAIN,
+    clientId: AUTH0_CLIENT_ID,
+    authorizationParams: {
+      redirect_uri: window.location.origin,
+      audience: AUTH0_AUDIENCE,
+    },
+  };
 
 // Initialize app data when user authenticates
 function AppInitializer() {
