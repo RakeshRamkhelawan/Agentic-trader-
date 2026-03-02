@@ -84,26 +84,26 @@ async def test_ooda():
 async def test_websocket():
     """Test WebSocket connection."""
     import aiohttp
-    
+
     try:
         session = aiohttp.ClientSession()
         ws = await session.ws_connect(f"{API_BASE.replace('http', 'ws')}/ws")
-        
+
         # Subscribe to ticker
         await ws.send_json({"type": "subscribe", "channel": "ticker.BTC-EUR"})
-        
+
         # Wait for response
         msg = await asyncio.wait_for(ws.receive(), timeout=5)
-        
+
         if msg.type == aiohttp.WSMsgType.TEXT:
             data = msg.json()
             print(f"  Connected: {data.get('type')}")
             print(f"  Connection ID: {data.get('connection_id', 'N/A')[:8]}...")
-        
+
         await ws.close()
         await session.close()
         return True
-        
+
     except Exception as e:
         print(f"  Error: {e}")
         return False
@@ -117,7 +117,7 @@ async def run_tests():
     print(f"Base URL: {API_BASE}")
     print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
-    
+
     tests = [
         ("Health Check", test_health),
         ("Markets", test_markets),
@@ -126,9 +126,9 @@ async def run_tests():
         ("OODA Cycle", test_ooda),
         ("WebSocket", test_websocket),
     ]
-    
+
     results = []
-    
+
     for name, test_func in tests:
         print(f"[TEST] {name}")
         try:
@@ -140,23 +140,23 @@ async def run_tests():
             print(f"  [FAIL] {e}")
             results.append((name, False))
         print()
-    
+
     # Summary
     print("=" * 60)
     print("SUMMARY")
     print("=" * 60)
-    
+
     passed = sum(1 for _, r in results if r)
     failed = sum(1 for _, r in results if not r)
-    
+
     for name, result in results:
         status = "[PASS]" if result else "[FAIL]"
         print(f"{status} {name}")
-    
+
     print()
     print(f"Passed: {passed}/{len(results)}")
     print("=" * 60)
-    
+
     return failed == 0
 
 

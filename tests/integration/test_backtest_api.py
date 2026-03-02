@@ -26,9 +26,9 @@ client = TestClient(app)
 def test_run_backtest():
     start_date = (datetime.now() - timedelta(days=30)).isoformat()
     end_date = datetime.now().isoformat()
-    
+
     headers = {"Authorization": "Bearer mock-token"}
-    
+
     payload = {
         "strategy_name": "MovingAverage",
         "symbols": ["BTC/USD"],
@@ -37,21 +37,21 @@ def test_run_backtest():
         "initial_capital": 10000.0,
         "timeframe": "1d"
     }
-    
+
     print(f"Testing Backtest API with payload: {payload}")
-    
+
     response = client.post("/api/v1/backtest/run", json=payload, headers=headers)
-    
+
     if response.status_code != 200:
         print(f"Request failed: {response.status_code}")
         print(response.json())
         sys.exit(1)
-        
+
     data = response.json()
     metrics = data.get("metrics")
     equity_curve = data.get("equity_curve")
     trades = data.get("trades")
-    
+
     print("\n--- Backtest Results ---")
     print(f"Total Return: {metrics['total_return']*100:.2f}%")
     print(f"CAGR: {metrics['cagr']*100:.2f}%")
@@ -59,10 +59,10 @@ def test_run_backtest():
     print(f"Max Drawdown: {metrics['max_drawdown']*100:.2f}%")
     print(f"Total Trades: {metrics.get('total_trades', len(trades))}")
     print(f"Final Equity: {equity_curve[-1]['equity']:.2f}")
-    
+
     assert metrics['total_return'] is not None
     assert len(equity_curve) > 0
-    
+
     print("\nSUCCESS: Backtest API Verified!")
 
 if __name__ == "__main__":

@@ -30,11 +30,11 @@ async def test_elemental_manager():
     print("\n" + "=" * 60)
     print("TEST 1: ElementalAgentManagerV18")
     print("=" * 60)
-    
+
     async with MCPClientWrapper() as client:
         manager = ElementalAgentManagerV18(client)
         await manager.initialize()
-        
+
         # Test consensus
         print("\n1. Testing Elemental Consensus...")
         result = await manager.get_elemental_consensus(
@@ -46,11 +46,11 @@ async def test_elemental_manager():
         print(f"   Harmony: {result.get('harmony_score', 0):.2f}")
         print(f"   Approved: {result.get('approved', False)}")
         print(f"   Dominant: {result.get('dominant_element', 'unknown')}")
-        
+
         # Test entry evaluation
         print("\n2. Testing Entry Evaluation...")
         price_history = [100.0 + i * 0.5 for i in range(30)]
-        
+
         entry = await manager.evaluate_entry(
             symbol="AAPL",
             current_price=150.0,
@@ -59,17 +59,17 @@ async def test_elemental_manager():
             dominant_planet="JUPITER",
             price_history=price_history
         )
-        
+
         if entry:
             print(f"   Entry approved!")
             print(f"   Position size: €{entry['position_size']:.2f}")
             print(f"   Quantity: {entry['quantity']:.2f}")
         else:
             print("   Entry blocked")
-        
+
         # Test exit evaluation
         print("\n3. Testing Exit Evaluation...")
-        
+
         # Manually add a position
         manager.open_positions["TEST"] = {
             "entry_date": (datetime.utcnow() - timedelta(days=65)).isoformat(),
@@ -77,17 +77,17 @@ async def test_elemental_manager():
             "quantity": 10.0
         }
         manager.peak_prices["TEST"] = 140.0
-        
+
         should_exit, reason = await manager.evaluate_exit(
             symbol="TEST",
             current_price=120.0
         )
-        
+
         print(f"   Should exit: {should_exit}")
         print(f"   Reason: {reason}")
-        
+
         await manager.close()
-    
+
     print("\n✓ ElementalManagerV18 test complete")
 
 
@@ -96,23 +96,23 @@ async def test_backtest_engine():
     print("\n" + "=" * 60)
     print("TEST 2: BacktestEngineV18")
     print("=" * 60)
-    
+
     start_date = datetime(2024, 1, 1)
     end_date = datetime(2024, 1, 31)
     symbols = ["AAPL", "MSFT", "GOOGL"]
-    
+
     print(f"\nRunning backtest:")
     print(f"  Period: {start_date.date()} to {end_date.date()}")
     print(f"  Symbols: {', '.join(symbols)}")
     print(f"  Initial cash: €50,000")
-    
+
     results = await run_backtest_v18(
         symbols=symbols,
         start_date=start_date,
         end_date=end_date,
         initial_cash=50000.0
     )
-    
+
     print("\n" + "-" * 60)
     print("BACKTEST RESULTS")
     print("-" * 60)
@@ -123,7 +123,7 @@ async def test_backtest_engine():
     print(f"Gross P&L: €{results['results']['gross_pnl']:,.2f}")
     print(f"Commissions: €{results['results']['total_commission']:,.2f}")
     print(f"Net P&L: €{results['results']['net_pnl']:,.2f}")
-    
+
     # Show some trades
     if results['trades']:
         print("\nSample trades:")
@@ -132,9 +132,9 @@ async def test_backtest_engine():
             symbol = trade['symbol']
             price = trade['price']
             print(f"  {action} {symbol} @ ${price:.2f}")
-    
+
     print("\n✓ BacktestEngineV18 test complete")
-    
+
     return results
 
 
@@ -143,7 +143,7 @@ async def test_mcp_tools_directly():
     print("\n" + "=" * 60)
     print("TEST 3: Direct MCP Tool Calls")
     print("=" * 60)
-    
+
     async with MCPClientWrapper() as client:
         # Test Fire position sizing
         print("\n1. Fire Position Sizing...")
@@ -159,7 +159,7 @@ async def test_mcp_tools_directly():
         )
         print(f"   Position size: €{result.get('position_size_eur', 0):.2f}")
         print(f"   Max allowed: €{result.get('max_position_eur', 0):.2f}")
-        
+
         # Test Earth entry check
         print("\n2. Earth Entry Check...")
         result = await client.call_tool(
@@ -173,7 +173,7 @@ async def test_mcp_tools_directly():
             }
         )
         print(f"   Can enter: {result.get('can_enter', False)}")
-        
+
         # Test VedAstro signal
         print("\n3. VedAstro Signal...")
         result = await client.call_tool(
@@ -185,7 +185,7 @@ async def test_mcp_tools_directly():
         )
         print(f"   Signal: {result.get('signal', 'UNKNOWN')}")
         print(f"   Confidence: {result.get('confidence', 0)}%")
-        
+
         # Test execution
         print("\n4. Paper Trade Execution...")
         result = await client.call_tool(
@@ -201,13 +201,13 @@ async def test_mcp_tools_directly():
         print(f"   Order ID: {result.get('order_id', 'N/A')}")
         print(f"   Status: {result.get('status', 'N/A')}")
         print(f"   Commission: €{result.get('commission', 0):.4f}")
-        
+
         # Test health check
         print("\n5. System Health Check...")
         result = await client.call_tool("system__health_check", {})
         print(f"   Status: {result.get('status', 'UNKNOWN')}")
         print(f"   Circuit breakers: {len(result.get('circuit_breaker_states', {}))}")
-    
+
     print("\n✓ Direct MCP tool calls test complete")
 
 
@@ -216,27 +216,27 @@ async def compare_v17_v18():
     print("\n" + "=" * 60)
     print("COMPARISON: V17 vs V18 Architecture")
     print("=" * 60)
-    
+
     print("\nV17 (Old):")
     print("  - Direct agent method calls")
     print("  - Tightly coupled components")
     print("  - No failure isolation")
     print("  - Hardcoded backtest loop")
-    
+
     print("\nV18 (New):")
     print("  - MCP tool calls via stdio/SSE")
     print("  - Decoupled via ToolBroker")
     print("  - Circuit breakers for resilience")
     print("  - LLM orchestration support")
     print("  - Same V17 financial constraints")
-    
+
     print("\nKey improvements:")
     print("  ✓ Better error isolation")
     print("  ✓ Retry logic with backoff")
     print("  ✓ LLM can orchestrate tools")
     print("  ✓ External tools easy to add")
     print("  ✓ Standard MCP protocol")
-    
+
     print("\nPreserved:")
     print("  ✓ €2,000 max position size")
     print("  ✓ 60-day failsafe")
@@ -251,33 +251,33 @@ async def main():
     print("\n" + "=" * 60)
     print("BACKTEST V18 - MCP INTEGRATION TEST SUITE")
     print("=" * 60)
-    
+
     try:
         # Test 1: Elemental Manager
         await test_elemental_manager()
-        
+
         # Test 2: Backtest Engine
         results = await test_backtest_engine()
-        
+
         # Test 3: Direct tool calls
         await test_mcp_tools_directly()
-        
+
         # Comparison
         await compare_v17_v18()
-        
+
         # Save results
         output_file = Path("backtest_v18_results.json")
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2, default=str)
-        
+
         print(f"\n✓ Results saved to {output_file}")
-        
+
         print("\n" + "=" * 60)
         print("ALL TESTS COMPLETED SUCCESSFULLY!")
         print("=" * 60)
-        
+
         return 0
-    
+
     except Exception as e:
         logger.error(f"Test failed: {e}")
         import traceback

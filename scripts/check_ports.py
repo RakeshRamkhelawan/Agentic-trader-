@@ -21,7 +21,7 @@ DOCKER_PORTS = [
     ("ChromaDB", 8005, "Vector DB"),
     ("Prometheus", 9091, "Metrics"),
     ("Grafana", 3100, "Dashboards"),
-    
+
     # Application
     ("API Server", 8000, "FastAPI Backend"),
     ("Federated Triad", 8001, "AI Service"),
@@ -78,13 +78,13 @@ def main():
     print("  DOCKER PORT CONFLICT CHECKER")
     print("=" * 60)
     print()
-    
+
     print(f"Checking {len(DOCKER_PORTS)} ports...")
     print()
-    
+
     conflicts = []
     available = []
-    
+
     for service, port, description in DOCKER_PORTS:
         if check_port(port):
             process = get_process_using_port(port)
@@ -94,14 +94,14 @@ def main():
         else:
             print(f"[OK] Port {port:5d} - {service:20s} [AVAILABLE]")
             available.append((service, port, description))
-    
+
     # Summary
     print()
     print("=" * 60)
     print("  SUMMARY")
     print("=" * 60)
     print()
-    
+
     if not conflicts:
         print("[SUCCESS] All ports are available!")
         print("   You can start Docker without conflicts.")
@@ -109,14 +109,14 @@ def main():
     else:
         print(f"[WARNING] Found {len(conflicts)} port conflicts!")
         print()
-        
+
         print("Conflicting Ports:")
         print("-" * 60)
         for service, port, process, desc in conflicts:
             proc_str = f"({process})" if process else ""
             print(f"  {service:20s} Port {port:5d} {proc_str}")
         print()
-        
+
         print("Suggested Alternative Ports:")
         print("-" * 60)
         for service, port, process, desc in conflicts:
@@ -128,19 +128,19 @@ def main():
             print(f"    Original:  {port}")
             print(f"    Suggested: {suggested}")
             print()
-        
+
         print("To resolve conflicts:")
         print("  1. Stop the conflicting services")
         print("  2. Use: docker-compose -p agentic-trader up -d")
         print("  3. Or modify docker-compose.yml ports")
         print()
-    
+
     # Check Docker
     print("=" * 60)
     print("  DOCKER STATUS")
     print("=" * 60)
     print()
-    
+
     try:
         result = subprocess.run(
             ['docker', 'info'],
@@ -150,7 +150,7 @@ def main():
         )
         if result.returncode == 0:
             print("[OK] Docker is running")
-            
+
             # Check containers
             result = subprocess.run(
                 ['docker', 'ps', '--format', '{{.Names}}'],
@@ -173,7 +173,7 @@ def main():
         print("[ERROR] Docker is not installed!")
     except Exception as e:
         print(f"[ERROR] Error checking Docker: {e}")
-    
+
     print()
     print("=" * 60)
 

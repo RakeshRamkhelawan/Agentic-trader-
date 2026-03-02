@@ -18,20 +18,20 @@ async def test():
     print("     BITVAVO CONNECTION TEST")
     print("="*70)
     print()
-    
+
     adapter = BitvavoAdapter()
     success = await adapter.initialize()
-    
+
     if success:
         print("[OK] Connected to Bitvavo")
         print()
-        
+
         # Get available pairs
         eur_pairs = adapter.get_eur_pairs()
         print(f"[INFO] Available EUR pairs: {len(eur_pairs)}")
         print(f"       {', '.join(eur_pairs[:5])}...")
         print()
-        
+
         # Get BTC/EUR ticker
         print("[FETCH] Getting BTC/EUR ticker...")
         ticker = await adapter.fetch_ticker("BTC/EUR")
@@ -42,9 +42,9 @@ async def test():
             print(f"[DATA] 24h Change: {ticker['percentage']:.2f}%")
         else:
             print("[ERROR] Failed to fetch ticker")
-        
+
         print()
-        
+
         # Get orderbook
         print("[FETCH] Getting BTC/EUR orderbook...")
         orderbook = await adapter.fetch_order_book("BTC/EUR", limit=5)
@@ -55,7 +55,7 @@ async def test():
             print("[DATA] Top 5 Asks (sellers):")
             for price, qty in orderbook['asks'][:5]:
                 print(f"       EUR {price:,.2f} x {qty:.6f} BTC")
-        
+
         await adapter.close()
         print()
         print("[OK] Test completed successfully")

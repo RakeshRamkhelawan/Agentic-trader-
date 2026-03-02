@@ -22,26 +22,26 @@ from mcp.client.stdio import stdio_client
 
 async def test_mcp_server():
     """Test the MCP server."""
-    
+
     # Server parameters
     server_params = StdioServerParameters(
         command="python",
         args=["-m", "backend.mcp_broker.server"],
         env={"PYTHONPATH": str(Path(__file__).parent.parent)}
     )
-    
+
     print("=" * 60)
     print("AgenticTraderBroker MCP Client Test")
     print("=" * 60)
     print("Connecting to MCP server...")
-    
+
     try:
         async with stdio_client(server_params) as (read, write):
             async with ClientSession(read, write) as session:
                 # Initialize
                 await session.initialize()
                 print("✓ Connected to MCP server\n")
-                
+
                 # List tools
                 tools = await session.list_tools()
                 print(f"✓ Available tools: {len(tools.tools)}")
@@ -49,7 +49,7 @@ async def test_mcp_server():
                 for tool in tools.tools:
                     print(f"  - {tool.name}")
                 print()
-                
+
                 # Test 1: Elemental consensus
                 print("=" * 60)
                 print("Test 1: Elemental Ether Consensus")
@@ -65,7 +65,7 @@ async def test_mcp_server():
                 )
                 print(f"Result: {result.content[0].text if result.content else 'No result'}")
                 print()
-                
+
                 # Test 2: Fire position sizing
                 print("=" * 60)
                 print("Test 2: Fire Position Sizing (V17 Constraint Test)")
@@ -82,7 +82,7 @@ async def test_mcp_server():
                 )
                 print(f"Result: {result.content[0].text if result.content else 'No result'}")
                 print()
-                
+
                 # Test 3: Earth entry check
                 print("=" * 60)
                 print("Test 3: Earth Entry Check (3-Loss Rule)")
@@ -100,7 +100,7 @@ async def test_mcp_server():
                 )
                 print(f"Result: {result.content[0].text if result.content else 'No result'}")
                 print()
-                
+
                 # Test 4: Earth exit check
                 print("=" * 60)
                 print("Test 4: Earth Exit Check (60-Day Failsafe)")
@@ -108,7 +108,7 @@ async def test_mcp_server():
                 from datetime import datetime, timedelta
                 entry_date = (datetime.utcnow() - timedelta(days=65)).isoformat()
                 current_date = datetime.utcnow().isoformat()
-                
+
                 result = await session.call_tool(
                     "elemental__earth_exit_check",
                     {
@@ -122,7 +122,7 @@ async def test_mcp_server():
                 )
                 print(f"Result: {result.content[0].text if result.content else 'No result'}")
                 print()
-                
+
                 # Test 5: Water regime check
                 print("=" * 60)
                 print("Test 5: Water Regime Check")
@@ -136,14 +136,14 @@ async def test_mcp_server():
                 )
                 print(f"Result: {result.content[0].text if result.content else 'No result'}")
                 print()
-                
+
                 # Test 6: Data - historical prices
                 print("=" * 60)
                 print("Test 6: Historical Prices")
                 print("=" * 60)
                 start_date = (datetime.utcnow() - timedelta(days=30)).isoformat()
                 end_date = datetime.utcnow().isoformat()
-                
+
                 result = await session.call_tool(
                     "data__get_historical_prices",
                     {
@@ -155,7 +155,7 @@ async def test_mcp_server():
                 )
                 print(f"Result: {result.content[0].text if result.content else 'No result'}")
                 print()
-                
+
                 # Test 7: Execution - paper trade
                 print("=" * 60)
                 print("Test 7: Paper Trade Execution")
@@ -172,7 +172,7 @@ async def test_mcp_server():
                 )
                 print(f"Result: {result.content[0].text if result.content else 'No result'}")
                 print()
-                
+
                 # Test 8: Health check
                 print("=" * 60)
                 print("Test 8: System Health Check")
@@ -180,17 +180,17 @@ async def test_mcp_server():
                 result = await session.call_tool("system__health_check", {})
                 print(f"Result: {result.content[0].text if result.content else 'No result'}")
                 print()
-                
+
                 print("=" * 60)
                 print("✓ All tests completed!")
                 print("=" * 60)
-    
+
     except Exception as e:
         print(f"\n❌ Test failed: {e}")
         import traceback
         traceback.print_exc()
         return 1
-    
+
     return 0
 
 

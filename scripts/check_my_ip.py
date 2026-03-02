@@ -13,7 +13,7 @@ def get_public_ip():
         "https://api.myip.com",
         "https://ifconfig.me/ip",
     ]
-    
+
     for source in sources:
         try:
             response = requests.get(source, timeout=5)
@@ -26,7 +26,7 @@ def get_public_ip():
         except Exception as e:
             print(f"❌ Fout met {source}: {e}")
             continue
-    
+
     print("❌ Kon publiek IP adres niet ophalen")
     return None
 

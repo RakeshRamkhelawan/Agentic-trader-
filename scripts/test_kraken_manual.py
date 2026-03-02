@@ -50,7 +50,7 @@ def make_api_request(endpoint, data=None, api_key=None, api_secret=None):
 
 if __name__ == "__main__":
     print(f"Testing Kraken with API Key: {API_KEY[:10]}...")
-    
+
     print("\n1. Testing WITHOUT 2FA...")
     result_no_2fa = make_api_request(
         'Balance',

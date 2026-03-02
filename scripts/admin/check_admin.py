@@ -16,7 +16,7 @@ async def check():
     print(f"Checking DB: {settings.DATABASE_URL}")
     engine = create_async_engine(str(settings.DATABASE_URL))
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    
+
     async with async_session() as session:
         try:
             await session.execute(text("SET app.current_tenant = 'system_admin'"))
@@ -30,7 +30,7 @@ async def check():
             print(f"ERROR: {e}")
         finally:
             await session.close()
-    
+
     await engine.dispose()
 
 if __name__ == "__main__":

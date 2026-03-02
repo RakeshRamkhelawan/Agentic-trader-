@@ -203,7 +203,7 @@ Tests will:
   ✓ Initialize OrderExecutor with real adapter
   ✓ Create execution plan
   ✓ Query active orders
-  
+
   ⚠️  Real order execution is DISABLED by default
   ⚠️  Uncomment the execution block to place real orders
 

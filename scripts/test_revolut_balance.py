@@ -17,7 +17,7 @@ from backend.core.config.settings import settings # Nieuw: voor Revolut host
 async def test_connection():
     # De API key moet uit een .env file komen of hier handmatig worden ingevuld voor testdoeleinden
     API_KEY = os.getenv("REVOLUT_API_KEY", "JOUW_API_KEY_HIER")
-    
+
     # Path calculation for pem file
     default_pem_path = str(project_root / "revolut_private.pem")
     PRIVATE_KEY_PATH = os.getenv("REVOLUT_PRIVATE_KEY_PATH", default_pem_path)
@@ -27,17 +27,17 @@ async def test_connection():
         return
 
     print(f"Verbinding maken met Exchange (Revolut X)...")
-    
+
     adapter = ExchangeAdapter(
-        api_key=API_KEY, 
-        private_key_path=PRIVATE_KEY_PATH, 
+        api_key=API_KEY,
+        private_key_path=PRIVATE_KEY_PATH,
         base_url="https://revx.revolut.com" # Of settings.REVOLUT_BASE_URL als die bestaat
     )
 
     try:
         print("Saldo ophalen...")
         balances = await adapter.get_balance()
-        
+
         print("\n--- Jouw Revolut X Saldo ---")
         if not balances:
             print("Geen saldo gevonden (of alle wallets zijn leeg).")

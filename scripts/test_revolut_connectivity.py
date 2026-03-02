@@ -20,14 +20,14 @@ async def test_connection():
     API_KEY = os.getenv("REVOLUT_API_KEY", "")
     PRIVATE_KEY_PATH = os.getenv("REVOLUT_PRIVATE_KEY_PATH", str(project_root / "revolut_private.pem"))
     SANDBOX = os.getenv("REVOLUT_SANDBOX", "false").lower() == "true"
-    
+
     if not API_KEY:
         print("[ERROR] REVOLUT_API_KEY not found in .env file!")
         print("Add this to your .env file:")
         print('  REVOLUT_API_KEY="your_api_key_here"')
         print('  REVOLUT_PRIVATE_KEY_PATH="path/to/revolut_private.pem"')
         return
-    
+
     if not Path(PRIVATE_KEY_PATH).exists():
         print(f"[ERROR] Private key file not found: {PRIVATE_KEY_PATH}")
         return
@@ -35,12 +35,12 @@ async def test_connection():
     base_url = "https://sandbox-revx.revolut.com" if SANDBOX else "https://revx.revolut.com"
     mode = "SANDBOX" if SANDBOX else "LIVE"
     print(f"Connecting to Revolut X ({mode})...")
-    
+
     # Gebruik ExchangeAdapter, met de Revolut URL
     # Read private key content
     with open(PRIVATE_KEY_PATH, 'r') as f:
         private_key_pem = f.read()
-    
+
     adapter = ExchangeAdapter(api_key=API_KEY, private_key_pem=private_key_pem, base_url=base_url)
 
     try:
@@ -49,7 +49,7 @@ async def test_connection():
         currencies = await adapter._request("GET", "/api/1.0/configuration/currencies")
         print(f"\n[SUCCESS] CONNECTION SUCCESSFUL!")
         print(f"Available currencies found: {len(currencies)}")
-        
+
         # Laat de eerste 5 zien als check
         for c in currencies[:5]:
             print(f"- {c['code']} ({c['name']})")
