@@ -20,7 +20,7 @@ def test_agent_with_tools_exists():
     print("\n" + "="*60)
     print("Test 1: AgentWithTools Import")
     print("="*60)
-    
+
     try:
         from backend.agents.agent_with_tools import AgentWithTools, ToolBrokerClient
         print("[PASS] AgentWithTools succesvol geïmporteerd")
@@ -35,25 +35,25 @@ def test_agent_instantiation():
     print("\n" + "="*60)
     print("Test 2: Agent Instantiation")
     print("="*60)
-    
+
     try:
         from backend.agents.agent_with_tools import AgentWithTools
-        
+
         # Create concrete subclass for testing
         class TestAgent(AgentWithTools):
             async def analyze(self, features, context):
                 return {"action": "hold"}
-        
+
         agent = TestAgent(
             agent_name="TestAgent",
             tool_broker_url="http://localhost:8001"
         )
-        
+
         print(f"[PASS] Agent aangemaakt: {agent.agent_name}")
         print(f"[INFO] ToolBroker URL: {agent.tool_broker.http_url}")
         print(f"[INFO] Agent has {len([m for m in dir(agent) if not m.startswith('_')])} public methods")
         return True
-        
+
     except Exception as e:
         print(f"[FAIL] Instantiation error: {e}")
         import traceback
@@ -66,7 +66,7 @@ def test_vedastro_tools_import():
     print("\n" + "="*60)
     print("Test 3: VedAstro Tools Import")
     print("="*60)
-    
+
     try:
         from backend.mcp_broker.tools.vedastro_tools import (
             vedastro_generate_signal,
@@ -79,7 +79,7 @@ def test_vedastro_tools_import():
         print("       - vedastro_get_dasha")
         print("       - vedastro_get_transits")
         return True
-        
+
     except ImportError as e:
         print(f"[FAIL] Import error: {e}")
         return False
@@ -90,7 +90,7 @@ def test_mcp_server_imports():
     print("\n" + "="*60)
     print("Test 4: MCP Server Tool Imports")
     print("="*60)
-    
+
     try:
         # Simuleer wat server.py doet
         from backend.mcp_broker.tools.data_tools import (
@@ -116,11 +116,11 @@ def test_mcp_server_imports():
             vedastro_get_dasha,
             vedastro_get_transits,
         )
-        
+
         print("[PASS] Alle tool imports succesvol")
         print("[INFO] Totaal tools beschikbaar: 15+")
         return True
-        
+
     except ImportError as e:
         print(f"[FAIL] Import error: {e}")
         import traceback
@@ -133,20 +133,20 @@ async def test_async_tool_call():
     print("\n" + "="*60)
     print("Test 5: Async Tool Call (Simulated)")
     print("="*60)
-    
+
     try:
         from backend.agents.agent_with_tools import ToolBrokerClient
-        
+
         client = ToolBrokerClient(http_url="http://localhost:8001")
-        
+
         # We kunnen geen echte call doen zonder server
         # Maar we kunnen wel testen of de client correct is geïnitialiseerd
         print(f"[PASS] ToolBrokerClient geïnitialiseerd")
         print(f"[INFO] HTTP URL: {client.http_url}")
-        
+
         await client.close()
         return True
-        
+
     except Exception as e:
         print(f"[FAIL] Async test error: {e}")
         return False
@@ -157,10 +157,10 @@ def test_existing_vedastro_module():
     print("\n" + "="*60)
     print("Test 6: Bestaande VedAstro Module")
     print("="*60)
-    
+
     try:
         from pathlib import Path
-        
+
         vedastro_dir = Path("backend/vedastro")
         if vedastro_dir.exists():
             files = list(vedastro_dir.glob("*.py"))
@@ -174,7 +174,7 @@ def test_existing_vedastro_module():
         else:
             print("[FAIL] VedAstro directory niet gevonden")
             return False
-            
+
     except Exception as e:
         print(f"[FAIL] Error: {e}")
         return False
@@ -185,34 +185,34 @@ def main():
     print("\n" + "="*60)
     print("ECHTE GAPS TEST SUITE")
     print("="*60)
-    
+
     results = []
-    
+
     # Sync tests
     results.append(("AgentWithTools Import", test_agent_with_tools_exists()))
     results.append(("Agent Instantiation", test_agent_instantiation()))
     results.append(("VedAstro Tools Import", test_vedastro_tools_import()))
     results.append(("MCP Server Imports", test_mcp_server_imports()))
     results.append(("Bestaande VedAstro", test_existing_vedastro_module()))
-    
+
     # Async test
     async_results = asyncio.run(async_test())
     results.extend(async_results)
-    
+
     # Summary
     print("\n" + "="*60)
     print("SAMENVATTING")
     print("="*60)
-    
+
     passed = 0
     for name, result in results:
         status = "[PASS]" if result else "[FAIL]"
         print(f"{status} {name}")
         if result:
             passed += 1
-    
+
     print(f"\n{passed}/{len(results)} tests geslaagd")
-    
+
     if passed == len(results):
         print("\n[OK] Alle echte gaps zijn opgelost!")
         print("\nVolgende stap:")

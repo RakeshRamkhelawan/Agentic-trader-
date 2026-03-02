@@ -13,10 +13,10 @@ from backend.core.cache_layer import get_cache
 
 async def check():
     cache = get_cache()
-    
+
     print("Checking cache contents...")
     print("=" * 60)
-    
+
     # Check markets:all
     all_markets = await cache.get('markets:all')
     if all_markets:
@@ -25,7 +25,7 @@ async def check():
             print(f"  {m.get('symbol')}: price={m.get('price')}, exchange={m.get('exchange')}")
     else:
         print("\nmarkets:all is EMPTY")
-    
+
     # Check exchange-specific caches
     for ex in ['kraken', 'revolut', 'bitvavo']:
         markets = await cache.get(f'markets:{ex}')

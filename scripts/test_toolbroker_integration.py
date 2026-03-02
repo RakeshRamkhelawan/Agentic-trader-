@@ -18,13 +18,13 @@ if str(project_root) not in sys.path:
 async def test_toolbroker_http():
     """Test ToolBroker HTTP server."""
     import httpx
-    
+
     base_url = "http://localhost:8001"
-    
+
     print("=" * 60)
     print("Testing ToolBroker HTTP Server")
     print("=" * 60)
-    
+
     async with httpx.AsyncClient() as client:
         # Test health
         print("\n1. Testing health endpoint...")
@@ -40,7 +40,7 @@ async def test_toolbroker_http():
         except Exception as e:
             print(f"   [FAIL] {e}")
             return False
-        
+
         # Test list tools
         print("\n2. Testing list tools...")
         try:
@@ -49,7 +49,7 @@ async def test_toolbroker_http():
                 data = response.json()
                 tools = data.get("tools", [])
                 print(f"   [OK] Found {len(tools)} tools")
-                
+
                 # Show some tools
                 for tool in tools[:5]:
                     print(f"      - {tool['name']}")
@@ -57,7 +57,7 @@ async def test_toolbroker_http():
                 print(f"   [FAIL] HTTP {response.status_code}")
         except Exception as e:
             print(f"   [FAIL] {e}")
-        
+
         # Test sentiment analysis
         print("\n3. Testing sentiment analysis tool...")
         try:
@@ -80,7 +80,7 @@ async def test_toolbroker_http():
                 print(f"   [FAIL] HTTP {response.status_code}")
         except Exception as e:
             print(f"   [FAIL] {e}")
-        
+
         # Test technical indicators
         print("\n4. Testing technical indicators...")
         try:
@@ -109,7 +109,7 @@ async def test_toolbroker_http():
                 print(f"   [FAIL] HTTP {response.status_code}")
         except Exception as e:
             print(f"   [FAIL] {e}")
-        
+
         # Test VedAstro
         print("\n5. Testing VedAstro signal...")
         try:
@@ -132,7 +132,7 @@ async def test_toolbroker_http():
                 print(f"   [FAIL] HTTP {response.status_code}")
         except Exception as e:
             print(f"   [FAIL] {e}")
-    
+
     return True
 
 
@@ -141,11 +141,11 @@ async def test_agent_with_tools():
     print("\n" + "=" * 60)
     print("Testing Agent with ToolBroker")
     print("=" * 60)
-    
+
     try:
         from backend.agents.agent_with_tools import AgentWithTools
         from backend.governance.agent_gatekeeper import AgentRole
-        
+
         # Create agent
         print("\n1. Creating test agent...")
         agent = AgentWithTools(
@@ -154,17 +154,17 @@ async def test_agent_with_tools():
             tool_broker_url="http://localhost:8001"
         )
         print("   [OK] Agent created")
-        
+
         # Check ToolBroker health
         print("\n2. Checking ToolBroker health...")
         health = await agent.check_toolbroker_health()
         print(f"   [OK] Status: {health.get('status', 'unknown')}")
-        
+
         # List tools
         print("\n3. Listing available tools...")
         tools = await agent.list_available_tools()
         print(f"   [OK] Found {len(tools)} tools")
-        
+
         # Test sentiment via agent
         print("\n4. Testing sentiment via agent...")
         sentiment = await agent.call_tool(
@@ -172,13 +172,13 @@ async def test_agent_with_tools():
             {"symbol": "BTC", "source": "news"}
         )
         print(f"   [OK] Sentiment: {sentiment.get('sentiment_score', 'N/A')}")
-        
+
         # Cleanup
         await agent.close()
         print("\n   [OK] Agent closed successfully")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"   [FAIL] {e}")
         import traceback
@@ -191,17 +191,17 @@ async def test_enhanced_sentiment_agent():
     print("\n" + "=" * 60)
     print("Testing EnhancedSentimentAgent")
     print("=" * 60)
-    
+
     try:
         from backend.agents.enhanced_sentiment_agent import EnhancedSentimentAgent
-        
+
         # Create agent
         print("\n1. Creating EnhancedSentimentAgent...")
         agent = EnhancedSentimentAgent(
             tool_broker_url="http://localhost:8001"
         )
         print("   [OK] Agent created")
-        
+
         # Run analysis
         print("\n2. Running analysis...")
         result = await agent.analyze(
@@ -212,17 +212,17 @@ async def test_enhanced_sentiment_agent():
             },
             context={"portfolio_value": 100000.0}
         )
-        
+
         print(f"   [OK] Signal: {result['signal']}")
         print(f"   [OK] Confidence: {result['confidence']}")
         print(f"   [OK] Metadata keys: {list(result['metadata'].keys())}")
-        
+
         # Cleanup
         await agent.close()
         print("\n   [OK] Agent closed successfully")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"   [FAIL] {e}")
         import traceback
@@ -235,32 +235,32 @@ async def main():
     print("\n" + "=" * 60)
     print("ToolBroker Integration Test Suite")
     print("=" * 60)
-    
+
     results = []
-    
+
     # Test 1: HTTP Server
     results.append(("ToolBroker HTTP", await test_toolbroker_http()))
-    
+
     # Test 2: Agent with tools
     results.append(("Agent with Tools", await test_agent_with_tools()))
-    
+
     # Test 3: Enhanced Sentiment Agent
     results.append(("EnhancedSentimentAgent", await test_enhanced_sentiment_agent()))
-    
+
     # Summary
     print("\n" + "=" * 60)
     print("Test Summary")
     print("=" * 60)
-    
+
     for name, passed in results:
         status = "[PASS]" if passed else "[FAIL]"
         print(f"{status} {name}")
-    
+
     total = len(results)
     passed = sum(1 for _, p in results if p)
-    
+
     print(f"\nTotal: {passed}/{total} tests passed")
-    
+
     if passed == total:
         print("\n[OK] All tests passed!")
         return 0

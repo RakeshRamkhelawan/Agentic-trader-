@@ -13,16 +13,16 @@ async def test_tools():
     print("="*60, file=sys.stderr)
     print("TEST 2: MCP Tools Test", file=sys.stderr)
     print("="*60, file=sys.stderr)
-    
+
     client = MCPClientWrapper()
-    
+
     try:
         # Test 1: Health check
         print("\n[1] Testing system__health_check...", file=sys.stderr)
         result = await client.call_tool('system__health_check', {})
         print(f"Status: {result.get('status', 'N/A')}", file=sys.stderr)
         assert result.get('status') == 'healthy', "Health check failed"
-        
+
         # Test 2: VedAstro signal
         print("\n[2] Testing vedastro__generate_signal...", file=sys.stderr)
         result = await client.call_tool('vedastro__generate_signal', {
@@ -31,7 +31,7 @@ async def test_tools():
         })
         print(f"Signal: {result.get('signal', 'N/A')}", file=sys.stderr)
         assert 'signal' in result, "Missing signal in response"
-        
+
         # Test 3: Elemental consensus
         print("\n[3] Testing elemental__ether_consensus...", file=sys.stderr)
         result = await client.call_tool('elemental__ether_consensus', {
@@ -43,7 +43,7 @@ async def test_tools():
         })
         print(f"Should enter: {result.get('should_enter', False)}", file=sys.stderr)
         assert 'should_enter' in result, "Missing should_enter in response"
-        
+
         # Test 4: Position sizing
         print("\n[4] Testing elemental__fire_position_size...", file=sys.stderr)
         result = await client.call_tool('elemental__fire_position_size', {
@@ -54,12 +54,12 @@ async def test_tools():
         })
         print(f"Position size: {result.get('position_size_eur', 0):.2f} EUR", file=sys.stderr)
         assert result.get('position_size_eur', 0) > 0, "Invalid position size"
-        
+
         print("\n" + "="*60, file=sys.stderr)
         print("[OK] All tool tests passed!", file=sys.stderr)
         print("="*60, file=sys.stderr)
         return True
-        
+
     except Exception as e:
         print(f"\n[FAILED] Tool test error: {e}", file=sys.stderr)
         import traceback

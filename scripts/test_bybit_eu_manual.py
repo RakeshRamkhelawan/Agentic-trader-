@@ -29,7 +29,7 @@ def test_bybit_eu():
     print("=" * 60)
     print("BYBIT EU API TEST SCRIPT (MANUAL)")
     print("=" * 60)
-    
+
     if not API_KEY or not API_SECRET:
         print("❌ FOUT: Geen API_KEY of API_SECRET gevonden in .env")
         return
@@ -46,7 +46,7 @@ def test_bybit_eu():
     signature = generate_signature(timestamp, API_KEY, API_SECRET, recv_window, query_string)
 
     endpoint = f"{BASE_URL}/v5/account/wallet-balance?{query_string}"
-    
+
     headers = {
         'X-BAPI-API-KEY': API_KEY,
         'X-BAPI-TIMESTAMP': timestamp,
@@ -58,19 +58,19 @@ def test_bybit_eu():
         print(f"Verbinding maken met {endpoint}...")
         response = requests.get(endpoint, headers=headers)
         data = response.json()
-        
+
         print("\nAPI Response:")
         print("-" * 60)
         import json
         print(json.dumps(data, indent=2))
         print("-" * 60)
-        
+
         if data.get("retCode") == 0:
             print("\n✅ SUCCESS: Je API key werkt perfect op api.bybit.eu!")
         else:
             print(f"\n❌ FOUT: API weigert de verbinding (retCode: {data.get('retCode')})")
             print(f"Melding: {data.get('retMsg')}")
-            
+
     except Exception as e:
         print(f"\n❌ CRASH: Fout tijdens het uitvoeren van de request: {e}")
 

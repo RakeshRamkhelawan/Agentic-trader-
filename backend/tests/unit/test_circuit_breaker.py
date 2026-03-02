@@ -40,12 +40,12 @@ class TestCircuitBreakerState:
     def test_state_transitions(self):
         """Test state transitions."""
         state = CircuitBreakerState(breaker_name="test")
-        
+
         # Trip to OPEN
         state.state = BreakerState.OPEN.value
         state.trip_reason = TripReason.MAX_DAILY_LOSS.value
         state.tripped_at = datetime.now(UTC)
-        
+
         assert state.state == BreakerState.OPEN.value
         assert state.trip_reason == TripReason.MAX_DAILY_LOSS.value
 
@@ -75,7 +75,7 @@ class TestCircuitBreakerBasic:
             breaker_name="test_breaker",
             state=BreakerState.CLOSED.value,
         )
-        
+
         is_open = await b.is_open()
         assert is_open is False
 
@@ -84,14 +84,14 @@ class TestCircuitBreakerBasic:
         """Test breaker trips when daily loss exceeds threshold."""
         b = await breaker
         b._portfolio_value = 100000.0
-        
+
         # Mock state with 6% daily loss (> 5% threshold)
         b._state = CircuitBreakerState(
             breaker_name="test_breaker",
             state=BreakerState.CLOSED.value,
             daily_pnl=-6000.0,  # 6% loss
         )
-        
+
         is_open = await b.is_open()
         assert is_open is True
 
@@ -100,14 +100,14 @@ class TestCircuitBreakerBasic:
         """Test breaker trips on max consecutive losses."""
         b = await breaker
         b._portfolio_value = 100000.0
-        
+
         b._state = CircuitBreakerState(
             breaker_name="test_breaker",
             state=BreakerState.CLOSED.value,
             daily_pnl=-1000.0,
             consecutive_losses=3,  # At threshold
         )
-        
+
         is_open = await b.is_open()
         assert is_open is True
 
@@ -116,13 +116,13 @@ class TestCircuitBreakerBasic:
         """Test breaker trips on max exposure."""
         b = await breaker
         b._portfolio_value = 100000.0
-        
+
         b._state = CircuitBreakerState(
             breaker_name="test_breaker",
             state=BreakerState.CLOSED.value,
             total_exposure=90000.0,  # 90% at threshold
         )
-        
+
         is_open = await b.is_open()
         assert is_open is True
 
@@ -131,13 +131,13 @@ class TestCircuitBreakerBasic:
         """Test breaker trips on emergency shutdown."""
         b = await breaker
         b._portfolio_value = 100000.0
-        
+
         b._state = CircuitBreakerState(
             breaker_name="test_breaker",
             state=BreakerState.CLOSED.value,
             emergency_shutdown=True,
         )
-        
+
         is_open = await b.is_open()
         assert is_open is True
 
@@ -146,7 +146,7 @@ class TestCircuitBreakerBasic:
         """Test breaker stays closed within normal limits."""
         b = await breaker
         b._portfolio_value = 100000.0
-        
+
         b._state = CircuitBreakerState(
             breaker_name="test_breaker",
             state=BreakerState.CLOSED.value,
@@ -154,7 +154,7 @@ class TestCircuitBreakerBasic:
             consecutive_losses=1,  # (< 3 threshold)
             total_exposure=50000.0,  # 50% (< 90% threshold)
         )
-        
+
         is_open = await b.is_open()
         assert is_open is False
 
@@ -168,7 +168,7 @@ class TestCircuitBreakerTradeRecording:
         mock_session = AsyncMock()
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
-        
+
         breaker = CircuitBreaker(
             db_session=mock_session,
             breaker_name="test_breaker",
@@ -176,7 +176,7 @@ class TestCircuitBreakerTradeRecording:
             max_consecutive_losses=3,
             max_exposure_pct=0.90,
         )
-        
+
         # Initialize state
         breaker._state = CircuitBreakerState(
             breaker_name="test_breaker",
@@ -185,16 +185,16 @@ class TestCircuitBreakerTradeRecording:
             consecutive_losses=0,
             total_exposure=0.0,
         )
-        
+
         return breaker
 
     @pytest.mark.asyncio
     async def test_record_winning_trade(self, breaker):
         """Test recording a winning trade."""
         b = await breaker
-        
+
         await b.record_trade_result(pnl=1000.0, position_delta=5000.0)
-        
+
         assert b._state.daily_pnl == 1000.0
         assert b._state.consecutive_losses == 0  # Reset on win
         assert b._state.total_exposure == 5000.0
@@ -203,9 +203,9 @@ class TestCircuitBreakerTradeRecording:
     async def test_record_losing_trade(self, breaker):
         """Test recording a losing trade."""
         b = await breaker
-        
+
         await b.record_trade_result(pnl=-1000.0, position_delta=0.0)
-        
+
         assert b._state.daily_pnl == -1000.0
         assert b._state.consecutive_losses == 1
 
@@ -213,34 +213,34 @@ class TestCircuitBreakerTradeRecording:
     async def test_consecutive_losses_accumulate(self, breaker):
         """Test consecutive losses accumulate correctly."""
         b = await breaker
-        
+
         # Three consecutive losses
         await b.record_trade_result(pnl=-100.0, position_delta=0.0)
         await b.record_trade_result(pnl=-200.0, position_delta=0.0)
         await b.record_trade_result(pnl=-300.0, position_delta=0.0)
-        
+
         assert b._state.consecutive_losses == 3
 
     @pytest.mark.asyncio
     async def test_win_resets_consecutive_losses(self, breaker):
         """Test winning trade resets consecutive loss counter."""
         b = await breaker
-        
+
         # Two losses then a win
         await b.record_trade_result(pnl=-100.0, position_delta=0.0)
         await b.record_trade_result(pnl=-200.0, position_delta=0.0)
         await b.record_trade_result(pnl=500.0, position_delta=0.0)
-        
+
         assert b._state.consecutive_losses == 0
 
     @pytest.mark.asyncio
     async def test_exposure_never_negative(self, breaker):
         """Test exposure can't go negative."""
         b = await breaker
-        
+
         # Large position reduction
         await b.record_trade_result(pnl=0.0, position_delta=-10000.0)
-        
+
         assert b._state.total_exposure == 0.0  # Clamped to 0
 
 
@@ -252,12 +252,12 @@ class TestCircuitBreakerDailyReset:
         """Test daily metrics reset on new trading day."""
         mock_session = AsyncMock()
         mock_session.commit = AsyncMock()
-        
+
         breaker = CircuitBreaker(
             db_session=mock_session,
             breaker_name="test_breaker",
         )
-        
+
         # State from yesterday
         yesterday = datetime.now(UTC) - timedelta(days=1)
         breaker._state = CircuitBreakerState(
@@ -267,10 +267,10 @@ class TestCircuitBreakerDailyReset:
             consecutive_losses=2,
             last_daily_reset_at=yesterday,
         )
-        
+
         # Record trade should trigger reset
         await breaker.record_trade_result(pnl=100.0, position_delta=0.0)
-        
+
         # Should be reset
         assert breaker._state.daily_pnl == 100.0  # Reset + new trade
         assert breaker._state.consecutive_losses == 0
@@ -285,28 +285,28 @@ class TestCircuitBreakerManualOperations:
         mock_session = AsyncMock()
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
-        
+
         breaker = CircuitBreaker(
             db_session=mock_session,
             breaker_name="test_breaker",
         )
-        
+
         breaker._state = CircuitBreakerState(
             breaker_name="test_breaker",
             state=BreakerState.OPEN.value,
             trip_reason=TripReason.MAX_DAILY_LOSS.value,
             tripped_at=datetime.now(UTC),
         )
-        
+
         return breaker
 
     @pytest.mark.asyncio
     async def test_emergency_shutdown(self, breaker):
         """Test emergency shutdown functionality."""
         b = await breaker
-        
+
         await b.emergency_shutdown()
-        
+
         assert b._state.emergency_shutdown is True
         assert b._state.state == BreakerState.OPEN.value
         assert b._state.trip_reason == TripReason.EMERGENCY_SHUTDOWN.value
@@ -315,7 +315,7 @@ class TestCircuitBreakerManualOperations:
     async def test_reset_requires_admin_override(self, breaker):
         """Test reset requires admin override flag."""
         b = await breaker
-        
+
         with pytest.raises(ValueError, match="admin_override"):
             await b.reset(admin_override=False)
 
@@ -323,9 +323,9 @@ class TestCircuitBreakerManualOperations:
     async def test_reset_with_admin_override(self, breaker):
         """Test reset with proper admin override."""
         b = await breaker
-        
+
         await b.reset(admin_override=True)
-        
+
         assert b._state.state == BreakerState.CLOSED.value
         assert b._state.trip_reason is None
         assert b._state.tripped_at is None
@@ -339,20 +339,20 @@ class TestCircuitBreakerUnitComparison:
     async def test_daily_loss_comparison_uses_percentage(self):
         """CRITICAL: Test that daily loss comparison uses percentage, not absolute."""
         mock_session = AsyncMock()
-        
+
         breaker = CircuitBreaker(
             db_session=mock_session,
             breaker_name="test_breaker",
             max_daily_loss_pct=0.05,  # 5%
         )
-        
+
         breaker._portfolio_value = 100000.0
         breaker._state = CircuitBreakerState(
             breaker_name="test_breaker",
             state=BreakerState.CLOSED.value,
             daily_pnl=-6000.0,  # 6% of 100k = should trip
         )
-        
+
         is_open = await breaker.is_open()
         assert is_open is True, "6% loss should trip 5% threshold"
 
@@ -360,20 +360,20 @@ class TestCircuitBreakerUnitComparison:
     async def test_daily_loss_small_portfolio(self):
         """Test daily loss with small portfolio value."""
         mock_session = AsyncMock()
-        
+
         breaker = CircuitBreaker(
             db_session=mock_session,
             breaker_name="test_breaker",
             max_daily_loss_pct=0.05,  # 5%
         )
-        
+
         breaker._portfolio_value = 10000.0
         breaker._state = CircuitBreakerState(
             breaker_name="test_breaker",
             state=BreakerState.CLOSED.value,
             daily_pnl=-400.0,  # 4% of 10k = should NOT trip
         )
-        
+
         is_open = await breaker.is_open()
         assert is_open is False, "4% loss should not trip 5% threshold"
 
@@ -385,19 +385,19 @@ class TestCircuitBreakerEdgeCases:
     async def test_zero_portfolio_value(self):
         """Test behavior with zero portfolio value."""
         mock_session = AsyncMock()
-        
+
         breaker = CircuitBreaker(
             db_session=mock_session,
             breaker_name="test_breaker",
         )
-        
+
         breaker._portfolio_value = 0.0
         breaker._state = CircuitBreakerState(
             breaker_name="test_breaker",
             state=BreakerState.CLOSED.value,
             daily_pnl=-1000.0,
         )
-        
+
         # Should handle gracefully (no division by zero)
         is_open = await breaker.is_open()
         # With 0 portfolio, can't calculate %, should default to not trip
@@ -407,20 +407,20 @@ class TestCircuitBreakerEdgeCases:
     async def test_exactly_at_threshold(self):
         """Test behavior exactly at trip threshold."""
         mock_session = AsyncMock()
-        
+
         breaker = CircuitBreaker(
             db_session=mock_session,
             breaker_name="test_breaker",
             max_daily_loss_pct=0.05,  # 5%
         )
-        
+
         breaker._portfolio_value = 100000.0
         breaker._state = CircuitBreakerState(
             breaker_name="test_breaker",
             state=BreakerState.CLOSED.value,
             daily_pnl=-5000.0,  # Exactly 5%
         )
-        
+
         is_open = await breaker.is_open()
         # At threshold, should trip
         assert is_open is True
@@ -430,25 +430,25 @@ class TestCircuitBreakerEdgeCases:
         """Test rapid state changes don't cause race conditions."""
         mock_session = AsyncMock()
         mock_session.commit = AsyncMock()
-        
+
         breaker = CircuitBreaker(
             db_session=mock_session,
             breaker_name="test_breaker",
         )
-        
+
         breaker._portfolio_value = 100000.0
         breaker._state = CircuitBreakerState(
             breaker_name="test_breaker",
             state=BreakerState.CLOSED.value,
         )
-        
+
         # Rapid trades
         for i in range(10):
             await breaker.record_trade_result(
                 pnl=(-1) ** i * 100.0,  # Alternating wins/losses
                 position_delta=0.0
             )
-        
+
         # Should have consistent state
         assert breaker._state.consecutive_losses <= 1  # Never more than 1 consecutive
 
@@ -462,7 +462,7 @@ class TestCircuitBreakerIntegration:
         mock_session = AsyncMock()
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
-        
+
         breaker = CircuitBreaker(
             db_session=mock_session,
             breaker_name="main_breaker",
@@ -470,30 +470,30 @@ class TestCircuitBreakerIntegration:
             max_consecutive_losses=3,
             max_exposure_pct=0.90,
         )
-        
+
         breaker._portfolio_value = 100000.0
         breaker._state = CircuitBreakerState(
             breaker_name="main_breaker",
             state=BreakerState.CLOSED.value,
         )
-        
+
         # Normal trading
         assert await breaker.is_open() is False
-        
+
         # Some winning trades
         await breaker.record_trade_result(pnl=500.0, position_delta=10000.0)
         await breaker.record_trade_result(pnl=300.0, position_delta=5000.0)
         assert await breaker.is_open() is False
-        
+
         # Some losing trades but within limits
         await breaker.record_trade_result(pnl=-200.0, position_delta=0.0)
         await breaker.record_trade_result(pnl=-150.0, position_delta=0.0)
         assert await breaker.is_open() is False
-        
+
         # Recover with wins
         await breaker.record_trade_result(pnl=400.0, position_delta=0.0)
         assert breaker._state.consecutive_losses == 0
-        
+
         # Big loss that trips breaker
         await breaker.record_trade_result(pnl=-6000.0, position_delta=0.0)
         assert await breaker.is_open() is True

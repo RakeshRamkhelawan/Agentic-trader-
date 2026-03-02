@@ -24,11 +24,11 @@ async def test():
             df.index = pd.to_datetime(df.index, unit='ms')
         data[sym] = df
         print(f'Loaded {sym}: {len(df)} rows')
-    
+
     engine = SmartConsciousnessBacktest(100000)
     print('\nRunning 30-day smart test...')
     results = await engine.run(data, days=30)
-    
+
     print('\n=== RESULTS ===')
     print(f"Return: {results['total_return_pct']:+.2f}%")
     print(f"Trades: {results['total_trades']}")

@@ -35,13 +35,13 @@ def test_bybit_ipv4_forced():
     print("=" * 60)
     print("BYBIT IPv4 FORCED TEST")
     print("=" * 60)
-    
+
     timestamp = str(int(time.time() * 1000))
     recv_window = "5000"
     query_string = "accountType=UNIFIED"
     signature = generate_signature(timestamp, API_KEY, API_SECRET, recv_window, query_string)
     endpoint = f"{BASE_URL}/v5/account/wallet-balance?{query_string}"
-    
+
     headers = {
         'X-BAPI-API-KEY': API_KEY,
         'X-BAPI-TIMESTAMP': timestamp,
@@ -55,12 +55,12 @@ def test_bybit_ipv4_forced():
         data = response.json()
         print(f"Response retCode: {data.get('retCode')}")
         print(f"Response retMsg: {data.get('retMsg')}")
-        
+
         if data.get("retCode") == 0:
             print("\n✅ SUCCESS: Connection works when forcing IPv4!")
         else:
             print(f"\n❌ FAILED: Still getting {data.get('retCode')}")
-            
+
     except Exception as e:
         print(f"Error: {e}")
 

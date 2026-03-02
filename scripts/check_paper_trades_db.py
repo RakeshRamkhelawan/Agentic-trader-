@@ -17,20 +17,20 @@ from backend.models.orders import Order
 
 async def check_trades():
     """Check paper trades in database."""
-    
+
     async with AsyncSessionLocal() as session:
         # Get total count
         count_result = await session.execute(
             select(func.count()).select_from(Order)
         )
         total = count_result.scalar()
-        
+
         # Get paper trading count
         paper_count_result = await session.execute(
             select(func.count()).select_from(Order).where(Order.tenant_id == "paper_trading")
         )
         paper_total = paper_count_result.scalar()
-        
+
         print("="*70)
         print("     PAPER TRADES IN DATABASE")
         print("="*70)
@@ -38,7 +38,7 @@ async def check_trades():
         print(f"Total orders: {total}")
         print(f"Paper trading orders: {paper_total}")
         print()
-        
+
         # Get recent trades
         result = await session.execute(
             select(Order)
@@ -47,7 +47,7 @@ async def check_trades():
             .limit(10)
         )
         recent_trades = result.scalars().all()
-        
+
         if recent_trades:
             print("Recent paper trades:")
             print()
@@ -62,7 +62,7 @@ async def check_trades():
                 print(f"  [{time}] {side:4} {qty:.6f} {symbol} @ EUR {price:,.2f} = EUR {value:,.2f} [{status}]")
         else:
             print("No paper trades found in database")
-        
+
         # Get unique symbols
         symbols_result = await session.execute(
             select(Order.symbol, func.count().label('count'))
@@ -70,7 +70,7 @@ async def check_trades():
             .group_by(Order.symbol)
         )
         symbols = symbols_result.all()
-        
+
         if symbols:
             print()
             print("Symbols traded:")

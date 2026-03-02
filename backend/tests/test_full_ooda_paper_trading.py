@@ -479,7 +479,7 @@ async def main():
 if __name__ == "__main__":
     print("""
 ============================================================
-        OODA LOOP PAPER TRADING - INTEGRATION TEST            
+        OODA LOOP PAPER TRADING - INTEGRATION TEST
 ============================================================
 
 This test demonstrates the complete OODA cycle:
@@ -487,7 +487,7 @@ This test demonstrates the complete OODA cycle:
 OBSERVE (DataScout)
    - Fetch realtime market data (price, volume, trends)
 
-ORIENT (Analyst)  
+ORIENT (Analyst)
    - Analyze data, detect patterns, assess sentiment
 
 DECIDE (Trader)

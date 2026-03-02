@@ -31,11 +31,11 @@ def test_bybit_endpoint(base_url: str, api_key: str, api_secret: str, region_nam
     print(f"🧪 Testing: {region_name}")
     print(f"   Endpoint: {base_url}")
     print(f"{'='*60}")
-    
+
     # V5 API authentication parameters
     timestamp = str(int(time.time() * 1000))
     recv_window = "5000"
-    
+
     # Test 1: Get server time (public endpoint, no auth)
     try:
         print("\n📡 Test 1: Server Time (public endpoint)...")
@@ -49,18 +49,18 @@ def test_bybit_endpoint(base_url: str, api_key: str, api_secret: str, region_nam
     except Exception as e:
         print(f"   ❌ Error: {e}")
         return False
-    
+
     # Test 2: Get Wallet Balance (authenticated endpoint)
     try:
         print("\n🔐 Test 2: Wallet Balance (authenticated)...")
-        
+
         # Build query string
         account_type = "UNIFIED"  # or "CONTRACT" for classic account
         query_string = f"accountType={account_type}"
-        
+
         # Generate signature
         signature = generate_signature(timestamp, api_key, recv_window, query_string, api_secret)
-        
+
         # Headers voor Bybit V5
         headers = {
             "X-BAPI-API-KEY": api_key,
@@ -68,10 +68,10 @@ def test_bybit_endpoint(base_url: str, api_key: str, api_secret: str, region_nam
             "X-BAPI-SIGN": signature,
             "X-BAPI-RECV-WINDOW": recv_window,
         }
-        
+
         url = f"{base_url}/v5/account/wallet-balance?{query_string}"
         response = requests.get(url, headers=headers, timeout=10)
-        
+
         if response.status_code == 200:
             data = response.json()
             if data.get("retCode") == 0:
@@ -85,7 +85,7 @@ def test_bybit_endpoint(base_url: str, api_key: str, api_secret: str, region_nam
             print(f"   ❌ HTTP Error: {response.status_code}")
             print(f"   Response: {response.text}")
             return False
-            
+
     except Exception as e:
         print(f"   ❌ Exception: {e}")
         return False
@@ -94,15 +94,15 @@ def main():
     api_key = os.getenv("BYBIT_API_KEY")
     api_secret = os.getenv("BYBIT_API_SECRET")
     testnet = os.getenv("BYBIT_TESTNET", "false").lower() == "true"
-    
+
     if not api_key or not api_secret:
         print("❌ BYBIT_API_KEY en BYBIT_API_SECRET moeten ingesteld zijn in .env")
         return
-    
+
     print("🚀 Bybit V5 API Direct Test")
     print(f"   Testnet Mode: {testnet}")
     print(f"   API Key: {api_key[:8]}...{api_key[-4:]}")
-    
+
     if testnet:
         endpoints = [
             ("https://api-testnet.bybit.com", "Testnet"),
@@ -114,12 +114,12 @@ def main():
             ("https://api.bybit.com", "Global Mainnet"),
             ("https://api.bybit.eu", "EU Mainnet (beperkt)"),
         ]
-    
+
     results = {}
     for base_url, region in endpoints:
         success = test_bybit_endpoint(base_url, api_key, api_secret, region)
         results[region] = success
-    
+
     # Summary
     print(f"\n{'='*60}")
     print("📊 SUMMARY")
@@ -127,12 +127,12 @@ def main():
     for region, success in results.items():
         status = "✅ PASSED" if success else "❌ FAILED"
         print(f"   {status} - {region}")
-    
+
     # Recommendations
     print(f"\n{'='*60}")
     print("💡 AANBEVELINGEN")
     print(f"{'='*60}")
-    
+
     if not any(results.values()):
         print("""
 ❌ Geen enkel endpoint werkt!

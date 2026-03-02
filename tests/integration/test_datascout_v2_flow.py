@@ -6,13 +6,13 @@ import pytest
 import websockets
 from datetime import datetime
 
-# We will start the FastAPI server in a separate thread/process if needed, 
-# but for a pure integration test in this environment, 
-# we'll assume the server is being started by the user or 
+# We will start the FastAPI server in a separate thread/process if needed,
+# but for a pure integration test in this environment,
+# we'll assume the server is being started by the user or
 # we'll use a local instance of the WebSocketManagerV2 directly to verify the bridge.
 
 # However, the task asks to run against the "live backend".
-# Since I cannot start a long-running server that blocks, 
+# Since I cannot start a long-running server that blocks,
 # I will implement a test that simulates the end-to-end flow using mocks
 # for the transport but REAL logic for the Manager and Bridge.
 
@@ -23,7 +23,7 @@ from backend.events.event_bus import EventBus
 @pytest.mark.asyncio
 async def test_datascout_to_websocket_flow():
     """
-    Validates that DataScoutAgent logs correctly flow through the 
+    Validates that DataScoutAgent logs correctly flow through the
     WebSocketManagerV2 using the {type, channel, data} protocol.
     """
     # 1. Setup EventBus and WebSocketManager
@@ -53,7 +53,7 @@ async def test_datascout_to_websocket_flow():
 
     mock_ws = MockWebSocket()
     connection_id = await ws_manager_v2.connect(mock_ws, tenant_id="test-tenant")
-    
+
     # Subscribe to reasoning chain
     await ws_manager_v2.subscribe(connection_id, "reasoning_chain")
 
@@ -64,7 +64,7 @@ async def test_datascout_to_websocket_flow():
         "thought": "Market depth is high, liquidity looks good.",
         "timestamp": datetime.now().isoformat()
     }
-    
+
     start_time = asyncio.get_event_loop().time()
     await eb.publish("agent.audit_logs", test_log)
 
@@ -86,14 +86,14 @@ async def test_datascout_to_websocket_flow():
 
     # 5. Assertions
     assert received, "Message was not received by the WebSocket client"
-    
-    # Check protocol: {type, channel, data} 
+
+    # Check protocol: {type, channel, data}
     # v2 uses {type, stream, data, ts, seq, priority}
     last_msg = [m for m in mock_ws.sent_messages if m.get("stream") == "reasoning_chain"][-1]
     assert last_msg["type"] == "agent_log"
     assert last_msg["stream"] == "reasoning_chain"
     assert last_msg["data"]["agent"] == "DataScoutAgent"
-    
+
     print(f"Integration Test Passed: Latency = {latency:.2f}ms")
     assert latency < 200, f"Latency too high: {latency:.2f}ms"
 

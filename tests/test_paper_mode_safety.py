@@ -23,42 +23,42 @@ class TestPaperModeAbsoluteGuarantee:
     @pytest.mark.asyncio
     async def test_paper_guard_blocks_decorated_function(self):
         """De @paper_guard decorator moet elke call blokkeren in paper mode."""
-        
+
         @paper_guard
         async def fake_exchange_call(symbol: str, qty: float):
             return {"status": "filled", "order_id": "123"}
-        
+
         with pytest.raises(PaperModeViolation) as exc_info:
             await fake_exchange_call("BTC/EUR", 0.001)
-        
+
         assert "paper mode" in str(exc_info.value).lower()
         assert "blocked" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
     async def test_paper_guard_audit_log_written(self):
         """Elke geblokkeerde call MOET worden gelogd."""
-        
+
         audit_logs = []
-        
+
         # Maak een mock audit logger die de log_intercept methode heeft
         mock_audit_logger = MagicMock()
-        
+
         async def mock_log_intercept(func_name, args, kwargs, session_id=None):
             audit_logs.append({
                 "event": "paper_guard_intercept",
                 "function": func_name,
             })
-        
+
         mock_audit_logger.log_intercept = mock_log_intercept
-        
+
         with patch("backend.execution._paper_guard._audit_logger", mock_audit_logger):
             @paper_guard
             async def fake_order():
                 pass
-            
+
             with pytest.raises(PaperModeViolation):
                 await fake_order()
-        
+
         # Audit log moet geschreven zijn
         assert len(audit_logs) == 1
         assert audit_logs[0]["event"] == "paper_guard_intercept"
@@ -76,11 +76,11 @@ class TestVedicCycleIntegrity:
         """SHM namen MOETEN _v2 suffix hebben."""
         import os
         import re
-        
+
         # Zoek specifiek naar SHM gebruik (shm_name= of create= of attach=)
         v1_pattern = re.compile(r'shm_name\s*=\s*["\'](trading_intents|market_data)["\']')
         non_v2_refs = []
-        
+
         for root, dirs, files in os.walk("backend/"):
             for file in files:
                 if file.endswith(".py"):
@@ -93,7 +93,7 @@ class TestVedicCycleIntegrity:
                                 non_v2_refs.append(f"{filepath}: {matches}")
                     except Exception:
                         continue
-        
+
         # Moet 0 zijn
         assert len(non_v2_refs) == 0, f"Gevonden v1 SHM referenties:\n" + "\n".join(non_v2_refs)
 
@@ -105,7 +105,7 @@ class TestVedicCycleIntegrity:
         from backend.agents.elemental_risk_guardian import ElementalRiskGuardian
         from backend.agents.elemental_macro import ElementalMacro
         from backend.agents.elemental_valuation import ElementalValuation
-        
+
         agents = {
             "ether": ElementalOrchestrator(),
             "air": ElementalResearch(),
@@ -113,7 +113,7 @@ class TestVedicCycleIntegrity:
             "water": ElementalMacro(),
             "earth": ElementalValuation(),
         }
-        
+
         for name, agent in agents.items():
             assert agent.prana >= 80, f"{name} prana {agent.prana} < 80"
 

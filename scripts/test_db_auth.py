@@ -18,14 +18,14 @@ async def test_connection(user, password, database="trading_db", port=5455):
 async def main():
     # Test 1: Trader (from current .env)
     trader_success = await test_connection("trader", "trading_secure")
-    
+
     # Test 2: App (from database.py default)
     app_success = await test_connection("app", "app_secure")
-    
+
     # Test 3: Postgres (standard superuser, default password often postgres)
     postgres_success = await test_connection("postgres", "postgres") # common default
     postgres_secure_success = await test_connection("postgres", "trading_secure") # maybe shared pass
-    
+
     if trader_success:
         print("\nCONCLUSION: Use 'trader'")
     elif app_success:

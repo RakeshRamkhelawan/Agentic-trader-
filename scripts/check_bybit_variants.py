@@ -9,7 +9,7 @@ load_dotenv()
 async def check_bybit_variants():
     api_key = os.getenv("BYBIT_API_KEY")
     api_secret = os.getenv("BYBIT_API_SECRET")
-    
+
     if not api_key:
         print("No Bybit key in .env")
         return

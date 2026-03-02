@@ -11,7 +11,7 @@ async def test():
         'apiKey': settings.BITVAVO_API_KEY,
         'secret': settings.BITVAVO_API_SECRET,
     })
-    
+
     try:
         await exchange.load_markets()
         tickers = await exchange.fetch_tickers(['BTC/EUR', 'ETH/EUR', 'SOL/EUR', 'ADA/EUR', 'DOT/EUR'])

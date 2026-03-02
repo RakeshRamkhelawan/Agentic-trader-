@@ -9,7 +9,7 @@ load_dotenv()
 async def test_bybit_with_broker():
     api_key = os.getenv("BYBIT_API_KEY")
     api_secret = os.getenv("BYBIT_API_SECRET")
-    
+
     if not api_key:
         print("No Bybit key in .env")
         return
@@ -32,15 +32,15 @@ async def test_bybit_with_broker():
                         'hostname': hostname,
                         'options': {'defaultType': acc_type}
                     }
-                    
+
                     exchange = ccxt.bybit(config)
-                    
+
                     if b_id:
                         # V5 uses X-Referer header for broker identification
                         exchange.headers = {
                             'X-Referer': b_id
                         }
-                    
+
                     # Try a simple private call (fetch balance)
                     balance = await exchange.fetch_balance()
                     print(f"✅ SUCCESS! Balance found.")
