@@ -65,19 +65,37 @@ def setup_signal_handlers(loop, logger):
 async def start_services():
     import os
 
-    # ═══════════════════════════════════════════════════════════════════════
-    # ENTERPRISE SAFETY: TRADING_MODE VERIFICATIE
-    # ═══════════════════════════════════════════════════════════════════════
-    TRADING_MODE = os.getenv("TRADING_MODE", "paper")
-    if TRADING_MODE != "paper":
+    # =========================================================================
+    # TRADING MODE CONFIGURATION (Configuration-driven, not hardcoded)
+    # =========================================================================
+    # Supported modes: paper, live, backtest
+    # Live mode requires explicit double opt-in:
+    #   1. TRADING_MODE=live
+    #   2. ENABLE_LIVE_TRADING=true
+    # This prevents accidental live trading deployment.
+    TRADING_MODE = os.getenv("TRADING_MODE", "paper").lower()
+    ENABLE_LIVE_TRADING = os.getenv("ENABLE_LIVE_TRADING", "false").lower() == "true"
+
+    valid_modes = {"paper", "live", "backtest"}
+    if TRADING_MODE not in valid_modes:
         raise SystemExit(
             f"\n{'='*60}\n"
-            f"🚫 STARTUP ABORTED: TRADING_MODE='{TRADING_MODE}' is not 'paper'\n"
+            f"STARTUP ABORTED: Invalid TRADING_MODE='{TRADING_MODE}'\n"
             f"{'='*60}\n"
-            f"This system is ONLY configured for paper trading.\n"
-            f"Set TRADING_MODE=paper in your .env file:\n\n"
-            f"    TRADING_MODE=paper\n\n"
-            f"Refusing to start to prevent any risk of live orders.\n"
+            f"Valid modes: {', '.join(sorted(valid_modes))}\n"
+            f"Set TRADING_MODE in your .env file.\n"
+            f"{'='*60}\n"
+        )
+
+    if TRADING_MODE == "live" and not ENABLE_LIVE_TRADING:
+        raise SystemExit(
+            f"\n{'='*60}\n"
+            f"STARTUP ABORTED: TRADING_MODE=live requires ENABLE_LIVE_TRADING=true\n"
+            f"{'='*60}\n"
+            f"Live trading requires explicit double opt-in:\n"
+            f"  1. TRADING_MODE=live\n"
+            f"  2. ENABLE_LIVE_TRADING=true\n\n"
+            f"This safety check prevents accidental live trading.\n"
             f"{'='*60}\n"
         )
 
@@ -89,7 +107,7 @@ async def start_services():
 
     logger = logging.getLogger("MainApp")
     logger.info("Starting Agentic Trader Platform...")
-    logger.info(f"✓ SAFETY CHECK: TRADING_MODE={TRADING_MODE} (verified)")
+    logger.info(f"SAFETY CHECK: TRADING_MODE={TRADING_MODE} (verified)")
 
     # Setup signal handlers voor graceful shutdown
     loop = asyncio.get_event_loop()

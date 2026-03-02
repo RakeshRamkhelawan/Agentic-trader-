@@ -35,6 +35,7 @@ class AccessControl:
             async def list_tournaments(request: Request):
                 ...
         """
+
         def decorator(func: Callable) -> Callable:
             @wraps(func)
             async def wrapper(*args, **kwargs):
@@ -61,12 +62,15 @@ class AccessControl:
                     )
 
                 return await func(*args, **kwargs)
+
             return wrapper
+
         return decorator
 
     @staticmethod
     def require_any(*permissions: Permission):
         """Require any of the specified permissions."""
+
         def decorator(func: Callable) -> Callable:
             @wraps(func)
             async def wrapper(*args, **kwargs):
@@ -92,12 +96,15 @@ class AccessControl:
                     )
 
                 return await func(*args, **kwargs)
+
             return wrapper
+
         return decorator
 
     @staticmethod
     def require_all(*permissions: Permission):
         """Require all specified permissions."""
+
         def decorator(func: Callable) -> Callable:
             @wraps(func)
             async def wrapper(*args, **kwargs):
@@ -124,7 +131,9 @@ class AccessControl:
                     )
 
                 return await func(*args, **kwargs)
+
             return wrapper
+
         return decorator
 
 

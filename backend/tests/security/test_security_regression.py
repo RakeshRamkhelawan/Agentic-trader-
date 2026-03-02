@@ -89,8 +89,8 @@ class TestJWTSecurity:
             issuer="https://test.auth0.com/",
         )
 
-        # Mock token
-        token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.invalid"
+        # Mock token - intentionally invalid for testing
+        token = "INVALID_TEST_TOKEN_FOR_SECURITY_TESTING"
 
         # Should raise error when no signing key available
         with pytest.raises(Exception):
@@ -104,7 +104,7 @@ class TestJWTSecurity:
         """Verify expired tokens are rejected."""
         from backend.auth.jwt_handler import JWTHandler
 
-        handler = JWTHandler(secret_key="a" * 32)
+        handler = JWTHandler(secret_key="test_secret_key_for_unit_tests_only")
 
         # Create expired token
         expired_payload = {
@@ -112,7 +112,7 @@ class TestJWTSecurity:
             "exp": datetime.now(timezone.utc) - timedelta(hours=1),
             "iat": datetime.now(timezone.utc) - timedelta(hours=2),
         }
-        expired_token = jwt.encode(expired_payload, "a" * 32, algorithm="HS256")
+        expired_token = jwt.encode(expired_payload, "test_secret_key_for_unit_tests_only", algorithm="HS256")
 
         # Should return None for expired token
         result = handler.decode_token(expired_token)

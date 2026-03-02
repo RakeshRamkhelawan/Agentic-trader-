@@ -548,16 +548,56 @@ class RevolutXClient:
 
     # Known Revolut X trading pairs (fallback when API doesn't provide symbols endpoint)
     KNOWN_SYMBOLS = [
-        "BTC-USD", "ETH-USD", "SOL-USD", "ADA-USD", "DOT-USD",
-        "XRP-USD", "LINK-USD", "LTC-USD", "BCH-USD", "XLM-USD",
-        "DOGE-USD", "AVAX-USD", "ATOM-USD", "ALGO-USD", "VET-USD",
-        "FIL-USD", "TRX-USD", "ETC-USD", "AAVE-USD", "UNI-USD",
-        "MKR-USD", "COMP-USD", "SNX-USD", "YFI-USD", "BAT-USD",
-        "ZRX-USD", "ENJ-USD", "CHZ-USD", "MANA-USD", "SAND-USD",
-        "AXS-USD", "LRC-USD", "CRV-USD", "KNC-USD", "GRT-USD",
-        "UMA-USD", "OCEAN-USD", "SUSHI-USD", "1INCH-USD", "STORJ-USD",
-        "FET-USD", "SKL-USD", "APT-USD", "ARB-USD", "OP-USD",
-        "NEAR-USD", "FTM-USD", "GALA-USD", "SUI-USD", "SEI-USD",
+        "BTC-USD",
+        "ETH-USD",
+        "SOL-USD",
+        "ADA-USD",
+        "DOT-USD",
+        "XRP-USD",
+        "LINK-USD",
+        "LTC-USD",
+        "BCH-USD",
+        "XLM-USD",
+        "DOGE-USD",
+        "AVAX-USD",
+        "ATOM-USD",
+        "ALGO-USD",
+        "VET-USD",
+        "FIL-USD",
+        "TRX-USD",
+        "ETC-USD",
+        "AAVE-USD",
+        "UNI-USD",
+        "MKR-USD",
+        "COMP-USD",
+        "SNX-USD",
+        "YFI-USD",
+        "BAT-USD",
+        "ZRX-USD",
+        "ENJ-USD",
+        "CHZ-USD",
+        "MANA-USD",
+        "SAND-USD",
+        "AXS-USD",
+        "LRC-USD",
+        "CRV-USD",
+        "KNC-USD",
+        "GRT-USD",
+        "UMA-USD",
+        "OCEAN-USD",
+        "SUSHI-USD",
+        "1INCH-USD",
+        "STORJ-USD",
+        "FET-USD",
+        "SKL-USD",
+        "APT-USD",
+        "ARB-USD",
+        "OP-USD",
+        "NEAR-USD",
+        "FTM-USD",
+        "GALA-USD",
+        "SUI-USD",
+        "SEI-USD",
     ]
 
     async def get_symbols(self) -> list[str]:
@@ -592,7 +632,9 @@ class RevolutXClient:
                 logger.info(f"[OK] Found {len(symbols)} trading symbols")
                 return symbols
             else:
-                logger.warning(f"[WARN] Symbols endpoint returned {response.status_code}, using known pairs")
+                logger.warning(
+                    f"[WARN] Symbols endpoint returned {response.status_code}, using known pairs"
+                )
                 return self.KNOWN_SYMBOLS
 
         except Exception as e:

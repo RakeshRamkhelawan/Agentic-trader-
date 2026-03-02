@@ -9,13 +9,14 @@ from datetime import datetime
 @dataclass
 class CronJob:
     """A scheduled cron job."""
+
     id: str
     name: str
     minute: str  # 0-59 or *
-    hour: str    # 0-23 or *
+    hour: str  # 0-23 or *
     day_of_month: str  # 1-31 or *
-    month: str   # 1-12 or *
-    day_of_week: str   # 0-6 (0=Sunday) or *
+    month: str  # 1-12 or *
+    day_of_week: str  # 0-6 (0=Sunday) or *
     task: Callable
     enabled: bool = True
     last_run: datetime | None = None
@@ -119,11 +120,11 @@ class CronRunner:
             return False
 
         return (
-            self._match_field(job.minute, now.minute) and
-            self._match_field(job.hour, now.hour) and
-            self._match_field(job.day_of_month, now.day) and
-            self._match_field(job.month, now.month) and
-            self._match_field(job.day_of_week, now.weekday())
+            self._match_field(job.minute, now.minute)
+            and self._match_field(job.hour, now.hour)
+            and self._match_field(job.day_of_month, now.day)
+            and self._match_field(job.month, now.month)
+            and self._match_field(job.day_of_week, now.weekday())
         )
 
     async def _run_job(self, job: CronJob) -> None:
@@ -213,12 +214,14 @@ class CronRunner:
     async def _cleanup_cache(self) -> None:
         """Cleanup expired cache entries."""
         from backend.cache import redis_cache
+
         stats = redis_cache.get_stats()
         print(f"Cache stats: {stats}")
 
     async def _refresh_leaderboards(self) -> None:
         """Refresh leaderboard caches."""
         from backend.cache import redis_cache
+
         redis_cache.invalidate_leaderboard()
         print("Leaderboard cache invalidated")
 
