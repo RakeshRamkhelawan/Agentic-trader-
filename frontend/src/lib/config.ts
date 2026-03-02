@@ -24,8 +24,8 @@ function getConfig(key: string, defaultValue: string): string {
 }
 
 // API Configuration
-export const API_URL = getConfig('VITE_API_URL', 'http://localhost:8003');
-export const WS_URL = getConfig('VITE_WS_URL', 'ws://localhost:8003/ws/public');
+export const API_URL = getConfig('VITE_API_URL', 'http://localhost:8001');
+export const WS_URL = getConfig('VITE_WS_URL', 'ws://localhost:8001/ws/public');
 
 // Auth0 Configuration
 export const AUTH0_DOMAIN = getConfig('VITE_AUTH0_DOMAIN', '');

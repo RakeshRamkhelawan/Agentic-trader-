@@ -1,0 +1,114 @@
+2026-02-27 18:18:43,818 - INFO -
+2026-02-27 18:18:43,820 - INFO - ======================================================================
+2026-02-27 18:18:43,820 - INFO -   CHITTA ULTIMATE TRAINING
+2026-02-27 18:18:43,821 - INFO - ======================================================================
+2026-02-27 18:18:43,822 - INFO - Model: transformer
+2026-02-27 18:18:43,822 - INFO - Epochs: 50
+2026-02-27 18:18:43,823 - INFO - No GPU detected, using CPU
+2026-02-27 18:18:43,824 - INFO - Device: cpu
+2026-02-27 18:18:43,827 - INFO - No GPU detected, using CPU
+2026-02-27 18:18:43,827 - INFO -
+2026-02-27 18:18:43,828 - INFO - ======================================================================
+2026-02-27 18:18:43,828 - INFO -   LOADING DATA
+2026-02-27 18:18:43,829 - INFO - ======================================================================
+2026-02-27 18:18:43,830 - INFO - Processing 10 files with 4 workers...
+2026-02-27 18:18:56,128 - INFO - Dataset built: 6717 sequences
+2026-02-27 18:18:56,211 - INFO - Cached to: .cache\chitta_datasets\dataset_10_50_5.pkl
+2026-02-27 18:18:56,248 - INFO - Dataset size: 6717
+2026-02-27 18:18:56,249 - INFO - Input features: 4
+2026-02-27 18:18:56,250 - INFO - Sequence length: 50
+2026-02-27 18:18:56,251 - INFO - Train: 5373, Val: 1344
+2026-02-27 18:18:56,252 - INFO -
+2026-02-27 18:18:56,252 - INFO - ======================================================================
+2026-02-27 18:18:56,252 - INFO -   CREATING MODEL
+2026-02-27 18:18:56,253 - INFO - ======================================================================
+2026-02-27 18:18:56,317 - INFO - ChittaTransformer initialized: d_model=256, layers=4, heads=8
+2026-02-27 18:18:56,320 - INFO - Model parameters: 2,175,745
+2026-02-27 18:18:56,320 - INFO -
+2026-02-27 18:18:56,321 - INFO - ======================================================================
+2026-02-27 18:18:56,321 - INFO -   TRAINING
+2026-02-27 18:18:56,321 - INFO - ======================================================================
+2026-02-27 18:19:01,122 - INFO - Model trainer initialized on cpu
+2026-02-27 18:22:32,480 - INFO - Epoch   1/50: Train=0.146122, Val=0.000020, Acc=31.77%, Time=211.4s
+2026-02-27 18:25:18,337 - INFO - Epoch   2/50: Train=0.052731, Val=0.000002, Acc=65.48%, Time=165.9s
+2026-02-27 18:28:08,579 - INFO - Epoch   3/50: Train=0.052752, Val=0.000009, Acc=31.77%, Time=170.2s
+2026-02-27 18:31:06,877 - INFO - Epoch   4/50: Train=0.052665, Val=0.000003, Acc=31.77%, Time=178.3s
+2026-02-27 18:34:34,562 - INFO - Epoch   5/50: Train=0.052783, Val=0.000002, Acc=65.40%, Time=207.7s
+2026-02-27 18:39:11,672 - INFO - Epoch   6/50: Train=0.052784, Val=0.000013, Acc=31.77%, Time=277.1s
+2026-02-27 18:43:06,738 - INFO - Epoch   7/50: Train=0.052895, Val=0.000010, Acc=65.40%, Time=235.1s
+2026-02-27 18:48:22,488 - INFO - Epoch   8/50: Train=0.052575, Val=0.000042, Acc=65.40%, Time=315.7s
+2026-02-27 18:59:52,572 - INFO - Epoch   9/50: Train=0.052779, Val=0.000021, Acc=65.40%, Time=690.1s
+2026-02-27 19:12:23,868 - INFO - Epoch  10/50: Train=0.052681, Val=0.000120, Acc=31.77%, Time=751.3s
+2026-02-27 19:22:52,954 - INFO - Epoch  11/50: Train=0.052575, Val=0.000004, Acc=65.40%, Time=629.1s
+2026-02-27 19:33:34,470 - INFO - Epoch  12/50: Train=0.052682, Val=0.000002, Acc=65.40%, Time=641.5s
+2026-02-27 19:44:24,739 - INFO - Epoch  13/50: Train=0.052535, Val=0.000004, Acc=65.40%, Time=650.3s
+2026-02-27 19:50:42,934 - INFO - Epoch  14/50: Train=0.052505, Val=0.000008, Acc=31.77%, Time=378.2s
+2026-02-27 19:56:35,268 - INFO - Epoch  15/50: Train=0.052608, Val=0.000004, Acc=65.40%, Time=352.3s
+2026-02-27 20:02:40,784 - INFO - Epoch  16/50: Train=0.052597, Val=0.000014, Acc=65.40%, Time=365.5s
+2026-02-27 20:08:11,143 - INFO - Epoch  17/50: Train=0.052513, Val=0.000016, Acc=65.40%, Time=330.4s
+2026-02-27 20:12:59,081 - INFO - Epoch  18/50: Train=0.057976, Val=0.000569, Acc=65.40%, Time=287.9s
+2026-02-27 20:18:00,980 - INFO - Epoch  19/50: Train=0.052680, Val=0.000036, Acc=31.77%, Time=301.9s
+2026-02-27 20:23:22,552 - INFO - Epoch  20/50: Train=0.052715, Val=0.000027, Acc=65.40%, Time=321.6s
+2026-02-27 20:28:28,744 - INFO - Epoch  21/50: Train=0.052714, Val=0.000006, Acc=65.40%, Time=306.2s
+2026-02-27 20:33:17,984 - INFO - Epoch  22/50: Train=0.052482, Val=0.000003, Acc=65.40%, Time=289.2s
+2026-02-27 20:37:49,236 - INFO - Epoch  23/50: Train=0.052472, Val=0.000018, Acc=65.40%, Time=271.3s
+2026-02-27 20:42:45,663 - INFO - Epoch  24/50: Train=0.052497, Val=0.000076, Acc=65.40%, Time=296.4s
+2026-02-27 20:47:42,041 - INFO - Epoch  25/50: Train=0.052493, Val=0.000003, Acc=65.40%, Time=296.4s
+2026-02-27 20:52:51,363 - INFO - Epoch  26/50: Train=0.052486, Val=0.000048, Acc=65.40%, Time=309.3s
+2026-02-27 20:58:02,994 - INFO - Epoch  27/50: Train=0.052476, Val=0.000003, Acc=65.40%, Time=311.6s
+2026-02-27 21:03:15,399 - INFO - Epoch  28/50: Train=0.052489, Val=0.000002, Acc=65.40%, Time=312.4s
+2026-02-27 21:08:29,338 - INFO - Epoch  29/50: Train=0.052490, Val=0.000003, Acc=65.40%, Time=313.9s
+2026-02-27 21:16:35,405 - INFO - Epoch  30/50: Train=0.052490, Val=0.000003, Acc=65.40%, Time=486.1s
+2026-02-27 21:22:50,097 - INFO - Epoch  31/50: Train=0.052491, Val=0.000004, Acc=65.40%, Time=374.7s
+2026-02-27 21:27:46,922 - INFO - Epoch  32/50: Train=0.052491, Val=0.000006, Acc=65.40%, Time=296.8s
+2026-02-27 21:30:02,497 - INFO - Epoch  33/50: Train=0.052488, Val=0.000003, Acc=65.40%, Time=135.6s
+2026-02-27 21:32:21,050 - INFO - Epoch  34/50: Train=0.052491, Val=0.000003, Acc=65.40%, Time=138.6s
+2026-02-27 21:34:53,472 - INFO - Epoch  35/50: Train=0.052491, Val=0.000003, Acc=65.40%, Time=152.4s
+2026-02-27 21:37:02,543 - INFO - Epoch  36/50: Train=0.052490, Val=0.000003, Acc=65.40%, Time=129.1s
+2026-02-27 21:38:51,938 - INFO - Epoch  37/50: Train=0.052490, Val=0.000002, Acc=65.40%, Time=109.4s
+2026-02-27 21:40:52,044 - INFO - Epoch  38/50: Train=0.052491, Val=0.000010, Acc=65.40%, Time=120.1s
+2026-02-27 21:42:52,560 - INFO - Epoch  39/50: Train=0.052485, Val=0.000002, Acc=65.40%, Time=120.5s
+2026-02-27 21:45:01,562 - INFO - Epoch  40/50: Train=0.052491, Val=0.000004, Acc=65.40%, Time=129.0s
+2026-02-27 21:47:02,083 - INFO - Epoch  41/50: Train=0.052491, Val=0.000010, Acc=65.40%, Time=120.5s
+2026-02-27 21:49:44,495 - INFO - Epoch  42/50: Train=0.052490, Val=0.000003, Acc=65.40%, Time=162.4s
+2026-02-27 21:54:10,637 - INFO - Epoch  43/50: Train=0.052482, Val=0.000086, Acc=65.40%, Time=266.1s
+2026-02-27 21:58:43,654 - INFO - Epoch  44/50: Train=0.052484, Val=0.000003, Acc=65.40%, Time=273.0s
+2026-02-27 22:03:00,113 - INFO - Epoch  45/50: Train=0.052490, Val=0.000002, Acc=65.40%, Time=256.5s
+2026-02-27 22:06:31,777 - INFO - Epoch  46/50: Train=0.052487, Val=0.000052, Acc=65.40%, Time=211.7s
+2026-02-27 22:09:32,020 - INFO - Epoch  47/50: Train=0.052475, Val=0.000002, Acc=65.40%, Time=180.2s
+2026-02-27 22:11:48,844 - INFO - Epoch  48/50: Train=0.052480, Val=0.000091, Acc=65.40%, Time=136.8s
+2026-02-27 22:14:06,796 - INFO - Epoch  49/50: Train=0.052498, Val=0.000003, Acc=65.40%, Time=137.9s
+2026-02-27 22:16:26,044 - INFO - Epoch  50/50: Train=0.052489, Val=0.000003, Acc=65.40%, Time=139.2s
+2026-02-27 22:16:26,091 - INFO -
+2026-02-27 22:16:26,092 - INFO - ======================================================================
+2026-02-27 22:16:26,093 - INFO -   RESULTS
+2026-02-27 22:16:26,096 - INFO - ======================================================================
+2026-02-27 22:16:26,097 - INFO - Training time: 14249.8s (237.5 min)
+2026-02-27 22:16:26,098 - INFO - Best val loss: 0.000002
+2026-02-27 22:16:26,098 - INFO - Final val accuracy: 65.40%
+Traceback (most recent call last):
+  File "C:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\scripts\train_chitta_ultimate.py", line 350, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\scripts\train_chitta_ultimate.py", line 319, in main
+    torch.save({
+    ~~~~~~~~~~^^
+        'model_state_dict': results['model'].state_dict(),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+        }
+        ^
+    }, model_path)
+    ^^^^^^^^^^^^^^
+  File "C:\Users\rsram\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\serialization.py", line 966, in save
+    serialized_storages: Dict[str, Tuple[torch.UntypedStorage, torch.dtype]] = {}
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rsram\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\serialization.py", line 828, in _open_zipfile_writer
+    return False
+       ^^^^^^^^^
+  File "C:\Users\rsram\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\serialization.py", line 793, in __init__
+    if not hasattr(buffer, "write"):
+                       ^^^^^^^^^^^^^
+  File "C:\Users\rsram\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\serialization.py", line 177, in get_crc32_options
+    """
+ModuleNotFoundError: No module named 'torch.utils.serialization'

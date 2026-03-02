@@ -110,8 +110,9 @@ class SentimentAgent:
             # Fallback to rule-based scoring
             return self._fallback_analysis(headlines, coin)
 
-        # Build prompt
-        headlines_text = "\n".join([f"- {h}" for h in headlines[:15]])  # Limit to 15
+        # Sanitize headlines to prevent prompt injection
+        sanitized_headlines = self._sanitize_headlines(headlines[:15])
+        headlines_text = "\n".join([f"- {h}" for h in sanitized_headlines])
 
         prompt = f"""You are a crypto trading sentiment analyst. Analyze the following news headlines for {coin} and provide a sentiment assessment.
 

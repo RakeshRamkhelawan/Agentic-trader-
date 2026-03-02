@@ -49,7 +49,7 @@ class QuoteResponse(BaseModel):
 @router.get("/best-price", response_model=QuoteResponse)
 async def get_best_price(
     symbol: str = Query(..., description="Symbol in any format (BTC/EUR, BTC-EUR, BTCEUR)"),
-    side: str = Query("buy", regex="^(buy|sell)$"),
+    side: str = Query("buy", pattern="^(buy|sell)$"),
     engine: RouterEngine = Depends(get_router_engine),
 ):
     """

@@ -154,7 +154,8 @@ REDIS_URL=redis://redis:6379/0
 
 # ClickHouse
 CLICKHOUSE_HOST=clickhouse
-CLICKHOUSE_PORT=8123
+CLICKHOUSE_HTTP_PORT=8123  # Intern in container
+# Extern: localhost:5000 (zie PORT_ALLOCATION.md)
 CLICKHOUSE_USER=trader
 CLICKHOUSE_PASSWORD=trading_secure
 

@@ -1,4 +1,3 @@
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +18,7 @@ class OAuthConfig:
         # In a real app, load from env vars
         # For now, we stub this to avoid needing actual credentials in dev
         self.enabled = False
-        self.oidc_config: Optional[OIDCConfig] = None
+        self.oidc_config: OIDCConfig | None = None
 
     def validate_token(self, token: str) -> dict:
         """
@@ -33,7 +32,7 @@ class OAuthConfig:
             return {"sub": "mock_user", "scope": "read write"}
 
         # Mock validation
-        if token == "invalid":
+        if token == "invalid":  # nosec B105 - Test value for mock validation
             raise ValueError("Invalid token")
 
         return {"sub": "user_123", "tenant_id": "tenant_abc"}

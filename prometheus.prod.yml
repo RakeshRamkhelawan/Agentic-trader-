@@ -16,4 +16,4 @@ scrape_configs:
 
   - job_name: 'clickhouse'
     static_configs:
-      - targets: ['clickhouse:8123']
+      - targets: ['clickhouse:8123']  # Interne Docker poort, extern is 5000

@@ -174,7 +174,7 @@ class NewsAgent:
         seen = set()
         unique_news = []
         for item in all_news:
-            title_hash = hashlib.md5(item.title.lower().encode()).hexdigest()[:16]
+            title_hash = hashlib.blake2b(item.title.lower().encode(), digest_size=8).hexdigest()
             if title_hash not in seen:
                 seen.add(title_hash)
                 unique_news.append(item)

@@ -1,0 +1,104 @@
+# OPA (Open Policy Agent) Policies for Kubernetes
+---
+# OPA Gatekeeper Constraints
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: required-labels
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod", "Service", "Deployment"]
+    namespaces: ["agentic-trader"]
+  parameters:
+    labels:
+      - key: app.kubernetes.io/name
+        allowedRegex: "^[a-z-]+$"
+      - key: app.kubernetes.io/component
+        allowedRegex: "^(api|frontend|database|cache)$"
+      - key: environment
+        allowedRegex: "^(dev|staging|prod)$"
+
+---
+# Prevent containers from running as root
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sPSPForbiddenSysctls
+metadata:
+  name: forbid-sysctls
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["agentic-trader"]
+  parameters:
+    forbiddenSysctls:
+      - "*"
+
+---
+# Require resource limits
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredResources
+metadata:
+  name: required-resources
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["agentic-trader"]
+  parameters:
+    limits:
+      - cpu
+      - memory
+
+---
+# Block privileged containers
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sPSPPrivilegedContainer
+metadata:
+  name: psp-privileged-container
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["agentic-trader"]
+  parameters:
+    privileged: false
+
+---
+# Require read-only root filesystem
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sreadonlyrootfilesystem
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sReadOnlyRootFilesystem
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sreadonlyrootfilesystem
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.readOnlyRootFilesystem
+          msg := sprintf("Container %s must have readOnlyRootFilesystem set to true", [container.name])
+        }
+
+---
+# Apply the read-only root filesystem constraint
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sReadOnlyRootFilesystem
+metadata:
+  name: readonly-root-fs
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["agentic-trader"]

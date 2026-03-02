@@ -14319,6 +14319,18 @@
         "symbol": "BTC/EUR",
         "qty": 0.001
       }
+    },
+    {
+      "event": "paper_guard_intercept",
+      "function": "test_paper_mode_safety.TestPaperModeAbsoluteGuarantee.test_paper_guard_blocks_decorated_function.<locals>.fake_exchange_call",
+      "trading_mode": "paper",
+      "timestamp": "2026-02-28T18:32:17.976340+00:00",
+      "intercepted": true,
+      "session_id": null,
+      "intent": {
+        "symbol": "BTC/EUR",
+        "qty": 0.001
+      }
     }
   ]
 }

@@ -130,7 +130,27 @@ class RiskOrchestrator:
                 drawdown_status=dd_status,
             )
 
-        # 4. Position sizing
+        # 4. Portfolio VaR Limit Check (CRITICAL - was missing!)
+        # Calculate portfolio VaR and ensure it doesn't exceed limit
+        try:
+            # This would normally use historical returns; using simplified check here
+            portfolio_var_pct = self._estimate_portfolio_var(
+                portfolio_value=portfolio_value,
+                new_position_size=quantity,
+                signal=signal
+            )
+            if portfolio_var_pct > self.max_daily_var_pct:
+                return RiskDecision(
+                    approved=False,
+                    reason=f"Portfolio VaR limit exceeded: {portfolio_var_pct:.2%} > {self.max_daily_var_pct:.2%}",
+                    recommended_quantity=0.0,
+                    drawdown_status=dd_status,
+                )
+        except Exception as e:
+            # Log warning but don't block trade if VaR calculation fails
+            warnings_list.append(f"VaR calculation warning: {e}")
+
+        # 5. Position sizing
         sizing_method = "fixed_risk"
         kelly_fraction = None
 
@@ -200,3 +220,48 @@ class RiskOrchestrator:
             Current DrawdownStatus
         """
         return self.drawdown_monitor.check(value)
+
+    def _estimate_portfolio_var(
+        self,
+        portfolio_value: float,
+        new_position_size: float,
+        signal: TradeSignal,
+        confidence: float = 0.95
+    ) -> float:
+        """
+        Estimate portfolio VaR with proposed new position.
+        
+        This is a simplified VaR estimation. In production, use historical
+        returns and proper VaR calculation.
+        
+        Args:
+            portfolio_value: Current portfolio value
+            new_position_size: Proposed position size
+            signal: Trade signal
+            confidence: VaR confidence level
+            
+        Returns:
+            Estimated VaR as percentage of portfolio
+        """
+        # Simplified: estimate VaR based on position size and stop distance
+        if portfolio_value <= 0 or new_position_size <= 0:
+            return 0.0
+            
+        # Risk per unit based on stop distance
+        risk_per_unit = abs(signal.entry_price - signal.stop_price)
+        if risk_per_unit <= 0:
+            return 0.0
+            
+        # Total risk amount
+        total_risk = new_position_size * risk_per_unit
+        
+        # VaR as percentage (simplified - doesn't account for correlation)
+        var_pct = total_risk / portfolio_value
+        
+        # Scale by confidence (higher confidence = higher VaR)
+        # 95% confidence: multiply by ~1.645 (z-score)
+        # 99% confidence: multiply by ~2.326
+        z_scores = {0.90: 1.28, 0.95: 1.645, 0.99: 2.326}
+        z_score = z_scores.get(confidence, 1.645)
+        
+        return var_pct * z_score

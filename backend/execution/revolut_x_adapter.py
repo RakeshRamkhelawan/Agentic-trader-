@@ -31,7 +31,7 @@ class RevolutXAdapter:
         """
         self.client = RevolutXClient(api_key=api_key, private_key_path=private_key_path)
         self._connected = False
-        logger.info("✅ RevolutXAdapter initialized")
+        logger.info("[OK] RevolutXAdapter initialized")
 
     async def connect(self) -> bool:
         """
@@ -146,7 +146,7 @@ class RevolutXAdapter:
         revolut_type = self._map_order_type(order_type)
 
         logger.info(
-            f"📤 Placing {order_type} {side} order on Revolut X: "
+            f"[ORDER] Placing {order_type} {side} order on Revolut X: "
             f"{quantity} {revolut_symbol} @ {price or 'market'}"
         )
 
@@ -167,7 +167,7 @@ class RevolutXAdapter:
         ooda_order = self._revolut_to_ooda_order(revolut_order)
 
         logger.info(
-            f"✅ Order placed on Revolut X: {ooda_order.order_id} " f"(status: {ooda_order.status})"
+            f"[OK] Order placed on Revolut X: {ooda_order.order_id} (status: {ooda_order.status})"
         )
 
         return ooda_order
@@ -220,14 +220,14 @@ class RevolutXAdapter:
         if not self._connected:
             await self.connect()
 
-        logger.info(f"🚫 Cancelling order on Revolut X: {order_id}")
+        logger.info(f"[CANCEL] Cancelling order on Revolut X: {order_id}")
 
         success = await self.client.cancel_order(order_id)
 
         if success:
-            logger.info(f"✅ Order cancelled: {order_id}")
+            logger.info(f"[OK] Order cancelled: {order_id}")
         else:
-            logger.error(f"❌ Failed to cancel order: {order_id}")
+            logger.error(f"[ERROR] Failed to cancel order: {order_id}")
 
         return success
 

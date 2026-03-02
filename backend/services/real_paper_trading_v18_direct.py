@@ -64,9 +64,11 @@ class PaperTradingConfig:
     min_vedastro_confidence: float = 50.0
     min_vedastro_score: float = 45.0
 
-    # Trading cycle settings
-    cycle_interval_seconds: int = 30
-    symbols_per_cycle: int = 20
+    # Trading cycle settings - OPTIMIZED
+    # DataPreFetchAgent updates all 400+ symbols continuously
+    # We analyze ALL symbols every cycle, prioritizing those with VedAstro signals
+    cycle_interval_seconds: int = 5  # Reduced from 30s for faster response
+    symbols_per_cycle: int = 400  # Analyze all symbols every cycle
 
 
 @dataclass
@@ -262,13 +264,13 @@ class RealPaperTradingV18:
         return False
 
     async def _trading_cycle(self):
-        """Execute one trading cycle - EXACT Backtest V18 Logic."""
+        """Execute one trading cycle - OPTIMIZED for all 400+ symbols."""
         self._cycle_count += 1
 
         if not self.data_agent:
             return
 
-        # Get fresh prices
+        # Get fresh prices for ALL symbols
         prices = await self.data_agent.get_all_prices()
 
         if len(prices) < 10:
@@ -282,31 +284,44 @@ class RealPaperTradingV18:
         if self._check_portfolio_circuit_breaker():
             return  # Skip this cycle
 
-        # Select symbols to analyze (rotating)
-        available = list(prices.keys())
-        cycle_offset = (self._cycle_count * self.config.symbols_per_cycle) % max(1, len(available))
-        to_analyze = []
-        for i in range(min(self.config.symbols_per_cycle, len(available))):
-            idx = (cycle_offset + i) % len(available)
-            to_analyze.append(available[idx])
+        # OPTIMIZED: Prioritize symbols
+        # 1. Symbols with open positions (exit check) - ALWAYS check these
+        # 2. Other symbols (entry check) - prioritize by VedAstro potential
+        open_position_symbols = [s for s in self.state.open_positions.keys() if s in prices]
+        other_symbols = [s for s in prices.keys() if s not in self.state.open_positions]
+
+        # Limit other symbols to analyze per cycle to prevent overload
+        # But rotate through them faster (every symbol gets checked every few cycles)
+        max_new_symbols_per_cycle = 100
+        cycle_offset = (self._cycle_count * max_new_symbols_per_cycle) % max(1, len(other_symbols))
+        new_symbols_to_check = []
+        for i in range(min(max_new_symbols_per_cycle, len(other_symbols))):
+            idx = (cycle_offset + i) % len(other_symbols)
+            new_symbols_to_check.append(other_symbols[idx])
+
+        # Combine: open positions first (critical), then new opportunities
+        to_analyze = open_position_symbols + new_symbols_to_check
 
         trades_this_cycle = 0
+
+        logger.debug(f"Cycle {self._cycle_count}: Checking {len(open_position_symbols)} positions + {len(new_symbols_to_check)} new symbols")
 
         for symbol in to_analyze:
             try:
                 price_data = prices[symbol]
                 current_price = price_data.price
 
-                # Get price history (convert to float list)
-                price_history_data = await self.data_agent.get_price_history(symbol, lookback=30)
-                price_history = [p.price for p in price_history_data]
-
                 # Check if we have an open position
                 if symbol in self.state.open_positions:
+                    # Exit check - always do this for positions
                     exit_triggered = await self._evaluate_exit(symbol, current_price)
                     if exit_triggered:
                         trades_this_cycle += 1
                 else:
+                    # Entry check - get price history only when needed
+                    price_history_data = await self.data_agent.get_price_history(symbol, lookback=30)
+                    price_history = [p.price for p in price_history_data]
+
                     entry_triggered = await self._evaluate_entry(
                         symbol, current_price, price_history
                     )
@@ -798,10 +813,12 @@ class RealPaperTradingV18:
             trade = {
                 "timestamp": datetime.utcnow().isoformat(),
                 "symbol": symbol,
-                "action": "BUY",
-                "quantity": quantity,
+                "side": "buy",
+                "qty": quantity,
                 "price": current_price,
-                "position_size": position_size,
+                "value": position_size,
+                "agent": "V18_Elemental",
+                "exchange": "Bitvavo",
                 "commission": commission,
                 "vedastro_confidence": confidence,
                 "vedastro_score": strength_score,
@@ -1022,9 +1039,12 @@ class RealPaperTradingV18:
             trade = {
                 "timestamp": datetime.utcnow().isoformat(),
                 "symbol": symbol,
-                "action": "SELL",
-                "quantity": quantity,
+                "side": "sell",
+                "qty": quantity,
                 "price": current_price,
+                "value": proceeds,
+                "agent": "V18_Elemental",
+                "exchange": "Bitvavo",
                 "commission": commission,
                 "pnl": pnl,
                 "pnl_pct": pnl_pct,

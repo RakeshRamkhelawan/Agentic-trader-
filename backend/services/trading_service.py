@@ -927,17 +927,23 @@ class TradingService:
             # Create a query for each symbol is too many queries.
             # Use a window function approach or Postgres DISTINCT ON
 
-            sym_list_str = "', '".join(symbols)
-            sql = text(f"""
+            # Use parameterized query for symbols list
+            placeholders = ', '.join([f':sym_{i}' for i in range(len(symbols))])
+            params = {f'sym_{i}': sym for i, sym in enumerate(symbols)}
+            params['target_time'] = target_time
+
+            sql = text(  # nosec B608
+                f"""
                 SELECT DISTINCT ON (symbol) symbol, price
                 FROM market_ticks
-                WHERE symbol IN ('{sym_list_str}')
+                WHERE symbol IN ({placeholders})
                   AND timestamp <= :target_time
                 ORDER BY symbol, timestamp DESC
-            """)
+            """
+            )
 
             try:
-                result = await session.execute(sql, {"target_time": target_time})
+                result = await session.execute(sql, params)
                 rows = result.fetchall()
                 return {row[0]: float(row[1]) for row in rows}
             except Exception as e:

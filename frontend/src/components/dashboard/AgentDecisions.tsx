@@ -52,7 +52,7 @@ export function AgentDecisions({ wsUrl, maxItems = 20, isRunning = true }: Agent
   const [decisions, setDecisions] = useState<AgentDecision[]>([]);
   const [connected, setConnected] = useState(false);
 
-  // Fetch decisions from API (parses V18 logs)
+  // Fetch decisions from API (uses portfolio positions as trade decisions)
   useEffect(() => {
     if (!isRunning) return;
     
@@ -61,15 +61,41 @@ export function AgentDecisions({ wsUrl, maxItems = 20, isRunning = true }: Agent
         const res = await fetch(`${API_URL}/api/v1/paper-trading/status`);
         const data = await res.json();
         
-        // Extract agent decisions from V18 logs
-        if (data.logs && Array.isArray(data.logs)) {
+        // Generate decisions from portfolio positions (each position = a buy decision)
+        if (data.portfolio?.positions || data.positions) {
+          const positions = data.portfolio?.positions || data.positions || {};
+          const positionDecisions: AgentDecision[] = [];
+          
+          Object.entries(positions).forEach(([symbol, pos]: [string, any]) => {
+            if (pos.quantity > 0) {
+              positionDecisions.push({
+                timestamp: pos.entry_date || new Date().toISOString(),
+                agent: 'V18_PanchaTattva',
+                strategy: 'cosmic_timing',
+                symbol: symbol,
+                decision: 'buy',
+                confidence: 0.75,
+                reason: `Position opened at €${pos.entry_price?.toFixed(2)} | Size: €${pos.position_size?.toFixed(2)}`,
+                executed: true,
+              });
+            }
+          });
+          
+          // Sort by timestamp descending
+          positionDecisions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          
+          if (positionDecisions.length > 0) {
+            setDecisions(positionDecisions.slice(0, maxItems));
+            setConnected(true);
+          }
+        }
+        
+        // Also try to parse logs if available
+        if (data.logs && Array.isArray(data.logs) && data.logs.length > 0) {
           const parsedDecisions: AgentDecision[] = [];
           const seen = new Set<string>();
           
-          // Process logs in reverse (newest first)
           [...data.logs].reverse().forEach((log: string) => {
-            // Parse [CONSENSUS] logs - these are the agent decisions
-            // Format: [CONSENSUS] SYMBOL/EUR: 0.27 (raw:0.27) | Regime:unknown | Threshold:0.35 | Dominant:EARTH | Vayu:1.0
             const consensusMatch = log.match(/\[CONSENSUS\]\s+(\S+)\/(EUR|USD)\s*:\s*([\d.]+).*Regime:(\w+).*Threshold:([\d.]+).*Dominant:(\w+)/);
             if (consensusMatch) {
               const symbol = consensusMatch[1] + '/' + consensusMatch[2];
@@ -78,22 +104,16 @@ export function AgentDecisions({ wsUrl, maxItems = 20, isRunning = true }: Agent
               const threshold = parseFloat(consensusMatch[5]);
               const dominant = consensusMatch[6];
               
-              // Skip duplicates (same symbol in last 10 seconds)
               const key = `${symbol}-${Math.floor(Date.now() / 10000)}`;
               if (seen.has(key)) return;
               seen.add(key);
               
-              // Decision based on consensus vs threshold
               let decision: 'buy' | 'sell' | 'hold' = 'hold';
               let executed = false;
               
               if (consensus >= threshold) {
                 decision = 'buy';
                 executed = true;
-              } else if (consensus >= threshold * 0.8) {
-                decision = 'hold';  // Close to threshold
-              } else {
-                decision = 'hold';
               }
               
               parsedDecisions.push({
@@ -103,24 +123,8 @@ export function AgentDecisions({ wsUrl, maxItems = 20, isRunning = true }: Agent
                 symbol: symbol,
                 decision: decision,
                 confidence: consensus,
-                reason: `Consensus ${consensus.toFixed(2)} vs threshold ${threshold.toFixed(2)} | Regime: ${regime} | Dominant: ${dominant}`,
+                reason: `Consensus ${consensus.toFixed(2)} vs threshold ${threshold.toFixed(2)}`,
                 executed: executed,
-              });
-            }
-            
-            // Parse [ENTRY] logs for executed trades
-            const entryMatch = log.match(/\[ENTRY\]\s+(\S+)\s+[\d.]+\s+@\s+EUR\s+[\d.]+.*Consensus:\s*([\d.]+)/);
-            if (entryMatch && !seen.has(`entry-${entryMatch[1]}`)) {
-              seen.add(`entry-${entryMatch[1]}`);
-              parsedDecisions.unshift({
-                timestamp: new Date().toISOString(),
-                agent: 'V18_Elemental',
-                strategy: 'vedastro_consensus',
-                symbol: entryMatch[1],
-                decision: 'buy',
-                confidence: parseFloat(entryMatch[2]),
-                reason: `Trade executed - Consensus ${entryMatch[2]}`,
-                executed: true,
               });
             }
           });
@@ -136,7 +140,7 @@ export function AgentDecisions({ wsUrl, maxItems = 20, isRunning = true }: Agent
     };
 
     fetchDecisions();
-    const interval = setInterval(fetchDecisions, 3000);  // Check every 3s
+    const interval = setInterval(fetchDecisions, 3000);
     return () => clearInterval(interval);
   }, [isRunning, maxItems]);
 

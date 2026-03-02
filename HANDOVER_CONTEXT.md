@@ -36,6 +36,13 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
   - **Gefixed: python-multipart conflict**: Versie gepind op `0.0.9`.
   - **Robuustheid**: `ZeroCopyBridge` vangt nu shared memory errors op zonder te crashen.
   - **Build Optimalisatie**: Docker build context verkleind door `src/` uit te sluiten (~95% sneller).
+- **Commit en Push Alles (VOLTOOID)**:
+  - Alle openstaande wijzigingen (waaronder WebSocket integratietesten) zijn gestaged en gecommit.
+  - De werkbranch is succesvol gemerged naar `main`.
+  - De code is veilig gepusht naar de remote repository (`origin/main`).
+- **Security & Branch Oplevering (VOLTOOID)**:
+  - Alle huidige openstaande wijzigingen gecontroleerd op hardcoded secrets (API keys, passwords, bearer tokens) vóór commit.
+  - Branch `chore/commit-security-fixes` succesvol aangemaakt, gestaged, gecommit en gepusht naar de remote.
 
 ## 3. Key Files
 - `backend/governance/agent_gatekeeper.py` (Agent RBAC logic)
@@ -53,6 +60,8 @@ Security Hardening and Standardized Data Infrastructure (Epics 10 & 11).
 - **Automatisering**: Het vroegtijdig activeren van CI/CD en lokale `pre-commit` hooks voorkomt "breaking changes" en houdt de codebase op een hoog kwaliteitsniveau zonder handmatig werk.
 - **Infrastructure Context**: Het uitsluiten van zware, irrelevante mappen (zoals `src/` van SanskritiSetu) in `.dockerignore` is cruciaal voor snelle Docker builds en het voorkomen van context-bloat.
 - **Dependency Management**: Pijndpunten in FastAPI imports (zoals `python-multipart`) vereisen strikte versiecontrole in `requirements.txt` om onverwachte runtime errors te vermijden.
+- **Git Workflow**: Lokaal committen, mergen naar main, en dan pushen werkt feilloos mits de status van integratietesten geverifieerd is.
+- **Proactieve Beveiliging**: Het instellen van checks op hardcoded secrets in handoff-processen of via pipelines voorkomt datalekken. Templates (`secrets.yaml`) en example configuraties moeten secuur gemanaged worden (evt. via Vault) om valse positieven uit te sluiten in de detectie.
 
 ## 5. Volgende Stappen
 - **Grafana Dashboards**: Uitbreiden met specifieke metrics voor agent-performantie.

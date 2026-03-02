@@ -69,7 +69,7 @@ class BitvavoAdapter:
             self.exchange = ccxt.bitvavo(config)
             await self.exchange.load_markets()
 
-            logger.info(f"✅ Connected to Bitvavo ({'sandbox' if self.sandbox else 'live'})")
+            logger.info(f"[OK] Connected to Bitvavo ({'sandbox' if self.sandbox else 'live'})")
             logger.info(f"   Available markets: {len(self.exchange.markets)}")
 
             # Log available EUR pairs
