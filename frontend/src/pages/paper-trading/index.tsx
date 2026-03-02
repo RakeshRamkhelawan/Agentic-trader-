@@ -20,6 +20,8 @@ import {
   PaperSessionControls,
   PaperOrderPanel,
   PaperActiveOrders,
+  PaperAIAdvisor,
+  PaperAgentStatus,
 } from '@/components/paper-trading';
 import usePaperTradingStore from '@/store/paper-trading';
 import { usePaperTradingWebSocket } from '@/hooks/paper-trading/usePaperTradingWebSocket';
@@ -81,23 +83,8 @@ export default function PaperTradingPage() {
             </div>
             <div className="space-y-6">
               <PaperOrderPanel />
-              
-              {/* Placeholder for future components */}
-              <Card className="border-dashed">
-                <CardHeader>
-                  <CardTitle>Coming Soon</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground text-sm">
-                    More features coming:
-                  </p>
-                  <ul className="list-disc list-inside mt-2 text-xs text-muted-foreground">
-                    <li>Trading Chart</li>
-                    <li>AI Advisor</li>
-                    <li>Agent Status</li>
-                  </ul>
-                </CardContent>
-              </Card>
+              <PaperAIAdvisor />
+              <PaperAgentStatus />
             </div>
           </div>
         </>
