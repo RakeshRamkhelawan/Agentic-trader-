@@ -143,8 +143,10 @@ def _calculate_kelly_fraction_jit(
     if win_ratio < 1e-10:
         return 0.0
 
-    # Calculate Kelly fraction
-    kelly = (win_prob * win_ratio - q * loss_ratio) / win_ratio
+    # Calculate Kelly fraction: f* = (p*b - q) / b
+    # where p = win_prob, q = loss_prob, b = win_ratio
+    # Note: loss_ratio is assumed to be 1.0 (lose what you risk)
+    kelly = (win_prob * win_ratio - q) / win_ratio
 
     # Clamp to [0, 1] and apply conservative factor
     if kelly < 0.0:

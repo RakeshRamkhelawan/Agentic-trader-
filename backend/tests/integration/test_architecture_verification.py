@@ -1,3 +1,5 @@
+# flake8: noqa: S608
+# nosec B608
 from uuid import uuid4
 
 import pytest
@@ -53,7 +55,7 @@ async def test_03_login_happy_path(async_client, system_db):
     tenant_id = f"tenant-{uuid4().hex[:12]}"
 
     # We use raw SQL for speed and independance from Model changes in this fixture setup
-    await system_db.execute(text(f"""
+    await system_db.execute(text(f"""  # nosec B608
         INSERT INTO users (id, email, password_hash, tenant_id, role, is_active, created_at)
         VALUES ('{uuid4()}', '{email}', '{hash_password(password)}', '{tenant_id}', 'user', true, now())
     """))

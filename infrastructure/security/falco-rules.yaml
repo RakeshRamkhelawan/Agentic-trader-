@@ -1,0 +1,125 @@
+# Falco Security Rules for Runtime Threat Detection
+---
+# Custom Falco Rules for Trading Platform
+- rule: Unauthorized API Access
+  desc: Detect unauthorized access to trading API endpoints
+  condition: >
+    spawned_process and
+    container.name contains "api" and
+    (proc.cmdline contains "curl" or
+     proc.cmdline contains "wget") and
+    not proc.cmdline contains "health"
+  output: >
+    Unauthorized API access attempt
+    user=%user.name command=%proc.cmdline
+    container=%container.name
+  priority: WARNING
+
+- rule: Database Credential Access
+  desc: Detect access to database credentials
+  condition: >
+    open_read and
+    (fd.name contains "/etc/secrets" or
+     fd.name contains "postgresql-credentials" or
+     fd.name contains "redis-password") and
+    not proc.name in ("api", "python", "postgres")
+  output: >
+    Sensitive credential file accessed
+    user=%user.name file=%fd.name
+    proc=%proc.name container=%container.name
+  priority: CRITICAL
+
+- rule: Outbound Connection from Database
+  desc: Detect unexpected outbound connections from database containers
+  condition: >
+    outbound and
+    (container.name contains "postgres" or
+     container.name contains "redis") and
+    not (fd.sip in ("127.0.0.1", "10.0.0.0/8"))
+  output: >
+    Database container making external connection
+    connection=%fd.name container=%container.name
+    remote=%fd.sip
+  priority: WARNING
+
+- rule: Privilege Escalation
+  desc: Detect privilege escalation attempts
+  condition: >
+    spawned_process and
+    (proc.name in ("sudo", "su") or
+     proc.cmdline contains "chmod +s" or
+     proc.cmdline contains "setuid")
+  output: >
+    Privilege escalation attempt detected
+    user=%user.name command=%proc.cmdline
+    container=%container.name
+  priority: CRITICAL
+
+- rule: Shell Spawned in Trading Container
+  desc: Detect shell access in production trading containers
+  condition: >
+    spawned_process and
+    container.name contains "api" and
+    shell_procs and
+    proc.tty != 0
+  output: >
+    Interactive shell spawned in trading container
+    user=%user.name shell=%proc.name
+    parent=%proc.pname cmdline=%proc.cmdline
+    container=%container.name
+  priority: NOTICE
+
+- rule: Sensitive File Modification
+  desc: Detect modifications to sensitive trading configuration files
+  condition: >
+    open_write and
+    (fd.name contains "/app/config" or
+     fd.name contains "trading_config" or
+     fd.name contains "exchange_keys") and
+    not proc.name in ("api", "vim", "vi")
+  output: >
+    Sensitive trading file modified
+    user=%user.name file=%fd.name
+    proc=%proc.name container=%container.name
+  priority: WARNING
+
+- rule: Cryptomining Detection
+  desc: Detect cryptomining processes
+  condition: >
+    spawned_process and
+    (proc.name in ("xmrig", "minerd", "cgminer") or
+     proc.cmdline contains "stratum+tcp" or
+     proc.cmdline contains "stratum+ssl")
+  output: >
+    Potential cryptomining detected
+    user=%user.name command=%proc.cmdline
+    container=%container.name
+  priority: CRITICAL
+
+- rule: High CPU Usage
+  desc: Detect processes consuming excessive CPU
+  condition: >
+    spawned_process and
+    container.name contains "api" and
+    thread_cpu_usage > 90
+  output: >
+    High CPU usage detected
+    user=%user.name proc=%proc.name
+    cpu=%thread_cpu_usage container=%container.name
+  priority: NOTICE
+
+# Default macros
+- macro: shell_procs
+  condition: proc.name in ("bash", "sh", "zsh", "fish")
+
+- macro: spawned_process
+  condition: evt.type = execve and evt.dir = <
+
+- macro: open_read
+  condition: (evt.type = open or evt.type = openat) and evt.is_open_read = true and fd.type = file
+
+- macro: open_write
+  condition: (evt.type = open or evt.type = openat) and evt.is_open_write = true and fd.type = file
+
+- macro: outbound
+  condition: evt.type = connect and evt.dir = < and (fd.type = ipv4 or fd.type = ipv6)

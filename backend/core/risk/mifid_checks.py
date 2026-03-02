@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class ComplianceStatus(str, Enum):
-    PASS = "pass"
+    PASS = "pass"  # nosec B105 - Compliance status enum, not a password
     WARN = "warn"
     BLOCK = "block"
 

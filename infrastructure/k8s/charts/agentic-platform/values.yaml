@@ -22,7 +22,7 @@ agentOrchestrator:
   service:
     type: ClusterIP
     port: 8000
-    metricsPort: 8001
+    metricsPort: 9090  # Zie PORT_ALLOCATION.md
 
 # Dashboard API configuration
 dashboardApi:

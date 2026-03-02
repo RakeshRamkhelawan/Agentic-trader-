@@ -64,7 +64,7 @@ async def get_performance_metrics(
         pnl = t.get("pnl")
         if pnl is None:
             # Simulate PnL driven by side
-            import random
+            import random  # nosec B311 - Used for simulation only, not cryptography
 
             cost = t["total"]
             pnl = cost * (random.random() - 0.45) * 0.1  # Slight bias to positive

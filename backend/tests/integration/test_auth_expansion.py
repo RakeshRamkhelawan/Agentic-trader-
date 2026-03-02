@@ -1,3 +1,4 @@
+# nosec B608 - Test fixtures use internally generated UUIDs, not user input
 from datetime import UTC
 from uuid import uuid4
 

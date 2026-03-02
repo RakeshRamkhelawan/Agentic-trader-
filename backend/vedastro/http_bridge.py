@@ -296,7 +296,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "vedastro.http_bridge:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # nosec B104 - Required for Docker/containerized deployment
         port=5000,
         log_level="info",
         reload=False,

@@ -16,7 +16,16 @@ from backend.core.context import set_tenant_context
 
 DATABASE_URL = settings.DATABASE_URL
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+# Configure connection pooling for production performance
+engine = create_async_engine(
+    DATABASE_URL, 
+    echo=False,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
+    pool_timeout=settings.DB_POOL_TIMEOUT,
+    pool_recycle=settings.DB_POOL_RECYCLE,
+    pool_pre_ping=True,  # Verify connections before using
+)
 
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

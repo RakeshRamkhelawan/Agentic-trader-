@@ -10,20 +10,25 @@ Provides intelligent caching for:
 import asyncio
 import hashlib
 import json
+import logging
 import pickle
+import socket
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from functools import wraps
 from typing import Any
 
+logger = logging.getLogger(__name__)
+
 # Try to import Redis, fallback to memory cache
 try:
-    import redis.asyncio as redis
-
+    from redis.asyncio import Redis
+    from redis.asyncio.connection import ConnectionPool
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
+    logger.warning("redis-py not available, using memory cache only")
 
 
 @dataclass
@@ -113,6 +118,7 @@ class BacktestCache:
     - Automatic serialization with compression
     - Cache key hashing for efficient lookup
     - TTL-based expiration
+    - Docker-compatible Redis connection handling
     """
 
     def __init__(self, config: CacheConfig | None = None):
@@ -122,28 +128,79 @@ class BacktestCache:
         self._redis_connected = False
 
         if REDIS_AVAILABLE and self.config.enable_redis:
-            try:
-                self._redis = redis.from_url(
-                    self.config.redis_url, encoding="utf-8", decode_responses=False
-                )
-            except Exception:
-                pass  # Fallback to memory only
+            self._init_redis()
+
+    def _init_redis(self):
+        """Initialize Redis connection with Docker-compatible settings."""
+        try:
+            # Parse URL to get connection details
+            import urllib.parse
+            parsed = urllib.parse.urlparse(self.config.redis_url)
+            
+            host = parsed.hostname or "localhost"
+            port = parsed.port or 6379
+            db = int(parsed.path.lstrip("/")) if parsed.path else 0
+            password = parsed.password
+            
+            logger.info(f"Initializing Redis connection to {host}:{port}/{db}")
+            
+            # Create connection pool with Docker-compatible settings
+            # Key fixes for Docker networking issues:
+            # 1. socket_keepalive=False (prevents connection issues)
+            # 2. socket_connect_timeout (prevents hanging)
+            # 3. health_check_interval=0 (disables health checks that can cause issues)
+            # 4. retry_on_timeout=True
+            # 5. socket_keepalive_options={} (empty to avoid TCP keepalive issues)
+            
+            pool = ConnectionPool(
+                host=host,
+                port=port,
+                db=db,
+                password=password,
+                socket_keepalive=False,
+                socket_connect_timeout=5,
+                socket_timeout=5,
+                health_check_interval=0,
+                retry_on_timeout=True,
+                retry_on_error=[ConnectionError, TimeoutError],
+                max_connections=10,
+            )
+            
+            self._redis = Redis(connection_pool=pool)
+            logger.info("Redis client initialized successfully")
+            
+        except Exception as e:
+            logger.warning(f"Redis initialization failed: {e}, will use memory cache")
+            self._redis = None
 
     async def connect(self) -> bool:
         """Connect to Redis if available."""
         if self._redis and not self._redis_connected:
             try:
-                await self._redis.ping()
+                # Use a timeout to prevent hanging
+                await asyncio.wait_for(self._redis.ping(), timeout=3.0)
                 self._redis_connected = True
-            except Exception:
+                logger.info("Redis connection established successfully")
+            except asyncio.TimeoutError:
+                logger.warning("Redis connection timed out, using memory cache")
                 self._redis_connected = False
+            except Exception as e:
+                logger.warning(f"Redis connection failed: {e}, using memory cache")
+                self._redis_connected = False
+                # Close the connection pool to clean up
+                try:
+                    await self._redis.close()
+                except:
+                    pass
+                self._redis = None
+        
         return self._redis_connected
 
     def _generate_key(self, prefix: str, params: dict[str, Any]) -> str:
         """Generate deterministic cache key from parameters."""
         # Sort keys for deterministic hashing
         param_str = json.dumps(params, sort_keys=True, default=str)
-        hash_val = hashlib.md5(param_str.encode()).hexdigest()[:16]
+        hash_val = hashlib.blake2b(param_str.encode(), digest_size=8).hexdigest()
         return f"{prefix}:{hash_val}"
 
     def _serialize(self, value: Any) -> bytes:
@@ -152,7 +209,6 @@ class BacktestCache:
         if self.config.compression:
             try:
                 import zlib
-
                 return zlib.compress(data)
             except ImportError:
                 pass
@@ -163,11 +219,10 @@ class BacktestCache:
         if self.config.compression:
             try:
                 import zlib
-
                 data = zlib.decompress(data)
             except Exception:
                 pass  # Wasn't compressed
-        return pickle.loads(data)
+        return pickle.loads(data)  # nosec B301 - Internal cache only
 
     async def get(self, prefix: str, params: dict[str, Any]) -> Any | None:
         """Get cached value with two-tier lookup."""
@@ -178,8 +233,8 @@ class BacktestCache:
         if value is not None:
             return value
 
-        # Try Redis second
-        if self._redis_connected:
+        # Try Redis second (only if connected)
+        if self._redis_connected and self._redis:
             try:
                 data = await self._redis.get(key)
                 if data:
@@ -187,8 +242,9 @@ class BacktestCache:
                     # Promote to memory cache
                     await self._memory.set(key, value)
                     return value
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Redis get failed: {e}")
+                # Don't mark as disconnected for single failures
 
         return None
 
@@ -198,161 +254,117 @@ class BacktestCache:
         """Set cached value in both tiers."""
         key = self._generate_key(prefix, params)
 
-        # Set in memory
+        # Always set in memory
         await self._memory.set(key, value, ttl_seconds)
 
-        # Set in Redis
-        if self._redis_connected:
+        # Set in Redis if connected
+        if self._redis_connected and self._redis:
             try:
                 data = self._serialize(value)
                 await self._redis.setex(key, ttl_seconds, data)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Redis set failed: {e}")
 
-    async def get_vedastro_signal(
-        self, symbol: str, date: datetime, params: dict | None = None
-    ) -> dict | None:
-        """Cached VedAstro signal lookup."""
-        cache_params = {"symbol": symbol, "date": date.strftime("%Y-%m-%d"), **(params or {})}
-        return await self.get("vedastro", cache_params)
-
-    async def set_vedastro_signal(
-        self, symbol: str, date: datetime, result: dict, params: dict | None = None
-    ) -> None:
-        """Cache VedAstro signal result."""
-        cache_params = {"symbol": symbol, "date": date.strftime("%Y-%m-%d"), **(params or {})}
-        await self.set("vedastro", cache_params, result, self.config.vedastro_ttl_seconds)
-
-    async def get_market_data(
-        self, symbol: str, start_date: datetime, end_date: datetime, interval: str = "1d"
-    ) -> list[dict] | None:
-        """Cached market data lookup."""
-        cache_params = {
-            "symbol": symbol,
-            "start": start_date.strftime("%Y-%m-%d"),
-            "end": end_date.strftime("%Y-%m-%d"),
-            "interval": interval,
-        }
-        return await self.get("market_data", cache_params)
-
-    async def set_market_data(
-        self,
-        symbol: str,
-        start_date: datetime,
-        end_date: datetime,
-        data: list[dict],
-        interval: str = "1d",
-    ) -> None:
-        """Cache market data."""
-        cache_params = {
-            "symbol": symbol,
-            "start": start_date.strftime("%Y-%m-%d"),
-            "end": end_date.strftime("%Y-%m-%d"),
-            "interval": interval,
-        }
-        await self.set("market_data", cache_params, data, self.config.market_data_ttl_seconds)
-
-    async def get_elemental_consensus(
-        self, elemental_scores: dict[str, float], date: datetime
-    ) -> dict | None:
-        """Cached Elemental consensus lookup."""
-        cache_params = {
-            "scores": json.dumps(elemental_scores, sort_keys=True),
-            "date": date.strftime("%Y-%m-%d"),
-        }
-        return await self.get("elemental_consensus", cache_params)
-
-    async def set_elemental_consensus(
-        self, elemental_scores: dict[str, float], date: datetime, result: dict
-    ) -> None:
-        """Cache Elemental consensus result."""
-        cache_params = {
-            "scores": json.dumps(elemental_scores, sort_keys=True),
-            "date": date.strftime("%Y-%m-%d"),
-        }
-        await self.set(
-            "elemental_consensus", cache_params, result, self.config.consensus_ttl_seconds
-        )
+    async def invalidate(self, prefix: str, params: dict[str, Any] | None = None) -> int:
+        """Invalidate cached entries."""
+        if params is not None:
+            # Invalidate specific entry
+            key = self._generate_key(prefix, params)
+            await self._memory.delete(key)
+            if self._redis_connected and self._redis:
+                try:
+                    await self._redis.delete(key)
+                except Exception:
+                    pass
+            return 1
+        else:
+            # Invalidate all entries with prefix
+            if self._redis_connected and self._redis:
+                try:
+                    pattern = f"{prefix}:*"
+                    keys = await self._redis.keys(pattern)
+                    if keys:
+                        await self._redis.delete(*keys)
+                        return len(keys)
+                except Exception:
+                    pass
+            return 0
 
     async def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         memory_stats = await self._memory.get_stats()
         redis_stats = {"connected": self._redis_connected}
 
-        if self._redis_connected:
+        if self._redis_connected and self._redis:
             try:
-                info = await self._redis.info("memory")
-                redis_stats["used_memory_mb"] = info.get("used_memory", 0) / (1024 * 1024)
-                redis_stats["keys"] = await self._redis.dbsize()
-            except Exception as e:
-                redis_stats["error"] = str(e)
-
-        return {"memory": memory_stats, "redis": redis_stats}
-
-    async def clear(self) -> None:
-        """Clear all caches."""
-        await self._memory.clear()
-        if self._redis_connected:
-            try:
-                await self._redis.flushdb()
+                info = await self._redis.info()
+                redis_stats["used_memory_human"] = info.get("used_memory_human", "N/A")
+                redis_stats["connected_clients"] = info.get("connected_clients", 0)
             except Exception:
                 pass
 
+        return {
+            "memory": memory_stats,
+            "redis": redis_stats,
+        }
 
-# Decorator helpers for easy caching
 
-
-def cached_vedastro_calculation(cache: BacktestCache):
-    """Decorator to cache VedAstro calculations."""
-
+# Decorator for cached functions
+def cached(prefix: str, ttl_seconds: int = 300):
+    """Decorator to cache function results."""
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        async def wrapper(symbol: str, date: datetime, **kwargs) -> dict:
-            # Try cache first
-            cached = await cache.get_vedastro_signal(symbol, date, kwargs)
-            if cached is not None:
-                return cached
-
-            # Execute and cache
-            result = await func(symbol, date, **kwargs)
-            await cache.set_vedastro_signal(symbol, date, result, kwargs)
+        async def wrapper(*args, **kwargs):
+            cache = get_cache()
+            
+            # Generate cache key from function name and arguments
+            cache_params = {
+                "func": func.__name__,
+                "args": str(args),
+                "kwargs": str(sorted(kwargs.items())),
+            }
+            
+            # Try to get from cache
+            cached_value = await cache.get(prefix, cache_params)
+            if cached_value is not None:
+                return cached_value
+            
+            # Execute function
+            result = await func(*args, **kwargs)
+            
+            # Store in cache
+            await cache.set(prefix, cache_params, result, ttl_seconds)
+            
             return result
-
+        
         return wrapper
-
     return decorator
 
 
-def cached_market_data(cache: BacktestCache):
-    """Decorator to cache market data fetches."""
+# Specific cache decorators
+def cached_vedastro_calculation(ttl_seconds: int = 3600):
+    """Cache decorator for VedAstro calculations."""
+    return cached("vedastro", ttl_seconds)
 
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        async def wrapper(
-            symbol: str, start_date: datetime, end_date: datetime, interval: str = "1d"
-        ) -> list[dict]:
-            # Try cache first
-            cached = await cache.get_market_data(symbol, start_date, end_date, interval)
-            if cached is not None:
-                return cached
 
-            # Execute and cache
-            result = await func(symbol, start_date, end_date, interval)
-            await cache.set_market_data(symbol, start_date, end_date, result, interval)
-            return result
-
-        return wrapper
-
-    return decorator
+def cached_market_data(ttl_seconds: int = 300):
+    """Cache decorator for market data."""
+    return cached("market_data", ttl_seconds)
 
 
 # Global cache instance
-_global_cache: BacktestCache | None = None
+_cache_instance: BacktestCache | None = None
 
 
-def get_cache(config: CacheConfig | None = None) -> BacktestCache:
-    """Get or create global cache instance."""
-    global _global_cache
-    if _global_cache is None:
-        _global_cache = BacktestCache(config)
-    return _global_cache
+def get_cache() -> BacktestCache:
+    """Get global cache instance."""
+    global _cache_instance
+    if _cache_instance is None:
+        _cache_instance = BacktestCache()
+    return _cache_instance
+
+
+def reset_cache() -> None:
+    """Reset global cache instance."""
+    global _cache_instance
+    _cache_instance = None

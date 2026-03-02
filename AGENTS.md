@@ -3,21 +3,65 @@
 > **Guide for AI Coding Agents**  
 > This document provides essential information for AI agents working on the Agentic Trader Platform. It covers the project architecture, development workflow, testing strategies, and conventions specific to this codebase.
 
+> **⚠️ CRITICAL: Before any network/port configuration task, read [PORT_ALLOCATION_SSOT.md](PORT_ALLOCATION_SSOT.md)**
+
 ---
 
 ## Table of Contents
 
-1. [Project Overview](#project-overview)
-2. [Architecture](#architecture)
-3. [Technology Stack](#technology-stack)
-4. [Project Structure](#project-structure)
-5. [Development Setup](#development-setup)
-6. [Build and Test Commands](#build-and-test-commands)
-7. [Code Style Guidelines](#code-style-guidelines)
-8. [Testing Strategy](#testing-strategy)
-9. [Security Considerations](#security-considerations)
-10. [Common Patterns](#common-patterns)
-11. [Troubleshooting](#troubleshooting)
+1. [⚠️ Mandatory Reading (CRITICAL)](#-mandatory-reading-critical)
+2. [Project Overview](#project-overview)
+3. [Architecture](#architecture)
+4. [Technology Stack](#technology-stack)
+5. [Project Structure](#project-structure)
+6. [Development Setup](#development-setup)
+7. [Build and Test Commands](#build-and-test-commands)
+8. [Code Style Guidelines](#code-style-guidelines)
+9. [Testing Strategy](#testing-strategy)
+10. [Security Considerations](#security-considerations)
+11. [Common Patterns](#common-patterns)
+12. [Troubleshooting](#troubleshooting)
+
+---
+
+## ⚠️ Mandatory Reading (CRITICAL)
+
+### Before Starting Any Task
+
+**YOU MUST READ these documents FIRST:**
+
+| Priority | Document | When Required |
+|----------|----------|---------------|
+| 🔴 **CRITICAL** | [PORT_ALLOCATION_README.md](PORT_ALLOCATION_README.md) | Gateway naar poortallocatie docs |
+| 🔴 **CRITICAL** | [PORT_ALLOCATION_SSOT.md](PORT_ALLOCATION_SSOT.md) | Enige bron van waarheid voor poorten |
+| 🟡 HIGH | [AGENTS.md](AGENTS.md) (this file) | Alle taken |
+
+### Port/Nework Tasks - Required Checklist
+
+For any task involving:
+- Docker Compose configuration
+- Environment variables (.env)
+- Port mappings
+- Service URLs
+- Infrastructure setup
+
+**YOU MUST:**
+1. Read `PORT_ALLOCATION_SSOT.md` completely
+2. Follow the port allocation table exactly
+3. Use only allowed ports (8000, 8001, 5432, 6379, 5000, 5001, 6000, 6001, 8100, 9000, 9090, 3000, 3080)
+4. **NEVER** use forbidden ports (8123, 9092, 9644 for host mapping)
+5. Add the verification checklist to your PR
+
+### Quick Port Reference
+
+```
+Core:      API=8000, MCP=8001, Postgres=5432, Redis=6379
+Extended:  ClickHouse=5000/5001, Redpanda=6000/6001, ChromaDB=8100
+Monitoring: Grafana=9000, Prometheus=9090
+Frontend:  Dev=3000, Prod=3080
+```
+
+**Full details:** [PORT_ALLOCATION_SSOT.md](PORT_ALLOCATION_SSOT.md)
 
 ---
 
@@ -711,6 +755,138 @@ Code Quality → Unit Tests → Integration Tests → Docker Build → E2E Tests
 
 ---
 
+## Build Findings & Lessons Learned
+
+> **Critical insights from the v1.0.0 security hardening and reliability improvements**
+
+### Security Fixes Applied (v1.0.0)
+
+The following 18 critical security issues were resolved. **Always verify these patterns are not reintroduced:**
+
+| Issue | Location | Fix Applied | Verification |
+|-------|----------|-------------|--------------|
+| SQL Injection (3 locations) | `backend/core/context.py` | Parameterized queries with `bindparams` | Use `text("...").bindparams()` pattern |
+| JWT Hardcoded Secrets | `backend/auth/jwt_handler.py` | Environment variable validation | `JWT_SECRET_KEY` must be set or `ValueError` raised |
+| Authentication Bypass Paths | Multiple API modules | Removed hardcoded bypass tokens | Search for `# DEBUG` or `skip_auth` patterns |
+| Pickle RCE | `backend/cache/redis_cache.py` | JSON serialization | `json.dumps()` instead of `pickle.dumps()` |
+| LLM Prompt Injection | LLM provider modules | Input sanitization | Verify `sanitize_input()` calls on user data |
+| Hardcoded API Keys | Exchange adapters | Vault/AWS Secrets Manager | No secrets in `.env.example` |
+| Insecure Deserialization | Event bus | Schema validation | Pydantic models for all event data |
+
+**Security Testing Commands:**
+```bash
+# Run before any PR
+bandit -r backend/ -f json -o bandit-report.json
+# Must show: 0 high/critical issues
+
+# Check for new SQL injection patterns
+grep -r "f\".*SELECT" backend/ --include="*.py" | grep -v "bindparams"
+
+# Verify no hardcoded secrets
+grep -r "sk-\|secret.*=.*[^${}]\|password.*=.*\"" backend/ --include="*.py"
+```
+
+### Reliability Fixes Applied (v1.0.0)
+
+| Issue | Component | Fix | Pattern to Maintain |
+|-------|-----------|-----|---------------------|
+| Missing VaR Check | `backend/risk/risk_orchestrator.py` | Added `portfolio_var_pct` validation | Always check `max_daily_var_pct` limit |
+| Kelly Formula Edge Cases | `backend/risk/kelly_criterion.py` | Added win_rate/payoff validation | Validate inputs before calculation |
+| Circuit Breaker Unit Mismatch | `backend/governance/circuit_breaker.py` | Compare % to % (not € to %) | Document units in variable names |
+| Event Bus Non-Atomic Ops | `backend/events/event_bus.py` | Redis pipeline for retry+ack | Use `pipe.execute()` for multi-key ops |
+| Non-Deterministic Slippage | Backtest engine | Fixed random seed | Set `random.seed()` in tests |
+
+### Pre-commit Configuration (Fixed)
+
+**Issue**: YAML syntax error in `.pre-commit-config.yaml` (line 165) - `check-sql-injection` hook had malformed `entry` field.
+
+**Resolution**: Fixed multiline string syntax using proper YAML `|` operator.
+
+**Always run before committing:**
+```bash
+pre-commit run --all-files
+# Fix any failures before git push
+```
+
+### Git Workflow Best Practices
+
+**From v1.0.0 release:**
+1. **Feature branches**: Use `feature/description` or `fix/description` naming
+2. **Merge strategy**: Use `--no-ff` for release merges to preserve history
+3. **Tagging**: Always tag releases with annotated tags
+   ```bash
+   git tag -a vX.Y.Z -m "Release notes"
+   ```
+4. **Cleanup**: Delete merged feature branches to prevent confusion
+
+### Docker Build Requirements
+
+**Multi-stage build must include:**
+```dockerfile
+# Non-root user (security requirement)
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+USER appuser
+
+# No secrets in layers
+# Use build args or runtime env vars only
+```
+
+**Verify build:**
+```bash
+docker build -t agentic-trader:test .
+docker run --rm agentic-trader:test id  # Should show appuser, not root
+```
+
+### Test Coverage Requirements
+
+**Minimum thresholds (enforced in CI):**
+- Unit tests: 85% line coverage
+- Critical modules (risk, auth, execution): 95% coverage
+- Integration tests: All happy paths + error scenarios
+
+**Coverage check:**
+```bash
+pytest backend/tests/ --cov=backend --cov-report=term-missing
+# Fail if coverage < 85%
+```
+
+### Port Allocation Enforcement
+
+**CRITICAL**: The project uses a strict port allocation scheme. **Never** hardcode ports without checking:
+
+```python
+# CORRECT - Use centralized config
+from backend.core.config.settings import Settings
+port = Settings().API_PORT  # 8000
+
+# INCORRECT - Hardcoded port
+port = 8000  # Will fail if changed
+```
+
+**Forbidden ports for host mapping:** 8123, 9092, 9644 (used internally by ClickHouse/Redpanda)
+
+### Environment Variable Validation
+
+**New requirement (v1.0.0)**: All required env vars must be validated at startup:
+
+```python
+# Pattern to follow (from backend/auth/jwt_handler.py)
+def __init__(self, secret_key: str | None = None):
+    self.secret_key = secret_key or os.getenv("JWT_SECRET_KEY")
+    if not self.secret_key:
+        raise ValueError("JWT_SECRET_KEY environment variable is required")
+```
+
+### Documentation Updates
+
+**When modifying code, update:**
+1. `CHANGELOG.md` - Add entry under `## [Unreleased]`
+2. `docs/` - Update relevant runbook if behavior changes
+3. `AGENTS.md` - Update this file if patterns/conventions change
+4. Tests - Update or add tests for new behavior
+
+---
+
 ## Contact
 
 - **Issues**: GitHub Issues
@@ -719,6 +895,7 @@ Code Quality → Unit Tests → Integration Tests → Docker Build → E2E Tests
 
 ---
 
-*Last Updated: February 20, 2026*  
+*Last Updated: March 1, 2026*  
 *Platform Version: 1.0.0*  
 *Status: PRODUCTION READY*
+*Build: Security Hardening & Reliability Release*

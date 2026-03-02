@@ -431,18 +431,18 @@ OLLAMA_BASE_URL=http://localhost:11434
 
 # ===== INFRASTRUCTURE (CUSTOMIZE AS NEEDED) =====
 # Message Broker: Kafka, RabbitMQ, Redis, etc.
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+KAFKA_BOOTSTRAP_SERVERS=localhost:6000  # Zie PORT_ALLOCATION.md
 
 # Analytics Database: ClickHouse, PostgreSQL, TimescaleDB, etc.
 CLICKHOUSE_HOST=localhost
-CLICKHOUSE_PORT=8123
+CLICKHOUSE_HTTP_PORT=5000  # Was 8123, zie PORT_ALLOCATION.md
 
 # Event Bus: Redis, RabbitMQ, etc.
 REDIS_URL=redis://localhost:6379/0
 
 # Vector Database: ChromaDB, Pinecone, Weaviate, etc.
-CHROMA_HOST=localhost
-CHROMA_PORT=8000
+CHROMA_DB_HOST=localhost
+CHROMA_DB_PORT=8100  # Was 8000, zie PORT_ALLOCATION.md
 
 # ===== TRADING BROKER (PICK YOUR BROKER) =====
 # Option A: Revolut (example/test implementation)

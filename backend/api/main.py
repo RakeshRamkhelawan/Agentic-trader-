@@ -30,6 +30,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.api.metrics_middleware import MetricsMiddleware
+from backend.api.security_middleware import SecurityHeadersMiddleware
 from backend.api.paper_trading_api import router as paper_trading_router
 from backend.api.paper_trading_ws_simple import router as paper_trading_ws_router
 from backend.api.routers import (
@@ -72,25 +73,38 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Security Headers Middleware (first for all responses)
+app.add_middleware(SecurityHeadersMiddleware)
+
 # Prometheus Metrics & Middleware
 app.add_middleware(MetricsMiddleware)
 app.get("/metrics")(metrics_endpoint)
 
 # CORS middleware for React frontend
-# Note: WebSocket CORS is handled at the endpoint level, not here
+# In production, use specific origins from settings
+from backend.core.config.settings import settings
+
+cors_origins = settings.BACKEND_CORS_ORIGINS or [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-        "*",  # Allow all in development
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Accept",
+        "Origin",
+    ],
+    expose_headers=["X-Total-Count", "X-Page-Count"],
+    max_age=600,  # 10 minutes
 )
 
 
@@ -116,6 +130,14 @@ app.include_router(ooda.router, prefix="/api/v1")
 app.include_router(federated.router, prefix="/api/v1")
 app.include_router(websocket_router)
 app.include_router(paper_trading_ws_router)
+
+# Include MCP ToolBroker router (if available)
+try:
+    from backend.api.mcp_api import router as mcp_router
+    app.include_router(mcp_router, prefix="/api/v1")
+    logger.info("MCP ToolBroker router registered")
+except ImportError:
+    logger.warning("MCP ToolBroker router not available")
 
 
 @app.get("/")
@@ -194,4 +216,4 @@ if __name__ == "__main__":
     import uvicorn
 
     logger.info("Starting Uvicorn server...")
-    uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
+    uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")  # nosec B104 - Required for Docker/containerized deployment

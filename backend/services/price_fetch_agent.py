@@ -279,7 +279,7 @@ class PriceFetchAgent:
                     self._ws = ws
                     self._ws_connected = True
                     self._consecutive_errors = 0
-                    logger.info("✓ WebSocket connected")
+                    logger.info("[OK] WebSocket connected")
 
                     # Subscribe to valid EUR pairs
                     await self._subscribe_all(ws)
@@ -357,7 +357,7 @@ class PriceFetchAgent:
                 await self._process_ticker_update(data)
             # Handle subscription confirmation
             elif data.get("event") == "subscribed":
-                logger.info(f"✓ Subscribed: {data.get('channels', [])}")
+                logger.info(f"[OK] Subscribed: {data.get('channels', [])}")
             # Handle errors
             elif "error" in data:
                 error_msg = data["error"]
@@ -489,7 +489,7 @@ class PriceFetchAgent:
                 except Exception as e:
                     logger.debug(f"REST fetch failed for {symbol}: {e}")
 
-            logger.info(f"✓ REST fallback complete: {success_count} prices updated")
+            logger.info(f"[OK] REST fallback complete: {success_count} prices updated")
 
         except Exception as e:
             logger.error(f"REST fallback failed: {e}")
@@ -500,7 +500,7 @@ class PriceFetchAgent:
         """Open circuit breaker after too many errors."""
         self._circuit_open = True
         self._circuit_reset_time = datetime.now() + timedelta(minutes=1)
-        logger.error("🚨 CIRCUIT BREAKER OPEN - Waiting 1 minute")
+        logger.error("[ALERT] CIRCUIT BREAKER OPEN - Waiting 1 minute")
 
     async def _wait_for_circuit_reset(self):
         """Wait until circuit can be reset."""
@@ -511,7 +511,7 @@ class PriceFetchAgent:
 
         self._circuit_open = False
         self._consecutive_errors = 0
-        logger.info("✓ Circuit breaker reset")
+        logger.info("[OK] Circuit breaker reset")
 
     # ============ Monitoring ============
 

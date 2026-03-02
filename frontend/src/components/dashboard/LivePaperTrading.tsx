@@ -183,37 +183,56 @@ export function LivePaperTrading() {
         
         setIsRunning(data.is_running);
         
-        // Parse trades from logs if no trades in data
-        if (data.logs && Array.isArray(data.logs) && trades.length === 0) {
-          const logTrades: Trade[] = [];
-          data.logs.forEach((log: string) => {
-            const match = log.match(/\[ENTRY\]\s+(\S+)\s+(\d+\.?\d*)\s+@\s+EUR\s+(\d+\.?\d*)/);
-            if (match && !logTrades.find(t => t.symbol === match[1])) {
-              logTrades.push({
-                timestamp: new Date().toISOString(),
-                symbol: match[1],
+        // Use portfolio positions to generate trades if no trades available
+        if (data.portfolio?.positions && trades.length === 0) {
+          const positionTrades: Trade[] = [];
+          Object.entries(data.portfolio.positions).forEach(([symbol, pos]: [string, any]) => {
+            if (pos.quantity > 0) {
+              positionTrades.push({
+                timestamp: pos.entry_date || new Date().toISOString(),
+                symbol: symbol,
                 side: 'buy',
-                qty: parseFloat(match[2]),
-                price: parseFloat(match[3]),
-                value: parseFloat(match[2]) * parseFloat(match[3]),
+                qty: pos.quantity,
+                price: pos.entry_price,
+                value: pos.position_size || (pos.quantity * pos.entry_price),
                 agent: 'V18_Elemental',
                 exchange: 'Bitvavo'
               });
             }
           });
-          if (logTrades.length > 0) {
-            setTrades(logTrades.slice(0, 50));
+          // Sort by timestamp descending
+          positionTrades.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          if (positionTrades.length > 0) {
+            setTrades(positionTrades.slice(0, 50));
           }
         }
         
-        // Use stats from API
-        if (data.stats) {
-          setStats({
-            total_trades: data.stats.total_trades || 0,
-            buy_trades: data.trades?.filter((t: Trade) => t.side === 'buy').length || 0,
-            sell_trades: data.trades?.filter((t: Trade) => t.side === 'sell').length || 0,
-            avg_trade_value: 0,
-            uptime_seconds: 0
+        // Use trades from API if available
+        if (data.trades && Array.isArray(data.trades) && data.trades.length > 0) {
+          setTrades(data.trades.slice(0, 50));
+        }
+        
+        // Use stats from API or calculate from data
+        const totalTrades = data.total_trades || data.stats?.total_trades || trades.length || 0;
+        const buyTrades = trades.filter((t: Trade) => t.side === 'buy').length;
+        const sellTrades = trades.filter((t: Trade) => t.side === 'sell').length;
+        
+        setStats({
+          total_trades: totalTrades,
+          buy_trades: buyTrades,
+          sell_trades: sellTrades,
+          avg_trade_value: data.stats?.avg_trade_value || 0,
+          uptime_seconds: data.stats?.uptime_seconds || 0
+        });
+        
+        // Update portfolio if available
+        if (data.portfolio) {
+          setPortfolio({
+            cash: data.portfolio.cash || data.cash || 0,
+            total_value: data.portfolio.total_value || data.current_value || 0,
+            pnl: data.portfolio.pnl || data.pnl || 0,
+            pnl_pct: data.pnl_percent || 0,
+            positions: data.portfolio.positions || {}
           });
         }
         
@@ -226,9 +245,9 @@ export function LivePaperTrading() {
     };
 
     checkStatus();
-    const interval = setInterval(checkStatus, 2000);
+    const interval = setInterval(checkStatus, 3000);
     return () => clearInterval(interval);
-  }, [API_URL, trades.length]);
+  }, [API_URL]);
 
   const startSession = async () => {
     setLoading(true);
@@ -451,10 +470,10 @@ export function LivePaperTrading() {
                       trades.map((trade, idx) => (
                         <TableRow key={idx}>
                           <TableCell className="text-xs">
-                            {new Date(trade.timestamp).toLocaleTimeString()}
+                            {trade.timestamp ? new Date(trade.timestamp).toLocaleTimeString() : '--:--:--'}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{trade.symbol}</Badge>
+                            <Badge variant="outline">{trade.symbol || 'N/A'}</Badge>
                           </TableCell>
                           <TableCell>
                             <Badge 
@@ -462,14 +481,14 @@ export function LivePaperTrading() {
                               className="gap-1"
                             >
                               {trade.side === 'buy' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                              {trade.side.toUpperCase()}
+                              {(trade.side || 'unknown').toUpperCase()}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">{trade.qty?.toFixed(6) || '0.000000'}</TableCell>
                           <TableCell className="text-right">€{trade.price?.toFixed(2) || '0.00'}</TableCell>
                           <TableCell className="text-right">€{trade.value?.toFixed(2) || '0.00'}</TableCell>
                           <TableCell>
-                            <Badge variant="secondary">{trade.agent}</Badge>
+                            <Badge variant="secondary">{trade.agent || 'Unknown'}</Badge>
                           </TableCell>
                         </TableRow>
                       ))

@@ -109,7 +109,14 @@ class TenantAwareClickHouseClient(ClickHouseClient):
         if table_name in self.EXEMPT_TABLES:
             return sql
 
-        # Build tenant filter clause
+        # Build tenant filter clause (parameterized to prevent injection)
+        # Note: ClickHouse doesn't support :param style, so we validate tenant_id
+        if not tenant_id or not isinstance(tenant_id, str):
+            raise ValueError("Invalid tenant_id")
+        # Validate tenant_id format (alphanumeric, hyphens, underscores only)
+        import re
+        if not re.match(r'^[a-zA-Z0-9_-]+$', tenant_id):
+            raise ValueError(f"Invalid tenant_id format: {tenant_id}")
         tenant_filter = f"tenant_id = '{tenant_id}'"
 
         # Check if WHERE clause exists

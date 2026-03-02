@@ -187,7 +187,7 @@ Score: 0.0-0.4 bearish, 0.4-0.6 neutral, 0.6-1.0 bullish"""
         import hashlib
 
         content = coin + "".join(sorted(headlines))
-        return hashlib.md5(content.encode()).hexdigest()[:16]
+        return hashlib.blake2b(content.encode(), digest_size=8).hexdigest()
 
     def _parse_response(self, text: str) -> SentimentResult:
         """Parse JSON response from LLM."""
