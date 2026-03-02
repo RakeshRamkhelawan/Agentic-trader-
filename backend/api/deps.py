@@ -1,18 +1,25 @@
 """
 API Dependencies.
 Shares common logic like Tenant ID extraction and Database Session setup with RLS context.
+
+Security: Authentication is enforced by default. Dev-mode fallbacks are ONLY
+available when AUTH_DISABLED=True AND ENV != 'production'.
 """
 
+import logging
 import os
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Import raw session maker from database.py
+from backend.core.config.settings import settings
+
 # Import SessionManager from database.py
 from backend.core.database import SessionManager
+
+logger = logging.getLogger(__name__)
 
 # JWT handling
 try:
@@ -28,6 +35,18 @@ except ImportError:
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "")
 
 
+def _is_dev_fallback_allowed() -> bool:
+    """Check if development fallback authentication is permitted.
+
+    Dev fallback is ONLY allowed when:
+    - AUTH_DISABLED is explicitly set to True, AND
+    - ENV is NOT 'production'
+
+    This prevents accidental authentication bypass in production.
+    """
+    return settings.AUTH_DISABLED is True and settings.ENV != "production"
+
+
 async def get_current_tenant_id(request: Request) -> str:
     """
     Extract tenant_id from JWT token in Authorization header.
@@ -35,30 +54,56 @@ async def get_current_tenant_id(request: Request) -> str:
     Flow:
     1. Check if AuthMiddleware already set tenant_id in request.state
     2. If not, try to parse JWT directly from header
-    3. Fallback to dev tenant for development
+    3. If no valid token: 401 Unauthorized (or dev fallback if explicitly allowed)
     """
     # Check if AuthMiddleware already processed the token
     if hasattr(request.state, "tenant_id") and request.state.tenant_id:
         return request.state.tenant_id
 
-    # Fallback: try to extract from Authorization header directly
+    # Try to extract from Authorization header directly
     auth_header = request.headers.get("Authorization", "")
 
     if not auth_header or not auth_header.startswith("Bearer "):
-        # No token provided - for protected routes, middleware should have blocked this
-        # But for dev/testing, allow fallback
-        return "tenant-dev"
+        if _is_dev_fallback_allowed():
+            logger.debug(
+                "Dev fallback: using tenant-dev (AUTH_DISABLED=True, ENV=%s)", settings.ENV
+            )
+            return "tenant-dev"
+        raise HTTPException(
+            status_code=401,
+            detail="Authorization header required. Provide a valid Bearer token.",
+        )
 
     token = auth_header[7:]  # Remove "Bearer "
 
     if not JOSE_AVAILABLE:
-        return "tenant-dev"
+        logger.error("python-jose library not available. Cannot verify JWT tokens.")
+        raise HTTPException(
+            status_code=500,
+            detail="Authentication service unavailable.",
+        )
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"], options={"verify_aud": False})
-        return payload.get("tenant_id", "tenant-dev")
-    except Exception:
-        return "tenant-dev"
+        tenant_id = payload.get("tenant_id")
+        if not tenant_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Token missing required 'tenant_id' claim.",
+            )
+        return tenant_id
+    except JWTError as e:
+        logger.warning("JWT verification failed: %s", e)
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token.",
+        )
+    except Exception as e:
+        logger.error("Unexpected error during token verification: %s", e)
+        raise HTTPException(
+            status_code=401,
+            detail="Token verification failed.",
+        )
 
 
 async def get_current_user(request: Request) -> dict[str, Any]:
@@ -66,6 +111,7 @@ async def get_current_user(request: Request) -> dict[str, Any]:
     Dependency to get the current authenticated user from request.
 
     Uses data set by AuthMiddleware or parses JWT directly.
+    Returns 401 if no valid authentication is present (unless dev fallback is allowed).
     """
     # Check if AuthMiddleware already processed the token
     if hasattr(request.state, "token_payload") and request.state.token_payload:
@@ -78,18 +124,35 @@ async def get_current_user(request: Request) -> dict[str, Any]:
             "roles": payload.roles,
         }
 
-    # Fallback: Get tenant from header
+    # Try to get tenant from header (this will raise 401 if not authenticated)
     tenant_id = await get_current_tenant_id(request)
 
-    # Check for user_id in request state
-    user_id = getattr(request.state, "user_id", "user-dev")
+    # If we reach here with tenant-dev, it means dev fallback is allowed
+    if tenant_id == "tenant-dev" and _is_dev_fallback_allowed():
+        user_id = getattr(request.state, "user_id", "user-dev")
+        logger.debug("Dev fallback: using dev user with limited roles (AUTH_DISABLED=True)")
+        return {
+            "sub": user_id,
+            "user_id": user_id,
+            "email": f"{user_id}@agentic-trader.com",
+            "tenant_id": tenant_id,
+            "roles": ["viewer"],  # Dev users get minimal roles, NOT admin
+        }
+
+    # For authenticated requests: extract user_id from request state
+    user_id = getattr(request.state, "user_id", None)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="User identity could not be determined from token.",
+        )
 
     return {
         "sub": user_id,
         "user_id": user_id,
         "email": f"{user_id}@agentic-trader.com",
         "tenant_id": tenant_id,
-        "roles": ["admin", "trader"],
+        "roles": getattr(request.state, "roles", ["viewer"]),
     }
 
 
