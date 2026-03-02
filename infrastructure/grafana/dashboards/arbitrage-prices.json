@@ -1,0 +1,119 @@
+{
+  "dashboard": {
+    "title": "Trading Platform - Arbitrage & Price Monitoring",
+    "tags": ["trading", "arbitrage", "prices"],
+    "timezone": "UTC",
+    "schemaVersion": 36,
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Price Discrepancy by Symbol",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "trading_price_discrepancy_pct",
+            "legendFormat": "{{symbol}}"
+          }
+        ],
+        "yAxes": [
+          { "label": "%", "min": 0 }
+        ],
+        "alert": {
+          "name": "High Price Discrepancy",
+          "condition": {
+            "query": { "queryType": "", "refId": "A" },
+            "reducer": { "type": "last", "query": "A" },
+            "evaluator": { "params": [1], "type": "gt" }
+          }
+        },
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 }
+      },
+      {
+        "id": 2,
+        "title": "Best Bid Prices",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "trading_best_bid",
+            "legendFormat": "{{symbol}} - {{exchange}}"
+          }
+        ],
+        "yAxes": [
+          { "label": "Price", "format": "currencyEUR" }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+      },
+      {
+        "id": 3,
+        "title": "Best Ask Prices",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "trading_best_ask",
+            "legendFormat": "{{symbol}} - {{exchange}}"
+          }
+        ],
+        "yAxes": [
+          { "label": "Price", "format": "currencyEUR" }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+      },
+      {
+        "id": 4,
+        "title": "Bid-Ask Spread by Exchange",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "((trading_best_ask - trading_best_bid) / trading_best_bid) * 100",
+            "legendFormat": "{{exchange}}"
+          }
+        ],
+        "dataFormat": "tsbuckets",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 }
+      },
+      {
+        "id": 5,
+        "title": "Arbitrage Opportunities",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "trading_price_discrepancy_pct > 0.1",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "columns": [
+          { "text": "Symbol", "value": "symbol" },
+          { "text": "Discrepancy %", "value": "Value" }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 }
+      },
+      {
+        "id": 6,
+        "title": "Price Feeds Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"trading-price-feed\"}",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "options": {
+                  "0": { "text": "DOWN", "color": "red" },
+                  "1": { "text": "UP", "color": "green" }
+                },
+                "type": "value"
+              }
+            ]
+          }
+        },
+        "gridPos": { "h": 4, "w": 24, "x": 0, "y": 24 }
+      }
+    ]
+  }
+}

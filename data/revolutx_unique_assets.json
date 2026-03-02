@@ -1,0 +1,62 @@
+[
+  {
+    "symbol": "BTC",
+    "name": "Bitcoin",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ETH",
+    "name": "Ethereum",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SOL",
+    "name": "Solana",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ADA",
+    "name": "Cardano",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DOT",
+    "name": "Polkadot",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XRP",
+    "name": "XRP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LINK",
+    "name": "Chainlink",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DOGE",
+    "name": "Dogecoin",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LTC",
+    "name": "Litecoin",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XLM",
+    "name": "Stellar",
+    "type": "crypto",
+    "active": true
+  }
+]

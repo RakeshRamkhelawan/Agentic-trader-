@@ -1,0 +1,2624 @@
+[
+  {
+    "symbol": "FUN",
+    "name": "FUN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MON",
+    "name": "MON",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "APT",
+    "name": "APT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "VANRY",
+    "name": "VANRY",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CTSI",
+    "name": "CTSI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SHELL",
+    "name": "SHELL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DMC",
+    "name": "DMC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MAVIA",
+    "name": "MAVIA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "W",
+    "name": "W",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "IMU",
+    "name": "IMU",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CHILLGUY",
+    "name": "CHILLGUY",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "EURCV",
+    "name": "EURCV",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MOCA",
+    "name": "MOCA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ONDO",
+    "name": "ONDO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AVAX",
+    "name": "AVAX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "IMX",
+    "name": "IMX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BABY",
+    "name": "BABY",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "IOST",
+    "name": "IOST",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HIGH",
+    "name": "HIGH",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "USELESS",
+    "name": "USELESS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SOL",
+    "name": "SOL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AUCTION",
+    "name": "AUCTION",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MASK",
+    "name": "MASK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RAD",
+    "name": "RAD",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BANANA",
+    "name": "BANANA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SUI",
+    "name": "SUI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LPT",
+    "name": "LPT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ALICE",
+    "name": "ALICE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RVN",
+    "name": "RVN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TRIA",
+    "name": "TRIA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CAT",
+    "name": "CAT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ALMANAK",
+    "name": "ALMANAK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PUNDIX",
+    "name": "PUNDIX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZK",
+    "name": "ZK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SQD",
+    "name": "SQD",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CRV",
+    "name": "CRV",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZKC",
+    "name": "ZKC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PNUT",
+    "name": "PNUT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PUMP",
+    "name": "PUMP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SWELL",
+    "name": "SWELL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DBR",
+    "name": "DBR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TRB",
+    "name": "TRB",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LINK",
+    "name": "LINK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HOME",
+    "name": "HOME",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "POND",
+    "name": "POND",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SFP",
+    "name": "SFP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HOOK",
+    "name": "HOOK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "REQ",
+    "name": "REQ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TAIKO",
+    "name": "TAIKO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "EPIC",
+    "name": "EPIC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FARTCOIN",
+    "name": "FARTCOIN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZBT",
+    "name": "ZBT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XMN",
+    "name": "XMN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZORA",
+    "name": "ZORA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DIA",
+    "name": "DIA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "API3",
+    "name": "API3",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ADA",
+    "name": "ADA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TREE",
+    "name": "TREE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RUNE",
+    "name": "RUNE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "EURC",
+    "name": "EURC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ENJ",
+    "name": "ENJ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NEWT",
+    "name": "NEWT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "METIS",
+    "name": "METIS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RENDER",
+    "name": "RENDER",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ALT",
+    "name": "ALT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SAND",
+    "name": "SAND",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DYDX",
+    "name": "DYDX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "IO",
+    "name": "IO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CC",
+    "name": "CC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DGB",
+    "name": "DGB",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MMT",
+    "name": "MMT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "IP",
+    "name": "IP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NEIRO",
+    "name": "NEIRO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RLC",
+    "name": "RLC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PHA",
+    "name": "PHA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ICNT",
+    "name": "ICNT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HFT",
+    "name": "HFT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "USDC",
+    "name": "USDC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "IQ",
+    "name": "IQ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "QKC",
+    "name": "QKC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZIG",
+    "name": "ZIG",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RDNT",
+    "name": "RDNT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TAI",
+    "name": "TAI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XVG",
+    "name": "XVG",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XRP",
+    "name": "XRP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BIO",
+    "name": "BIO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "QTUM",
+    "name": "QTUM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZKJ",
+    "name": "ZKJ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CAKE",
+    "name": "CAKE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BTC",
+    "name": "BTC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RPL",
+    "name": "RPL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DOT",
+    "name": "DOT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PHB",
+    "name": "PHB",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SOLV",
+    "name": "SOLV",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ICP",
+    "name": "ICP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GRT",
+    "name": "GRT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "REZ",
+    "name": "REZ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BLUR",
+    "name": "BLUR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RARE",
+    "name": "RARE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MOVR",
+    "name": "MOVR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CFG",
+    "name": "CFG",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "JUP",
+    "name": "JUP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PRIME",
+    "name": "PRIME",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "POLS",
+    "name": "POLS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DOGE",
+    "name": "DOGE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BLAST",
+    "name": "BLAST",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GAS",
+    "name": "GAS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MEME",
+    "name": "MEME",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DOGS",
+    "name": "DOGS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "UMA",
+    "name": "UMA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "KAIA",
+    "name": "KAIA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CORE",
+    "name": "CORE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "COTI",
+    "name": "COTI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ENS",
+    "name": "ENS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SSV",
+    "name": "SSV",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MANTA",
+    "name": "MANTA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TRAC",
+    "name": "TRAC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "KNC",
+    "name": "KNC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TAO",
+    "name": "TAO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PLUME",
+    "name": "PLUME",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "IOTA",
+    "name": "IOTA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LSK",
+    "name": "LSK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SOSO",
+    "name": "SOSO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "INJ",
+    "name": "INJ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZKP",
+    "name": "ZKP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TRUST",
+    "name": "TRUST",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "0G",
+    "name": "0G",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "YFI",
+    "name": "YFI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZIL",
+    "name": "ZIL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GNO",
+    "name": "GNO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BEL",
+    "name": "BEL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BCH",
+    "name": "BCH",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HUMA",
+    "name": "HUMA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "WELL",
+    "name": "WELL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SUSHI",
+    "name": "SUSHI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LDO",
+    "name": "LDO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "VET",
+    "name": "VET",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CHR",
+    "name": "CHR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MTL",
+    "name": "MTL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FLOCK",
+    "name": "FLOCK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ROSE",
+    "name": "ROSE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PEPE",
+    "name": "PEPE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MORPHO",
+    "name": "MORPHO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "WLFI",
+    "name": "WLFI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZEUS",
+    "name": "ZEUS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MAGIC",
+    "name": "MAGIC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PENGU",
+    "name": "PENGU",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LYX",
+    "name": "LYX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GLM",
+    "name": "GLM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HONEY",
+    "name": "HONEY",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PEOPLE",
+    "name": "PEOPLE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TRU",
+    "name": "TRU",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ICX",
+    "name": "ICX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BICO",
+    "name": "BICO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "OGN",
+    "name": "OGN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "UXLINK",
+    "name": "UXLINK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BNB",
+    "name": "BNB",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PROM",
+    "name": "PROM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZRC",
+    "name": "ZRC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FIDA",
+    "name": "FIDA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CELR",
+    "name": "CELR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GHST",
+    "name": "GHST",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AGLD",
+    "name": "AGLD",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FLUID",
+    "name": "FLUID",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GNS",
+    "name": "GNS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "EDEN",
+    "name": "EDEN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FIL",
+    "name": "FIL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RAY",
+    "name": "RAY",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "KAVA",
+    "name": "KAVA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SAFE",
+    "name": "SAFE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GRASS",
+    "name": "GRASS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XAI",
+    "name": "XAI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BREV",
+    "name": "BREV",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SKL",
+    "name": "SKL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CELO",
+    "name": "CELO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZAMA",
+    "name": "ZAMA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AUDIO",
+    "name": "AUDIO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "KMNO",
+    "name": "KMNO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CETUS",
+    "name": "CETUS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SOMI",
+    "name": "SOMI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TOMO",
+    "name": "TOMO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FLUX",
+    "name": "FLUX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NFP",
+    "name": "NFP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SIGN",
+    "name": "SIGN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HOT",
+    "name": "HOT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LISTA",
+    "name": "LISTA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SWEAT",
+    "name": "SWEAT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MET",
+    "name": "MET",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "POWR",
+    "name": "POWR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TLM",
+    "name": "TLM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TURBO",
+    "name": "TURBO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PIXEL",
+    "name": "PIXEL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "OXT",
+    "name": "OXT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZEN",
+    "name": "ZEN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "THE",
+    "name": "THE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TRX",
+    "name": "TRX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TRUMP",
+    "name": "TRUMP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SOON",
+    "name": "SOON",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HMSTR",
+    "name": "HMSTR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZBCN",
+    "name": "ZBCN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PYR",
+    "name": "PYR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BTT",
+    "name": "BTT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "USDCV",
+    "name": "USDCV",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CHZ",
+    "name": "CHZ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PYTH",
+    "name": "PYTH",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XAN",
+    "name": "XAN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "KAS",
+    "name": "KAS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DENT",
+    "name": "DENT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "COMP",
+    "name": "COMP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LUMIA",
+    "name": "LUMIA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ETHFI",
+    "name": "ETHFI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "EUL",
+    "name": "EUL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "VELO",
+    "name": "VELO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ABT",
+    "name": "ABT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ADX",
+    "name": "ADX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ARPA",
+    "name": "ARPA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "YB",
+    "name": "YB",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SUPER",
+    "name": "SUPER",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "IRYS",
+    "name": "IRYS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AERO",
+    "name": "AERO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XPL",
+    "name": "XPL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MEW",
+    "name": "MEW",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "JASMY",
+    "name": "JASMY",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PONKE",
+    "name": "PONKE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DUSK",
+    "name": "DUSK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FRAX",
+    "name": "FRAX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LAYER",
+    "name": "LAYER",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BIGTIME",
+    "name": "BIGTIME",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "INX",
+    "name": "INX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BEAM",
+    "name": "BEAM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HEI",
+    "name": "HEI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "VIRTUAL",
+    "name": "VIRTUAL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "WOO",
+    "name": "WOO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "STRK",
+    "name": "STRK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "2Z",
+    "name": "2Z",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZRO",
+    "name": "ZRO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CPOOL",
+    "name": "CPOOL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HBAR",
+    "name": "HBAR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "KAITO",
+    "name": "KAITO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "WIF",
+    "name": "WIF",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BRETT",
+    "name": "BRETT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ILV",
+    "name": "ILV",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LQTY",
+    "name": "LQTY",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NOM",
+    "name": "NOM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BOME",
+    "name": "BOME",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AIOZ",
+    "name": "AIOZ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AMP",
+    "name": "AMP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MANA",
+    "name": "MANA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "EDGE",
+    "name": "EDGE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AVA",
+    "name": "AVA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SEI",
+    "name": "SEI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "EUROP",
+    "name": "EUROP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BAT",
+    "name": "BAT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MOODENG",
+    "name": "MOODENG",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DCR",
+    "name": "DCR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "IDEX",
+    "name": "IDEX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LUNA",
+    "name": "LUNA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ONG",
+    "name": "ONG",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MAV",
+    "name": "MAV",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AERGO",
+    "name": "AERGO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ANIME",
+    "name": "ANIME",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ESP",
+    "name": "ESP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "EGLD",
+    "name": "EGLD",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XTZ",
+    "name": "XTZ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ORCA",
+    "name": "ORCA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XLM",
+    "name": "XLM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "THQ",
+    "name": "THQ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AEVO",
+    "name": "AEVO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FLOKI",
+    "name": "FLOKI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MLN",
+    "name": "MLN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SXT",
+    "name": "SXT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZETA",
+    "name": "ZETA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "KERNEL",
+    "name": "KERNEL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PROMPT",
+    "name": "PROMPT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SKY",
+    "name": "SKY",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "OPEN",
+    "name": "OPEN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ATA",
+    "name": "ATA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FET",
+    "name": "FET",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "EDU",
+    "name": "EDU",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ELSA",
+    "name": "ELSA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TIA",
+    "name": "TIA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AGI",
+    "name": "AGI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NANO",
+    "name": "NANO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ETH",
+    "name": "ETH",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CARV",
+    "name": "CARV",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ARKM",
+    "name": "ARKM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "POPCAT",
+    "name": "POPCAT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NOS",
+    "name": "NOS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "VTHO",
+    "name": "VTHO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "POL",
+    "name": "POL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BNT",
+    "name": "BNT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "COS",
+    "name": "COS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FTT",
+    "name": "FTT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "WIN",
+    "name": "WIN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AXL",
+    "name": "AXL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CVC",
+    "name": "CVC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LMWR",
+    "name": "LMWR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FORM",
+    "name": "FORM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LTC",
+    "name": "LTC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AKT",
+    "name": "AKT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NOT",
+    "name": "NOT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "STO",
+    "name": "STO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ACE",
+    "name": "ACE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SHIB",
+    "name": "SHIB",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "A",
+    "name": "A",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XDC",
+    "name": "XDC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ARB",
+    "name": "ARB",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PARTI",
+    "name": "PARTI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GLMR",
+    "name": "GLMR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ZRX",
+    "name": "ZRX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NMR",
+    "name": "NMR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LINEA",
+    "name": "LINEA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NKN",
+    "name": "NKN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RSR",
+    "name": "RSR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "COW",
+    "name": "COW",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TWT",
+    "name": "TWT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SENT",
+    "name": "SENT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SCR",
+    "name": "SCR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ONT",
+    "name": "ONT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BAND",
+    "name": "BAND",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ATOM",
+    "name": "ATOM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CTC",
+    "name": "CTC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ATH",
+    "name": "ATH",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PEAQ",
+    "name": "PEAQ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PORTAL",
+    "name": "PORTAL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "JTO",
+    "name": "JTO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XYO",
+    "name": "XYO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "D",
+    "name": "D",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LRC",
+    "name": "LRC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ACH",
+    "name": "ACH",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "YGG",
+    "name": "YGG",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "WMTX",
+    "name": "WMTX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DODO",
+    "name": "DODO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SAPIEN",
+    "name": "SAPIEN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DEEP",
+    "name": "DEEP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GOAT",
+    "name": "GOAT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SPK",
+    "name": "SPK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NIL",
+    "name": "NIL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DNT",
+    "name": "DNT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "IKA",
+    "name": "IKA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PUFFER",
+    "name": "PUFFER",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PROVE",
+    "name": "PROVE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NEAR",
+    "name": "NEAR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ALGO",
+    "name": "ALGO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TOWNS",
+    "name": "TOWNS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "F",
+    "name": "F",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RON",
+    "name": "RON",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AXS",
+    "name": "AXS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "G",
+    "name": "G",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "STX",
+    "name": "STX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "WAXP",
+    "name": "WAXP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SAGA",
+    "name": "SAGA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MERL",
+    "name": "MERL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MIRA",
+    "name": "MIRA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "UP",
+    "name": "UP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DYM",
+    "name": "DYM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BLZ",
+    "name": "BLZ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "APE",
+    "name": "APE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ANKR",
+    "name": "ANKR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "KSM",
+    "name": "KSM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SOPH",
+    "name": "SOPH",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PTB",
+    "name": "PTB",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SYRUP",
+    "name": "SYRUP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "QNT",
+    "name": "QNT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BOB",
+    "name": "BOB",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ETC",
+    "name": "ETC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CSPR",
+    "name": "CSPR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TNSR",
+    "name": "TNSR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FUEL",
+    "name": "FUEL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ARK",
+    "name": "ARK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "INIT",
+    "name": "INIT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "VSN",
+    "name": "VSN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "1INCH",
+    "name": "1INCH",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CTK",
+    "name": "CTK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ASTR",
+    "name": "ASTR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "PENDLE",
+    "name": "PENDLE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TON",
+    "name": "TON",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "EIGEN",
+    "name": "EIGEN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "STRAX",
+    "name": "STRAX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FLR",
+    "name": "FLR",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "UNI",
+    "name": "UNI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AAVE",
+    "name": "AAVE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ME",
+    "name": "ME",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "WAL",
+    "name": "WAL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NEO",
+    "name": "NEO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GMT",
+    "name": "GMT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "VANA",
+    "name": "VANA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "NPC",
+    "name": "NPC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "LUNA2",
+    "name": "LUNA2",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SPX",
+    "name": "SPX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SLP",
+    "name": "SLP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GTC",
+    "name": "GTC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "TOSHI",
+    "name": "TOSHI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "WLD",
+    "name": "WLD",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "OSMO",
+    "name": "OSMO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "C98",
+    "name": "C98",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ALPHA",
+    "name": "ALPHA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ACT",
+    "name": "ACT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HNT",
+    "name": "HNT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RED",
+    "name": "RED",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "KITE",
+    "name": "KITE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MOG",
+    "name": "MOG",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AIXBT",
+    "name": "AIXBT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MBOX",
+    "name": "MBOX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CROSS",
+    "name": "CROSS",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CATI",
+    "name": "CATI",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MDT",
+    "name": "MDT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "OM",
+    "name": "OM",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DRIFT",
+    "name": "DRIFT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "DEGEN",
+    "name": "DEGEN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ACU",
+    "name": "ACU",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "FORTH",
+    "name": "FORTH",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GMX",
+    "name": "GMX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "MOVE",
+    "name": "MOVE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "S",
+    "name": "S",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AZTEC",
+    "name": "AZTEC",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "WCT",
+    "name": "WCT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GALA",
+    "name": "GALA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HYPE",
+    "name": "HYPE",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CRO",
+    "name": "CRO",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SNX",
+    "name": "SNX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ENA",
+    "name": "ENA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "T",
+    "name": "T",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "BONK",
+    "name": "BONK",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "SYN",
+    "name": "SYN",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CYBER",
+    "name": "CYBER",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "CVX",
+    "name": "CVX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "OP",
+    "name": "OP",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ID",
+    "name": "ID",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "HAEDAL",
+    "name": "HAEDAL",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "XION",
+    "name": "XION",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "U",
+    "name": "U",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "GIGA",
+    "name": "GIGA",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "ACX",
+    "name": "ACX",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "STORJ",
+    "name": "STORJ",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "AVNT",
+    "name": "AVNT",
+    "type": "crypto",
+    "active": true
+  },
+  {
+    "symbol": "RECALL",
+    "name": "RECALL",
+    "type": "crypto",
+    "active": true
+  }
+]
