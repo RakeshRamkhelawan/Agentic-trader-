@@ -74,6 +74,12 @@ htmlcov/
 .ruff_cache/
 .tmp/
 __pycache__/
+**/__pycache__/
+**/.pytest_cache/
+**/.benchmarks/
+backend/.benchmarks/
+backend/.pytest_cache/
+backend/__pycache__/
 
 # ============================================================================
 # ENVIRONMENT VARIABLES

@@ -172,12 +172,14 @@ class AnalyticsExporter:
                     formatted = f"{value:.2f}" if isinstance(value, float) else str(value)
                     css_class = ""
 
-                cards.append(f"""
+                cards.append(
+                    f"""
                 <div class="metric-card">
                     <div class="metric-label">{label}</div>
                     <div class="metric-value {css_class}">{formatted}{suffix}</div>
                 </div>
-                """)
+                """
+                )
 
         return "\n".join(cards)
 

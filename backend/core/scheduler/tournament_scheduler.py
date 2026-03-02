@@ -15,6 +15,7 @@ from backend.competitions.advanced_tournaments import (
 
 class ScheduleFrequency(Enum):
     """Tournament schedule frequencies."""
+
     HOURLY = "hourly"
     DAILY = "daily"
     WEEKLY = "weekly"
@@ -24,6 +25,7 @@ class ScheduleFrequency(Enum):
 @dataclass
 class ScheduledTournament:
     """Scheduled tournament configuration."""
+
     id: str
     name_template: str
     description: str
@@ -140,19 +142,25 @@ class TournamentScheduler:
         self._active_tournaments[schedule.id] = tournament.id
 
         # Trigger callback
-        await self._trigger_callback("on_create", {
-            "schedule_id": schedule.id,
-            "tournament_id": tournament.id,
-            "name": name,
-        })
+        await self._trigger_callback(
+            "on_create",
+            {
+                "schedule_id": schedule.id,
+                "tournament_id": tournament.id,
+                "name": name,
+            },
+        )
 
         # Auto-start if configured
         if schedule.auto_start:
             self._engine.start_tournament(tournament.id)
-            await self._trigger_callback("on_start", {
-                "schedule_id": schedule.id,
-                "tournament_id": tournament.id,
-            })
+            await self._trigger_callback(
+                "on_start",
+                {
+                    "schedule_id": schedule.id,
+                    "tournament_id": tournament.id,
+                },
+            )
 
         return tournament
 
@@ -272,35 +280,41 @@ class TournamentScheduler:
     def create_default_schedules(self) -> None:
         """Create default tournament schedules."""
         # Weekly main tournament
-        self.add_schedule(ScheduledTournament(
-            id="weekly_main",
-            name_template="Weekly Tournament - Week {week}",
-            description="Main weekly trading competition",
-            frequency=ScheduleFrequency.WEEKLY,
-            duration_hours=168,  # 1 week
-            max_participants=100,
-        ))
+        self.add_schedule(
+            ScheduledTournament(
+                id="weekly_main",
+                name_template="Weekly Tournament - Week {week}",
+                description="Main weekly trading competition",
+                frequency=ScheduleFrequency.WEEKLY,
+                duration_hours=168,  # 1 week
+                max_participants=100,
+            )
+        )
 
         # Daily blitz tournament
-        self.add_schedule(ScheduledTournament(
-            id="daily_blitz",
-            name_template="Daily Blitz - {date}",
-            description="Fast-paced daily tournament",
-            frequency=ScheduleFrequency.DAILY,
-            duration_hours=24,
-            max_participants=50,
-        ))
+        self.add_schedule(
+            ScheduledTournament(
+                id="daily_blitz",
+                name_template="Daily Blitz - {date}",
+                description="Fast-paced daily tournament",
+                frequency=ScheduleFrequency.DAILY,
+                duration_hours=24,
+                max_participants=50,
+            )
+        )
 
         # Weekly crypto tournament
-        self.add_schedule(ScheduledTournament(
-            id="weekly_crypto",
-            name_template="Crypto Masters - Week {week}",
-            description="Cryptocurrency trading tournament",
-            frequency=ScheduleFrequency.WEEKLY,
-            variant=TournamentVariant.CRYPTO_ONLY,
-            duration_hours=168,
-            max_participants=75,
-        ))
+        self.add_schedule(
+            ScheduledTournament(
+                id="weekly_crypto",
+                name_template="Crypto Masters - Week {week}",
+                description="Cryptocurrency trading tournament",
+                frequency=ScheduleFrequency.WEEKLY,
+                variant=TournamentVariant.CRYPTO_ONLY,
+                duration_hours=168,
+                max_participants=75,
+            )
+        )
 
 
 # Global scheduler instance

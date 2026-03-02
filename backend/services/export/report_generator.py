@@ -29,8 +29,7 @@ class ReportGenerator:
         # Get trades from last 7 days
         week_ago = datetime.utcnow() - timedelta(days=7)
         recent_trades = [
-            t for t in trades
-            if datetime.fromisoformat(t.get("timestamp", "2000-01-01")) > week_ago
+            t for t in trades if datetime.fromisoformat(t.get("timestamp", "2000-01-01")) > week_ago
         ]
 
         # Calculate metrics
@@ -132,7 +131,9 @@ class ReportGenerator:
                 "win_rate": (len(winning) / len(trades) * 100) if trades else 0,
                 "total_pnl": sum(pnls),
                 "avg_pnl": sum(pnls) / len(pnls) if pnls else 0,
-                "profit_factor": sum(winning) / abs(sum(losing)) if losing and sum(losing) != 0 else float('inf'),
+                "profit_factor": (
+                    sum(winning) / abs(sum(losing)) if losing and sum(losing) != 0 else float("inf")
+                ),
             },
             "trades_by_symbol": self._aggregate_by_symbol(trades),
         }
@@ -160,7 +161,9 @@ class ReportGenerator:
         # Calculate win rates
         for symbol in by_symbol:
             data = by_symbol[symbol]
-            data["win_rate"] = (data["winning_trades"] / data["trades"] * 100) if data["trades"] > 0 else 0
+            data["win_rate"] = (
+                (data["winning_trades"] / data["trades"] * 100) if data["trades"] > 0 else 0
+            )
 
         return by_symbol
 
