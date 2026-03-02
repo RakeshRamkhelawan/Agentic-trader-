@@ -1,0 +1,11 @@
+symbol,name,type,active
+BTC,Bitcoin,crypto,True
+ETH,Ethereum,crypto,True
+SOL,Solana,crypto,True
+ADA,Cardano,crypto,True
+DOT,Polkadot,crypto,True
+XRP,XRP,crypto,True
+LINK,Chainlink,crypto,True
+DOGE,Dogecoin,crypto,True
+LTC,Litecoin,crypto,True
+XLM,Stellar,crypto,True

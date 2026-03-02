@@ -1,0 +1,72 @@
+[
+  {
+    "symbol": "BTC-EUR",
+    "baseAsset": "BTC",
+    "quoteAsset": "EUR",
+    "name": "Bitcoin",
+    "status": "active"
+  },
+  {
+    "symbol": "ETH-EUR",
+    "baseAsset": "ETH",
+    "quoteAsset": "EUR",
+    "name": "Ethereum",
+    "status": "active"
+  },
+  {
+    "symbol": "SOL-EUR",
+    "baseAsset": "SOL",
+    "quoteAsset": "EUR",
+    "name": "Solana",
+    "status": "active"
+  },
+  {
+    "symbol": "ADA-EUR",
+    "baseAsset": "ADA",
+    "quoteAsset": "EUR",
+    "name": "Cardano",
+    "status": "active"
+  },
+  {
+    "symbol": "DOT-EUR",
+    "baseAsset": "DOT",
+    "quoteAsset": "EUR",
+    "name": "Polkadot",
+    "status": "active"
+  },
+  {
+    "symbol": "XRP-EUR",
+    "baseAsset": "XRP",
+    "quoteAsset": "EUR",
+    "name": "XRP",
+    "status": "active"
+  },
+  {
+    "symbol": "LINK-EUR",
+    "baseAsset": "LINK",
+    "quoteAsset": "EUR",
+    "name": "Chainlink",
+    "status": "active"
+  },
+  {
+    "symbol": "DOGE-EUR",
+    "baseAsset": "DOGE",
+    "quoteAsset": "EUR",
+    "name": "Dogecoin",
+    "status": "active"
+  },
+  {
+    "symbol": "LTC-EUR",
+    "baseAsset": "LTC",
+    "quoteAsset": "EUR",
+    "name": "Litecoin",
+    "status": "active"
+  },
+  {
+    "symbol": "XLM-EUR",
+    "baseAsset": "XLM",
+    "quoteAsset": "EUR",
+    "name": "Stellar",
+    "status": "active"
+  }
+]
