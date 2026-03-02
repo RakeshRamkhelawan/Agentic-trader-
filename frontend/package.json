@@ -71,7 +71,7 @@
     "@chromatic-com/storybook": "^3",
     "@eslint/js": "^9.39.3",
     "@playwright/test": "^1.49.0",
-    "@storybook/addon-a11y": "^8.5.0",
+    "@storybook/addon-a11y": "^10.2.13",
     "@storybook/addon-essentials": "^8.5.0",
     "@storybook/addon-interactions": "^8.5.0",
     "@storybook/addon-onboarding": "^8.5.0",
