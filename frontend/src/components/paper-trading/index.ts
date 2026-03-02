@@ -9,8 +9,8 @@ export { PaperTradeHistory } from './PaperTradeHistory';
 export { PaperSessionControls } from './PaperSessionControls';
 export { PaperOrderPanel } from './PaperOrderPanel';
 export { PaperActiveOrders } from './PaperActiveOrders';
+export { PaperAIAdvisor } from './PaperAIAdvisor';
+export { PaperAgentStatus } from './PaperAgentStatus';
 
-// Future exports (Week 4):
+// Future exports:
 // export { PaperTradingChart } from './PaperTradingChart';
-// export { PaperAIAdvisor } from './PaperAIAdvisor';
-// export { PaperAgentStatus } from './PaperAgentStatus';
