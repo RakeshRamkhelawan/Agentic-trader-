@@ -23,7 +23,7 @@ async def verify_websocket():
     # 1. Login to get token
     payload = {"tenant_id": "tenant-123", "account_id": "acc-123"}
     try:
-        r = requests.post(f"{HTTP_BASE_URL}/auth/token", json=payload)
+        r = requests.post(f"{HTTP_BASE_URL}/auth/token", json=payload, timeout=30)
         if r.status_code != 200:
             print(f"❌ Login Failed: {r.text}")
             return

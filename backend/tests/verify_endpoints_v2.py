@@ -19,7 +19,7 @@ def verify_system():
 
     # 1. Health Check
     try:
-        r = requests.get("http://localhost:8003/health")
+        r = requests.get("http://localhost:8003/health", timeout=10)
         if r.status_code == 200:
             print_result("Health Check", True)
         else:
@@ -45,7 +45,7 @@ def verify_system():
         payload = {"tenant_id": "tenant-123", "account_id": "acc-123"}
 
         # Try JSON first as it's common in modern APIs, fallback to form if 422
-        r = requests.post(f"{BASE_URL}/auth/token", json=payload)
+        r = requests.post(f"{BASE_URL}/auth/token", json=payload, timeout=30)
 
         if r.status_code == 200:
             data = r.json()
@@ -53,7 +53,7 @@ def verify_system():
             print_result("Auth Login", True)
         elif r.status_code == 422:
             # Retry with form data
-            r = requests.post(f"{BASE_URL}/auth/token", data=payload)
+            r = requests.post(f"{BASE_URL}/auth/token", data=payload, timeout=30)
             if r.status_code == 200:
                 data = r.json()
                 token = data.get("access_token")
@@ -73,7 +73,7 @@ def verify_system():
     # 3. Protected Resource (Trading Markets)
     headers = {"Authorization": f"Bearer {token}"}
     try:
-        r = requests.get(f"{BASE_URL}/trading/markets", headers=headers)
+        r = requests.get(f"{BASE_URL}/trading/markets", headers=headers, timeout=10)
         if r.status_code == 200:
             markets = r.json()
             print_result("Get Markets", True, f"Found {len(markets)} markets")
@@ -84,7 +84,7 @@ def verify_system():
 
     # 4. Protected Resource (User Settings)
     try:
-        r = requests.get(f"{BASE_URL}/settings/profile", headers=headers)
+        r = requests.get(f"{BASE_URL}/settings/profile", headers=headers, timeout=10)
         if r.status_code == 200:
             print_result("Get Profile", True)
         elif r.status_code == 404:
@@ -94,11 +94,11 @@ def verify_system():
                 "last_name": "User",
                 "email": "admin@example.com",
             }
-            r = requests.put(f"{BASE_URL}/settings/profile", headers=headers, json=profile_data)
+            r = requests.put(f"{BASE_URL}/settings/profile", headers=headers, json=profile_data, timeout=10)
             if r.status_code == 200:
                 print_result("Create Profile", True)
                 # Verify it exists now
-                r = requests.get(f"{BASE_URL}/settings/profile", headers=headers)
+                r = requests.get(f"{BASE_URL}/settings/profile", headers=headers, timeout=10)
                 if r.status_code == 200:
                     print_result("Get Profile (After Create)", True)
                 else:

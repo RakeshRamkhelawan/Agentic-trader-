@@ -112,6 +112,7 @@ class CircuitBreaker:
         self.max_exposure_pct = max_exposure_pct
 
         self._state: CircuitBreakerState | None = None
+        self._portfolio_value: float = 0.0
 
     async def _load_state(self) -> CircuitBreakerState:
         """Load or create breaker state."""
@@ -171,9 +172,14 @@ class CircuitBreaker:
             return True
 
         # Check daily loss limit
-        if state.daily_pnl <= -self.max_daily_loss_pct:
-            await self._trip(TripReason.MAX_DAILY_LOSS, state)
-            return True
+        # IMPORTANT: Compare percentages to percentages!
+        # state.daily_pnl is absolute (€), convert to percentage first
+        portfolio_value = await self._get_portfolio_value()
+        if portfolio_value > 0:
+            daily_loss_pct = abs(state.daily_pnl) / portfolio_value
+            if daily_loss_pct >= self.max_daily_loss_pct:
+                await self._trip(TripReason.MAX_DAILY_LOSS, state)
+                return True
 
         # Check consecutive losses
         if state.consecutive_losses >= self.max_consecutive_losses:
@@ -241,6 +247,14 @@ class CircuitBreaker:
 
         # Check if should trip
         await self.check_and_trip()
+
+    def update_portfolio_value(self, value: float):
+        """Update portfolio value for percentage calculations."""
+        self._portfolio_value = value
+
+    async def _get_portfolio_value(self) -> float:
+        """Get current portfolio value."""
+        return self._portfolio_value
 
     async def _check_daily_reset(self, state: CircuitBreakerState):
         """Reset daily metrics indien nieuwe dag."""

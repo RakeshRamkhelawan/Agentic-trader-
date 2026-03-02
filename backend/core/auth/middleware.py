@@ -144,7 +144,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
         return None
 
     def _create_dev_payload(self, token: str) -> TokenPayload:
-        """Create development payload (for testing without real JWT)."""
+        """Create development payload (for testing without real JWT).
+        
+        WARNING: This is only allowed in development mode with explicit env var set.
+        """
+        import os
+        if os.getenv("DEVELOPMENT_MODE") != "true":
+            raise ValueError(
+                "Dev auth payload only available in development mode. "
+                "Set DEVELOPMENT_MODE=true explicitly to enable."
+            )
         return TokenPayload(
             sub="dev-user-001",
             tenant_id="dev-tenant-001",

@@ -332,7 +332,7 @@ class BacktestEngineV18:
         # For now, return mock price based on symbol hash
         import hashlib
 
-        hash_val = int(hashlib.md5(f"{symbol}{date.date()}".encode()).hexdigest(), 16)
+        hash_val = int(hashlib.blake2b(f"{symbol}{date.date()}".encode(), digest_size=8).hexdigest(), 16)
         return 100.0 + (hash_val % 100)
 
     async def _get_price_history(self, symbol: str, date: datetime) -> list[float]:

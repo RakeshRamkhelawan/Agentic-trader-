@@ -282,9 +282,10 @@ class OptimizedQueries:
             return ""
 
         keys = list(items[0].keys())
-        values_list = [f"({', '.join(str(item.get(k, 'NULL')) for k in keys)})" for item in items]
+        # Generate parameterized placeholders for safety
+        placeholders = [f"({', '.join(['%s'] * len(keys))})" for _ in items]
 
-        return f"INSERT INTO table ({', '.join(keys)}) VALUES {', '.join(values_list)}"
+        return f"INSERT INTO table ({', '.join(keys)}) VALUES {', '.join(placeholders)}"  # nosec B608 - Returns parameterized query, values passed separately
 
     @staticmethod
     def batch_update_pattern(updates: list[dict[str, Any]]) -> str:
