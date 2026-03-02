@@ -8,6 +8,7 @@ from typing import Any
 
 class ChatMessageType(Enum):
     """Types of chat messages."""
+
     TEXT = "text"
     TRADE = "trade"
     SYSTEM = "system"
@@ -17,6 +18,7 @@ class ChatMessageType(Enum):
 @dataclass
 class ChatMessage:
     """A chat message."""
+
     id: str
     tournament_id: str
     competitor_id: str
@@ -82,7 +84,7 @@ class TournamentChat:
 
         # Trim history if needed
         if len(self.messages) > self.max_history:
-            self.messages = self.messages[-self.max_history:]
+            self.messages = self.messages[-self.max_history :]
 
         return chat_msg
 

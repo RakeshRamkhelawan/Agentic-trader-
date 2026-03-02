@@ -102,14 +102,14 @@ coordinator = OODALoopCoordinator(
 # 3. Run backtest loop
 while data_feed.next():
     bar = data_feed.get_latest_bar("BTC/USDT")
-    
+
     # Process through consciousness pipeline
     result = await coordinator.run_cycle(
         symbol="BTC/USDT",
         current_price=bar["close"],
         strategy_id="trend_following"
     )
-    
+
     if result["decision"] == "EXECUTE":
         # Execute paper trade
         pass

@@ -411,10 +411,10 @@ async def main():
 Examples:
   # Auto-download and backtest
   python scripts/backtest_6year.py --symbol BTC-EUR
-  
+
   # Use existing data file
   python scripts/backtest_6year.py --file data/historical_6year/BTC-EUR_1h_2020-2026.parquet
-  
+
   # Different capital
   python scripts/backtest_6year.py --symbol ETH-EUR --capital 50000
         """,

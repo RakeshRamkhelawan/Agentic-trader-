@@ -2,15 +2,13 @@
 Unit tests for Online Learning module (Sprint 3).
 """
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from backend.core.learning.online_learner import OnlineLearner, LearningMetrics
+from backend.core.learning.online_learner import OnlineLearner
 from backend.core.learning.drift_detector import (
     ADWINDriftDetector,
-    DriftEvent,
     MultiMetricDriftDetector,
 )
 from backend.core.learning.strategy_adapter import StrategyWeightAdapter

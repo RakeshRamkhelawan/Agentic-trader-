@@ -7,21 +7,20 @@ Integratietests voor:
 """
 
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from backend.core.navagraha.models import GunaDistribution, NavagrahaState, PlanetName
 from backend.core.schemas.ooda_types import (
     MarketRegime,
-    Observation,
     Orientation,
     RiskAssessment,
     RiskDecision,
     TradeProposal,
 )
 from backend.core.strategy.unified_strategy_registry import UnifiedStrategyRegistry
-from backend.orchestration.ooda_coordinator import OODALoopCoordinator, TradingMode
+from backend.orchestration.ooda_coordinator import OODALoopCoordinator
 from backend.risk.drawdown_monitor import DrawdownMonitor, DrawdownStatus
 from backend.risk.risk_orchestrator import RiskOrchestrator, TradeSignal
 

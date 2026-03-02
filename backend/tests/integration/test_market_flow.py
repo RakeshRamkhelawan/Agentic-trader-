@@ -1,10 +1,9 @@
 import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
-from backend.market_data.interfaces import EventSink, ExchangeProvider
-from backend.market_data.models import EventType
+from backend.market_data.interfaces import EventSink
 from backend.market_data.normalizer import StandardNormalizer
 from backend.market_data.pipeline import MarketDataPipeline
 from backend.market_data.providers.base import BaseExchangeProvider

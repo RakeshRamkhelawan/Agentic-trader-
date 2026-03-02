@@ -32,9 +32,7 @@ class JWTHandler:
                 "or pass secret_key parameter."
             )
         if len(self.secret_key) < 32:
-            raise ValueError(
-                "JWT secret key must be at least 32 characters long for security."
-            )
+            raise ValueError("JWT secret key must be at least 32 characters long for security.")
         self.algorithm = algorithm
         self.access_token_expire_minutes = access_token_expire_minutes
         self.refresh_token_expire_days = refresh_token_expire_days

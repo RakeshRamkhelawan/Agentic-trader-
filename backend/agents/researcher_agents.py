@@ -71,7 +71,7 @@ class BullResearcher(BaseAgent):
             raise ValueError("Invalid observation provided")
         if not analyst_view or not isinstance(analyst_view, Orientation):
             raise ValueError("Invalid analyst_view provided")
-        
+
         self.logger.info(f"Generating bullish hypothesis for {symbol}")
 
         # Build contrarian prompt
@@ -193,29 +193,30 @@ ARGUMENTS:
     def _validate_symbol(self, symbol: str) -> str:
         """
         Validate and sanitize trading symbol.
-        
+
         Args:
             symbol: Raw symbol string
-            
+
         Returns:
             Sanitized symbol string
-            
+
         Raises:
             ValueError: If symbol is invalid
         """
         if not symbol or not isinstance(symbol, str):
             raise ValueError("Symbol must be a non-empty string")
-        
+
         # Remove potentially dangerous characters
         import re
+
         # Allow alphanumeric, hyphen, underscore, forward slash (for pairs like BTC/USD)
-        if not re.match(r'^[A-Za-z0-9_/-]+$', symbol):
+        if not re.match(r"^[A-Za-z0-9_/-]+$", symbol):
             raise ValueError(f"Invalid symbol format: {symbol}")
-        
+
         # Limit length
         if len(symbol) > 20:
             raise ValueError(f"Symbol too long: {symbol}")
-        
+
         return symbol.upper()
 
 

@@ -228,9 +228,7 @@ class RateLimiter:
         if api_key not in self._local_history:
             self._local_history[api_key] = []
 
-        self._local_history[api_key] = [
-            t for t in self._local_history[api_key] if t > cutoff_time
-        ]
+        self._local_history[api_key] = [t for t in self._local_history[api_key] if t > cutoff_time]
 
         if len(self._local_history[api_key]) >= limit:
             return False
@@ -762,4 +760,6 @@ if __name__ == "__main__":
     app = create_gateway()
 
     # Run: uvicorn backend.api.gateway:app --reload
-    uvicorn.run(app, host="0.0.0.0", port=8000)  # nosec B104 - Required for Docker/containerized deployment
+    uvicorn.run(
+        app, host="0.0.0.0", port=8000
+    )  # nosec B104 - Required for Docker/containerized deployment

@@ -1,8 +1,8 @@
 # 🐳 EPIC 1: Container Infrastructuur
 
-**Epic ID:** EPIC-PM-001  
-**Status:** ✅ COMPLETE  
-**Voltooide doorlooptijd:** ~1-2 dagen  
+**Epic ID:** EPIC-PM-001
+**Status:** ✅ COMPLETE
+**Voltooide doorlooptijd:** ~1-2 dagen
 **Dependencies:** Geen (dit was het startpunt)
 
 ---
@@ -30,10 +30,10 @@ Dit epic richt zich op het opzetten van de complete containerinfrastructuur voor
 
 ## 📌 TASK 1.1: Repository Setup & Configuratie
 
-**Task ID:** TASK-PM-001  
-**Status:** 🔴 TODO  
-**Geschatte tijd:** 2 uur  
-**Dependencies:** Geen  
+**Task ID:** TASK-PM-001
+**Status:** 🔴 TODO
+**Geschatte tijd:** 2 uur
+**Dependencies:** Geen
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -246,16 +246,16 @@ from pathlib import Path
 
 class TestRepositorySetup:
     """Valideer repository setup."""
-    
+
     @pytest.fixture
     def repo_root(self) -> Path:
         """Repository root path."""
         return Path(__file__).parent.parent
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_required_directories_exist(self, repo_root: Path):
         """Happy path: Alle vereiste directories bestaan."""
         required_dirs = [
@@ -270,62 +270,62 @@ class TestRepositorySetup:
             dir_path = repo_root / dir_name
             assert dir_path.exists(), f"Directory {dir_name} ontbreekt"
             assert dir_path.is_dir(), f"{dir_name} is geen directory"
-    
+
     def test_happy_path_requirements_file_exists(self, repo_root: Path):
         """Happy path: requirements.txt bestaat en bevat core dependencies."""
         req_file = repo_root / "requirements.txt"
         assert req_file.exists(), "requirements.txt ontbreekt"
-        
+
         content = req_file.read_text()
         required_packages = ["fastapi", "duckdb", "pandas", "httpx", "uvicorn"]
         for pkg in required_packages:
             assert pkg in content, f"Package {pkg} ontbreekt in requirements.txt"
-    
+
     def test_happy_path_gitignore_configured(self, repo_root: Path):
         """Happy path: .gitignore bevat essentiële excludes."""
         gitignore = repo_root / ".gitignore"
         assert gitignore.exists(), ".gitignore ontbreekt"
-        
+
         content = gitignore.read_text()
         required_entries = ["__pycache__", "data/", ".env", "*.parquet", "output/"]
         for entry in required_entries:
             assert entry in content, f"Entry '{entry}' ontbreekt in .gitignore"
-    
+
     def test_happy_path_no_git_directory(self, repo_root: Path):
         """Happy path: Geen .git directory (we tracken in parent repo)."""
         git_dir = repo_root / ".git"
         assert not git_dir.exists(), ".git directory moet verwijderd zijn"
-    
+
     def test_happy_path_main_py_exists(self, repo_root: Path):
         """Happy path: main.py entry point bestaat."""
         main_file = repo_root / "main.py"
         assert main_file.exists(), "main.py ontbreekt"
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_missing_src_directory(self, tmp_path: Path):
         """Unhappy path: Validatie faalt bij ontbrekende src directory."""
         fake_root = tmp_path / "fake_repo"
         fake_root.mkdir()
-        
+
         src_path = fake_root / "src"
         assert not src_path.exists(), "src zou niet moeten bestaan in lege repo"
-    
+
     def test_unhappy_path_empty_requirements(self, tmp_path: Path):
         """Unhappy path: Lege requirements.txt is invalid."""
         req_file = tmp_path / "requirements.txt"
         req_file.write_text("")
-        
+
         content = req_file.read_text()
         assert "fastapi" not in content, "Lege file mag fastapi niet bevatten"
-    
+
     def test_unhappy_path_invalid_requirements_syntax(self, tmp_path: Path):
         """Unhappy path: Invalid requirements syntax wordt gedetecteerd."""
         req_file = tmp_path / "requirements.txt"
         req_file.write_text("invalid===not_a_version\nbroken>>1.0")
-        
+
         content = req_file.read_text()
         # Check for invalid syntax markers
         assert "===" in content or ">>" in content, "Invalid syntax moet detecteerbaar zijn"
@@ -335,8 +335,8 @@ class TestRepositorySetup:
 
 ### 📎 MICROTASK 1.1.1: Clone Repository
 
-**Microtask ID:** MT-PM-001-001  
-**Geschatte tijd:** 15 min  
+**Microtask ID:** MT-PM-001-001
+**Geschatte tijd:** 15 min
 **Status:** 🔴 TODO
 
 #### Microtask Beschrijving
@@ -386,8 +386,8 @@ Get-ChildItem "prediction-market-analysis/src" -Directory | Select-Object Name
 
 ### 📎 MICROTASK 1.1.2: Maak requirements.txt
 
-**Microtask ID:** MT-PM-001-002  
-**Geschatte tijd:** 20 min  
+**Microtask ID:** MT-PM-001-002
+**Geschatte tijd:** 20 min
 **Status:** 🔴 TODO
 
 #### Microtask Beschrijving
@@ -484,8 +484,8 @@ print('Validation complete')
 
 ### 📎 MICROTASK 1.1.3: Configureer .gitignore
 
-**Microtask ID:** MT-PM-001-003  
-**Geschatte tijd:** 10 min  
+**Microtask ID:** MT-PM-001-003
+**Geschatte tijd:** 10 min
 **Status:** 🔴 TODO
 
 #### Microtask Beschrijving
@@ -600,10 +600,10 @@ Remove-Item -Recurse -Force "prediction-market-analysis/data" -ErrorAction Silen
 
 ## 📌 TASK 1.2: Dockerfile Creatie
 
-**Task ID:** TASK-PM-002  
-**Status:** 🔴 TODO  
-**Geschatte tijd:** 3 uur  
-**Dependencies:** TASK-PM-001  
+**Task ID:** TASK-PM-002
+**Status:** 🔴 TODO
+**Geschatte tijd:** 3 uur
+**Dependencies:** TASK-PM-001
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -764,34 +764,34 @@ from pathlib import Path
 
 class TestDockerfile:
     """Valideer Dockerfile configuratie en build."""
-    
+
     @pytest.fixture
     def dockerfile_path(self) -> Path:
         """Path naar Dockerfile."""
         return Path(__file__).parent.parent / "Dockerfile"
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_dockerfile_exists(self, dockerfile_path: Path):
         """Happy path: Dockerfile bestaat."""
         assert dockerfile_path.exists(), "Dockerfile ontbreekt"
         assert dockerfile_path.is_file(), "Dockerfile is geen file"
-    
+
     def test_happy_path_has_multi_stage_build(self, dockerfile_path: Path):
         """Happy path: Multi-stage build met builder en runtime."""
         content = dockerfile_path.read_text()
-        
+
         from_count = content.count("FROM ")
         assert from_count >= 2, f"Multi-stage build vereist minstens 2 FROM statements, gevonden: {from_count}"
         assert "as builder" in content, "Builder stage ontbreekt"
         assert "as runtime" in content, "Runtime stage ontbreekt"
-    
+
     def test_happy_path_has_required_instructions(self, dockerfile_path: Path):
         """Happy path: Alle vereiste Docker instructies aanwezig."""
         content = dockerfile_path.read_text()
-        
+
         required_instructions = [
             "FROM python:3.11-slim",
             "WORKDIR /app",
@@ -800,42 +800,42 @@ class TestDockerfile:
             "USER appuser",
             "CMD"
         ]
-        
+
         for instruction in required_instructions:
             assert instruction in content, f"Vereiste instructie '{instruction}' ontbreekt"
-    
+
     def test_happy_path_security_non_root_user(self, dockerfile_path: Path):
         """Happy path: Non-root user voor security."""
         content = dockerfile_path.read_text()
-        
+
         assert "groupadd" in content, "groupadd instructie ontbreekt"
         assert "useradd" in content, "useradd instructie ontbreekt"
         assert "USER appuser" in content, "USER switch naar appuser ontbreekt"
-    
+
     def test_happy_path_healthcheck_configured(self, dockerfile_path: Path):
         """Happy path: Health check is correct geconfigureerd."""
         content = dockerfile_path.read_text()
-        
+
         assert "HEALTHCHECK" in content, "HEALTHCHECK ontbreekt"
         assert "curl -f http://localhost:8002/health" in content, "Health check URL incorrect"
         assert "--interval=" in content, "Health check interval ontbreekt"
-    
+
     def test_happy_path_venv_copy_from_builder(self, dockerfile_path: Path):
         """Happy path: Virtual environment wordt gekopieerd van builder."""
         content = dockerfile_path.read_text()
-        
+
         assert "COPY --from=builder /opt/venv /opt/venv" in content, \
             "Virtual environment copy van builder ontbreekt"
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_dockerfile_missing(self, tmp_path: Path):
         """Unhappy path: Foutmelding bij ontbrekende Dockerfile."""
         fake_dockerfile = tmp_path / "Dockerfile"
         assert not fake_dockerfile.exists(), "Fake Dockerfile zou niet moeten bestaan"
-    
+
     def test_unhappy_path_missing_expose(self, tmp_path: Path):
         """Unhappy path: Dockerfile zonder EXPOSE is incompleet."""
         incomplete_dockerfile = tmp_path / "Dockerfile"
@@ -844,10 +844,10 @@ FROM python:3.11-slim
 WORKDIR /app
 CMD ["python"]
         """)
-        
+
         content = incomplete_dockerfile.read_text()
         assert "EXPOSE" not in content, "Dit test een incomplete Dockerfile"
-    
+
     def test_unhappy_path_root_user(self, tmp_path: Path):
         """Unhappy path: Dockerfile die als root draait is onveilig."""
         insecure_dockerfile = tmp_path / "Dockerfile"
@@ -857,19 +857,19 @@ WORKDIR /app
 # GEEN USER statement - draait als root
 CMD ["python"]
         """)
-        
+
         content = insecure_dockerfile.read_text()
         assert "USER appuser" not in content, "Dit test een onveilige Dockerfile"
 
 
 class TestDockerBuild:
     """Integration tests voor Docker build (optioneel - vereist Docker)."""
-    
+
     @pytest.fixture
     def dockerfile_dir(self) -> Path:
         """Directory met Dockerfile."""
         return Path(__file__).parent.parent
-    
+
     @pytest.mark.skipif(
         subprocess.run(["docker", "--version"], capture_output=True).returncode != 0,
         reason="Docker niet beschikbaar"
@@ -883,9 +883,9 @@ class TestDockerBuild:
             text=True,
             timeout=300
         )
-        
+
         assert result.returncode == 0, f"Docker build failed: {result.stderr}"
-        
+
         # Cleanup
         subprocess.run(["docker", "rmi", "pm-test:pytest"], capture_output=True)
 ```
@@ -894,8 +894,8 @@ class TestDockerBuild:
 
 ### 📎 MICROTASK 1.2.1: Builder Stage
 
-**Microtask ID:** MT-PM-002-001  
-**Geschatte tijd:** 30 min  
+**Microtask ID:** MT-PM-002-001
+**Geschatte tijd:** 30 min
 **Status:** 🔴 TODO
 
 #### Microtask Beschrijving
@@ -965,8 +965,8 @@ fastapi                  0.115.9
 
 ### 📎 MICROTASK 1.2.2: Runtime Stage
 
-**Microtask ID:** MT-PM-002-002  
-**Geschatte tijd:** 45 min  
+**Microtask ID:** MT-PM-002-002
+**Geschatte tijd:** 45 min
 **Status:** 🔴 TODO
 
 #### Microtask Beschrijving
@@ -1051,8 +1051,8 @@ docker run --rm pm-runtime:test id
 
 ### 📎 MICROTASK 1.2.3: Health Check & Entrypoint
 
-**Microtask ID:** MT-PM-002-003  
-**Geschatte tijd:** 20 min  
+**Microtask ID:** MT-PM-002-003
+**Geschatte tijd:** 20 min
 **Status:** 🔴 TODO
 
 #### Microtask Beschrijving
@@ -1112,10 +1112,10 @@ docker inspect pm-full:test --format='{{json .Config.Cmd}}'
 
 ## 📌 TASK 1.3: Docker Compose Integratie
 
-**Task ID:** TASK-PM-003  
-**Status:** 🔴 TODO  
-**Geschatte tijd:** 2 uur  
-**Dependencies:** TASK-PM-002  
+**Task ID:** TASK-PM-003
+**Status:** 🔴 TODO
+**Geschatte tijd:** 2 uur
+**Dependencies:** TASK-PM-002
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -1272,7 +1272,7 @@ from typing import AsyncGenerator
 
 class TestPredictionDockerService:
     """Docker Compose integration tests."""
-    
+
     @pytest.fixture
     async def prediction_client(self) -> AsyncGenerator[httpx.AsyncClient, None]:
         """HTTP client voor prediction service."""
@@ -1281,23 +1281,23 @@ class TestPredictionDockerService:
             timeout=30.0
         ) as client:
             yield client
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_happy_path_health_endpoint_returns_200(self, prediction_client):
         """Happy path: Health endpoint retourneert 200 met status healthy."""
         response = await prediction_client.get("/health")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
         assert "service" in data
         assert data["service"] == "prediction-intelligence"
-    
+
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_happy_path_service_reachable_on_port_8002(self, prediction_client):
@@ -1308,7 +1308,7 @@ class TestPredictionDockerService:
             assert response.status_code in [200, 404, 422]
         except httpx.ConnectError as e:
             pytest.fail(f"Service niet bereikbaar op port 8002: {e}")
-    
+
     @pytest.mark.integration
     def test_happy_path_docker_compose_service_exists(self):
         """Happy path: Service is gedefinieerd in docker-compose."""
@@ -1318,7 +1318,7 @@ class TestPredictionDockerService:
             text=True
         )
         assert "prediction-intelligence" in result.stdout
-    
+
     @pytest.mark.integration
     def test_happy_path_volume_is_defined(self):
         """Happy path: prediction_market_cache volume is gedefinieerd."""
@@ -1328,18 +1328,18 @@ class TestPredictionDockerService:
             text=True
         )
         assert "prediction_market_cache" in result.stdout
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_unhappy_path_invalid_endpoint_returns_404(self, prediction_client):
         """Unhappy path: Onbekend endpoint retourneert 404."""
         response = await prediction_client.get("/api/v1/nonexistent-endpoint")
         assert response.status_code == 404
-    
+
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_unhappy_path_wrong_port_connection_error(self):
@@ -1350,13 +1350,13 @@ class TestPredictionDockerService:
         ) as client:
             with pytest.raises(httpx.ConnectError):
                 await client.get("/health")
-    
+
     @pytest.mark.integration
     def test_unhappy_path_invalid_compose_config(self, tmp_path):
         """Unhappy path: Invalid docker-compose config faalt."""
         invalid_compose = tmp_path / "docker-compose.yml"
         invalid_compose.write_text("invalid: yaml: content: [")
-        
+
         result = subprocess.run(
             ["docker-compose", "-f", str(invalid_compose), "config"],
             capture_output=True,
@@ -1369,8 +1369,8 @@ class TestPredictionDockerService:
 
 ### 📎 MICROTASK 1.3.1: Service Definitie
 
-**Microtask ID:** MT-PM-003-001  
-**Geschatte tijd:** 30 min  
+**Microtask ID:** MT-PM-003-001
+**Geschatte tijd:** 30 min
 **Status:** 🔴 TODO
 
 #### Microtask Beschrijving
@@ -1472,8 +1472,8 @@ docker-compose config | Select-String -Pattern "prediction" -Context 0,5
 
 ### 📎 MICROTASK 1.3.2: Volume Configuratie
 
-**Microtask ID:** MT-PM-003-002  
-**Geschatte tijd:** 15 min  
+**Microtask ID:** MT-PM-003-002
+**Geschatte tijd:** 15 min
 **Status:** 🔴 TODO
 
 #### Microtask Beschrijving
@@ -1537,8 +1537,8 @@ docker volume ls | findstr prediction
 
 ### 📎 MICROTASK 1.3.3: Environment Variables
 
-**Microtask ID:** MT-PM-003-003  
-**Geschatte tijd:** 20 min  
+**Microtask ID:** MT-PM-003-003
+**Geschatte tijd:** 20 min
 **Status:** 🔴 TODO
 
 #### Microtask Beschrijving
@@ -1603,10 +1603,10 @@ python -c "from dotenv import load_dotenv; import os; load_dotenv(); print(os.ge
 
 ## 📌 TASK 1.4: Container Build & Validatie
 
-**Task ID:** TASK-PM-004  
-**Status:** 🔴 TODO  
-**Geschatte tijd:** 1.5 uur  
-**Dependencies:** TASK-PM-003  
+**Task ID:** TASK-PM-004
+**Status:** 🔴 TODO
+**Geschatte tijd:** 1.5 uur
+**Dependencies:** TASK-PM-003
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -1742,26 +1742,26 @@ from pathlib import Path
 
 class TestContainerSmoke:
     """Container smoke tests - valideer build en basis functionaliteit."""
-    
+
     @pytest.fixture(scope="class")
     def dockerfile_dir(self) -> Path:
         """Dockerfile directory."""
         return Path(__file__).parent.parent
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_dockerfile_exists(self, dockerfile_dir: Path):
         """Happy path: Dockerfile is aanwezig."""
         dockerfile = dockerfile_dir / "Dockerfile"
         assert dockerfile.exists(), "Dockerfile niet gevonden"
-    
+
     def test_happy_path_requirements_exists(self, dockerfile_dir: Path):
         """Happy path: requirements.txt is aanwezig."""
         requirements = dockerfile_dir / "requirements.txt"
         assert requirements.exists(), "requirements.txt niet gevonden"
-    
+
     @pytest.mark.skipif(
         subprocess.run(["docker", "--version"], capture_output=True).returncode != 0,
         reason="Docker niet beschikbaar"
@@ -1775,17 +1775,17 @@ class TestContainerSmoke:
             text=True,
             timeout=600  # 10 min timeout
         )
-        
+
         try:
             assert result.returncode == 0, f"Build failed:\n{result.stderr}"
         finally:
             # Cleanup image
             subprocess.run(["docker", "rmi", "pm-smoke:test"], capture_output=True)
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_missing_dockerfile(self, tmp_path: Path):
         """Unhappy path: Build faalt zonder Dockerfile."""
         result = subprocess.run(
@@ -1801,8 +1801,8 @@ class TestContainerSmoke:
 
 ### 📎 MICROTASK 1.4.1: Build Image
 
-**Microtask ID:** MT-PM-004-001  
-**Geschatte tijd:** 15 min  
+**Microtask ID:** MT-PM-004-001
+**Geschatte tijd:** 15 min
 **Status:** 🔴 TODO
 
 #### MASTERPROMPT
@@ -1836,8 +1836,8 @@ TROUBLESHOOTING:
 
 ### 📎 MICROTASK 1.4.2: Validate Runtime
 
-**Microtask ID:** MT-PM-004-002  
-**Geschatte tijd:** 20 min  
+**Microtask ID:** MT-PM-004-002
+**Geschatte tijd:** 20 min
 **Status:** 🔴 TODO
 
 #### MASTERPROMPT
@@ -1874,8 +1874,8 @@ docker stop pm-validate; docker rm pm-validate
 
 ### 📎 MICROTASK 1.4.3: Docker Compose Integration
 
-**Microtask ID:** MT-PM-004-003  
-**Geschatte tijd:** 25 min  
+**Microtask ID:** MT-PM-004-003
+**Geschatte tijd:** 25 min
 **Status:** 🔴 TODO
 
 #### MASTERPROMPT

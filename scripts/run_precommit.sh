@@ -50,26 +50,26 @@ case "$MODE" in
         show_help
         exit 0
         ;;
-    
+
     "all")
         echo -e "${YELLOW}Running all hooks on all files...${NC}"
         echo "This may take a few minutes..."
         echo ""
         pre-commit run --all-files
         ;;
-    
+
     "staged")
         echo -e "${YELLOW}Running hooks on staged files only...${NC}"
         pre-commit run
         ;;
-    
+
     "security")
         echo -e "${YELLOW}Running security checks only...${NC}"
         pre-commit run bandit-security --all-files
         pre-commit run check-hardcoded-secrets --all-files
         pre-commit run check-sql-injection --all-files
         ;;
-    
+
     "lint")
         echo -e "${YELLOW}Running linting checks only...${NC}"
         pre-commit run black --all-files
@@ -77,30 +77,30 @@ case "$MODE" in
         pre-commit run isort --all-files
         pre-commit run mypy --all-files
         ;;
-    
+
     "fix")
         echo -e "${YELLOW}Running with auto-fixes...${NC}"
         echo "Applying automatic fixes where possible..."
         echo ""
-        
+
         # Run black with fix
         echo "Running Black formatter..."
         black backend/ --line-length=100 || true
-        
+
         # Run ruff with fix
         echo "Running Ruff linter..."
         ruff check backend/ --fix || true
-        
+
         # Run isort
         echo "Running isort..."
         isort backend/ --profile=black || true
-        
+
         # Run pre-commit
         echo ""
         echo "Running pre-commit..."
         pre-commit run --all-files
         ;;
-    
+
     *)
         echo -e "${RED}Unknown option: $MODE${NC}"
         show_help

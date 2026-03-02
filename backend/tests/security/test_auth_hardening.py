@@ -10,7 +10,6 @@ Verifies:
 Run with: pytest backend/tests/security/test_auth_hardening.py -v
 """
 
-import os
 
 import pytest
 

@@ -34,7 +34,7 @@ class MindCouncil:
             "volatility": 0.25,
             "volume": 0.20,
             "spread": 0.15,
-            "imbalance": 0.15
+            "imbalance": 0.15,
         }
 
     def analyze(self, market_data: dict) -> dict:
@@ -56,11 +56,11 @@ class MindCouncil:
 
         # Weighted average (0-100)
         fear_greed = (
-            momentum_score * self.weights["momentum"] +
-            volatility_score * self.weights["volatility"] +
-            volume_score * self.weights["volume"] +
-            spread_score * self.weights["spread"] +
-            imbalance_score * self.weights["imbalance"]
+            momentum_score * self.weights["momentum"]
+            + volatility_score * self.weights["volatility"]
+            + volume_score * self.weights["volume"]
+            + spread_score * self.weights["spread"]
+            + imbalance_score * self.weights["imbalance"]
         )
 
         # Clamp to 0-100
@@ -75,16 +75,15 @@ class MindCouncil:
             "perspective": perspective,
             "confidence": round(confidence, 3),
             "key_insights": self._generate_insights(
-                fear_greed, momentum_score, volatility_score,
-                volume_score, imbalance_score, insight
+                fear_greed, momentum_score, volatility_score, volume_score, imbalance_score, insight
             ),
             "components": {
                 "momentum": round(momentum_score, 1),
                 "volatility": round(volatility_score, 1),
                 "volume": round(volume_score, 1),
                 "spread": round(spread_score, 1),
-                "imbalance": round(imbalance_score, 1)
-            }
+                "imbalance": round(imbalance_score, 1),
+            },
         }
 
     def _calc_momentum_component(self, data: dict) -> float:
@@ -200,9 +199,15 @@ class MindCouncil:
         else:  # Neutral zone
             return "neutral", 0.5, "Balanced sentiment - wait for setup"
 
-    def _generate_insights(self, fear_greed: float, momentum_c: float,
-                          volatility_c: float, volume_c: float,
-                          imbalance_c: float, primary_insight: str) -> list[str]:
+    def _generate_insights(
+        self,
+        fear_greed: float,
+        momentum_c: float,
+        volatility_c: float,
+        volume_c: float,
+        imbalance_c: float,
+        primary_insight: str,
+    ) -> list[str]:
         """Generate detailed insights."""
         insights = [primary_insight]
 
@@ -262,23 +267,49 @@ if __name__ == "__main__":
     council = get_mind_council()
 
     scenarios = [
-        ("Capitulation", {"momentum_1d": -0.08, "momentum_3d": -0.15,
-                         "volatility_1m": 0.07, "volume_ratio": 3.0,
-                         "bid_ask_spread": 0.004, "imbalance": -0.6}),
-        ("Euphoria", {"momentum_1d": 0.12, "momentum_3d": 0.25,
-                     "volatility_1m": 0.05, "volume_ratio": 2.5,
-                     "bid_ask_spread": 0.001, "imbalance": 0.7}),
-        ("Calm", {"momentum_1d": 0.005, "momentum_3d": 0.01,
-                 "volatility_1m": 0.018, "volume_ratio": 0.9,
-                 "bid_ask_spread": 0.0005, "imbalance": 0.05}),
+        (
+            "Capitulation",
+            {
+                "momentum_1d": -0.08,
+                "momentum_3d": -0.15,
+                "volatility_1m": 0.07,
+                "volume_ratio": 3.0,
+                "bid_ask_spread": 0.004,
+                "imbalance": -0.6,
+            },
+        ),
+        (
+            "Euphoria",
+            {
+                "momentum_1d": 0.12,
+                "momentum_3d": 0.25,
+                "volatility_1m": 0.05,
+                "volume_ratio": 2.5,
+                "bid_ask_spread": 0.001,
+                "imbalance": 0.7,
+            },
+        ),
+        (
+            "Calm",
+            {
+                "momentum_1d": 0.005,
+                "momentum_3d": 0.01,
+                "volatility_1m": 0.018,
+                "volume_ratio": 0.9,
+                "bid_ask_spread": 0.0005,
+                "imbalance": 0.05,
+            },
+        ),
     ]
 
     for name, data in scenarios:
         print(f"\n{name}:")
         result = council.analyze(data)
-        label = council.get_sentiment_label(result['fear_greed_index'])
+        label = council.get_sentiment_label(result["fear_greed_index"])
         print(f"  Fear/Greed: {result['fear_greed_index']:.0f} ({label})")
         print(f"  Perspective: {result['perspective']} (conf: {result['confidence']:.2f})")
-        print(f"  Components: M={result['components']['momentum']:.0f}, "
-              f"V={result['components']['volatility']:.0f}, "
-              f"Vol={result['components']['volume']:.0f}")
+        print(
+            f"  Components: M={result['components']['momentum']:.0f}, "
+            f"V={result['components']['volatility']:.0f}, "
+            f"Vol={result['components']['volume']:.0f}"
+        )

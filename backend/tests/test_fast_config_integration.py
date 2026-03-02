@@ -1,4 +1,3 @@
-import asyncio
 import os
 import tempfile
 from unittest.mock import AsyncMock, MagicMock
@@ -7,8 +6,8 @@ import pytest
 
 from backend.agents.risk_manager_agent import RiskManagerAgent
 from backend.agents.trader_agent import TraderAgent
-from backend.core.schemas.ooda_types import MarketRegime, Orientation, TradeProposal
-from backend.execution.fast_config import FastConfig, FastConfigManager
+from backend.core.schemas.ooda_types import MarketRegime, TradeProposal
+from backend.execution.fast_config import FastConfig
 from backend.orchestration.ooda_coordinator import OODALoopCoordinator, TradingMode
 
 pytestmark = pytest.mark.asyncio

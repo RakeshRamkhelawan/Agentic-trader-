@@ -170,7 +170,9 @@ async def revolutx_place_order(
         Order details if successful
     """
     if ctx:
-        ctx.info(f"[LIVE TRADE] Placing {order_type} {side} order on Revolut X: {quantity} {symbol}")
+        ctx.info(
+            f"[LIVE TRADE] Placing {order_type} {side} order on Revolut X: {quantity} {symbol}"
+        )
 
     try:
         from backend.integrations.revolut_x_client import OrderSide, OrderType, RevolutXClient
@@ -182,7 +184,10 @@ async def revolutx_place_order(
 
         type_lower = order_type.lower()
         if type_lower not in ["market", "limit"]:
-            return {"success": False, "error": f"Invalid order_type: {order_type}. Must be 'market' or 'limit'"}
+            return {
+                "success": False,
+                "error": f"Invalid order_type: {order_type}. Must be 'market' or 'limit'",
+            }
 
         if type_lower == "limit" and price is None:
             return {"success": False, "error": "Price is required for limit orders"}

@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Forecast:
     """Voorspelling van toekomstige marktstaat."""
+
     predicted_volatility: float
     predicted_trend: str  # up, down, sideways
     confidence: float
@@ -28,14 +29,23 @@ class Forecast:
 
 class UnifiedDirectionPredictor(nn.Module):
     """Unified MLP model - 8 features, getraind op 15 batches."""
+
     def __init__(self, input_dim=8):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(input_dim, 128), nn.ReLU(), nn.Dropout(0.3),
-            nn.Linear(128, 64), nn.ReLU(), nn.Dropout(0.3),
-            nn.Linear(64, 32), nn.ReLU(), nn.Dropout(0.2),
-            nn.Linear(32, 1), nn.Sigmoid()
+            nn.Linear(input_dim, 128),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(32, 1),
+            nn.Sigmoid(),
         )
+
     def forward(self, x):
         return self.net(x)
 
@@ -60,7 +70,9 @@ class ChittaForecasterV2:
         if model_path:
             self.load_model(model_path)
 
-        logger.info(f"ChittaForecasterV2 initialized (device: {self.device}, model: {self.model_type})")
+        logger.info(
+            f"ChittaForecasterV2 initialized (device: {self.device}, model: {self.model_type})"
+        )
 
     def load_model(self, path: str):
         """Laad het unified direction predictor model."""
@@ -137,7 +149,7 @@ class ChittaForecasterV2:
             confidence=confidence,
             expected_shifts=shifts,
             model_type=self.model_type,
-            training_samples=31302
+            training_samples=31302,
         )
 
     def _extract_features(self, chitta_state: dict) -> np.ndarray | None:
@@ -180,7 +192,7 @@ class ChittaForecasterV2:
                 confidence=0.3,
                 expected_shifts=[],
                 model_type="heuristic",
-                training_samples=0
+                training_samples=0,
             )
 
         emotions = [n.get("emotion", "neutral") for n in nodes[-20:]]
@@ -202,7 +214,7 @@ class ChittaForecasterV2:
             confidence=confidence,
             expected_shifts=[],
             model_type="heuristic",
-            training_samples=len(nodes)
+            training_samples=len(nodes),
         )
 
     def _infer_council_shifts(self, predicted_trend: str, chitta_state: dict) -> list[dict]:
@@ -210,17 +222,13 @@ class ChittaForecasterV2:
         shifts = []
 
         if predicted_trend == "down":
-            shifts.append({
-                "council": "guna",
-                "shift": "rajas → tamas",
-                "reason": "predicted_sell_off"
-            })
+            shifts.append(
+                {"council": "guna", "shift": "rajas → tamas", "reason": "predicted_sell_off"}
+            )
         elif predicted_trend == "up":
-            shifts.append({
-                "council": "guna",
-                "shift": "tamas → rajas",
-                "reason": "predicted_rally"
-            })
+            shifts.append(
+                {"council": "guna", "shift": "tamas → rajas", "reason": "predicted_rally"}
+            )
 
         return shifts
 

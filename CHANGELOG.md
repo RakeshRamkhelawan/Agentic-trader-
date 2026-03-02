@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🎯 Release Highlights
 
-**Production Ready Release**  
-**Quality Score: 85/100** (was 60/100)  
+**Production Ready Release**
+**Quality Score: 85/100** (was 60/100)
 **18 Critical Vulnerabilities Fixed**
 
 ---

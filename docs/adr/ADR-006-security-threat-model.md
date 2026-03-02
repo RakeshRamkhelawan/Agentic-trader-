@@ -1,9 +1,9 @@
 # ADR-006: Security Boundaries & Threat Model (STRIDE)
 
-**Status**: Proposed  
-**Date**: 2026-02-20  
-**Author**: Architecture Team  
-**Scope**: Security architecture, threat modeling, mitigations  
+**Status**: Proposed
+**Date**: 2026-02-20
+**Author**: Architecture Team
+**Scope**: Security architecture, threat modeling, mitigations
 
 ---
 
@@ -122,7 +122,7 @@ class OrderSigner:
     def sign_order(self, order: OrderRequest) -> str:
         payload = f"{order.id}:{order.symbol}:{order.price}:{order.timestamp}"
         return hmac_sha256(self.secret, payload)
-    
+
     def verify_order(self, order: OrderRequest, signature: str) -> bool:
         expected = self.sign_order(order)
         return hmac.compare_digest(expected, signature)
@@ -180,7 +180,7 @@ class PIIMasker:
         (r'\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b', '[MASKED_CC]'),
         (r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', '[MASKED_EMAIL]'),
     ]
-    
+
     def mask(self, text: str) -> str:
         for pattern, replacement in self.MASK_PATTERNS:
             text = re.sub(pattern, replacement, text)
@@ -190,7 +190,7 @@ class PIIMasker:
 class DataEncryption:
     def __init__(self, key_provider: KeyProvider):
         self.key_provider = key_provider
-    
+
     def encrypt_sensitive(self, data: bytes) -> EncryptedData:
         key = self.key_provider.get_data_key()
         return self._encrypt_aes_gcm(data, key)
@@ -243,11 +243,11 @@ class RBACEnforcer:
         'admin': ['*'],
         'readonly': ['portfolio:read', 'analytics:read']
     }
-    
+
     def check_permission(self, user: User, resource: str, action: str):
         required = f"{resource}:{action}"
         user_perms = self.PERMISSIONS.get(user.role, [])
-        
+
         if '*' not in user_perms and required not in user_perms:
             raise PermissionDenied(f"Missing permission: {required}")
 
@@ -289,16 +289,16 @@ class SecretsManager:
     """
     Centralized secrets management with HashiCorp Vault.
     """
-    
+
     def __init__(self, vault_addr: str, vault_token: str):
         self.vault = hvac.Client(url=vault_addr, token=vault_token)
-    
+
     async def get_exchange_api_key(self, exchange: str, tenant_id: str) -> str:
         """Get API key for specific exchange and tenant."""
         path = f"secret/data/exchanges/{exchange}/{tenant_id}"
         response = self.vault.secrets.kv.v2.read_secret_version(path=path)
         return response['data']['data']['api_key']
-    
+
     async def rotate_exchange_key(self, exchange: str, tenant_id: str):
         """Rotate API key with zero downtime."""
         # 1. Generate new key at exchange
@@ -306,7 +306,7 @@ class SecretsManager:
         # 3. Update services
         # 4. Revoke old key after grace period
         pass
-    
+
     async def get_database_credentials(self, role: str) -> dict:
         """Get dynamic database credentials."""
         return self.vault.secrets.database.generate_credentials(
@@ -370,13 +370,13 @@ spec:
     (auth.source_ip NOT IN user.known_ips OR
      auth.user_agent != user.known_agent)
   severity: high
-  
+
 - name: LargeTradeAnomaly
   condition: |
     trade.value > user.avg_trade_value * 10 AND
     trade.timestamp WITHIN 1h
   severity: medium
-  
+
 - name: APIKeyAbuse
   condition: |
     api.requests_per_minute > user.quota * 5

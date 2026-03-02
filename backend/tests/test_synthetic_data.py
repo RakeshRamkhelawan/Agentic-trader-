@@ -4,9 +4,7 @@ Tests voor Synthetic Data Generator.
 Test trending, ranging, volatile, en flash crash scenarios.
 """
 
-from datetime import UTC, datetime
 
-import pytest
 
 from backend.testing.synthetic_data import (
     generate_flash_crash,

@@ -31,8 +31,8 @@ def get_all_symbols():
         result = conn.execute(
             text(
                 """
-            SELECT DISTINCT symbol FROM market_candles 
-            WHERE timestamp >= '2020-01-01' 
+            SELECT DISTINCT symbol FROM market_candles
+            WHERE timestamp >= '2020-01-01'
             ORDER BY symbol
         """
             )
@@ -66,7 +66,7 @@ def fetch_price_data(symbols, start_date, end_date):
                 SELECT timestamp, open, high, low, close, volume
                 FROM market_candles
                 WHERE symbol = :symbol
-                  AND timestamp >= :start 
+                  AND timestamp >= :start
                   AND timestamp <= :end
                 ORDER BY timestamp ASC
             """

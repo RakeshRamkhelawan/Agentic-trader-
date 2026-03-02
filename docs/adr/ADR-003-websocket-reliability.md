@@ -1,9 +1,9 @@
 # ADR-003: WebSocket Reliability & Backpressure
 
-**Status**: Proposed  
-**Date**: 2026-02-20  
-**Author**: Architecture Team  
-**Scope**: `/ws`, `/ws/paper-trading`, WebSocket Manager, Frontend WS Layer  
+**Status**: Proposed
+**Date**: 2026-02-20
+**Author**: Architecture Team
+**Scope**: `/ws`, `/ws/paper-trading`, WebSocket Manager, Frontend WS Layer
 
 ---
 
@@ -131,12 +131,12 @@ class WebSocketManager:
     def __init__(self):
         self.connections: Dict[str, ConnectionState] = {}
         self.metrics = WSMetrics()  # Prometheus metrics
-        
+
     async def connect(self, websocket: WebSocket, user: User):
         """Handle new connection with auth."""
         conn_id = generate_uuid()
         await websocket.accept()
-        
+
         self.connections[conn_id] = ConnectionState(
             websocket=websocket,
             user=user,
@@ -144,39 +144,39 @@ class WebSocketManager:
             last_pong=time.time(),
             subscriptions=set()
         )
-        
+
         # Start heartbeat handler
         asyncio.create_task(self._heartbeat_loop(conn_id))
-        
+
         # Start message processor
         asyncio.create_task(self._message_processor(conn_id))
-        
+
         self.metrics.connections.inc()
-        
+
     async def _heartbeat_loop(self, conn_id: str):
         """Send pings, expect pongs."""
         while conn_id in self.connections:
             try:
                 conn = self.connections[conn_id]
-                
+
                 # Check last pong
                 if time.time() - conn.last_pong > 90:
                     logger.warning(f"Heartbeat timeout for {conn_id}")
                     await self.disconnect(conn_id, reason="heartbeat_timeout")
                     break
-                
+
                 # Send ping
                 await conn.websocket.send_json({
                     "type": "ping",
                     "ts": datetime.utcnow().isoformat()
                 })
-                
+
                 await asyncio.sleep(30)
-                
+
             except Exception as e:
                 logger.error(f"Heartbeat error: {e}")
                 break
-                
+
     async def broadcast(self, stream: str, message: dict, priority: str = "low"):
         """Broadcast with backpressure handling."""
         msg = {
@@ -187,7 +187,7 @@ class WebSocketManager:
             "priority": priority,
             "data": message.get("data")
         }
-        
+
         for conn_id, conn in self.connections.items():
             if stream in conn.subscriptions:
                 try:
@@ -234,82 +234,82 @@ export function useWebSocket(config: WSConfig) {
   const [reconnectCount, setReconnectCount] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  
+
   const connect = useCallback(() => {
     setStatus('connecting');
-    
+
     const ws = new WebSocket(`${config.url}?token=${config.token}`);
     wsRef.current = ws;
-    
+
     ws.onopen = () => {
       setStatus('connected');
       setReconnectCount(0);
       config.onConnect?.();
-      
+
       // Subscribe to channels
       ws.send(JSON.stringify({
         type: 'subscribe',
         streams: ['ticker.*', 'portfolio', 'trades']
       }));
     };
-    
+
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
-      
+
       // Handle ping/pong
       if (msg.type === 'ping') {
         ws.send(JSON.stringify({ type: 'pong', ts: new Date().toISOString() }));
         return;
       }
-      
+
       // Handle resync required
       if (msg.type === 'resync_required') {
         triggerResync();
         return;
       }
-      
+
       config.onMessage(msg);
     };
-    
+
     ws.onclose = (event) => {
       setStatus('disconnected');
       config.onDisconnect?.(event.reason);
-      
+
       if (config.reconnect !== false) {
         scheduleReconnect();
       }
     };
-    
+
     ws.onerror = (error) => {
       console.error('WS error:', error);
       ws.close();
     };
   }, [config]);
-  
+
   const scheduleReconnect = () => {
     const baseDelay = Math.min(1000 * Math.pow(2, reconnectCount), 30000);
     const jitter = Math.random() * 0.3 * baseDelay;
     const delay = baseDelay + jitter;
-    
+
     setReconnectCount(prev => prev + 1);
-    
+
     reconnectTimeoutRef.current = setTimeout(() => {
       connect();
     }, delay);
   };
-  
+
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
     }
     wsRef.current?.close();
   }, []);
-  
+
   useEffect(() => {
     connect();
     return disconnect;
   }, [connect, disconnect]);
-  
+
   return { status, reconnectCount, disconnect, reconnect: connect };
 }
 ```
@@ -346,12 +346,12 @@ Panels:
   expr: rate(ws_messages_dropped[1m]) / rate(ws_messages_sent[1m]) > 0.01
   for: 2m
   severity: warning
-  
+
 - alert: WSHeartbeatTimeout
   expr: rate(ws_disconnect_total{reason="heartbeat_timeout"}[5m]) > 10
   for: 1m
   severity: critical
-  
+
 - alert: WSHighLatency
   expr: histogram_quantile(0.99, ws_latency_seconds) > 0.5
   for: 2m

@@ -1,8 +1,8 @@
 # Optimized Implementation Roadmap
 ## Samkhya Yoga Agentic Trader — Critical Path & Execution Sequence
 
-**Generated:** 2026-02-15  
-**Document Version:** 1.0  
+**Generated:** 2026-02-15
+**Document Version:** 1.0
 **Total Duration:** ~30 days (critical path), ~45 days (with parallel work)
 
 ---
@@ -15,7 +15,7 @@ This roadmap optimizes the 7-phase, ~180-microtask implementation by:
 3. **Defining early validation checkpoints** to catch issues fast
 4. **Highlighting build-once components** for reuse across phases
 
-**Critical Path:** Phase 1.1 → 1.2 → 1.4 → Phase 2 → Phase 3 → Phase 4 → Phase 5 (13 days)  
+**Critical Path:** Phase 1.1 → 1.2 → 1.4 → Phase 2 → Phase 3 → Phase 4 → Phase 5 (13 days)
 **Parallel Track:** Phase 1.3 (caching), Phase 7 (compliance/security) can run alongside main path
 
 ---
@@ -149,8 +149,8 @@ TOTAL: 33 days (critical path), 45 days (with parallel work)
 ## Parallelizable Work Streams
 
 ### Stream A: Core Trading Logic (Critical Path)
-**Team:** Backend Engineers (2-3)  
-**Duration:** 30 days  
+**Team:** Backend Engineers (2-3)
+**Duration:** 30 days
 **Dependencies:** Sequential (each phase depends on previous)
 
 - Milestone 1.1 → 1.2 → 1.4 (Ephemeris + OODA)
@@ -161,8 +161,8 @@ TOTAL: 33 days (critical path), 45 days (with parallel work)
 - Phase 6 (Karma Feedback)
 
 ### Stream B: Infrastructure & Caching (Parallel)
-**Team:** DevOps + Backend (1-2)  
-**Duration:** 6 days  
+**Team:** DevOps + Backend (1-2)
+**Duration:** 6 days
 **Can Start:** Day 4 (after Milestone 1.2 starts)
 
 - Milestone 1.3 (Redis caching)
@@ -170,8 +170,8 @@ TOTAL: 33 days (critical path), 45 days (with parallel work)
 - Load testing setup
 
 ### Stream C: Compliance & Security (Parallel)
-**Team:** Security Engineer + Compliance Specialist (1-2)  
-**Duration:** 45 days (spread across entire project)  
+**Team:** Security Engineer + Compliance Specialist (1-2)
+**Duration:** 45 days (spread across entire project)
 **Can Start:** Day 1 (no dependencies)
 
 - Phase 7: Database RLS, OAuth2, Vault rotation, MiFID II reporting
@@ -179,8 +179,8 @@ TOTAL: 33 days (critical path), 45 days (with parallel work)
 - Compliance documentation
 
 ### Stream D: Testing & QA (Parallel)
-**Team:** QA Engineer (1)  
-**Duration:** Ongoing  
+**Team:** QA Engineer (1)
+**Duration:** Ongoing
 **Can Start:** Day 1
 
 - Contract test development (CCXT, sentiment APIs)
@@ -189,8 +189,8 @@ TOTAL: 33 days (critical path), 45 days (with parallel work)
 - Performance regression tests
 
 ### Stream E: Observability (Parallel)
-**Team:** SRE + Backend (1)  
-**Duration:** 15 days (Days 20-35)  
+**Team:** SRE + Backend (1)
+**Duration:** 15 days (Days 20-35)
 **Can Start:** Day 20 (after core logic stabilized)
 
 - Prometheus metric instrumentation
@@ -203,19 +203,19 @@ TOTAL: 33 days (critical path), 45 days (with parallel work)
 ## Build-Once, Use-Everywhere Components
 
 ### 1. NavagrahaStateCalculator (Milestone 1.2)
-**Used By:** All phases (OODA, agents, karma feedback)  
+**Used By:** All phases (OODA, agents, karma feedback)
 **API:**
 ```python
 class NavagrahaStateCalculator:
     def calculate(self, dt: datetime, location: Location) -> NavagrahaState:
         pass
-    
+
     def calculate_with_cache(self, dt: datetime, location: Location) -> NavagrahaState:
         pass
 ```
 
 ### 2. OODAContext (Milestone 1.4)
-**Used By:** Phases 2-6 (Observe → Orient → Decide → Act → Karma)  
+**Used By:** Phases 2-6 (Observe → Orient → Decide → Act → Karma)
 **API:**
 ```python
 @dataclass
@@ -228,7 +228,7 @@ class OODAContext:
 ```
 
 ### 3. CircuitBreakerRegistry (Phase 2)
-**Used By:** All external API calls (CCXT, LLM, sentiment, ephemeris)  
+**Used By:** All external API calls (CCXT, LLM, sentiment, ephemeris)
 **API:**
 ```python
 class CircuitBreakerRegistry:
@@ -237,25 +237,25 @@ class CircuitBreakerRegistry:
 ```
 
 ### 4. AuditLogger (Phase 7)
-**Used By:** Phases 3-6 (every trade decision, execution, karma update)  
+**Used By:** Phases 3-6 (every trade decision, execution, karma update)
 **API:**
 ```python
 class AuditLogger:
     def log_decision(self, context: OODAContext, decision: TradeDecision):
         pass
-    
+
     def log_execution(self, order: Order, result: ExecutionResult):
         pass
 ```
 
 ### 5. PrometheusMetrics (Phase 7)
-**Used By:** All phases (instrumentation throughout)  
+**Used By:** All phases (instrumentation throughout)
 **API:**
 ```python
 class MetricsRegistry:
     def histogram(self, name: str, labels: Dict[str, str]):
         pass
-    
+
     def gauge(self, name: str, labels: Dict[str, str]):
         pass
 ```
@@ -270,7 +270,7 @@ class MetricsRegistry:
 def test_ephemeris_invariants():
     calc = EphemerisCalculator()
     state = calc.calculate(datetime(2026, 1, 15, 12, 0), Location(lat=28.6, lon=77.2))
-    
+
     assert len(state.planets) == 9
     assert state.get_planet("Rahu").is_retrograde == True
     assert all(0 <= p.longitude <= 360 for p in state.planets)
@@ -283,7 +283,7 @@ def test_ephemeris_invariants():
 ```python
 def test_navagraha_state_validity():
     state = calculator.calculate_state(datetime.now(), Location(...))
-    
+
     assert state.guna_ratios['sattva'] + state.guna_ratios['rajas'] + state.guna_ratios['tamas'] == 1.0
     assert state.rahu_kala.start_time < state.rahu_kala.end_time
     assert state.current_dasha.planet in VALID_DASHA_PLANETS
@@ -297,11 +297,11 @@ def test_navagraha_state_validity():
 def test_ooda_navagraha_integration():
     coordinator = OODACoordinator()
     result = coordinator.run_cycle()
-    
+
     assert result.context.navagraha_state is not None
     assert result.strategy_selected_by_dasha == True
     assert result.risk_modulated_by_guna == True
-    
+
     if result.context.navagraha_state.rahu_kala.is_active:
         assert result.execution_blocked == True
 ```
@@ -314,7 +314,7 @@ def test_ooda_navagraha_integration():
 def test_ccxt_binance_contract():
     exchange = ccxt.binance()
     ticker = exchange.fetch_ticker('BTC/USDT')
-    
+
     assert 'symbol' in ticker
     assert 'last' in ticker
     assert ticker['last'] > 0
@@ -328,7 +328,7 @@ def test_ccxt_binance_contract():
 def test_mifid2_pretrade_rejection():
     order = Order(symbol="BTC/USDT", size=1000000)  # Exceeds limit
     checker = MiFIDPreTradeChecker()
-    
+
     result = checker.check(order)
     assert result.approved == False
     assert "position_limit_exceeded" in result.rejection_reason
@@ -343,7 +343,7 @@ def test_karma_parameter_shift_bounded():
     learner = KarmaLearner()
     old_params = {"risk_tolerance": 0.5}
     new_params = learner.adjust_parameters(old_params, outcomes=[...])
-    
+
     shift = abs(new_params["risk_tolerance"] - old_params["risk_tolerance"])
     assert shift <= 0.2  # Max 20% shift per review
 ```
@@ -357,8 +357,8 @@ def test_karma_parameter_shift_bounded():
 ### High-Risk Areas
 
 #### Risk 1: Swiss Ephemeris File Missing
-**Probability:** Medium  
-**Impact:** Critical (system unusable)  
+**Probability:** Medium
+**Impact:** Critical (system unusable)
 **Mitigation:**
 - Pre-deployment verification script
 - Ephemeris file integrity check on startup
@@ -372,8 +372,8 @@ if not ephemeris_files_present():
 ```
 
 #### Risk 2: CCXT Exchange API Changes
-**Probability:** High (ongoing)  
-**Impact:** High (trading halts)  
+**Probability:** High (ongoing)
+**Impact:** High (trading halts)
 **Mitigation:**
 - Contract tests run nightly
 - Circuit breaker pattern
@@ -388,8 +388,8 @@ except CircuitBreakerOpenError:
 ```
 
 #### Risk 3: Karma Overfitting
-**Probability:** High  
-**Impact:** Medium (bad trades)  
+**Probability:** High
+**Impact:** Medium (bad trades)
 **Mitigation:**
 - Minimum 30-trade sample size
 - Statistical significance testing (p < 0.05)

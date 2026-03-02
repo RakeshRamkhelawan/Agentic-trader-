@@ -160,6 +160,7 @@ class BotManager:
         interval_seconds: int = 60,
     ) -> None:
         """Start continuous simulation loop."""
+
         async def simulation_loop():
             while True:
                 await self.run_bot_simulation(tournament_id)
@@ -196,7 +197,9 @@ class BotManager:
                 "pnl": bot.balance - 10000.0,
                 "return_pct": ((bot.balance - 10000.0) / 10000.0) * 100,
                 "total_trades": bot.total_trades,
-                "win_rate": (bot.winning_trades / bot.total_trades * 100) if bot.total_trades > 0 else 0,
+                "win_rate": (
+                    (bot.winning_trades / bot.total_trades * 100) if bot.total_trades > 0 else 0
+                ),
             }
             for bot in bots
         ]

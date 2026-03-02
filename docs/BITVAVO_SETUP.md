@@ -133,14 +133,14 @@ BITVAVO_API_SECRET="your_actual_secret"
 
 ### "Invalid API key"
 
-**Solution**: 
+**Solution**:
 1. Regenerate API keys at https://account.bitvavo.com/user/api-keys
 2. Ensure you're copying both key AND secret
 3. Check for extra spaces or quotes
 
 ### "Insufficient balance"
 
-**Solution**: 
+**Solution**:
 1. Deposit EUR to your Bitvavo account
 2. Check `TRADING_MODE=paper` if testing
 

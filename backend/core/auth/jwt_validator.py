@@ -166,8 +166,10 @@ class JWTValidator:
             if not signing_key:
                 # NEVER allow unverified tokens in production
                 logger.error("No signing key found for token validation")
-                raise InvalidSignatureError("Unable to verify token signature: no signing key available")
-            
+                raise InvalidSignatureError(
+                    "Unable to verify token signature: no signing key available"
+                )
+
             # Verify with JWKS key
             payload = jwt.decode(
                 token,

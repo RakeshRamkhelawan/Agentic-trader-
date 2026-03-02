@@ -9,6 +9,7 @@ from .competitor import LeagueTier
 @dataclass
 class LeaguePromotion:
     """Promotion/demotion rules and history."""
+
     competitor_id: str
     from_tier: LeagueTier
     to_tier: LeagueTier
@@ -21,6 +22,7 @@ class LeaguePromotion:
 @dataclass
 class League:
     """A competition league tier."""
+
     tier: LeagueTier
     name: str
     description: str
@@ -31,7 +33,7 @@ class League:
 
     # Promotion/demotion rules
     promotion_threshold: int = 1000  # Points needed to promote
-    demotion_threshold: int = -500   # Points for demotion
+    demotion_threshold: int = -500  # Points for demotion
 
     # Members
     competitor_ids: list[str] = field(default_factory=list)
@@ -73,10 +75,7 @@ class League:
 
         # Find best performer
         if competitor_pnls:
-            self.best_performer_id = max(
-                competitor_pnls,
-                key=competitor_pnls.get
-            )
+            self.best_performer_id = max(competitor_pnls, key=competitor_pnls.get)
 
     def get_tier_requirements(self) -> dict[str, any]:
         """Get tier requirements info."""
@@ -98,7 +97,7 @@ class League:
             LeagueTier.BRONZE: (0, 1000),
             LeagueTier.SILVER: (1000, 10000),
             LeagueTier.GOLD: (10000, 50000),
-            LeagueTier.DIAMOND: (50000, float('inf')),
+            LeagueTier.DIAMOND: (50000, float("inf")),
         }
         return bounds.get(tier, (0, 0))
 

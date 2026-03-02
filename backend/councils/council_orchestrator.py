@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CouncilView:
     """View van een council."""
+
     council_type: str
     perspective: str  # bullish, bearish, neutral
     confidence: float
@@ -45,8 +46,8 @@ class CouncilOrchestrator:
             "guna": 0.35,
             "mind": 0.30,
             "elemental": 0.15,  # Placeholder
-            "body": 0.10,       # Placeholder
-            "graha": 0.10       # Placeholder
+            "body": 0.10,  # Placeholder
+            "graha": 0.10,  # Placeholder
         }
 
     async def deliberate(self, market_data: dict, session_id: str = "default") -> dict:
@@ -73,7 +74,7 @@ class CouncilOrchestrator:
                 perspective=guna_result["perspective"],
                 confidence=guna_result["confidence"],
                 key_insights=guna_result["key_insights"],
-                metadata={"guna_vector": guna_result.get("guna_vector", {})}
+                metadata={"guna_vector": guna_result.get("guna_vector", {})},
             )
             council_views.append(guna_view)
 
@@ -83,7 +84,7 @@ class CouncilOrchestrator:
                 perspective=guna_result["perspective"],
                 confidence=guna_result["confidence"],
                 reasoning="; ".join(guna_result["key_insights"]),
-                metadata=guna_result.get("guna_vector", {})
+                metadata=guna_result.get("guna_vector", {}),
             )
 
         except Exception as e:
@@ -99,8 +100,8 @@ class CouncilOrchestrator:
                 key_insights=mind_result["key_insights"],
                 metadata={
                     "fear_greed_index": mind_result.get("fear_greed_index"),
-                    "components": mind_result.get("components", {})
-                }
+                    "components": mind_result.get("components", {}),
+                },
             )
             council_views.append(mind_view)
 
@@ -110,7 +111,7 @@ class CouncilOrchestrator:
                 perspective=mind_result["perspective"],
                 confidence=mind_result["confidence"],
                 reasoning=f"Fear/Greed: {mind_result.get('fear_greed_index', 50)}",
-                metadata=mind_result.get("components", {})
+                metadata=mind_result.get("components", {}),
             )
 
         except Exception as e:
@@ -132,14 +133,14 @@ class CouncilOrchestrator:
                     "council": v.council_type,
                     "perspective": v.perspective,
                     "confidence": v.confidence,
-                    "insights": v.key_insights[:2]  # Top 2 insights
+                    "insights": v.key_insights[:2],  # Top 2 insights
                 }
                 for v in council_views
             ],
             "coherence": coherence,
             "final_perspective": final_perspective,
             "final_confidence": final_confidence,
-            "timestamp": asyncio.get_event_loop().time()
+            "timestamp": asyncio.get_event_loop().time(),
         }
 
         # Publish final decision event
@@ -149,7 +150,7 @@ class CouncilOrchestrator:
             coherence=coherence,
             rationale=f"Weighted consensus: {final_perspective}",
             council_views=result["council_views"],
-            session_id=session_id
+            session_id=session_id,
         )
 
         return result
@@ -164,11 +165,7 @@ class CouncilOrchestrator:
             return 1.0  # Single council = perfect coherence
 
         # Map perspectives to scores
-        perspective_scores = {
-            "bullish": 1.0,
-            "neutral": 0.5,
-            "bearish": 0.0
-        }
+        perspective_scores = {"bullish": 1.0, "neutral": 0.5, "bearish": 0.0}
 
         scores = [perspective_scores.get(v.perspective, 0.5) for v in views]
 
@@ -256,26 +253,42 @@ if __name__ == "__main__":
 
         # Test scenarios
         scenarios = [
-            ("Strong uptrend", {
-                "volatility_1m": 0.035, "momentum_1d": 0.04,
-                "volume_ratio": 1.8, "bid_ask_spread": 0.001,
-                "trend": 1, "imbalance": 0.4
-            }),
-            ("Crash", {
-                "volatility_1m": 0.07, "momentum_1d": -0.06,
-                "volume_ratio": 2.8, "bid_ask_spread": 0.004,
-                "trend": -1, "imbalance": -0.5
-            }),
+            (
+                "Strong uptrend",
+                {
+                    "volatility_1m": 0.035,
+                    "momentum_1d": 0.04,
+                    "volume_ratio": 1.8,
+                    "bid_ask_spread": 0.001,
+                    "trend": 1,
+                    "imbalance": 0.4,
+                },
+            ),
+            (
+                "Crash",
+                {
+                    "volatility_1m": 0.07,
+                    "momentum_1d": -0.06,
+                    "volume_ratio": 2.8,
+                    "bid_ask_spread": 0.004,
+                    "trend": -1,
+                    "imbalance": -0.5,
+                },
+            ),
         ]
 
         for name, data in scenarios:
             print(f"\n{name}:")
             result = await orchestrator.deliberate(data, f"test_{name.lower().replace(' ', '_')}")
 
-            print(f"  Final: {result['final_perspective']} (conf: {result['final_confidence']:.2f})")
+            print(
+                f"  Final: {result['final_perspective']} (conf: {result['final_confidence']:.2f})"
+            )
             print(f"  Coherence: {result['coherence']:.2f}")
             print("  Councils:")
-            for view in result['council_views']:
-                print(f"    {view['council']}: {view['perspective']} (conf: {view['confidence']:.2f})")
+            for view in result["council_views"]:
+                print(
+                    f"    {view['council']}: {view['perspective']} (conf: {view['confidence']:.2f})"
+                )
 
     asyncio.run(test())

@@ -2,9 +2,7 @@
 Unit tests for Vasana Cache (Sprint 3).
 """
 
-import asyncio
 import time
-from unittest.mock import MagicMock
 
 import numpy as np
 import pytest

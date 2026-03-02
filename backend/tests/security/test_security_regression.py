@@ -81,7 +81,6 @@ class TestJWTSecurity:
 
     def test_no_unverified_token_fallback(self):
         """Verify tokens are always verified, no unverified fallback."""
-        from backend.core.auth.jwt_validator import JWTValidator
 
         validator = JWTValidator(
             jwks_url="https://test.auth0.com/.well-known/jwks.json",

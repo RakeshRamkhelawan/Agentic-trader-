@@ -4,7 +4,7 @@ LLM Backtest Runner - Backtest met DeepSeek LLM Agents
 
 Deze backtest gebruikt daadwerkelijk de AI agents met DeepSeek LLM:
 - Research Agents (Bull/Bear) met deepseek-reasoner
-- Risk Manager Agent met deepseek-reasoner  
+- Risk Manager Agent met deepseek-reasoner
 - Fund Manager Agent met deepseek-reasoner
 - Analyst Agent met deepseek-chat
 

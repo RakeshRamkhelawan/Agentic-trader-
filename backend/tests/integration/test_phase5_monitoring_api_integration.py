@@ -14,7 +14,7 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from backend.api.monitoring_api import _observer, router
+from backend.api.monitoring_api import router
 from backend.monitoring.soul_observer import SoulObserver
 
 _test_app = FastAPI()

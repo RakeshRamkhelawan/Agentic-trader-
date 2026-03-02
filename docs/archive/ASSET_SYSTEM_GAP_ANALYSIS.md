@@ -12,7 +12,7 @@ The current documentation provides a strong conceptual framework for scaling the
 ## 2. Key Review Areas Audit
 
 ### 2.1 Test Coverage Analysis
-*   **Missing Unit Tests:** 
+*   **Missing Unit Tests:**
     *   Validation of CoinGecko rate limiting headers specifically for Bitvavo's weight system.
     *   Testing the `Heatmap Engine` promotion/demotion logic in isolation (mocking volume spikes).
     *   Validation of multi-tenant isolation at the service layer (attempting to watch an asset for tenant A with tenant B's context).

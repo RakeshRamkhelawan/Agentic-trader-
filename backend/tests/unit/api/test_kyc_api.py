@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 
-from backend.api.kyc_api import ENABLE_KYC, KYCStatus, router
+from backend.api.kyc_api import KYCStatus, router
 
 
 # Create test app

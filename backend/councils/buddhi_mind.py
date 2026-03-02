@@ -26,6 +26,7 @@ class Action(Enum):
 @dataclass
 class BuddhiDecision:
     """Final decision from Buddhi Mind."""
+
     action: str
     confidence: float
     coherence: float
@@ -37,11 +38,7 @@ class BuddhiDecision:
 
     def is_executable(self) -> bool:
         """Check if decision meets execution thresholds."""
-        return (
-            self.confidence >= 0.6 and
-            self.coherence >= 0.5 and
-            self.action != Action.HOLD.value
-        )
+        return self.confidence >= 0.6 and self.coherence >= 0.5 and self.action != Action.HOLD.value
 
 
 class BuddhiMind:
@@ -68,13 +65,12 @@ class BuddhiMind:
             "mind": 0.30,
             "body": 0.25,
             "elemental": 0.10,  # Placeholder
-            "graha": 0.00       # Not implemented yet
+            "graha": 0.00,  # Not implemented yet
         }
 
-    def decide(self, council_views: list[dict],
-               market_data: dict,
-               session_id: str,
-               timestamp: str) -> BuddhiDecision:
+    def decide(
+        self, council_views: list[dict], market_data: dict, session_id: str, timestamp: str
+    ) -> BuddhiDecision:
         """
         Make final trading decision based on council inputs.
 
@@ -138,13 +134,13 @@ class BuddhiMind:
                 {
                     "council": v.get("council_type", v.get("council")),
                     "perspective": v.get("perspective"),
-                    "confidence": v.get("confidence")
+                    "confidence": v.get("confidence"),
                 }
                 for v in council_views
             ],
             risk_assessment=risk,
             session_id=session_id,
-            timestamp=timestamp
+            timestamp=timestamp,
         )
 
         logger.info(f"Buddhi decision: {action} (conf: {confidence:.2f}, coh: {coherence:.2f})")
@@ -285,7 +281,7 @@ class BuddhiMind:
             "level": level,
             "score": round(risk_score, 2),
             "concerns": concerns,
-            "primary_concern": concerns[0] if concerns else "None"
+            "primary_concern": concerns[0] if concerns else "None",
         }
 
     def _build_rationale(self, views: list[dict], perspective: str, coherence: float) -> str:
@@ -331,21 +327,31 @@ if __name__ == "__main__":
 
     # Test scenarios
     scenarios = [
-        ("Strong bullish consensus", [
-            {"council_type": "guna", "perspective": "bullish", "confidence": 0.85},
-            {"council_type": "mind", "perspective": "bullish", "confidence": 0.75},
-            {"council_type": "body", "perspective": "favorable", "confidence": 0.90}
-        ], {"volatility_1m": 0.025}),
-
-        ("Mixed signals", [
-            {"council_type": "guna", "perspective": "bullish", "confidence": 0.70},
-            {"council_type": "mind", "perspective": "bearish", "confidence": 0.65}
-        ], {"volatility_1m": 0.04}),
-
-        ("High risk", [
-            {"council_type": "guna", "perspective": "bullish", "confidence": 0.80},
-            {"council_type": "body", "perspective": "avoid", "confidence": 0.70}
-        ], {"volatility_1m": 0.08})
+        (
+            "Strong bullish consensus",
+            [
+                {"council_type": "guna", "perspective": "bullish", "confidence": 0.85},
+                {"council_type": "mind", "perspective": "bullish", "confidence": 0.75},
+                {"council_type": "body", "perspective": "favorable", "confidence": 0.90},
+            ],
+            {"volatility_1m": 0.025},
+        ),
+        (
+            "Mixed signals",
+            [
+                {"council_type": "guna", "perspective": "bullish", "confidence": 0.70},
+                {"council_type": "mind", "perspective": "bearish", "confidence": 0.65},
+            ],
+            {"volatility_1m": 0.04},
+        ),
+        (
+            "High risk",
+            [
+                {"council_type": "guna", "perspective": "bullish", "confidence": 0.80},
+                {"council_type": "body", "perspective": "avoid", "confidence": 0.70},
+            ],
+            {"volatility_1m": 0.08},
+        ),
     ]
 
     from datetime import datetime

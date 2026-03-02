@@ -160,6 +160,7 @@ class LiveMultiExchangeTrading:
         # Initialize Bitvavo
         try:
             from backend.execution.bitvavo_adapter import BitvavoAdapter
+
             self._exchanges["bitvavo"] = BitvavoAdapter()
             await self._exchanges["bitvavo"].initialize()
             logger.info("[INIT] Bitvavo connected for live trading")
@@ -169,6 +170,7 @@ class LiveMultiExchangeTrading:
         # Initialize Revolut X
         try:
             from backend.execution.revolut_x_adapter import RevolutXAdapter
+
             self._exchanges["revolutx"] = RevolutXAdapter()
             await self._exchanges["revolutx"].connect()
             logger.info("[INIT] Revolut X connected for live trading")
@@ -201,7 +203,9 @@ class LiveMultiExchangeTrading:
             except Exception as e:
                 logger.warning(f"[STOP] Error disconnecting {name}: {e}")
 
-    def _check_risk_limits(self, symbol: str, side: str, quantity: float, price: float) -> tuple[bool, str]:
+    def _check_risk_limits(
+        self, symbol: str, side: str, quantity: float, price: float
+    ) -> tuple[bool, str]:
         """
         Check if order violates risk limits.
 
@@ -212,7 +216,10 @@ class LiveMultiExchangeTrading:
 
         # Check max order value
         if order_value > self.max_order_value_eur:
-            return False, f"Order value €{order_value:.2f} exceeds max €{self.max_order_value_eur:.2f}"
+            return (
+                False,
+                f"Order value €{order_value:.2f} exceeds max €{self.max_order_value_eur:.2f}",
+            )
 
         # Check position limit (simplified - would need actual position lookup)
         # This is a placeholder - real implementation would check current positions
@@ -246,7 +253,9 @@ class LiveMultiExchangeTrading:
         """
         # Generate client order ID
         if not client_order_id:
-            client_order_id = f"live_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{symbol.replace('/', '_')}"
+            client_order_id = (
+                f"live_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{symbol.replace('/', '_')}"
+            )
 
         # Create order object
         order = LiveOrder(
@@ -355,7 +364,11 @@ class LiveMultiExchangeTrading:
         )
 
         order.exchange_order_id = result.order_id
-        order.status = OrderStatus(result.status) if result.status in [s.value for s in OrderStatus] else OrderStatus.PENDING
+        order.status = (
+            OrderStatus(result.status)
+            if result.status in [s.value for s in OrderStatus]
+            else OrderStatus.PENDING
+        )
         order.filled_quantity = result.filled_quantity
         order.avg_fill_price = result.avg_fill_price or 0.0
 
@@ -377,7 +390,11 @@ class LiveMultiExchangeTrading:
         )
 
         order.exchange_order_id = result.order_id
-        order.status = OrderStatus(result.status) if result.status in [s.value for s in OrderStatus] else OrderStatus.PENDING
+        order.status = (
+            OrderStatus(result.status)
+            if result.status in [s.value for s in OrderStatus]
+            else OrderStatus.PENDING
+        )
         order.filled_quantity = result.filled_quantity
         order.avg_fill_price = result.avg_fill_price or 0.0
 

@@ -85,7 +85,7 @@ services:
   redpanda-console:
     profiles:
       - monitoring
-      
+
   grafana:
     profiles:
       - monitoring

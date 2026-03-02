@@ -5,11 +5,10 @@ Validates the core consciousness data flow across all three layers
 without requiring real Redis or external services.
 """
 
-import asyncio
 import json
 import time
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 

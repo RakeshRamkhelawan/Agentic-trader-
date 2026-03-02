@@ -6,7 +6,7 @@ Market tick → Navagraha gate → OODA → Tattva filter → Risk check →
 Strategy select → Execute → Karma feedback → Consciousness update
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -15,7 +15,7 @@ from backend.agents.data_scout_agent import DataScoutAgent
 from backend.agents.risk_manager_agent import RiskManagerAgent
 from backend.agents.trader_agent import TraderAgent
 from backend.core.adapters.system_bridge import CognitiveBridge
-from backend.core.karma.karma_register import KarmaRegister, TradeOutcome
+from backend.core.karma.karma_register import KarmaRegister
 from backend.core.navagraha.models import GunaDistribution, NavagrahaState, PlanetName
 from backend.core.navagraha.service import NavagrahaService
 from backend.core.schemas.ooda_types import MarketRegime, Observation, RiskDecision, TradeProposal

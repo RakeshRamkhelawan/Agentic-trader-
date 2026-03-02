@@ -4,14 +4,13 @@ Tests voor PermissionService.
 Test RBAC enforcement en audit logging.
 """
 
-from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.core.database import Base
-from backend.governance.permission_service import PermissionService, TradingModeChange
+from backend.governance.permission_service import PermissionService
 from backend.governance.trading_permissions import (
     PermissionDeniedError,
     TradingPermission,

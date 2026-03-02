@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ExecutionMetrics:
     """Metrics voor execution quality."""
+
     expected_price: float
     actual_price: float
     slippage_bps: float  # Basis points (1 bps = 0.01%)
@@ -103,10 +104,10 @@ class BodyCouncil:
                 "spread_bps": round(spread_bps, 1),
                 "estimated_slippage_bps": round(estimated_slippage, 1),
                 "liquidity_score": round(liquidity_score, 2),
-                "depth_usd": depth
+                "depth_usd": depth,
             },
             "issues": issues,
-            "key_insights": self._generate_insights(quality, issues, spread_bps)
+            "key_insights": self._generate_insights(quality, issues, spread_bps),
         }
 
     def assess_trade_execution(self, execution: ExecutionMetrics) -> dict:
@@ -149,10 +150,10 @@ class BodyCouncil:
             "breakdown": {
                 "slippage": round(execution.slippage_bps, 1),
                 "fees": round(execution.fees_bps, 1),
-                "latency_ms": round(execution.latency_ms, 0)
+                "latency_ms": round(execution.latency_ms, 0),
             },
             "problems": problems,
-            "acceptable": grade in ["excellent", "good"]
+            "acceptable": grade in ["excellent", "good"],
         }
 
     def _calc_liquidity_score(self, depth: float, volume_24h: float) -> float:
@@ -239,24 +240,33 @@ if __name__ == "__main__":
 
     # Test scenarios
     scenarios = [
-        ("Liquid market", {
-            "bid_ask_spread": 0.0005,
-            "orderbook_depth": 500000,
-            "volume_24h": 50000000,
-            "trade_size_usd": 10000
-        }),
-        ("Illiquid market", {
-            "bid_ask_spread": 0.005,
-            "orderbook_depth": 5000,
-            "volume_24h": 100000,
-            "trade_size_usd": 10000
-        }),
-        ("Wide spread", {
-            "bid_ask_spread": 0.003,
-            "orderbook_depth": 200000,
-            "volume_24h": 2000000,
-            "trade_size_usd": 10000
-        }),
+        (
+            "Liquid market",
+            {
+                "bid_ask_spread": 0.0005,
+                "orderbook_depth": 500000,
+                "volume_24h": 50000000,
+                "trade_size_usd": 10000,
+            },
+        ),
+        (
+            "Illiquid market",
+            {
+                "bid_ask_spread": 0.005,
+                "orderbook_depth": 5000,
+                "volume_24h": 100000,
+                "trade_size_usd": 10000,
+            },
+        ),
+        (
+            "Wide spread",
+            {
+                "bid_ask_spread": 0.003,
+                "orderbook_depth": 200000,
+                "volume_24h": 2000000,
+                "trade_size_usd": 10000,
+            },
+        ),
     ]
 
     for name, data in scenarios:

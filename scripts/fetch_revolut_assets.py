@@ -9,7 +9,7 @@ Revolut X doesn't have a public API like Bitvavo, but we can:
 
 Usage:
     python scripts/fetch_revolut_assets.py
-    
+
 Output:
     - data/revolutx_assets.csv
     - data/revolutx_assets.json

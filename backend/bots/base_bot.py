@@ -12,35 +12,39 @@ from backend.competitions.models.competitor import Competitor, CompetitorStats, 
 
 class BotDifficulty(Enum):
     """Bot difficulty levels."""
-    EASY = "easy"       # 40-50% win rate
-    MEDIUM = "medium"   # 50-60% win rate
-    HARD = "hard"       # 60-70% win rate
-    EXPERT = "expert"   # 70-80% win rate
+
+    EASY = "easy"  # 40-50% win rate
+    MEDIUM = "medium"  # 50-60% win rate
+    HARD = "hard"  # 60-70% win rate
+    EXPERT = "expert"  # 70-80% win rate
 
 
 class BotPersonality(Enum):
     """Bot trading personalities."""
-    AGGRESSIVE = "aggressive"    # High risk, high reward
-    CONSERVATIVE = "conservative" # Low risk, steady gains
-    BALANCED = "balanced"        # Moderate approach
-    ADAPTIVE = "adaptive"        # Adjusts to market
+
+    AGGRESSIVE = "aggressive"  # High risk, high reward
+    CONSERVATIVE = "conservative"  # Low risk, steady gains
+    BALANCED = "balanced"  # Moderate approach
+    ADAPTIVE = "adaptive"  # Adjusts to market
 
 
 @dataclass
 class BotConfig:
     """Configuration for a trading bot."""
+
     name: str
     difficulty: BotDifficulty
     personality: BotPersonality
     max_position_pct: float = 0.2  # Max 20% of balance per trade
-    stop_loss_pct: float = 0.02    # 2% stop loss
+    stop_loss_pct: float = 0.02  # 2% stop loss
     take_profit_pct: float = 0.05  # 5% take profit
-    trade_frequency: int = 5       # Trades per day average
+    trade_frequency: int = 5  # Trades per day average
 
 
 @dataclass
 class TradeDecision:
     """Trade decision from bot."""
+
     action: str  # "buy", "sell", "hold"
     symbol: str
     quantity: float

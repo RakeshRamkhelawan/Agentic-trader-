@@ -19,6 +19,7 @@ class RandomBot(BaseTradingBot):
     def __init__(self, config: BotConfig = None):
         if config is None:
             from .base_bot import BotDifficulty, BotPersonality
+
             config = BotConfig(
                 name="RandomBot",
                 difficulty=BotDifficulty.EASY,

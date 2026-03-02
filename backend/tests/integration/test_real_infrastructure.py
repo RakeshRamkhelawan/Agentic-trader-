@@ -63,7 +63,6 @@ def test_clickhouse_connection():
 @pytest.mark.asyncio
 async def test_clickhouse_writer_integration():
     """Verify ClickHouseWriter can write and read from REAL ClickHouse."""
-    import time
     from datetime import datetime
 
     from backend.market_data.sinks.clickhouse_writer import ClickHouseWriter

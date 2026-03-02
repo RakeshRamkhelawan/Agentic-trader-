@@ -34,7 +34,7 @@ log_error() {
 check_ports() {
     local ports=(8000 8001 5173 5456 6380 8124 8005 9094)
     local in_use=0
-    
+
     for port in "${ports[@]}"; do
         if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1 || \
            netstat -tuln 2>/dev/null | grep -q ":$port " || \
@@ -42,7 +42,7 @@ check_ports() {
             ((in_use++))
         fi
     done
-    
+
     echo $in_use
 }
 
@@ -72,23 +72,23 @@ get_grafana_port() {
 # Commands
 cmd_start() {
     log_info "Starting development environment..."
-    
+
     # Check for port conflicts
     local conflicts=$(check_ports)
     if [ "$conflicts" -gt 0 ] && [ -f "docker-compose.override.yml.backup" ]; then
         log_warning "$conflicts ports are in use. Using alternative port configuration."
         log_info "To use default ports, run: bash scripts/use-default-ports.sh"
     fi
-    
+
     docker-compose up -d
-    
+
     # Get actual ports being used
     local frontend_port=$(get_frontend_port)
     local api_port=$(get_api_port)
     local redpanda_port=$(get_redpanda_port)
     local prometheus_port=$(get_prometheus_port)
     local grafana_port=$(get_grafana_port)
-    
+
     log_success "Services started!"
     echo ""
     echo "📊 Services available at:"

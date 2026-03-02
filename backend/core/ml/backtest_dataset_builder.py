@@ -108,21 +108,25 @@ class BacktestDatasetBuilder:
 
         # Encode decisions
         if "decision" in df.columns:
-            df["decision_encoded"] = df["decision"].map({
-                "BUY": 1,
-                "SELL": -1,
-                "HOLD": 0,
-                "BLOCK": 0
-            }).fillna(0)
+            df["decision_encoded"] = (
+                df["decision"].map({"BUY": 1, "SELL": -1, "HOLD": 0, "BLOCK": 0}).fillna(0)
+            )
 
         # Encode planets (vedic feature)
         if "planet" in df.columns:
             # One-hot encode of ordinal encoding
             planet_mapping = {
-                "SATURN": 0, "JUPITER": 1, "MARS": 2,
-                "SUN": 3, "VENUS": 4, "MERCURY": 5, "MOON": 6
+                "SATURN": 0,
+                "JUPITER": 1,
+                "MARS": 2,
+                "SUN": 3,
+                "VENUS": 4,
+                "MERCURY": 5,
+                "MOON": 6,
             }
-            df["planet_encoded"] = df["planet"].str.extract(r'(\w+)')[0].map(planet_mapping).fillna(-1)
+            df["planet_encoded"] = (
+                df["planet"].str.extract(r"(\w+)")[0].map(planet_mapping).fillna(-1)
+            )
 
         return df
 
@@ -131,7 +135,7 @@ class BacktestDatasetBuilder:
         backtest_dir: str = "backtest_results",
         sequence_length: int = 50,
         prediction_horizon: int = 10,
-        min_samples: int = 1000
+        min_samples: int = 1000,
     ) -> "LSTMDataset":
         """
         Bouw LSTM dataset uit alle backtest files.
@@ -168,12 +172,16 @@ class BacktestDatasetBuilder:
 
                 # Genereer sequences
                 for i in range(len(features) - sequence_length - prediction_horizon):
-                    seq = features[i:i + sequence_length]
+                    seq = features[i : i + sequence_length]
 
                     # Label: cumulative return over prediction_horizon
-                    future_returns = equity_df["returns"].iloc[
-                        i + sequence_length:i + sequence_length + prediction_horizon
-                    ].values if "returns" in equity_df.columns else [0]
+                    future_returns = (
+                        equity_df["returns"]
+                        .iloc[i + sequence_length : i + sequence_length + prediction_horizon]
+                        .values
+                        if "returns" in equity_df.columns
+                        else [0]
+                    )
 
                     label = np.sum(future_returns) if len(future_returns) > 0 else 0
 
@@ -192,9 +200,7 @@ class BacktestDatasetBuilder:
         return LSTMDataset(all_sequences, all_labels)
 
     def build_classification_dataset(
-        self,
-        backtest_dir: str = "backtest_results",
-        sequence_length: int = 20
+        self, backtest_dir: str = "backtest_results", sequence_length: int = 20
     ) -> "ClassificationDataset":
         """
         Classificatie dataset: voorspel of de volgende actie BUY, SELL, of HOLD moet zijn.
@@ -214,7 +220,7 @@ class BacktestDatasetBuilder:
 
                 # Features: harmony scores over tijd
                 for i in range(len(df) - sequence_length):
-                    seq = df["harmony"].iloc[i:i + sequence_length].values
+                    seq = df["harmony"].iloc[i : i + sequence_length].values
 
                     # Label: volgende decision
                     next_decision = df["decision_encoded"].iloc[i + sequence_length]
@@ -235,7 +241,9 @@ class BacktestDatasetBuilder:
         return {
             "total_sequences": len(self.features) if self.features else 0,
             "sequence_length": len(self.features[0]) if self.features else 0,
-            "num_features": len(self.features[0][0]) if self.features and len(self.features[0]) > 0 else 0,
+            "num_features": (
+                len(self.features[0][0]) if self.features and len(self.features[0]) > 0 else 0
+            ),
             "positive_labels": sum(1 for l in self.labels if l > 0) if self.labels else 0,
             "negative_labels": sum(1 for l in self.labels if l < 0) if self.labels else 0,
         }

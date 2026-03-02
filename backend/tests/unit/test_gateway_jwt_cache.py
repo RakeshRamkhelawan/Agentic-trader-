@@ -2,10 +2,9 @@
 Unit tests for JWT Token Caching in API Gateway.
 """
 
-import hashlib
 import json
 import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import jwt
 import pytest

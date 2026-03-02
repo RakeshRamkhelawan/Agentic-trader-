@@ -11,7 +11,6 @@ Tests verify that:
 """
 
 import json
-import logging
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -90,14 +89,7 @@ class TestSoulKarmaIntegration:
             return_value={"symbol": "BTC/USD", "price": 42000.0, "volatility": 0.02},
         ):
             with patch.object(soul.navagraha, "get_current_state") as mock_nav:
-                from datetime import datetime, timezone
 
-                from backend.core.navagraha.models import (
-                    GunaDistribution,
-                    NavagrahaState,
-                    PlanetName,
-                    PlanetState,
-                )
 
                 # Create minimal NavagrahaState mock
                 mock_nav.return_value = MagicMock(

@@ -6,7 +6,7 @@ Dit document is de **definitieve drop-in build spec** voor een LLM-builder om de
 
 ## 1. Doel & Scope
 
-**Doel:**  
+**Doel:**
 Bouw bovenop de bestaande codebase een productie-klare, real-time, multi-agent tradingarchitectuur die:
 - Continu een **OODA-loop** draait (Observe → Orient → Decide → Act) op live marktdata.
 - Een “trading firm in a box” simuleert met gespecialiseerde LLM-agents (Data Scout, Analyst, Risk Manager, Trader, **Fund Manager**, **Researcher**).
@@ -24,7 +24,7 @@ Bouw bovenop de bestaande codebase een productie-klare, real-time, multi-agent t
 
 De repo bevat reeds een uitgebreide cognitieve kern. Deze bestanden dienen als fundament en mogen **niet** worden verwijderd of herschreven zonder reden.
 
-### 2.1 Core Cognitive Layer  
+### 2.1 Core Cognitive Layer
 Locatie: `backend/core/`
 - `frequency_analysis.py`: FFT-analyse van marktsignalen.
 - `sensory_processor.py`: Verwerkt inputkanalen (prijs, volume, orderboek, sentiment).

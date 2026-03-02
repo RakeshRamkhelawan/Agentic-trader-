@@ -5,15 +5,13 @@ Validates that PortfolioRiskCalculator, Kelly sizing, and Guna modulation
 are correctly integrated into the CognitiveMindService process_cycle.
 """
 
-import asyncio
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from backend.core.cognitive_mind_service import CognitiveMindService
 from backend.core.risk.guna_sizing import GunaType
-from backend.core.risk.portfolio_risk import PortfolioRiskCalculator, RiskDecisionResult, RiskState
+from backend.core.risk.portfolio_risk import PortfolioRiskCalculator, RiskState
 from backend.core.zero_copy_bridge import ZeroCopyBridge
 
 # ---------------------------------------------------------------------------

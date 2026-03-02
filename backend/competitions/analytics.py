@@ -11,6 +11,7 @@ from .models.tournament import TournamentEntry
 @dataclass
 class PerformanceMetrics:
     """Performance metrics for a competitor."""
+
     competitor_id: str
     period: str  # "daily", "weekly", "monthly", "all_time"
 
@@ -143,10 +144,7 @@ class AnalyticsEngine:
         else:
             return all_trades
 
-        return [
-            t for t in all_trades
-            if datetime.fromisoformat(t["timestamp"]) >= cutoff
-        ]
+        return [t for t in all_trades if datetime.fromisoformat(t["timestamp"]) >= cutoff]
 
     def _calculate_sharpe_ratio(self, returns: list[float], risk_free_rate: float = 0.0) -> float:
         """Calculate Sharpe ratio."""
@@ -155,7 +153,7 @@ class AnalyticsEngine:
 
         avg_return = sum(returns) / len(returns)
         variance = sum((r - avg_return) ** 2 for r in returns) / len(returns)
-        std_dev = variance ** 0.5
+        std_dev = variance**0.5
 
         if std_dev == 0:
             return 0.0
@@ -230,10 +228,7 @@ class AnalyticsEngine:
 
     def get_leaderboard_analytics(self, competitor_ids: list[str]) -> dict[str, Any]:
         """Get comparative analytics for leaderboard."""
-        metrics = [
-            self.calculate_metrics(cid, "all_time")
-            for cid in competitor_ids
-        ]
+        metrics = [self.calculate_metrics(cid, "all_time") for cid in competitor_ids]
 
         # Sort by total P&L
         metrics.sort(key=lambda m: m.total_pnl, reverse=True)
@@ -290,39 +285,51 @@ class AnalyticsEngine:
         insights = []
 
         if metrics.win_rate > 60:
-            insights.append({
-                "type": "strength",
-                "message": f"Strong win rate of {metrics.win_rate:.1f}% - you're good at picking winners!",
-            })
+            insights.append(
+                {
+                    "type": "strength",
+                    "message": f"Strong win rate of {metrics.win_rate:.1f}% - you're good at picking winners!",
+                }
+            )
         elif metrics.win_rate < 40:
-            insights.append({
-                "type": "improvement",
-                "message": "Consider reviewing your entry criteria - win rate is below 40%.",
-            })
+            insights.append(
+                {
+                    "type": "improvement",
+                    "message": "Consider reviewing your entry criteria - win rate is below 40%.",
+                }
+            )
 
         if metrics.profit_factor > 2:
-            insights.append({
-                "type": "strength",
-                "message": f"Excellent profit factor of {metrics.profit_factor:.2f} - profits outweigh losses significantly.",
-            })
+            insights.append(
+                {
+                    "type": "strength",
+                    "message": f"Excellent profit factor of {metrics.profit_factor:.2f} - profits outweigh losses significantly.",
+                }
+            )
 
         if metrics.max_drawdown > 20:
-            insights.append({
-                "type": "warning",
-                "message": f"High drawdown of {metrics.max_drawdown:.1f}% - consider tighter risk management.",
-            })
+            insights.append(
+                {
+                    "type": "warning",
+                    "message": f"High drawdown of {metrics.max_drawdown:.1f}% - consider tighter risk management.",
+                }
+            )
 
         if metrics.sharpe_ratio > 1.5:
-            insights.append({
-                "type": "strength",
-                "message": f"Great Sharpe ratio of {metrics.sharpe_ratio:.2f} - excellent risk-adjusted returns!",
-            })
+            insights.append(
+                {
+                    "type": "strength",
+                    "message": f"Great Sharpe ratio of {metrics.sharpe_ratio:.2f} - excellent risk-adjusted returns!",
+                }
+            )
 
         if metrics.streak_max >= 5:
-            insights.append({
-                "type": "achievement",
-                "message": f"Longest win streak: {metrics.streak_max} trades - impressive consistency!",
-            })
+            insights.append(
+                {
+                    "type": "achievement",
+                    "message": f"Longest win streak: {metrics.streak_max} trades - impressive consistency!",
+                }
+            )
 
         return insights
 

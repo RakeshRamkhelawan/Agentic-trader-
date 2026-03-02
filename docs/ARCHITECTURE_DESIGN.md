@@ -1,7 +1,7 @@
 # Revised Architecture Design - Samkhya Yoga Agentic Trader
 
-**Generated:** 2026-02-14  
-**Version:** 1.0  
+**Generated:** 2026-02-14
+**Version:** 1.0
 **Focus:** State Management, Performance Optimization, Circuit Breakers
 
 ---
@@ -91,22 +91,22 @@ class Aspect:
 class NavagrahaState:
     timestamp: datetime
     calculation_time_ms: float
-    
+
     planets: Dict[str, PlanetPosition]
-    
+
     aspects: List[Aspect]
-    
+
     rahu_kala_start: datetime
     rahu_kala_end: datetime
     is_rahu_kala_active: bool
-    
+
     dasha_lord: str
     dasha_start: datetime
     dasha_end: datetime
-    
+
     cache_key: str
     version: str = "1.0"
-    
+
     def to_dict(self) -> dict:
         return {
             'timestamp': self.timestamp.isoformat(),
@@ -132,17 +132,17 @@ class NavagrahaState:
 class OODACoordinator:
     async def observe(self) -> Observations:
         navagraha_state = await self.navagraha_service.get_current_state()
-        
+
         return Observations(
             market_data=await self.market_service.get_latest(),
             navagraha_state=navagraha_state,
             sentiment=await self.sentiment_service.analyze(),
             timestamp=datetime.utcnow()
         )
-    
+
     async def orient(self, observations: Observations) -> Orientation:
         guna_ratios = self.guna_engine.calculate(observations.navagraha_state)
-        
+
         return Orientation(
             guna_ratios=guna_ratios,
             navagraha_snapshot_id=observations.navagraha_state.cache_key,
@@ -157,16 +157,16 @@ class OrderExecutor:
         navagraha_state = await self.navagraha_service.get_by_cache_key(
             decision.navagraha_snapshot_id
         )
-        
+
         audit_record = AuditRecord(
             decision_id=decision.id,
             navagraha_state=navagraha_state.to_dict(),
             guna_ratios=decision.guna_ratios,
             execution_timestamp=datetime.utcnow()
         )
-        
+
         await self.audit_logger.log(audit_record)
-        
+
         return await self._execute_order(decision, navagraha_state)
 ```
 
@@ -187,7 +187,7 @@ L1: In-Memory Cache (Python LRU)
     - Eviction: LRU
     - Hit rate target: 60%
     - Latency: <1ms
-    
+
     ▼ (on miss)
 
 L2: Redis Cache (Distributed)
@@ -198,7 +198,7 @@ L2: Redis Cache (Distributed)
       * Dasha periods: 24 hours
     - Hit rate target: 95%
     - Latency: <5ms
-    
+
     ▼ (on miss)
 
 L3: Swiss Ephemeris Calculation
@@ -219,7 +219,7 @@ class NavagrahaCache:
         'dasha': 'navagraha:dasha:{date}',
         'full_state': 'navagraha:state:{cache_key}'
     }
-    
+
     TTL = {
         'position': 300,
         'aspects': 900,
@@ -227,7 +227,7 @@ class NavagrahaCache:
         'dasha': 86400,
         'full_state': 3600
     }
-    
+
     async def get_planet_position(
         self,
         planet: str,
@@ -239,12 +239,12 @@ class NavagrahaCache:
             time_bucket=time_bucket,
             planet=planet
         )
-        
+
         cached = await self.redis.get(key)
         if cached:
             self.metrics.increment('cache_hit', tags={'type': 'position'})
             return PlanetPosition.from_json(cached)
-        
+
         self.metrics.increment('cache_miss', tags={'type': 'position'})
         return None
 ```
@@ -262,14 +262,14 @@ class NavagrahaCache:
 class CacheInvalidator:
     async def invalidate_all(self, reason: str):
         await self.redis.delete_pattern('navagraha:*')
-        
+
         await self.event_bus.publish('cache.invalidated', {
             'timestamp': datetime.utcnow(),
             'reason': reason
         })
-        
+
         await self.recalculate_all()
-    
+
     async def invalidate_time_range(
         self,
         start: datetime,
@@ -279,7 +279,7 @@ class CacheInvalidator:
         async for key in self.redis.scan_iter('navagraha:*'):
             if self._is_in_range(key, start, end):
                 keys_to_delete.append(key)
-        
+
         if keys_to_delete:
             await self.redis.delete(*keys_to_delete)
 ```
@@ -290,11 +290,11 @@ class CacheInvalidator:
 ```python
 async def warm_cache_on_startup():
     now = datetime.utcnow()
-    
+
     for hours_ahead in range(24):
         future_time = now + timedelta(hours=hours_ahead)
         await navagraha_service.calculate_and_cache(future_time)
-    
+
     logger.info("Cache warmed with 24 hours of ephemeris data")
 ```
 
@@ -372,7 +372,7 @@ class CircuitBreaker:
         self.half_open_call_count = 0
         self.last_failure_time: Optional[datetime] = None
         self.metrics = PrometheusMetrics()
-    
+
     async def call(self, func: Callable, *args, **kwargs):
         if self.state == CircuitState.OPEN:
             if self._should_attempt_reset():
@@ -387,14 +387,14 @@ class CircuitBreaker:
                 raise CircuitBreakerOpenError(
                     f"Circuit breaker {self.name} is OPEN"
                 )
-        
+
         if self.state == CircuitState.HALF_OPEN:
             if self.half_open_call_count >= self.half_open_max_calls:
                 raise CircuitBreakerOpenError(
                     f"Circuit breaker {self.name} max half-open calls exceeded"
                 )
             self.half_open_call_count += 1
-        
+
         try:
             result = await func(*args, **kwargs)
             self._on_success()
@@ -402,7 +402,7 @@ class CircuitBreaker:
         except Exception as e:
             self._on_failure()
             raise
-    
+
     def _on_success(self):
         if self.state == CircuitState.HALF_OPEN:
             self.state = CircuitState.CLOSED
@@ -412,9 +412,9 @@ class CircuitBreaker:
                 0,
                 {'name': self.name, 'state': 'closed'}
             )
-        
+
         self.failure_count = 0
-    
+
     def _on_failure(self):
         self.failure_count += 1
         self.last_failure_time = datetime.utcnow()
@@ -422,7 +422,7 @@ class CircuitBreaker:
             'circuit_breaker_failures',
             tags={'name': self.name}
         )
-        
+
         if self.failure_count >= self.failure_threshold:
             self.state = CircuitState.OPEN
             self.metrics.set_gauge(
@@ -430,11 +430,11 @@ class CircuitBreaker:
                 2,
                 {'name': self.name, 'state': 'open'}
             )
-    
+
     def _should_attempt_reset(self) -> bool:
         if self.last_failure_time is None:
             return True
-        
+
         elapsed = datetime.utcnow() - self.last_failure_time
         return elapsed.total_seconds() >= self.timeout_seconds
 ```
@@ -451,7 +451,7 @@ class CircuitBreakerManager:
             'sentiment_api': CircuitBreaker('sentiment_api', failure_threshold=5, timeout_seconds=60),
             'database': CircuitBreaker('database', failure_threshold=2, timeout_seconds=10),
         }
-    
+
     async def call_with_fallback(
         self,
         primary_service: str,
@@ -485,7 +485,7 @@ class NavagrahaService:
             timeout_seconds=60
         )
         self.cache = NavagrahaCache()
-    
+
     async def get_current_state(self) -> NavagrahaState:
         try:
             return await self.circuit_breaker.call(
@@ -495,7 +495,7 @@ class NavagrahaService:
             cached_state = await self.cache.get_last_known_good(
                 max_age_minutes=60
             )
-            
+
             if cached_state:
                 logger.warning("Using cached ephemeris data due to circuit breaker")
                 return cached_state
@@ -511,7 +511,7 @@ class ExchangeService:
     def __init__(self):
         self.primary_breaker = CircuitBreaker('exchange_api_primary', failure_threshold=5)
         self.backup_breaker = CircuitBreaker('exchange_api_backup', failure_threshold=3)
-    
+
     async def place_order(self, order: Order) -> ExecutionResult:
         try:
             return await self.primary_breaker.call(
@@ -531,7 +531,7 @@ class ExchangeService:
 class LLMService:
     async def call_with_fallback(self, prompt: str) -> str:
         providers = ['ollama', 'gemini', 'deepseek']
-        
+
         for provider in providers:
             breaker = self.breakers[provider]
             try:
@@ -543,7 +543,7 @@ class LLMService:
             except (CircuitBreakerOpenError, LLMProviderError):
                 logger.warning(f"{provider} unavailable, trying next")
                 continue
-        
+
         raise LLMExhaustedError("All LLM providers failed or circuit open")
 ```
 
@@ -572,12 +572,12 @@ class OptimizedOODACoordinator:
     async def run_cycle(self) -> CycleResult:
         async with self.metrics.timer('ooda_cycle_duration'):
             observations = await self._observe()
-            
+
             orientation, guna_update = await asyncio.gather(
                 self._orient(observations),
                 self._update_guna(observations.navagraha_state)
             )
-            
+
             agent_tasks = [
                 self.ether_agent.decide(observations, orientation),
                 self.air_agent.decide(observations, orientation),
@@ -585,16 +585,16 @@ class OptimizedOODACoordinator:
                 self.water_agent.decide(observations, orientation),
                 self.earth_agent.decide(observations, orientation),
             ]
-            
+
             agent_decisions = await asyncio.gather(*agent_tasks)
-            
+
             decision = self._aggregate_decisions(
                 agent_decisions,
                 guna_ratios=orientation.guna_ratios
             )
-            
+
             execution_result = await self._act(decision)
-            
+
             return CycleResult(
                 decision=decision,
                 execution=execution_result,
@@ -619,21 +619,21 @@ class OptimizedMarketDataRepository:
             ORDER BY timestamp DESC
             LIMIT $3
         """
-        
+
         cache_key = f"ohlcv:{symbol}:{timeframe}:{limit}"
-        
+
         cached = await self.redis.get(cache_key)
         if cached:
             return json.loads(cached)
-        
+
         result = await self.db.fetch(query, symbol, timeframe, limit)
-        
+
         await self.redis.setex(
             cache_key,
             60,
             json.dumps([dict(r) for r in result])
         )
-        
+
         return result
 ```
 
@@ -651,13 +651,13 @@ class SystemMetrics:
         'navagraha_state_age_seconds',
         'rahu_kala_gate_blocks_total',
     ]
-    
+
     OODA_METRICS = [
         'ooda_cycle_duration_seconds{phase="observe|orient|decide|act"}',
         'ooda_cycles_total{status="success|failure"}',
         'agent_decision_latency_seconds{agent="ether|air|fire|water|earth"}',
     ]
-    
+
     EXECUTION_METRICS = [
         'orders_placed_total{exchange="binance|bybit"}',
         'order_fill_latency_seconds',
@@ -677,9 +677,9 @@ async def health_check():
         check_exchanges(),
         return_exceptions=True
     )
-    
+
     all_healthy = all(c.status == "healthy" for c in checks if not isinstance(c, Exception))
-    
+
     return {
         "status": "healthy" if all_healthy else "degraded",
         "checks": checks,
@@ -726,9 +726,9 @@ async def health_check():
 ## Conclusion
 
 This architecture provides:
-✅ **Immutable NavagrahaState** threading through all layers  
-✅ **3-tier caching** with 95%+ hit rate target  
-✅ **Circuit breakers** with fallback chains  
-✅ **Sub-second OODA cycles** via parallelization  
-✅ **Production-grade observability** with Prometheus/Grafana  
+✅ **Immutable NavagrahaState** threading through all layers
+✅ **3-tier caching** with 95%+ hit rate target
+✅ **Circuit breakers** with fallback chains
+✅ **Sub-second OODA cycles** via parallelization
+✅ **Production-grade observability** with Prometheus/Grafana
 ✅ **Horizontal scalability** via Kubernetes deployment

@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TradingEpisode:
     """A complete trading episode stored in episodic memory."""
+
     id: str
     session_id: str
     timestamp: datetime
@@ -42,16 +43,16 @@ class TradingEpisode:
 
     def to_dict(self) -> dict:
         data = asdict(self)
-        data['timestamp'] = self.timestamp.isoformat() if self.timestamp else None
-        data['exit_timestamp'] = self.exit_timestamp.isoformat() if self.exit_timestamp else None
+        data["timestamp"] = self.timestamp.isoformat() if self.timestamp else None
+        data["exit_timestamp"] = self.exit_timestamp.isoformat() if self.exit_timestamp else None
         return data
 
     @classmethod
     def from_dict(cls, data: dict) -> "TradingEpisode":
-        if data.get('timestamp'):
-            data['timestamp'] = datetime.fromisoformat(data['timestamp'])
-        if data.get('exit_timestamp'):
-            data['exit_timestamp'] = datetime.fromisoformat(data['exit_timestamp'])
+        if data.get("timestamp"):
+            data["timestamp"] = datetime.fromisoformat(data["timestamp"])
+        if data.get("exit_timestamp"):
+            data["exit_timestamp"] = datetime.fromisoformat(data["exit_timestamp"])
         return cls(**data)
 
 
@@ -80,7 +81,7 @@ class EpisodicMemory:
         memory_file = self.storage_path / "episodes.json"
         try:
             data = [ep.to_dict() for ep in self.episodes]
-            with open(memory_file, 'w') as f:
+            with open(memory_file, "w") as f:
                 json.dump(data, f, indent=2, default=str)
         except Exception as e:
             logger.error(f"Failed to save episodes: {e}")
@@ -91,16 +92,15 @@ class EpisodicMemory:
         logger.info(f"Stored episode {episode.id} ({episode.action})")
         return episode.id
 
-    def update_outcome(self, episode_id: str, outcome: str,
-                       pnl: float, exit_reason: str) -> bool:
+    def update_outcome(self, episode_id: str, outcome: str, pnl: float, exit_reason: str) -> bool:
         for ep in self.episodes:
             if ep.id == episode_id:
                 ep.outcome = outcome
                 ep.pnl = pnl
                 ep.exit_reason = exit_reason
                 ep.exit_timestamp = datetime.utcnow()
-                if ep.market_context.get('price'):
-                    ep.pnl_pct = pnl / ep.market_context['price']
+                if ep.market_context.get("price"):
+                    ep.pnl_pct = pnl / ep.market_context["price"]
                 self._save_episodes()
                 logger.info(f"Updated episode {episode_id}: {outcome}, PnL: {pnl:.2f}")
                 return True
@@ -113,19 +113,19 @@ class EpisodicMemory:
         scores = []
         for ep in self.episodes:
             score = 0.0
-            vol_diff = abs(ep.volatility - market_context.get('volatility_1m', 0.02))
+            vol_diff = abs(ep.volatility - market_context.get("volatility_1m", 0.02))
             if vol_diff < 0.005:
                 score += 0.3
             elif vol_diff < 0.01:
                 score += 0.2
 
-            if ep.trend == market_context.get('trend_direction', 'neutral'):
+            if ep.trend == market_context.get("trend_direction", "neutral"):
                 score += 0.3
 
-            if ep.volume_profile == self._classify_volume(market_context.get('volume_ratio', 1.0)):
+            if ep.volume_profile == self._classify_volume(market_context.get("volume_ratio", 1.0)):
                 score += 0.2
 
-            current_fg = market_context.get('fear_greed', 50)
+            current_fg = market_context.get("fear_greed", 50)
             if abs(ep.fear_greed_index - current_fg) < 15:
                 score += 0.2
 
@@ -170,8 +170,7 @@ class EpisodicMemory:
 
     def get_performance_stats(self, lookback_days: int = 30) -> dict:
         cutoff = datetime.utcnow() - timedelta(days=lookback_days)
-        recent = [ep for ep in self.episodes
-                  if ep.timestamp > cutoff and ep.outcome is not None]
+        recent = [ep for ep in self.episodes if ep.timestamp > cutoff and ep.outcome is not None]
 
         if not recent:
             return {"total_trades": 0, "win_rate": 0.0, "avg_pnl": 0.0, "total_pnl": 0.0}
@@ -185,7 +184,7 @@ class EpisodicMemory:
             "avg_pnl": total_pnl / len(recent),
             "total_pnl": total_pnl,
             "avg_confidence": sum(ep.confidence for ep in recent) / len(recent),
-            "avg_coherence": sum(ep.coherence for ep in recent) / len(recent)
+            "avg_coherence": sum(ep.coherence for ep in recent) / len(recent),
         }
 
     def _classify_volume(self, volume_ratio: float) -> str:
@@ -204,8 +203,8 @@ class EpisodicMemory:
             return ["Insufficient data for pattern analysis"]
 
         lessons = []
-        successful = [ep for ep in self.episodes if ep.outcome == 'success']
-        failed = [ep for ep in self.episodes if ep.outcome == 'failure']
+        successful = [ep for ep in self.episodes if ep.outcome == "success"]
+        failed = [ep for ep in self.episodes if ep.outcome == "failure"]
 
         if successful:
             avg_conf = sum(ep.confidence for ep in successful) / len(successful)

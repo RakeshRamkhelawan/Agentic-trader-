@@ -7,6 +7,7 @@ from datetime import datetime
 @dataclass
 class FollowRelationship:
     """A follow relationship between users."""
+
     follower_id: str
     following_id: str
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -143,8 +144,11 @@ class FollowSystem:
         """Get followers who have notifications enabled."""
         followers = self.get_followers(user_id)
         return [
-            follower_id for follower_id in followers
-            if self._relationships.get((follower_id, user_id), FollowRelationship(follower_id, user_id)).notifications_enabled
+            follower_id
+            for follower_id in followers
+            if self._relationships.get(
+                (follower_id, user_id), FollowRelationship(follower_id, user_id)
+            ).notifications_enabled
         ]
 
     def get_mutual_follows(self, user_id: str) -> list[str]:

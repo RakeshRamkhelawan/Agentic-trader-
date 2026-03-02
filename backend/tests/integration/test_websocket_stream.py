@@ -26,7 +26,6 @@ async def test_websocket_navagraha_stream():
 
         # For this integration test, we'll try to trigger a broadcast manually
         # to avoid waiting for the background task loop.
-        from backend.api.websocket_manager import ws_manager
 
         test_payload = {
             "planets": {},
@@ -68,7 +67,7 @@ async def test_websocket_broadcast_unit():
     """
     Unit test the WebSocketManager's broadcast logic using AsyncMock.
     """
-    from unittest.mock import AsyncMock, MagicMock
+    from unittest.mock import AsyncMock
 
     from backend.api.websocket_manager import ws_manager
 

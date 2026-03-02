@@ -1,7 +1,7 @@
 # Incident Response Plan - Agentic Trader Platform
 
-> **Status:** ACTIVE  
-> **Classification:** CONFIDENTIAL  
+> **Status:** ACTIVE
+> **Classification:** CONFIDENTIAL
 > **Owner:** Incident Response Team
 
 ## Overview
@@ -77,7 +77,7 @@ On-Call Engineer (5 min)
    ```python
    # Emergency kill switch
    from backend.governance.circuit_breaker import CircuitBreaker
-   
+
    breaker = CircuitBreaker(db_session=session)
    await breaker.emergency_shutdown()
    ```
@@ -85,13 +85,13 @@ On-Call Engineer (5 min)
 2. **ISOLATE AFFECTED ACCOUNTS**
    ```sql
    -- Disable trading for affected account
-   UPDATE users 
-   SET trading_enabled = false, 
-       account_locked = true 
+   UPDATE users
+   SET trading_enabled = false,
+       account_locked = true
    WHERE id = 'SUSPECT_ACCOUNT_ID';
-   
+
    -- Force logout all sessions
-   DELETE FROM user_sessions 
+   DELETE FROM user_sessions
    WHERE user_id = 'SUSPECT_ACCOUNT_ID';
    ```
 
@@ -99,14 +99,14 @@ On-Call Engineer (5 min)
    ```bash
    # Capture current state
    kubectl logs deployment/api --since=1h > /tmp/incident_logs_$(date +%s).txt
-   
+
    # Export recent trades
    clickhouse-client --query="
-     SELECT * FROM trades 
+     SELECT * FROM trades
      WHERE timestamp > now() - INTERVAL 1 HOUR
      FORMAT CSV
    " > /tmp/recent_trades_$(date +%s).csv
-   
+
    # Database snapshot
    pg_dump $DATABASE_URL > /tmp/db_snapshot_$(date +%s).sql
    ```
@@ -122,10 +122,10 @@ On-Call Engineer (5 min)
    ```bash
    # Check authentication patterns
    grep "auth" /tmp/incident_logs_*.txt | grep "SUSPECT_ACCOUNT_ID"
-   
+
    # Check IP addresses
    grep "SUSPECT_ACCOUNT_ID" /tmp/incident_logs_*.txt | awk '{print $5}' | sort | uniq -c
-   
+
    # Check trade history
    grep "EXECUTE" /tmp/incident_logs_*.txt | tail -100
    ```
@@ -141,7 +141,7 @@ On-Call Engineer (5 min)
    ```bash
    # Run security checks
    bandit -r backend/
-   
+
    # Check for persistence
    ps aux | grep -i "suspicious"
    netstat -tulpn | grep -v "expected"
@@ -175,10 +175,10 @@ On-Call Engineer (5 min)
    ```bash
    # Rotate JWT secret immediately
    kubectl patch secret jwt-secret -p='{"data":{"JWT_SECRET_KEY":"'$(openssl rand -base64 32 | tr -d '\n')'"}}'
-   
+
    # Revoke all existing sessions
    redis-cli FLUSHDB  # Or selectively delete auth tokens
-   
+
    # Force re-authentication
    kubectl rollout restart deployment/api
    ```
@@ -188,7 +188,7 @@ On-Call Engineer (5 min)
    # Test authentication
    curl -H "Authorization: Bearer $OLD_TOKEN" http://api/health
    # Should return 401
-   
+
    curl -H "Authorization: Bearer $NEW_TOKEN" http://api/health
    # Should return 200
    ```
@@ -203,11 +203,11 @@ On-Call Engineer (5 min)
 1. **Immediate Actions**
    ```sql
    -- Check for successful injection
-   SELECT * FROM pg_stat_activity 
+   SELECT * FROM pg_stat_activity
    WHERE query LIKE '%drop%' OR query LIKE '%delete%';
-   
+
    -- Check audit log for data access
-   SELECT * FROM audit_log 
+   SELECT * FROM audit_log
    WHERE timestamp > NOW() - INTERVAL '1 hour'
    AND action = 'DATA_ACCESS'
    ORDER BY timestamp DESC;
@@ -244,11 +244,11 @@ Subject: Security Incident Notification - Account Temporary Suspension
 
 Dear [Customer Name],
 
-We are writing to inform you of a security incident affecting your account 
+We are writing to inform you of a security incident affecting your account
 ([Account ID]).
 
 What Happened:
-At [Time], we detected unauthorized trading activity on your account. 
+At [Time], we detected unauthorized trading activity on your account.
 As a precautionary measure, we have:
 - Suspended all trading on your account
 - Locked your account pending investigation
@@ -415,6 +415,6 @@ kubectl exec -it deployment/api -- ss -tulpn
 
 ---
 
-**Document Owner:** Security Team  
-**Review Cycle:** Quarterly  
+**Document Owner:** Security Team
+**Review Cycle:** Quarterly
 **Next Review:** 2026-06-01

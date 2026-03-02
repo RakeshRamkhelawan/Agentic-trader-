@@ -8,7 +8,6 @@ from sqlalchemy.orm import sessionmaker
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from backend.core.cache_layer import get_cache
 from backend.services.trading_service import TradingService
 from backend.services.user_settings_service import UserSettingsService
 

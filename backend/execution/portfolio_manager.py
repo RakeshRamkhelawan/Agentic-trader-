@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AssetAllocation:
     """Asset allocation across exchanges."""
+
     asset: str
     total: Decimal
     free: Decimal
@@ -47,6 +48,7 @@ class AssetAllocation:
 @dataclass
 class PortfolioSnapshot:
     """Complete portfolio snapshot."""
+
     timestamp: datetime
     total_value_usd: Decimal
     assets: dict[str, AssetAllocation]
@@ -61,6 +63,7 @@ class PortfolioSnapshot:
 @dataclass
 class PerformanceMetrics:
     """Portfolio performance metrics."""
+
     total_pnl: Decimal
     realized_pnl: Decimal
     unrealized_pnl: Decimal
@@ -78,6 +81,7 @@ class PerformanceMetrics:
 @dataclass
 class RebalanceSuggestion:
     """Portfolio rebalance suggestion."""
+
     asset: str
     current_allocation: Decimal
     target_allocation: Decimal
@@ -154,11 +158,11 @@ class PortfolioManager:
         for exchange_id, adapter in self._adapters.items():
             # Check if adapter is connected
             is_connected = False
-            if hasattr(adapter, 'connected'):
+            if hasattr(adapter, "connected"):
                 is_connected = adapter.connected
-            elif hasattr(adapter, '_connected'):
+            elif hasattr(adapter, "_connected"):
                 is_connected = adapter._connected
-            elif hasattr(adapter, 'exchange'):
+            elif hasattr(adapter, "exchange"):
                 is_connected = adapter.exchange is not None
 
             if not is_connected:
@@ -176,14 +180,16 @@ class PortfolioManager:
                             total=Decimal("0"),
                             free=Decimal("0"),
                             used=Decimal("0"),
-                            by_exchange={}
+                            by_exchange={},
                         )
 
                     # Update balances
-                    all_balances[asset].total += balance_data.get('total', Decimal("0"))
-                    all_balances[asset].free += balance_data.get('free', Decimal("0"))
-                    all_balances[asset].used += balance_data.get('used', Decimal("0"))
-                    all_balances[asset].by_exchange[exchange_id] = balance_data.get('total', Decimal("0"))
+                    all_balances[asset].total += balance_data.get("total", Decimal("0"))
+                    all_balances[asset].free += balance_data.get("free", Decimal("0"))
+                    all_balances[asset].used += balance_data.get("used", Decimal("0"))
+                    all_balances[asset].by_exchange[exchange_id] = balance_data.get(
+                        "total", Decimal("0")
+                    )
 
             except Exception as e:
                 logger.error(f"[PortfolioManager] Failed to get data from {exchange_id}: {e}")
@@ -215,13 +221,13 @@ class PortfolioManager:
             exchanges=list(self._adapters.keys()),
             cash_ratio=self._calculate_cash_ratio(all_balances, total_value_usd),
             max_position_pct=self._calculate_max_position(all_balances),
-            concentration_risk=self._calculate_concentration(all_balances)
+            concentration_risk=self._calculate_concentration(all_balances),
         )
 
         # Store snapshot
         self._snapshots.append(snapshot)
         if len(self._snapshots) > self._max_snapshots:
-            self._snapshots = self._snapshots[-self._max_snapshots:]
+            self._snapshots = self._snapshots[-self._max_snapshots :]
 
         return snapshot
 
@@ -239,9 +245,9 @@ class PortfolioManager:
 
         try:
             # Try different balance methods
-            if hasattr(adapter, 'fetch_balance'):
+            if hasattr(adapter, "fetch_balance"):
                 raw_balances = await adapter.fetch_balance()
-            elif hasattr(adapter, 'get_balance'):
+            elif hasattr(adapter, "get_balance"):
                 raw_balances = await adapter.get_balance()
             else:
                 logger.warning("[PortfolioManager] Adapter has no balance method")
@@ -250,25 +256,17 @@ class PortfolioManager:
             # Normalize to Decimal
             for asset, data in raw_balances.items():
                 if isinstance(data, dict):
-                    total = self._to_decimal(data.get('total', 0))
-                    free = self._to_decimal(data.get('free', 0))
-                    used = self._to_decimal(data.get('used', 0))
+                    total = self._to_decimal(data.get("total", 0))
+                    free = self._to_decimal(data.get("free", 0))
+                    used = self._to_decimal(data.get("used", 0))
 
-                    if total > 0 or asset in ['EUR', 'USD', 'USDT', 'BTC', 'ETH']:
-                        balances[asset] = {
-                            'total': total,
-                            'free': free,
-                            'used': used
-                        }
+                    if total > 0 or asset in ["EUR", "USD", "USDT", "BTC", "ETH"]:
+                        balances[asset] = {"total": total, "free": free, "used": used}
                 else:
                     # Simple balance format
                     total = self._to_decimal(data)
                     if total > 0:
-                        balances[asset] = {
-                            'total': total,
-                            'free': total,
-                            'used': Decimal('0')
-                        }
+                        balances[asset] = {"total": total, "free": total, "used": Decimal("0")}
 
         except Exception as e:
             logger.error(f"[PortfolioManager] Error fetching balances: {e}")
@@ -283,7 +281,7 @@ class PortfolioManager:
             return Decimal(str(value))
         if isinstance(value, str):
             return Decimal(value)
-        return Decimal('0')
+        return Decimal("0")
 
     async def _get_asset_price_usd(self, asset: str) -> Decimal | None:
         """
@@ -299,14 +297,14 @@ class PortfolioManager:
 
         # Try each adapter
         for exchange_id, adapter in self._adapters.items():
-            if not hasattr(adapter, 'fetch_ticker'):
+            if not hasattr(adapter, "fetch_ticker"):
                 continue
 
             try:
                 # Try direct USD pair
                 ticker = await adapter.fetch_ticker(f"{asset}/USD")
-                if ticker and 'last' in ticker:
-                    price = self._to_decimal(ticker['last'])
+                if ticker and "last" in ticker:
+                    price = self._to_decimal(ticker["last"])
                     self._price_cache[asset] = (price, datetime.utcnow())
                     return price
             except Exception:
@@ -315,8 +313,8 @@ class PortfolioManager:
             try:
                 # Try USDT pair
                 ticker = await adapter.fetch_ticker(f"{asset}/USDT")
-                if ticker and 'last' in ticker:
-                    price = self._to_decimal(ticker['last'])
+                if ticker and "last" in ticker:
+                    price = self._to_decimal(ticker["last"])
                     self._price_cache[asset] = (price, datetime.utcnow())
                     return price
             except Exception:
@@ -325,9 +323,9 @@ class PortfolioManager:
             try:
                 # Try EUR pair and convert
                 ticker = await adapter.fetch_ticker(f"{asset}/EUR")
-                if ticker and 'last' in ticker:
+                if ticker and "last" in ticker:
                     # Approximate USD conversion (1 EUR ≈ 1.08 USD)
-                    price_eur = self._to_decimal(ticker['last'])
+                    price_eur = self._to_decimal(ticker["last"])
                     price = price_eur * Decimal("1.08")
                     self._price_cache[asset] = (price, datetime.utcnow())
                     return price
@@ -351,7 +349,7 @@ class PortfolioManager:
             available_capital=float(self._get_free_capital(snapshot)),
             total_exposure_pct=float(self._calculate_exposure(snapshot)),
             num_open_positions=len([a for a in snapshot.assets.values() if a.total > 0]),
-            timestamp=datetime.utcnow().timestamp()
+            timestamp=datetime.utcnow().timestamp(),
         )
 
     def _get_free_capital(self, snapshot: PortfolioSnapshot) -> Decimal:
@@ -380,9 +378,7 @@ class PortfolioManager:
         return non_cash_value / snapshot.total_value_usd
 
     def _calculate_cash_ratio(
-        self,
-        assets: dict[str, AssetAllocation],
-        total_value: Decimal
+        self, assets: dict[str, AssetAllocation], total_value: Decimal
     ) -> Decimal | None:
         """Calculate cash/stablecoin ratio."""
         if total_value == 0:
@@ -397,34 +393,22 @@ class PortfolioManager:
 
         return cash_value / total_value
 
-    def _calculate_max_position(
-        self,
-        assets: dict[str, AssetAllocation]
-    ) -> Decimal | None:
+    def _calculate_max_position(self, assets: dict[str, AssetAllocation]) -> Decimal | None:
         """Calculate maximum single position percentage."""
         if not assets:
             return None
 
-        max_pct = max(
-            (alloc.allocation_pct or Decimal("0"))
-            for alloc in assets.values()
-        )
+        max_pct = max((alloc.allocation_pct or Decimal("0")) for alloc in assets.values())
 
         return max_pct
 
-    def _calculate_concentration(
-        self,
-        assets: dict[str, AssetAllocation]
-    ) -> Decimal | None:
+    def _calculate_concentration(self, assets: dict[str, AssetAllocation]) -> Decimal | None:
         """Calculate portfolio concentration (Herfindahl index)."""
         if not assets:
             return None
 
         # Herfindahl-Hirschman Index
-        hhi = sum(
-            (alloc.allocation_pct or Decimal("0")) ** 2
-            for alloc in assets.values()
-        )
+        hhi = sum((alloc.allocation_pct or Decimal("0")) ** 2 for alloc in assets.values())
 
         return hhi
 
@@ -467,14 +451,16 @@ class PortfolioManager:
                 price = current.price_usd if current and current.price_usd else Decimal("1")
                 amount = abs(diff_value) / price
 
-            suggestions.append(RebalanceSuggestion(
-                asset=asset,
-                current_allocation=current_pct,
-                target_allocation=target_pct,
-                suggested_action=action,
-                suggested_amount=amount,
-                reason=f"Allocation diff: {diff_pct:.1%}"
-            ))
+            suggestions.append(
+                RebalanceSuggestion(
+                    asset=asset,
+                    current_allocation=current_pct,
+                    target_allocation=target_pct,
+                    suggested_action=action,
+                    suggested_amount=amount,
+                    reason=f"Allocation diff: {diff_pct:.1%}",
+                )
+            )
 
         return suggestions
 
@@ -493,14 +479,12 @@ class PortfolioManager:
             f"\nTotal Value: ${latest.total_value_usd:,.2f}",
             f"Exchanges: {', '.join(latest.exchanges)}",
             "\nAsset Allocation:",
-            "-" * 60
+            "-" * 60,
         ]
 
         # Sort by allocation
         sorted_assets = sorted(
-            latest.assets.items(),
-            key=lambda x: x[1].allocation_pct or Decimal("0"),
-            reverse=True
+            latest.assets.items(), key=lambda x: x[1].allocation_pct or Decimal("0"), reverse=True
         )
 
         for asset, alloc in sorted_assets:
@@ -510,12 +494,22 @@ class PortfolioManager:
             bar = "█" * bar_length + "░" * (50 - bar_length)
             lines.append(f"{asset:6} │{bar}│ {float(pct):>6.1%} (${float(value):>10,.2f})")
 
-        lines.extend([
-            "-" * 60,
-            f"Cash Ratio: {float(latest.cash_ratio):.1%}" if latest.cash_ratio else "Cash Ratio: N/A",
-            f"Max Position: {float(latest.max_position_pct):.1%}" if latest.max_position_pct else "Max Position: N/A",
-            "=" * 60
-        ])
+        lines.extend(
+            [
+                "-" * 60,
+                (
+                    f"Cash Ratio: {float(latest.cash_ratio):.1%}"
+                    if latest.cash_ratio
+                    else "Cash Ratio: N/A"
+                ),
+                (
+                    f"Max Position: {float(latest.max_position_pct):.1%}"
+                    if latest.max_position_pct
+                    else "Max Position: N/A"
+                ),
+                "=" * 60,
+            ]
+        )
 
         return "\n".join(lines)
 

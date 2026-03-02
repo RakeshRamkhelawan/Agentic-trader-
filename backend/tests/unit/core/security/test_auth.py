@@ -5,7 +5,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from backend.core.auth import context
-from backend.core.auth.jwt_validator import InvalidSignatureError, JWTValidator, TokenExpiredError
+from backend.core.auth.jwt_validator import JWTValidator
 from backend.core.auth.middleware import AuthMiddleware
 from backend.core.auth.models import TokenPayload
 from backend.core.security.schemas import IdentityPayload, OIDCUserInfo, SecretMetadata, TokenClaims

@@ -8,6 +8,7 @@ from typing import Any
 
 class StrategyVisibility(Enum):
     """Strategy visibility levels."""
+
     PRIVATE = "private"
     PUBLIC = "public"
     LEAGUE_ONLY = "league_only"
@@ -15,6 +16,7 @@ class StrategyVisibility(Enum):
 
 class StrategyLanguage(Enum):
     """Strategy implementation language."""
+
     PYTHON = "python"
     JAVASCRIPT = "javascript"
     PSEUDOCODE = "pseudocode"
@@ -23,6 +25,7 @@ class StrategyLanguage(Enum):
 @dataclass
 class StrategyMetrics:
     """Performance metrics for a strategy."""
+
     total_return: float = 0.0
     sharpe_ratio: float = 0.0
     max_drawdown: float = 0.0
@@ -36,6 +39,7 @@ class StrategyMetrics:
 @dataclass
 class StrategyFork:
     """A fork of a strategy."""
+
     id: str
     original_strategy_id: str
     forked_by: str
@@ -47,6 +51,7 @@ class StrategyFork:
 @dataclass
 class SharedStrategy:
     """A shared trading strategy."""
+
     id: str
     name: str
     description: str
@@ -93,11 +98,11 @@ class SharedStrategy:
         """Calculate overall strategy score."""
         # Weighted scoring
         score = (
-            self.metrics.total_return * 0.3 +
-            self.metrics.sharpe_ratio * 20 * 0.25 +
-            (100 - abs(self.metrics.max_drawdown)) * 0.2 +
-            self.metrics.win_rate * 0.15 +
-            min(self.likes * 0.5, 10) * 0.1  # Cap likes contribution
+            self.metrics.total_return * 0.3
+            + self.metrics.sharpe_ratio * 20 * 0.25
+            + (100 - abs(self.metrics.max_drawdown)) * 0.2
+            + self.metrics.win_rate * 0.15
+            + min(self.likes * 0.5, 10) * 0.1  # Cap likes contribution
         )
         return max(0, score)  # Ensure non-negative
 

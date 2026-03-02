@@ -1,7 +1,7 @@
 # Testing Guide - Agentic Trader Platform
 
-> **Purpose:** Comprehensive testing procedures and best practices  
-> **Audience:** Developers, QA Engineers, DevOps  
+> **Purpose:** Comprehensive testing procedures and best practices
+> **Audience:** Developers, QA Engineers, DevOps
 > **Last Updated:** March 2026
 
 ---
@@ -164,43 +164,43 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 class TestComponentName:
     """Test suite for ComponentName."""
-    
+
     @pytest.fixture
     def component(self):
         """Create test fixture."""
         return ComponentName()
-    
+
     @pytest.mark.asyncio
     async def test_success_case(self, component):
         """Test the happy path."""
         # Arrange
         input_data = "test_input"
-        
+
         # Act
         result = await component.process(input_data)
-        
+
         # Assert
         assert result.status == "success"
         assert result.value == expected_value
-    
+
     @pytest.mark.asyncio
     async def test_error_case(self, component):
         """Test error handling."""
         # Arrange
         invalid_input = None
-        
+
         # Act & Assert
         with pytest.raises(ValueError, match="invalid input"):
             await component.process(invalid_input)
-    
+
     @pytest.mark.asyncio
     async def test_mocked_dependency(self, component):
         """Test with mocked external dependency."""
         with patch("backend.module.external_service") as mock:
             mock.fetch = AsyncMock(return_value={"data": "mocked"})
-            
+
             result = await component.call_external()
-            
+
             assert result == {"data": "mocked"}
             mock.fetch.assert_called_once()
 ```
@@ -283,9 +283,9 @@ async def test_async_operation():
 
 ### Unit Tests
 
-**Purpose:** Test individual components in isolation  
-**Speed:** Fast (< 100ms per test)  
-**Dependencies:** Mocked  
+**Purpose:** Test individual components in isolation
+**Speed:** Fast (< 100ms per test)
+**Dependencies:** Mocked
 **Coverage Target:** 90%
 
 ```python
@@ -297,16 +297,16 @@ def test_calculate_kelly_fraction():
         win_ratio=2.0,
         loss_ratio=1.0
     )
-    
+
     # f* = (0.55 * 2 - 0.45) / 2 = 0.325
     assert abs(result - 0.325) < 0.001
 ```
 
 ### Integration Tests
 
-**Purpose:** Test component interactions  
-**Speed:** Medium (< 1s per test)  
-**Dependencies:** Real services (DB, Redis)  
+**Purpose:** Test component interactions
+**Speed:** Medium (< 1s per test)
+**Dependencies:** Real services (DB, Redis)
 **Coverage Target:** 80%
 
 ```python
@@ -317,16 +317,16 @@ async def test_order_flow_with_database():
     async with get_db_session() as session:
         order = await create_order(session, order_data)
         assert order.id is not None
-        
+
         fetched = await get_order(session, order.id)
         assert fetched.symbol == order_data.symbol
 ```
 
 ### E2E Tests
 
-**Purpose:** Test complete user workflows  
-**Speed:** Slow (< 10s per test)  
-**Dependencies:** Full stack  
+**Purpose:** Test complete user workflows
+**Speed:** Slow (< 10s per test)
+**Dependencies:** Full stack
 **Coverage Target:** 70%
 
 ```python
@@ -335,13 +335,13 @@ async def test_complete_buy_workflow():
     """Test complete buy workflow from API to execution."""
     # 1. Authenticate
     token = await login("test_user", "test_pass")
-    
+
     # 2. Place order
     order = await place_order(token, buy_order_data)
-    
+
     # 3. Verify execution
     assert order.status == "FILLED"
-    
+
     # 4. Check portfolio update
     portfolio = await get_portfolio(token)
     assert portfolio.positions[order.symbol] == order.quantity
@@ -349,16 +349,16 @@ async def test_complete_buy_workflow():
 
 ### Security Tests
 
-**Purpose:** Verify security controls  
-**Speed:** Fast  
-**Dependencies:** None (mostly)  
+**Purpose:** Verify security controls
+**Speed:** Fast
+**Dependencies:** None (mostly)
 **Coverage Target:** 100%
 
 ```python
 def test_sql_injection_blocked():
     """Verify SQL injection attempts are blocked."""
     malicious_input = "'; DROP TABLE users; --"
-    
+
     # Should not raise exception, should sanitize
     result = sanitize_input(malicious_input)
     assert "DROP" not in result
@@ -432,7 +432,7 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -445,31 +445,31 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-      
+
       redis:
         image: redis:7
         ports:
           - 6379:6379
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
           pip install pytest pytest-asyncio pytest-cov
-      
+
       - name: Run unit tests
         run: pytest backend/tests/unit/ -v --cov=backend --cov-report=xml
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
           REDIS_URL: redis://localhost:6379/0
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
@@ -505,7 +505,7 @@ from locust import HttpUser, task, between
 
 class TradingUser(HttpUser):
     wait_time = between(1, 5)
-    
+
     def on_start(self):
         """Login before starting."""
         response = self.client.post("/auth/token", json={
@@ -513,7 +513,7 @@ class TradingUser(HttpUser):
             "password": "test_pass"
         })
         self.token = response.json()["access_token"]
-    
+
     @task(10)
     def get_portfolio(self):
         """Simulate portfolio checks."""
@@ -521,7 +521,7 @@ class TradingUser(HttpUser):
             "/portfolio",
             headers={"Authorization": f"Bearer {self.token}"}
         )
-    
+
     @task(5)
     def place_order(self):
         """Simulate order placement."""
@@ -564,15 +564,15 @@ class TestPerformance:
         start = time.time()
         calculate_var(historical_returns)
         elapsed = time.time() - start
-        
+
         assert elapsed < 0.1  # 100ms
-    
+
     def test_api_response_under_200ms(self, client):
         """API health check should respond in < 200ms."""
         start = time.time()
         response = client.get("/health")
         elapsed = time.time() - start
-        
+
         assert response.status_code == 200
         assert elapsed < 0.2  # 200ms
 ```

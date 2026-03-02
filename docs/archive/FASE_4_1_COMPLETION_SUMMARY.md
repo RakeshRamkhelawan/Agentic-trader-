@@ -219,7 +219,7 @@ Coverage: 97% (257 lines executed, 95 lines covered)
 
 **Happy Path (8 tests)**:
 - Ticker subscription receives data
-- Orderbook subscription receives data  
+- Orderbook subscription receives data
 - Order subscription receives updates
 - Auto-reconnect on disconnect
 - Exponential backoff delays (1s, 2s, 4s, 8s, 16s)
@@ -273,13 +273,13 @@ class CCXTAdapter:
     async def __init__(self):
         self.ws_provider = await CCXTWSProvider('binance').connect()
         self.sink = await RedpandaSink(bootstrap_servers=[...]).connect()
-    
+
     async def subscribe_to_market_data(self, symbol: str):
         await self.ws_provider.subscribe_ticker(
             symbol,
             self._on_ticker_update
         )
-    
+
     async def _on_ticker_update(self, symbol: str, data: dict):
         await self.sink.send_ticker(symbol, data)
 ```

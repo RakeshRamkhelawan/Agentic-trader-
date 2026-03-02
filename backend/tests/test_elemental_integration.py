@@ -1,8 +1,6 @@
-import asyncio
 from typing import Any, Dict
 
 import pytest
-import pytest_asyncio
 
 from backend.agents.elemental_macro import ElementalMacro
 from backend.agents.elemental_orchestrator import ElementalOrchestrator
@@ -10,7 +8,6 @@ from backend.agents.elemental_research import ElementalResearch
 from backend.agents.elemental_risk_guardian import ElementalRiskGuardian
 from backend.agents.elemental_router import ElementalRouter
 from backend.agents.elemental_valuation import ElementalValuation
-from backend.governance.agent_gatekeeper import AgentRole
 
 
 # Mock EventBus for integration (in-memory)

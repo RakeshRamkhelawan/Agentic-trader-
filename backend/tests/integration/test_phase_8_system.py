@@ -1,10 +1,8 @@
 import asyncio
-import json
 import logging
 import os
 import time
 import traceback
-from datetime import datetime
 
 import aiohttp
 import pytest

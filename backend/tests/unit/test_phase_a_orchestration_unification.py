@@ -23,10 +23,8 @@ from backend.core.schemas.ooda_types import (
     MarketRegime,
     Observation,
     Orientation,
-    RiskDecision,
-    TradeProposal,
 )
-from backend.orchestration.ooda_coordinator import OODALoopCoordinator, TradingMode
+from backend.orchestration.ooda_coordinator import OODALoopCoordinator
 from backend.services.cognitive_orchestrator import CognitiveOrchestrator
 
 

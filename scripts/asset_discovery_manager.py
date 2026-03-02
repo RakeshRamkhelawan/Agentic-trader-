@@ -10,16 +10,16 @@ Dit script vervangt de handmatige scripts:
 Usage:
     # Start agent als autonome service
     python scripts/asset_discovery_manager.py --start
-    
+
     # Eenmalige discovery cycle
     python scripts/asset_discovery_manager.py --discover
-    
+
     # Metadata sync voor actieve assets
     python scripts/asset_discovery_manager.py --sync-metadata
-    
+
     # Toon statistics
     python scripts/asset_discovery_manager.py --stats
-    
+
     # Stop de agent (als die draait)
     python scripts/asset_discovery_manager.py --stop
 """
@@ -149,13 +149,13 @@ def main():
 Examples:
   # Start autonome service
   python %(prog)s --start
-  
+
   # Eenmalige discovery
   python %(prog)s --discover
-  
+
   # Sync metadata
   python %(prog)s --sync-metadata
-  
+
   # Toon statistics
   python %(prog)s --stats
         """,

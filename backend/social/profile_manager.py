@@ -8,6 +8,7 @@ from typing import Any
 @dataclass
 class UserProfile:
     """Enhanced user profile with social features."""
+
     user_id: str
     display_name: str
     bio: str = ""
@@ -89,11 +90,7 @@ class ProfileManager:
         self._display_name_index: dict[str, str] = {}  # display_name -> user_id
 
     def create_profile(
-        self,
-        user_id: str,
-        display_name: str,
-        bio: str = "",
-        **kwargs
+        self, user_id: str, display_name: str, bio: str = "", **kwargs
     ) -> UserProfile:
         """Create a new user profile."""
         # Ensure unique display name
@@ -103,12 +100,7 @@ class ProfileManager:
             display_name = f"{base_name}_{counter}"
             counter += 1
 
-        profile = UserProfile(
-            user_id=user_id,
-            display_name=display_name,
-            bio=bio,
-            **kwargs
-        )
+        profile = UserProfile(user_id=user_id, display_name=display_name, bio=bio, **kwargs)
 
         self._profiles[user_id] = profile
         self._display_name_index[display_name] = user_id
@@ -220,9 +212,9 @@ class ProfileManager:
         if query:
             query_lower = query.lower()
             results = [
-                p for p in results
-                if query_lower in p.display_name.lower()
-                or query_lower in p.bio.lower()
+                p
+                for p in results
+                if query_lower in p.display_name.lower() or query_lower in p.bio.lower()
             ]
 
         # Filter by tier

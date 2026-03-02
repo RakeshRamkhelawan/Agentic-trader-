@@ -32,7 +32,7 @@ class BacktestDatasetBuilderV2:
 
     def load_backtest_json(self, filepath: Path) -> dict:
         """Laad een backtest JSON file."""
-        with open(filepath, encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             return json.load(f)
 
     def process_equity_curve(self, backtest_data: dict) -> pd.DataFrame:
@@ -84,17 +84,29 @@ class BacktestDatasetBuilderV2:
         df["timestamp"] = pd.to_datetime(df["timestamp"])
 
         # Aggregeer per timestamp
-        aggregated = df.groupby("timestamp").agg({
-            "harmony": ["mean", "std", "min", "max"],
-            "decision": lambda x: x.mode()[0] if len(x.mode()) > 0 else "HOLD",
-            "action": lambda x: x.mode()[0] if len(x.mode()) > 0 else "HOLD",
-            "symbol": "count"  # Aantal assets met data
-        }).reset_index()
+        aggregated = (
+            df.groupby("timestamp")
+            .agg(
+                {
+                    "harmony": ["mean", "std", "min", "max"],
+                    "decision": lambda x: x.mode()[0] if len(x.mode()) > 0 else "HOLD",
+                    "action": lambda x: x.mode()[0] if len(x.mode()) > 0 else "HOLD",
+                    "symbol": "count",  # Aantal assets met data
+                }
+            )
+            .reset_index()
+        )
 
         # Flatten column names
         aggregated.columns = [
-            "timestamp", "harmony_mean", "harmony_std", "harmony_min", "harmony_max",
-            "dominant_decision", "dominant_action", "num_assets"
+            "timestamp",
+            "harmony_mean",
+            "harmony_std",
+            "harmony_min",
+            "harmony_max",
+            "dominant_decision",
+            "dominant_action",
+            "num_assets",
         ]
 
         return aggregated
@@ -140,7 +152,7 @@ class BacktestDatasetBuilderV2:
         backtest_dir: str = "backtest_results",
         sequence_length: int = 50,
         prediction_horizon: int = 5,
-        min_samples: int = 100
+        min_samples: int = 100,
     ) -> "LSTMDataset":
         """
         Bouw LSTM dataset uit alle backtest files.
@@ -178,12 +190,7 @@ class BacktestDatasetBuilderV2:
 
                 # Merge equity en harmony data
                 if not harmony_df.empty:
-                    combined = pd.merge(
-                        equity_df,
-                        harmony_df,
-                        on="timestamp",
-                        how="left"
-                    )
+                    combined = pd.merge(equity_df, harmony_df, on="timestamp", how="left")
                 else:
                     combined = equity_df.copy()
 
@@ -192,8 +199,12 @@ class BacktestDatasetBuilderV2:
 
                 # Bouw feature matrix
                 feature_cols = [
-                    "returns", "drawdown", "prana",
-                    "harmony_mean", "harmony_std", "num_assets"
+                    "returns",
+                    "drawdown",
+                    "prana",
+                    "harmony_mean",
+                    "harmony_std",
+                    "num_assets",
                 ]
 
                 # Voeg elemental features toe (constant per backtest)
@@ -211,12 +222,14 @@ class BacktestDatasetBuilderV2:
                 # Genereer sequences
                 n_sequences = 0
                 for i in range(len(features) - sequence_length - prediction_horizon):
-                    seq = features[i:i + sequence_length]
+                    seq = features[i : i + sequence_length]
 
                     # Label: cumulative return over prediction_horizon
-                    future_returns = combined["returns"].iloc[
-                        i + sequence_length:i + sequence_length + prediction_horizon
-                    ].values
+                    future_returns = (
+                        combined["returns"]
+                        .iloc[i + sequence_length : i + sequence_length + prediction_horizon]
+                        .values
+                    )
 
                     label = np.sum(future_returns)
 
@@ -229,6 +242,7 @@ class BacktestDatasetBuilderV2:
             except Exception as e:
                 logger.warning(f"Failed to process {json_file}: {e}")
                 import traceback
+
                 traceback.print_exc()
                 continue
 
@@ -240,9 +254,7 @@ class BacktestDatasetBuilderV2:
         return LSTMDataset(all_sequences, all_labels)
 
     def build_classification_dataset(
-        self,
-        backtest_dir: str = "backtest_results",
-        sequence_length: int = 20
+        self, backtest_dir: str = "backtest_results", sequence_length: int = 20
     ) -> "ClassificationDataset":
         """
         Classificatie dataset: voorspel of de volgende actie BUY, SELL, of HOLD moet zijn.
@@ -266,9 +278,17 @@ class BacktestDatasetBuilderV2:
                     continue
 
                 # Maak tijdseries van trades (BUY=1, SELL=-1, geen trade=0)
-                trades_by_time = trades_df.groupby("timestamp").apply(
-                    lambda x: 1 if "BUY" in x["action"].values else (-1 if "SELL" in x["action"].values else 0)
-                ).to_dict()
+                trades_by_time = (
+                    trades_df.groupby("timestamp")
+                    .apply(
+                        lambda x: (
+                            1
+                            if "BUY" in x["action"].values
+                            else (-1 if "SELL" in x["action"].values else 0)
+                        )
+                    )
+                    .to_dict()
+                )
 
                 equity_df["trade_signal"] = equity_df["timestamp"].map(trades_by_time).fillna(0)
 
@@ -276,9 +296,11 @@ class BacktestDatasetBuilderV2:
                 features = equity_df[["returns", "drawdown", "prana"]].values
 
                 for i in range(len(features) - sequence_length):
-                    seq = features[i:i + sequence_length]
+                    seq = features[i : i + sequence_length]
                     # Label: is er een trade in het volgende tijdsinterval?
-                    label = int(equity_df["trade_signal"].iloc[i + sequence_length]) + 1  # -1,0,1 -> 0,1,2
+                    label = (
+                        int(equity_df["trade_signal"].iloc[i + sequence_length]) + 1
+                    )  # -1,0,1 -> 0,1,2
 
                     all_sequences.append(seq)
                     all_labels.append(label)

@@ -9,6 +9,7 @@ from .websocket_manager import websocket_manager
 
 class EventType(Enum):
     """Types of real-time events."""
+
     TOURNAMENT_STARTED = "tournament_started"
     TOURNAMENT_ENDED = "tournament_ended"
     LEADERBOARD_UPDATE = "leaderboard_update"
@@ -42,8 +43,7 @@ class EventPublisher:
         """Unsubscribe from event type."""
         if event_type in self._subscribers:
             self._subscribers[event_type] = [
-                cb for cb in self._subscribers[event_type]
-                if cb != callback
+                cb for cb in self._subscribers[event_type] if cb != callback
             ]
 
     async def publish(self, event_type: EventType, data: dict[str, Any]) -> None:
@@ -64,15 +64,17 @@ class EventPublisher:
 
     async def publish_tournament_started(self, tournament_id: str, name: str) -> None:
         """Publish tournament started event."""
-        await self.publish(EventType.TOURNAMENT_STARTED, {
-            "tournament_id": tournament_id,
-            "name": name,
-        })
+        await self.publish(
+            EventType.TOURNAMENT_STARTED,
+            {
+                "tournament_id": tournament_id,
+                "name": name,
+            },
+        )
 
         # Also send via WebSocket
         await websocket_manager.broadcast_system_message(
-            tournament_id,
-            f"Tournament '{name}' has started! Good luck!"
+            tournament_id, f"Tournament '{name}' has started! Good luck!"
         )
 
     async def publish_tournament_ended(
@@ -82,17 +84,19 @@ class EventPublisher:
         winners: list,
     ) -> None:
         """Publish tournament ended event."""
-        await self.publish(EventType.TOURNAMENT_ENDED, {
-            "tournament_id": tournament_id,
-            "name": name,
-            "winners": winners,
-        })
+        await self.publish(
+            EventType.TOURNAMENT_ENDED,
+            {
+                "tournament_id": tournament_id,
+                "name": name,
+                "winners": winners,
+            },
+        )
 
         # WebSocket announcement
         winner_names = ", ".join([w.get("name", "Unknown") for w in winners[:3]])
         await websocket_manager.broadcast_system_message(
-            tournament_id,
-            f"Tournament ended! Winners: {winner_names}"
+            tournament_id, f"Tournament ended! Winners: {winner_names}"
         )
 
     async def publish_leaderboard_update(
@@ -101,10 +105,13 @@ class EventPublisher:
         leaderboard: list,
     ) -> None:
         """Publish leaderboard update."""
-        await self.publish(EventType.LEADERBOARD_UPDATE, {
-            "tournament_id": tournament_id,
-            "leaderboard": leaderboard,
-        })
+        await self.publish(
+            EventType.LEADERBOARD_UPDATE,
+            {
+                "tournament_id": tournament_id,
+                "leaderboard": leaderboard,
+            },
+        )
 
         # WebSocket broadcast
         await websocket_manager.broadcast_leaderboard_update(
@@ -146,12 +153,15 @@ class EventPublisher:
         message: str,
     ) -> None:
         """Publish chat message."""
-        await self.publish(EventType.CHAT_MESSAGE, {
-            "tournament_id": tournament_id,
-            "competitor_id": competitor_id,
-            "competitor_name": competitor_name,
-            "message": message,
-        })
+        await self.publish(
+            EventType.CHAT_MESSAGE,
+            {
+                "tournament_id": tournament_id,
+                "competitor_id": competitor_id,
+                "competitor_name": competitor_name,
+                "message": message,
+            },
+        )
 
         await websocket_manager.broadcast_chat(
             tournament_id,
@@ -174,10 +184,13 @@ class EventPublisher:
             "type": "badge",
         }
 
-        await self.publish(EventType.BADGE_EARNED, {
-            "user_id": user_id,
-            "badge_name": badge_name,
-        })
+        await self.publish(
+            EventType.BADGE_EARNED,
+            {
+                "user_id": user_id,
+                "badge_name": badge_name,
+            },
+        )
 
         await websocket_manager.send_notification(user_id, notification)
 
@@ -195,11 +208,14 @@ class EventPublisher:
             "type": "promotion",
         }
 
-        await self.publish(EventType.TIER_PROMOTION, {
-            "user_id": user_id,
-            "old_tier": old_tier,
-            "new_tier": new_tier,
-        })
+        await self.publish(
+            EventType.TIER_PROMOTION,
+            {
+                "user_id": user_id,
+                "old_tier": old_tier,
+                "new_tier": new_tier,
+            },
+        )
 
         await websocket_manager.send_notification(user_id, notification)
 

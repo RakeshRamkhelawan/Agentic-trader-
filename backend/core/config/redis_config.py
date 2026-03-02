@@ -27,10 +27,11 @@ def get_redis_url() -> str:
 
     # Test if port 6380 is available
     import socket
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(2)
     try:
-        result = sock.connect_ex(('localhost', 6380))
+        result = sock.connect_ex(("localhost", 6380))
         if result == 0:
             return docker_url
     finally:
@@ -57,16 +58,17 @@ if __name__ == "__main__":
 
     # Test connection
     import redis
+
     try:
         r = redis.from_url(REDIS_URL)
-        info = r.info('server')
+        info = r.info("server")
         print(f"Redis version: {info.get('redis_version')}")
 
         # Test XADD
         try:
-            msg_id = r.xadd('test_stream', {'test': 'value'})
+            msg_id = r.xadd("test_stream", {"test": "value"})
             print(f"XADD works! ID: {msg_id}")
-            r.delete('test_stream')
+            r.delete("test_stream")
         except Exception as e:
             print(f"XADD failed: {e}")
             print("WARNING: Redis Streams not available!")

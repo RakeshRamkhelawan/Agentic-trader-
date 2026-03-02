@@ -139,8 +139,8 @@ class HistoricalDataDownloader:
                 conn.execute(
                     text(
                         """
-                    SELECT create_hypertable('market_candles', 'timestamp', 
-                        if_not_exists => TRUE, 
+                    SELECT create_hypertable('market_candles', 'timestamp',
+                        if_not_exists => TRUE,
                         migrate_data => TRUE
                     );
                 """
@@ -156,7 +156,7 @@ class HistoricalDataDownloader:
             conn.execute(
                 text(
                     """
-                CREATE INDEX IF NOT EXISTS idx_market_candles_symbol 
+                CREATE INDEX IF NOT EXISTS idx_market_candles_symbol
                 ON market_candles (symbol, timestamp DESC);
             """
                 )
@@ -289,7 +289,7 @@ class HistoricalDataDownloader:
             result = conn.execute(
                 text(
                     """
-                SELECT 
+                SELECT
                     COUNT(*) as total_candles,
                     COUNT(DISTINCT symbol) as unique_symbols,
                     MIN(timestamp) as earliest,
@@ -303,9 +303,9 @@ class HistoricalDataDownloader:
             symbols_result = conn.execute(
                 text(
                     """
-                SELECT symbol, COUNT(*) as count 
-                FROM market_candles 
-                GROUP BY symbol 
+                SELECT symbol, COUNT(*) as count
+                FROM market_candles
+                GROUP BY symbol
                 ORDER BY count DESC
             """
                 )

@@ -24,19 +24,19 @@ from backend.models.orders import Order, OrderStatus
 
 async def import_trades(json_file: str, tenant_id: str = "paper_trading"):
     """Import paper trades from JSON file into database."""
-    
+
     print(f"Importing paper trades from: {json_file}")
-    
+
     with open(json_file, 'r') as f:
         data = json.load(f)
-    
+
     trades = data.get('trades', [])
     session_info = data.get('session_info', {})
-    
+
     print(f"Session: {session_info.get('exchange', 'unknown')} - {session_info.get('symbol', 'unknown')}")
     print(f"Found {len(trades)} trades to import")
     print()
-    
+
     async with AsyncSessionLocal() as session:
         imported = 0
         for trade in trades:
@@ -47,7 +47,7 @@ async def import_trades(json_file: str, tenant_id: str = "paper_trading"):
                     created_at = created_at.replace(tzinfo=None)
             except:
                 created_at = datetime.utcnow()
-            
+
             # Create order record
             order = Order(
                 tenant_id=tenant_id,
@@ -62,19 +62,19 @@ async def import_trades(json_file: str, tenant_id: str = "paper_trading"):
                 created_at=created_at,
                 updated_at=created_at,
             )
-            
+
             session.add(order)
             imported += 1
-            
+
             # Show progress
             if imported % 5 == 0:
                 print(f"  Imported {imported}/{len(trades)}...")
-        
+
         # Commit all
         await session.commit()
         print()
         print(f"[OK] Successfully imported {imported} paper trades to database")
-        
+
         # Show summary
         from sqlalchemy import func, select
         count_result = await session.execute(
@@ -87,17 +87,17 @@ async def import_trades(json_file: str, tenant_id: str = "paper_trading"):
 def find_latest_session():
     """Find the most recent paper trading session file."""
     import glob
-    
+
     # Look for both realtime and regular paper trading sessions
     patterns = ["realtime_paper_session_*.json", "paper_trading_session_*.json"]
     files = []
-    
+
     for pattern in patterns:
         files.extend(glob.glob(pattern))
-    
+
     if not files:
         return None
-    
+
     return max(files, key=os.path.getctime)
 
 
@@ -112,11 +112,11 @@ def main():
         print(f"[INFO] Using most recent file: {json_file}")
     else:
         json_file = sys.argv[1]
-    
+
     if not os.path.exists(json_file):
         print(f"[ERROR] File not found: {json_file}")
         sys.exit(1)
-    
+
     asyncio.run(import_trades(json_file))
 
 

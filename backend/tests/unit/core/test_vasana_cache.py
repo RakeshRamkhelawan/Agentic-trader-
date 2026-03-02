@@ -7,7 +7,7 @@ import time
 import numpy as np
 import pytest
 
-from backend.core.memory_system import VasanaCache, VasanaCacheEntry, MemorySystem, MemoryTrace
+from backend.core.memory_system import VasanaCache, MemorySystem, MemoryTrace
 
 
 class TestVasanaCacheInitialization:

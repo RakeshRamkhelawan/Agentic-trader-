@@ -2,10 +2,8 @@ from typing import Any, Dict
 from unittest.mock import MagicMock
 
 import pytest
-import pytest_asyncio
 
 from backend.agents.elemental_base import ElementalBase
-from backend.governance.agent_gatekeeper import AgentRole
 
 
 # Concrete implementation for testing

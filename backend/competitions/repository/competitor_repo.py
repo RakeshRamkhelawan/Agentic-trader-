@@ -55,14 +55,11 @@ class CompetitorRepository:
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[Competitor]:
         """Get all competitors with pagination."""
         competitors = list(self._competitors.values())
-        return competitors[offset:offset + limit]
+        return competitors[offset : offset + limit]
 
     async def get_by_tier(self, tier: LeagueTier) -> list[Competitor]:
         """Get competitors by tier."""
-        return [
-            c for c in self._competitors.values()
-            if c.tier == tier
-        ]
+        return [c for c in self._competitors.values() if c.tier == tier]
 
     async def get_leaderboard(self, limit: int = 50) -> list[Competitor]:
         """Get top competitors by points."""
@@ -108,10 +105,7 @@ class CompetitorRepository:
         """Get competitor counts per tier."""
         counts = {}
         for tier in LeagueTier:
-            counts[tier.value] = len([
-                c for c in self._competitors.values()
-                if c.tier == tier
-            ])
+            counts[tier.value] = len([c for c in self._competitors.values() if c.tier == tier])
         return counts
 
     # SQL Schema for PostgreSQL implementation

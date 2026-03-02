@@ -4,8 +4,7 @@ Unit tests for BaseAgent memory safety (deque with maxlen).
 
 import sys
 from collections import deque
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
+from datetime import datetime
 
 import pytest
 
@@ -359,7 +358,6 @@ class TestBaseAgentMemorySafetyIntegration:
 
     def test_memory_usage_stability(self, agent_with_small_buffer):
         """Test that memory usage doesn't grow unbounded."""
-        import sys
 
         # Get initial size
         initial_size = sys.getsizeof(agent_with_small_buffer.reasoning_history)

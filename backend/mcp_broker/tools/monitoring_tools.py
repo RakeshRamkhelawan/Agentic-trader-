@@ -159,9 +159,7 @@ async def monitoring_get_health(ctx=None) -> dict[str, Any]:
         }
 
         # Check exchanges
-        from backend.execution.live_multi_exchange_trading import (
-            get_live_trading_service,
-        )
+        from backend.execution.live_multi_exchange_trading import get_live_trading_service
 
         trading = await get_live_trading_service()
         stats = trading.get_stats()
@@ -182,10 +180,7 @@ async def monitoring_get_health(ctx=None) -> dict[str, Any]:
         }
 
         # Overall status
-        all_healthy = all(
-            c["status"] in ["healthy", "ok"]
-            for c in health["components"].values()
-        )
+        all_healthy = all(c["status"] in ["healthy", "ok"] for c in health["components"].values())
         health["overall_status"] = "healthy" if all_healthy else "degraded"
 
         return {
@@ -217,9 +212,7 @@ async def monitoring_get_performance_summary(ctx=None) -> dict[str, Any]:
         ctx.info("Generating performance summary")
 
     try:
-        from backend.execution.live_multi_exchange_trading import (
-            get_live_trading_service,
-        )
+        from backend.execution.live_multi_exchange_trading import get_live_trading_service
 
         trading = await get_live_trading_service()
         stats = trading.get_stats()

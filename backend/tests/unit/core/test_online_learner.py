@@ -3,9 +3,7 @@ Unit tests for Online Learning module (Sprint 3).
 """
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
 
-import numpy as np
 import pytest
 
 from backend.core.learning.online_learner import (

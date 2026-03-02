@@ -1,9 +1,9 @@
 # 📊 Prediction Market Intelligence - Kanban Implementatie Plan
 
-**Project:** Prediction Market Intelligence Container  
-**Platform:** Agentic Trader Platform  
-**Aanmaakdatum:** 13 februari 2026  
-**Geschatte doorlooptijd:** 6-8 weken  
+**Project:** Prediction Market Intelligence Container
+**Platform:** Agentic Trader Platform
+**Aanmaakdatum:** 13 februari 2026
+**Geschatte doorlooptijd:** 6-8 weken
 **Methodologie:** TDD met Happy & Unhappy Path Tests
 
 ---
@@ -62,7 +62,7 @@ Dit implementatieplan beschrijft de volledige integratie van de [prediction-mark
 | [EPIC 5](EPIC_05_INTEGRATION_DEPLOY.md) | Integration Tests & Deploy | 4 | ✅ COMPLETE | ~2-3 dagen |
 | **OPTIMIZATION** | [Performance & Infrastructure Hardening](../optimization/OPTIMIZATION_COMPLETE.md) | 5 | ✅ COMPLETE | ~1 dag |
 
-**Totaal:** 24 Tasks, ~60 Microtasks  
+**Totaal:** 24 Tasks, ~60 Microtasks
 **Voltooide:** 24/24 tasks (100% complete) ✅
 
 ---
@@ -168,7 +168,7 @@ backend/api/main.py                   # + prediction router
 ```python
 def test_happy_path_<scenario>():
     """Happy path: <what should happen>"""
-    
+
 def test_unhappy_path_<error_condition>():
     """Unhappy path: <how error is handled>"""
 ```

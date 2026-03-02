@@ -119,7 +119,7 @@ class TestCCXTWSProvider:
 ```
 Produceer ticks naar Redpanda topics:
   market.ticker.{symbol} → TickerUpdate
-  market.orderbook.{symbol} → OrderBook  
+  market.orderbook.{symbol} → OrderBook
   market.orders.{account_id} → OrderUpdate
 Gebruik confluent-kafka of aiokafka (Redpanda is Kafka-compatible).
 docker-compose.yml heeft Redpanda al op port 9094.

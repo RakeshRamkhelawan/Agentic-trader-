@@ -12,7 +12,6 @@ import hashlib
 import json
 import logging
 import pickle
-import socket
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -25,6 +24,7 @@ logger = logging.getLogger(__name__)
 try:
     from redis.asyncio import Redis
     from redis.asyncio.connection import ConnectionPool
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -135,15 +135,16 @@ class BacktestCache:
         try:
             # Parse URL to get connection details
             import urllib.parse
+
             parsed = urllib.parse.urlparse(self.config.redis_url)
-            
+
             host = parsed.hostname or "localhost"
             port = parsed.port or 6379
             db = int(parsed.path.lstrip("/")) if parsed.path else 0
             password = parsed.password
-            
+
             logger.info(f"Initializing Redis connection to {host}:{port}/{db}")
-            
+
             # Create connection pool with Docker-compatible settings
             # Key fixes for Docker networking issues:
             # 1. socket_keepalive=False (prevents connection issues)
@@ -151,7 +152,7 @@ class BacktestCache:
             # 3. health_check_interval=0 (disables health checks that can cause issues)
             # 4. retry_on_timeout=True
             # 5. socket_keepalive_options={} (empty to avoid TCP keepalive issues)
-            
+
             pool = ConnectionPool(
                 host=host,
                 port=port,
@@ -165,10 +166,10 @@ class BacktestCache:
                 retry_on_error=[ConnectionError, TimeoutError],
                 max_connections=10,
             )
-            
+
             self._redis = Redis(connection_pool=pool)
             logger.info("Redis client initialized successfully")
-            
+
         except Exception as e:
             logger.warning(f"Redis initialization failed: {e}, will use memory cache")
             self._redis = None
@@ -193,7 +194,7 @@ class BacktestCache:
                 except:
                     pass
                 self._redis = None
-        
+
         return self._redis_connected
 
     def _generate_key(self, prefix: str, params: dict[str, Any]) -> str:
@@ -209,6 +210,7 @@ class BacktestCache:
         if self.config.compression:
             try:
                 import zlib
+
                 return zlib.compress(data)
             except ImportError:
                 pass
@@ -219,6 +221,7 @@ class BacktestCache:
         if self.config.compression:
             try:
                 import zlib
+
                 data = zlib.decompress(data)
             except Exception:
                 pass  # Wasn't compressed
@@ -312,32 +315,34 @@ class BacktestCache:
 # Decorator for cached functions
 def cached(prefix: str, ttl_seconds: int = 300):
     """Decorator to cache function results."""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs):
             cache = get_cache()
-            
+
             # Generate cache key from function name and arguments
             cache_params = {
                 "func": func.__name__,
                 "args": str(args),
                 "kwargs": str(sorted(kwargs.items())),
             }
-            
+
             # Try to get from cache
             cached_value = await cache.get(prefix, cache_params)
             if cached_value is not None:
                 return cached_value
-            
+
             # Execute function
             result = await func(*args, **kwargs)
-            
+
             # Store in cache
             await cache.set(prefix, cache_params, result, ttl_seconds)
-            
+
             return result
-        
+
         return wrapper
+
     return decorator
 
 

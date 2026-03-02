@@ -1,8 +1,8 @@
 # 🔬 EPIC 3: Data & Analysis Engine
 
-**Epic ID:** EPIC-PM-003  
-**Status:** ✅ COMPLETE  
-**Voltooide doorlooptijd:** ~25-27 uur  
+**Epic ID:** EPIC-PM-003
+**Status:** ✅ COMPLETE
+**Voltooide doorlooptijd:** ~25-27 uur
 **Dependencies:** EPIC 2 (FastAPI Service Core) - COMPLETE
 
 ---
@@ -60,10 +60,10 @@ De analyses uit het notebook worden gerefactored naar productie-waardige Python 
 
 ## 📌 TASK 3.1: DuckDB Database Manager
 
-**Task ID:** TASK-PM-009  
-**Status:** ✅ COMPLETE (28/28 tests passing)  
-**Voltooide tijd:** ~2 uur  
-**Dependencies:** TASK-PM-005  
+**Task ID:** TASK-PM-009
+**Status:** ✅ COMPLETE (28/28 tests passing)
+**Voltooide tijd:** ~2 uur
+**Dependencies:** TASK-PM-005
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -120,20 +120,20 @@ logger = logging.getLogger(__name__)
 class DuckDBManager:
     """
     Manages DuckDB database connections and operations.
-    
+
     Supports both persistent (file-based) and in-memory databases.
     Can directly query Parquet files.
-    
+
     Usage:
         manager = DuckDBManager(db_path="/app/data/prediction_market.duckdb")
         manager.initialize()
         df = manager.query("SELECT * FROM kalshi_trades LIMIT 10")
         manager.close()
     """
-    
+
     # Schema versie voor migrations
     SCHEMA_VERSION = 1
-    
+
     def __init__(
         self,
         db_path: Optional[str] = None,
@@ -142,7 +142,7 @@ class DuckDBManager:
     ):
         """
         Initialize DuckDB manager.
-        
+
         Args:
             db_path: Path to DuckDB database file. None for in-memory.
             data_dir: Base directory for Parquet data files.
@@ -153,28 +153,28 @@ class DuckDBManager:
         self.read_only = read_only
         self._conn: Optional[duckdb.DuckDBPyConnection] = None
         self._initialized = False
-    
+
     @property
     def conn(self) -> duckdb.DuckDBPyConnection:
         """Get active database connection."""
         if self._conn is None:
             raise RuntimeError("Database not initialized. Call initialize() first.")
         return self._conn
-    
+
     @property
     def is_initialized(self) -> bool:
         """Check if database is initialized."""
         return self._initialized
-    
+
     def initialize(self) -> None:
         """
         Initialize database connection and create schema.
-        
+
         Creates tables if they don't exist.
         Registers Parquet file views.
         """
         logger.info(f"Initializing DuckDB (path: {self.db_path or ':memory:'})")
-        
+
         if self.db_path:
             # Ensure directory exists
             os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
@@ -184,20 +184,20 @@ class DuckDBManager:
             )
         else:
             self._conn = duckdb.connect(":memory:")
-        
+
         # Create schema
         self._create_schema()
-        
+
         # Register Parquet views if data directory exists
         if self.data_dir.exists():
             self._register_parquet_views()
-        
+
         self._initialized = True
         logger.info("DuckDB initialized successfully")
-    
+
     def _create_schema(self) -> None:
         """Create database schema (tables and indexes)."""
-        
+
         # Kalshi trades table
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS kalshi_trades (
@@ -214,7 +214,7 @@ class DuckDBManager:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Polymarket trades table
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS polymarket_trades (
@@ -231,7 +231,7 @@ class DuckDBManager:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Signals table (generated signals)
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS generated_signals (
@@ -245,7 +245,7 @@ class DuckDBManager:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Analysis results table
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS analysis_results (
@@ -258,36 +258,36 @@ class DuckDBManager:
                 completed_at TIMESTAMP
             )
         """)
-        
+
         logger.info("Schema created/verified")
-    
+
     def _register_parquet_views(self) -> None:
         """
         Register Parquet files as views for direct querying.
-        
+
         Creates views like:
         - kalshi_parquet → reads all parquet files in data/kalshi/
         - polymarket_parquet → reads all parquet files in data/polymarket/
         """
         kalshi_dir = self.data_dir / "kalshi"
         poly_dir = self.data_dir / "polymarket"
-        
+
         if kalshi_dir.exists() and list(kalshi_dir.glob("*.parquet")):
             parquet_path = str(kalshi_dir / "*.parquet")
             self.conn.execute(f"""
-                CREATE OR REPLACE VIEW kalshi_parquet AS 
+                CREATE OR REPLACE VIEW kalshi_parquet AS
                 SELECT * FROM read_parquet('{parquet_path}')
             """)
             logger.info(f"Registered Kalshi Parquet view: {parquet_path}")
-        
+
         if poly_dir.exists() and list(poly_dir.glob("*.parquet")):
             parquet_path = str(poly_dir / "*.parquet")
             self.conn.execute(f"""
-                CREATE OR REPLACE VIEW polymarket_parquet AS 
+                CREATE OR REPLACE VIEW polymarket_parquet AS
                 SELECT * FROM read_parquet('{parquet_path}')
             """)
             logger.info(f"Registered Polymarket Parquet view: {parquet_path}")
-    
+
     def query(
         self,
         sql: str,
@@ -296,15 +296,15 @@ class DuckDBManager:
     ) -> Union[pd.DataFrame, List[tuple]]:
         """
         Execute a query and return results.
-        
+
         Args:
             sql: SQL query string
             params: Query parameters for parameterized queries
             as_dataframe: Return as pandas DataFrame (True) or list of tuples
-        
+
         Returns:
             Query results as DataFrame or list of tuples
-        
+
         Raises:
             RuntimeError: If database not initialized
             duckdb.Error: If query fails
@@ -313,15 +313,15 @@ class DuckDBManager:
             result = self.conn.execute(sql, params)
         else:
             result = self.conn.execute(sql)
-        
+
         if as_dataframe:
             return result.fetchdf()
         return result.fetchall()
-    
+
     def execute(self, sql: str, params: Optional[List[Any]] = None) -> None:
         """
         Execute a statement (INSERT, UPDATE, DELETE, DDL).
-        
+
         Args:
             sql: SQL statement
             params: Statement parameters
@@ -330,7 +330,7 @@ class DuckDBManager:
             self.conn.execute(sql, params)
         else:
             self.conn.execute(sql)
-    
+
     def insert_dataframe(
         self,
         table: str,
@@ -339,24 +339,24 @@ class DuckDBManager:
     ) -> int:
         """
         Insert a pandas DataFrame into a table.
-        
+
         Args:
             table: Target table name
             df: DataFrame to insert
             if_exists: "append" or "replace"
-        
+
         Returns:
             Number of rows inserted
         """
         if if_exists == "replace":
             self.conn.execute(f"DELETE FROM {table}")
-        
+
         self.conn.register("_temp_df", df)
         self.conn.execute(f"INSERT INTO {table} SELECT * FROM _temp_df")
         self.conn.unregister("_temp_df")
-        
+
         return len(df)
-    
+
     def table_exists(self, table_name: str) -> bool:
         """Check if a table exists."""
         result = self.conn.execute(
@@ -364,14 +364,14 @@ class DuckDBManager:
             [table_name]
         ).fetchone()
         return result[0] > 0
-    
+
     def get_table_count(self, table_name: str) -> int:
         """Get row count for a table."""
         result = self.conn.execute(
             f"SELECT COUNT(*) FROM {table_name}"
         ).fetchone()
         return result[0]
-    
+
     def close(self) -> None:
         """Close database connection."""
         if self._conn:
@@ -379,12 +379,12 @@ class DuckDBManager:
             self._conn = None
             self._initialized = False
             logger.info("DuckDB connection closed")
-    
+
     def __enter__(self):
         """Context manager entry."""
         self.initialize()
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.close()
@@ -408,10 +408,10 @@ logger = logging.getLogger(__name__)
 
 class ParquetHandler:
     """Handle Parquet file I/O operations."""
-    
+
     def __init__(self, data_dir: str = "/app/data"):
         self.data_dir = Path(data_dir)
-    
+
     def read_parquet(
         self,
         market: str,
@@ -419,35 +419,35 @@ class ParquetHandler:
     ) -> pd.DataFrame:
         """
         Read Parquet file(s) for a market.
-        
+
         Args:
             market: "kalshi" or "polymarket"
             filename: Specific file to read, or None for all
-        
+
         Returns:
             DataFrame with trade data
         """
         market_dir = self.data_dir / market
-        
+
         if not market_dir.exists():
             logger.warning(f"Market directory not found: {market_dir}")
             return pd.DataFrame()
-        
+
         if filename:
             filepath = market_dir / filename
             if not filepath.exists():
                 raise FileNotFoundError(f"Parquet file not found: {filepath}")
             return pd.read_parquet(filepath)
-        
+
         # Read all parquet files
         files = list(market_dir.glob("*.parquet"))
         if not files:
             logger.warning(f"No parquet files found in {market_dir}")
             return pd.DataFrame()
-        
+
         dfs = [pd.read_parquet(f) for f in files]
         return pd.concat(dfs, ignore_index=True)
-    
+
     def write_parquet(
         self,
         df: pd.DataFrame,
@@ -456,24 +456,24 @@ class ParquetHandler:
     ) -> Path:
         """
         Write DataFrame as Parquet file.
-        
+
         Args:
             df: DataFrame to write
             market: Market subdirectory
             filename: Output filename
-        
+
         Returns:
             Path to written file
         """
         market_dir = self.data_dir / market
         market_dir.mkdir(parents=True, exist_ok=True)
-        
+
         filepath = market_dir / filename
         df.to_parquet(filepath, index=False)
         logger.info(f"Written {len(df)} rows to {filepath}")
-        
+
         return filepath
-    
+
     def list_parquet_files(self, market: str) -> List[str]:
         """List available Parquet files for a market."""
         market_dir = self.data_dir / market
@@ -524,26 +524,26 @@ from src.db.duckdb_manager import DuckDBManager
 
 class TestDuckDBManager:
     """Tests voor DuckDBManager."""
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_initialize_in_memory(self):
         """Happy path: In-memory database initialiseert correct."""
         manager = DuckDBManager()
         manager.initialize()
-        
+
         assert manager.is_initialized is True
         manager.close()
-    
+
     def test_happy_path_context_manager(self):
         """Happy path: Context manager werkt correct."""
         with DuckDBManager() as db:
             assert db.is_initialized is True
             result = db.query("SELECT 1 AS test")
             assert len(result) == 1
-    
+
     def test_happy_path_schema_created(self):
         """Happy path: Schema tabellen worden aangemaakt."""
         with DuckDBManager() as db:
@@ -551,24 +551,24 @@ class TestDuckDBManager:
             assert db.table_exists("polymarket_trades") is True
             assert db.table_exists("generated_signals") is True
             assert db.table_exists("analysis_results") is True
-    
+
     def test_happy_path_query_returns_dataframe(self):
         """Happy path: Query retourneert pandas DataFrame."""
         with DuckDBManager() as db:
             result = db.query("SELECT 1 AS value, 'test' AS name")
-            
+
             assert isinstance(result, pd.DataFrame)
             assert result.iloc[0]["value"] == 1
             assert result.iloc[0]["name"] == "test"
-    
+
     def test_happy_path_query_returns_tuples(self):
         """Happy path: Query met as_dataframe=False retourneert tuples."""
         with DuckDBManager() as db:
             result = db.query("SELECT 1, 2, 3", as_dataframe=False)
-            
+
             assert isinstance(result, list)
             assert result[0] == (1, 2, 3)
-    
+
     def test_happy_path_insert_dataframe(self):
         """Happy path: DataFrame insert werkt."""
         with DuckDBManager() as db:
@@ -585,41 +585,41 @@ class TestDuckDBManager:
                 "taker_side": ["buy", "sell"],
                 "created_at": pd.to_datetime(["2026-01-01", "2026-01-02"])
             })
-            
+
             rows = db.insert_dataframe("kalshi_trades", df)
             assert rows == 2
             assert db.get_table_count("kalshi_trades") == 2
-    
+
     def test_happy_path_file_based_database(self):
         """Happy path: File-based database werkt."""
         with tempfile.TemporaryDirectory() as tmp:
             db_path = os.path.join(tmp, "test.duckdb")
-            
+
             with DuckDBManager(db_path=db_path) as db:
                 db.execute("INSERT INTO generated_signals (signal_id, market, signal_type, confidence) VALUES ('s1', 'kalshi', 'bullish', 0.8)")
                 count = db.get_table_count("generated_signals")
                 assert count == 1
-            
+
             # Verify persistence
             assert os.path.exists(db_path)
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_query_before_initialize(self):
         """Unhappy path: Query zonder initialize geeft RuntimeError."""
         manager = DuckDBManager()
-        
+
         with pytest.raises(RuntimeError, match="not initialized"):
             manager.query("SELECT 1")
-    
+
     def test_unhappy_path_invalid_sql(self):
         """Unhappy path: Invalid SQL geeft DuckDB error."""
         with DuckDBManager() as db:
             with pytest.raises(Exception):
                 db.query("SELECT * FROM nonexistent_table_xyz")
-    
+
     def test_unhappy_path_close_already_closed(self):
         """Unhappy path: Close op gesloten DB geeft geen error."""
         manager = DuckDBManager()
@@ -627,7 +627,7 @@ class TestDuckDBManager:
         manager.close()
         # Second close should not raise
         manager.close()
-    
+
     def test_unhappy_path_table_not_exists(self):
         """Unhappy path: Check voor niet-bestaande tabel."""
         with DuckDBManager() as db:
@@ -636,42 +636,42 @@ class TestDuckDBManager:
 
 class TestParquetHandler:
     """Tests voor ParquetHandler."""
-    
+
     def test_happy_path_write_and_read(self):
         """Happy path: Schrijf en lees Parquet bestand."""
         from src.db.parquet_handler import ParquetHandler
-        
+
         with tempfile.TemporaryDirectory() as tmp:
             handler = ParquetHandler(data_dir=tmp)
-            
+
             df = pd.DataFrame({
                 "ticker": ["BTC-YES", "ETH-NO"],
                 "price": [0.72, 0.55]
             })
-            
+
             path = handler.write_parquet(df, "kalshi", "test.parquet")
             assert path.exists()
-            
+
             result = handler.read_parquet("kalshi", "test.parquet")
             assert len(result) == 2
-    
+
     def test_unhappy_path_read_nonexistent_market(self):
         """Unhappy path: Lees van niet-bestaande market directory."""
         from src.db.parquet_handler import ParquetHandler
-        
+
         with tempfile.TemporaryDirectory() as tmp:
             handler = ParquetHandler(data_dir=tmp)
             result = handler.read_parquet("nonexistent")
             assert len(result) == 0
-    
+
     def test_unhappy_path_read_nonexistent_file(self):
         """Unhappy path: Lees van niet-bestaand bestand."""
         from src.db.parquet_handler import ParquetHandler
-        
+
         with tempfile.TemporaryDirectory() as tmp:
             handler = ParquetHandler(data_dir=tmp)
             os.makedirs(os.path.join(tmp, "kalshi"))
-            
+
             with pytest.raises(FileNotFoundError):
                 handler.read_parquet("kalshi", "nonexistent.parquet")
 ```
@@ -680,30 +680,30 @@ class TestParquetHandler:
 
 ### 📎 MICROTASK 3.1.1: Create DB Directory & Init
 
-**Microtask ID:** MT-PM-009-001  
-**Geschatte tijd:** 10 min  
+**Microtask ID:** MT-PM-009-001
+**Geschatte tijd:** 10 min
 **Status:** 🔴 TODO
 
 ### 📎 MICROTASK 3.1.2: Implement DuckDBManager
 
-**Microtask ID:** MT-PM-009-002  
-**Geschatte tijd:** 90 min  
+**Microtask ID:** MT-PM-009-002
+**Geschatte tijd:** 90 min
 **Status:** 🔴 TODO
 
 ### 📎 MICROTASK 3.1.3: Implement ParquetHandler
 
-**Microtask ID:** MT-PM-009-003  
-**Geschatte tijd:** 45 min  
+**Microtask ID:** MT-PM-009-003
+**Geschatte tijd:** 45 min
 **Status:** 🔴 TODO
 
 ---
 
 ## 📌 TASK 3.2: Maker/Taker Analysis
 
-**Task ID:** TASK-PM-010  
-**Status:** ✅ COMPLETE (26/26 analysis tests passing)  
-**Voltooide tijd:** ~2.5 uur  
-**Dependencies:** TASK-PM-009  
+**Task ID:** TASK-PM-010
+**Status:** ✅ COMPLETE (26/26 analysis tests passing)
+**Voltooide tijd:** ~2.5 uur
+**Dependencies:** TASK-PM-009
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -779,7 +779,7 @@ class MakerTakerResult:
     period_start: datetime
     period_end: datetime
     confidence: float  # Based on sample size and consistency
-    
+
     @property
     def signal_direction(self) -> str:
         """Determine signal direction from advantage."""
@@ -793,26 +793,26 @@ class MakerTakerResult:
 class MakerTakerAnalyzer:
     """
     Analyzes maker/taker dynamics in prediction markets.
-    
+
     Identifies smart money flow by comparing prices obtained
     by liquidity makers vs takers.
     """
-    
+
     # Minimum trades for statistically meaningful analysis
     MIN_TRADES = 30
-    
+
     # Threshold for significant advantage
     SIGNIFICANCE_THRESHOLD = 0.01
-    
+
     def __init__(self, db: DuckDBManager):
         """
         Initialize analyzer.
-        
+
         Args:
             db: Initialized DuckDB manager
         """
         self.db = db
-    
+
     def analyze_kalshi(
         self,
         category: Optional[str] = None,
@@ -821,17 +821,17 @@ class MakerTakerAnalyzer:
     ) -> List[MakerTakerResult]:
         """
         Run maker/taker analysis on Kalshi data.
-        
+
         Args:
             category: Filter by category (crypto, politics, etc.)
             start_date: Analysis start date
             end_date: Analysis end date
-        
+
         Returns:
             List of MakerTakerResult per category
         """
         query = """
-            SELECT 
+            SELECT
                 category,
                 taker_side,
                 AVG(yes_price) as avg_price,
@@ -843,7 +843,7 @@ class MakerTakerAnalyzer:
             WHERE 1=1
         """
         params = []
-        
+
         if category:
             query += " AND category = ?"
             params.append(category)
@@ -853,17 +853,17 @@ class MakerTakerAnalyzer:
         if end_date:
             query += " AND trade_time <= ?"
             params.append(end_date)
-        
+
         query += " GROUP BY category, taker_side ORDER BY category"
-        
+
         df = self.db.query(query, params if params else None)
-        
+
         if df.empty:
             logger.warning("No Kalshi trade data found")
             return []
-        
+
         return self._calculate_results(df, "kalshi")
-    
+
     def analyze_polymarket(
         self,
         category: Optional[str] = None,
@@ -872,17 +872,17 @@ class MakerTakerAnalyzer:
     ) -> List[MakerTakerResult]:
         """
         Run maker/taker analysis on Polymarket data.
-        
+
         Args:
             category: Filter by category
             start_date: Analysis start date
             end_date: Analysis end date
-        
+
         Returns:
             List of MakerTakerResult per category
         """
         query = """
-            SELECT 
+            SELECT
                 category,
                 side as taker_side,
                 AVG(price) as avg_price,
@@ -894,7 +894,7 @@ class MakerTakerAnalyzer:
             WHERE 1=1
         """
         params = []
-        
+
         if category:
             query += " AND category = ?"
             params.append(category)
@@ -904,17 +904,17 @@ class MakerTakerAnalyzer:
         if end_date:
             query += " AND trade_time <= ?"
             params.append(end_date)
-        
+
         query += " GROUP BY category, side ORDER BY category"
-        
+
         df = self.db.query(query, params if params else None)
-        
+
         if df.empty:
             logger.warning("No Polymarket trade data found")
             return []
-        
+
         return self._calculate_results(df, "polymarket")
-    
+
     def _calculate_results(
         self,
         df: pd.DataFrame,
@@ -922,31 +922,31 @@ class MakerTakerAnalyzer:
     ) -> List[MakerTakerResult]:
         """Calculate maker/taker results from grouped data."""
         results = []
-        
+
         for category in df["category"].unique():
             cat_data = df[df["category"] == category]
-            
+
             # Get maker and taker data
             maker_data = cat_data[cat_data["taker_side"] != "buy"]
             taker_data = cat_data[cat_data["taker_side"] == "buy"]
-            
+
             if maker_data.empty or taker_data.empty:
                 continue
-            
+
             maker_avg = float(maker_data["avg_price"].iloc[0])
             taker_avg = float(taker_data["avg_price"].iloc[0])
             maker_vol = int(maker_data["total_volume"].iloc[0])
             taker_vol = int(taker_data["total_volume"].iloc[0])
             total_trades = int(cat_data["trade_count"].sum())
-            
+
             # Calculate confidence based on sample size
             confidence = min(1.0, total_trades / 1000)  # Linear scaling
-            
+
             if total_trades < self.MIN_TRADES:
                 confidence *= 0.5  # Penalize small samples
-            
+
             advantage = maker_avg - taker_avg
-            
+
             results.append(MakerTakerResult(
                 market=market,
                 category=category,
@@ -960,7 +960,7 @@ class MakerTakerAnalyzer:
                 period_end=cat_data["last_trade"].max(),
                 confidence=round(confidence, 3)
             ))
-        
+
         return results
 
 ───────────────────────────────────────────────────────────────────────────────
@@ -989,7 +989,7 @@ with DuckDBManager() as db:
         'created_at': pd.to_datetime(['2026-01-01']*4)
     })
     db.insert_dataframe('kalshi_trades', df)
-    
+
     analyzer = MakerTakerAnalyzer(db)
     results = analyzer.analyze_kalshi()
     for r in results:
@@ -1017,13 +1017,13 @@ from src.analysis.maker_taker import MakerTakerAnalyzer, MakerTakerResult
 
 class TestMakerTakerAnalyzer:
     """Tests voor MakerTakerAnalyzer."""
-    
+
     @pytest.fixture
     def db_with_data(self):
         """DuckDB met test trade data."""
         db = DuckDBManager()
         db.initialize()
-        
+
         # Insert Kalshi test data
         df = pd.DataFrame({
             "id": [f"t{i}" for i in range(100)],
@@ -1039,41 +1039,41 @@ class TestMakerTakerAnalyzer:
             "created_at": pd.to_datetime(["2026-01-01"] * 100)
         })
         db.insert_dataframe("kalshi_trades", df)
-        
+
         yield db
         db.close()
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_analyze_kalshi_returns_results(self, db_with_data):
         """Happy path: Kalshi analyse retourneert resultaten."""
         analyzer = MakerTakerAnalyzer(db_with_data)
         results = analyzer.analyze_kalshi()
-        
+
         assert len(results) > 0
         assert all(isinstance(r, MakerTakerResult) for r in results)
-    
+
     def test_happy_path_result_has_all_fields(self, db_with_data):
         """Happy path: Resultaat bevat alle velden."""
         analyzer = MakerTakerAnalyzer(db_with_data)
         results = analyzer.analyze_kalshi()
-        
+
         result = results[0]
         assert result.market == "kalshi"
         assert result.category == "crypto"
         assert isinstance(result.advantage, float)
         assert isinstance(result.confidence, float)
         assert 0 <= result.confidence <= 1
-    
+
     def test_happy_path_filter_by_category(self, db_with_data):
         """Happy path: Category filter werkt."""
         analyzer = MakerTakerAnalyzer(db_with_data)
         results = analyzer.analyze_kalshi(category="crypto")
-        
+
         assert all(r.category == "crypto" for r in results)
-    
+
     def test_happy_path_signal_direction_bullish(self):
         """Happy path: Positief advantage → bullish signal."""
         result = MakerTakerResult(
@@ -1084,7 +1084,7 @@ class TestMakerTakerAnalyzer:
             period_end=datetime.now(), confidence=0.8
         )
         assert result.signal_direction == "bullish"
-    
+
     def test_happy_path_signal_direction_bearish(self):
         """Happy path: Negatief advantage → bearish signal."""
         result = MakerTakerResult(
@@ -1095,24 +1095,24 @@ class TestMakerTakerAnalyzer:
             period_end=datetime.now(), confidence=0.8
         )
         assert result.signal_direction == "bearish"
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_empty_database(self):
         """Unhappy path: Lege database retourneert lege lijst."""
         with DuckDBManager() as db:
             analyzer = MakerTakerAnalyzer(db)
             results = analyzer.analyze_kalshi()
             assert results == []
-    
+
     def test_unhappy_path_nonexistent_category(self, db_with_data):
         """Unhappy path: Niet-bestaande category geeft lege lijst."""
         analyzer = MakerTakerAnalyzer(db_with_data)
         results = analyzer.analyze_kalshi(category="nonexistent")
         assert results == []
-    
+
     def test_unhappy_path_low_sample_confidence(self, db_with_data):
         """Unhappy path: Weinig trades → lage confidence."""
         with DuckDBManager() as db:
@@ -1130,10 +1130,10 @@ class TestMakerTakerAnalyzer:
                 "created_at": pd.to_datetime(["2026-01-01"] * 2)
             })
             db.insert_dataframe("kalshi_trades", df)
-            
+
             analyzer = MakerTakerAnalyzer(db)
             results = analyzer.analyze_kalshi()
-            
+
             if results:
                 assert results[0].confidence < 0.5
 ```
@@ -1142,30 +1142,30 @@ class TestMakerTakerAnalyzer:
 
 ### 📎 MICROTASK 3.2.1: Create Analysis Module Structure
 
-**Microtask ID:** MT-PM-010-001  
-**Geschatte tijd:** 10 min  
+**Microtask ID:** MT-PM-010-001
+**Geschatte tijd:** 10 min
 **Status:** 🔴 TODO
 
 ### 📎 MICROTASK 3.2.2: Implement MakerTakerAnalyzer
 
-**Microtask ID:** MT-PM-010-002  
-**Geschatte tijd:** 90 min  
+**Microtask ID:** MT-PM-010-002
+**Geschatte tijd:** 90 min
 **Status:** 🔴 TODO
 
 ### 📎 MICROTASK 3.2.3: Write & Run TDD Tests
 
-**Microtask ID:** MT-PM-010-003  
-**Geschatte tijd:** 60 min  
+**Microtask ID:** MT-PM-010-003
+**Geschatte tijd:** 60 min
 **Status:** 🔴 TODO
 
 ---
 
 ## 📌 TASK 3.3: Volume Trend Analysis & Statistical Tests
 
-**Task ID:** TASK-PM-011  
-**Status:** ✅ COMPLETE (26/26 analysis tests passing)  
-**Voltooide tijd:** ~2.5 uur  
-**Dependencies:** TASK-PM-010  
+**Task ID:** TASK-PM-011
+**Status:** ✅ COMPLETE (26/26 analysis tests passing)
+**Voltooide tijd:** ~2.5 uur
+**Dependencies:** TASK-PM-010
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -1220,7 +1220,7 @@ class VolumeTrendResult:
     trend: str  # "increasing", "decreasing", "stable"
     is_unusual: bool  # z_score > 2.0
     period_end: datetime
-    
+
     @property
     def signal_strength(self) -> float:
         """Calculate signal strength from volume change."""
@@ -1229,13 +1229,13 @@ class VolumeTrendResult:
 
 class VolumeTrendAnalyzer:
     """Analyzes volume trends in prediction markets."""
-    
+
     WINDOWS = [1, 4, 24]  # Hours
     Z_SCORE_THRESHOLD = 2.0  # For unusual volume detection
-    
+
     def __init__(self, db: DuckDBManager):
         self.db = db
-    
+
     def analyze(
         self,
         market: str = "kalshi",
@@ -1244,21 +1244,21 @@ class VolumeTrendAnalyzer:
     ) -> List[VolumeTrendResult]:
         """
         Analyze volume trends.
-        
+
         Args:
             market: "kalshi" or "polymarket"
             category: Optional category filter
             window_hours: Time window in hours
-        
+
         Returns:
             List of VolumeTrendResult
         """
         table = f"{market}_trades"
         volume_col = "volume" if market == "kalshi" else "amount"
-        
+
         query = f"""
             WITH current_window AS (
-                SELECT 
+                SELECT
                     category,
                     SUM({volume_col}) as volume,
                     COUNT(*) as trades
@@ -1268,7 +1268,7 @@ class VolumeTrendAnalyzer:
                 GROUP BY category
             ),
             previous_window AS (
-                SELECT 
+                SELECT
                     category,
                     SUM({volume_col}) as volume,
                     COUNT(*) as trades
@@ -1287,7 +1287,7 @@ class VolumeTrendAnalyzer:
                 {"WHERE category = ?" if category else ""}
                 GROUP BY category
             )
-            SELECT 
+            SELECT
                 c.category,
                 COALESCE(c.volume, 0) as current_volume,
                 COALESCE(p.volume, 0) as previous_volume,
@@ -1297,28 +1297,28 @@ class VolumeTrendAnalyzer:
             LEFT JOIN previous_window p ON c.category = p.category
             LEFT JOIN historical h ON c.category = h.category
         """
-        
+
         params = []
         if category:
             params = [category] * 3
-        
+
         df = self.db.query(query, params if params else None)
-        
+
         results = []
         for _, row in df.iterrows():
             prev = row["previous_volume"] if row["previous_volume"] > 0 else 1
             change_pct = ((row["current_volume"] - row["previous_volume"]) / prev) * 100
-            
+
             std = row["std_volume"] if row["std_volume"] > 0 else 1
             z_score = (row["current_volume"] - row["avg_volume"]) / std
-            
+
             if change_pct > 10:
                 trend = "increasing"
             elif change_pct < -10:
                 trend = "decreasing"
             else:
                 trend = "stable"
-            
+
             results.append(VolumeTrendResult(
                 market=market,
                 category=row["category"],
@@ -1331,7 +1331,7 @@ class VolumeTrendAnalyzer:
                 is_unusual=abs(z_score) > self.Z_SCORE_THRESHOLD,
                 period_end=datetime.utcnow()
             ))
-        
+
         return results
 
 ───────────────────────────────────────────────────────────────────────────────
@@ -1378,12 +1378,12 @@ class StatTestResult:
 
 class StatisticalTester:
     """Performs statistical tests on prediction market data."""
-    
+
     DEFAULT_ALPHA = 0.05
-    
+
     def __init__(self, db: DuckDBManager):
         self.db = db
-    
+
     def ttest_maker_vs_taker(
         self,
         market: str = "kalshi",
@@ -1392,22 +1392,22 @@ class StatisticalTester:
     ) -> Optional[StatTestResult]:
         """
         Independent t-test comparing maker vs taker prices.
-        
+
         H0: No difference in mean price between maker and taker trades
         H1: Significant difference exists
-        
+
         Args:
             market: Market to analyze
             category: Optional category filter
             alpha: Significance level
-        
+
         Returns:
             StatTestResult or None if insufficient data
         """
         price_col = "yes_price" if market == "kalshi" else "price"
         table = f"{market}_trades"
         side_col = "taker_side" if market == "kalshi" else "side"
-        
+
         query = f"""
             SELECT {price_col} as price, {side_col} as side
             FROM {table}
@@ -1415,29 +1415,29 @@ class StatisticalTester:
         """
         if category:
             query += f" AND category = '{category}'"
-        
+
         df = self.db.query(query)
-        
+
         if df.empty or len(df) < 10:
             logger.warning("Insufficient data for t-test")
             return None
-        
+
         group_a = df[df["side"] == "buy"]["price"].values
         group_b = df[df["side"] == "sell"]["price"].values
-        
+
         if len(group_a) < 5 or len(group_b) < 5:
             return None
-        
+
         t_stat, p_value = stats.ttest_ind(group_a, group_b, equal_var=False)
-        
+
         # Cohen's d effect size
         pooled_std = np.sqrt(
             (np.std(group_a)**2 + np.std(group_b)**2) / 2
         )
         effect_size = abs(np.mean(group_a) - np.mean(group_b)) / pooled_std if pooled_std > 0 else 0
-        
+
         is_sig = p_value < alpha
-        
+
         if not is_sig:
             interpretation = "No significant price difference between maker and taker trades"
         elif effect_size < 0.2:
@@ -1448,7 +1448,7 @@ class StatisticalTester:
             interpretation = "Medium-sized maker/taker price advantage detected"
         else:
             interpretation = "Large maker/taker price advantage detected — strong signal"
-        
+
         return StatTestResult(
             test_name="Independent t-test (Welch's)",
             statistic=round(float(t_stat), 4),
@@ -1460,7 +1460,7 @@ class StatisticalTester:
             sample_size_a=len(group_a),
             sample_size_b=len(group_b)
         )
-    
+
     def chi_square_distribution(
         self,
         market: str = "kalshi",
@@ -1469,21 +1469,21 @@ class StatisticalTester:
     ) -> Optional[StatTestResult]:
         """
         Chi-square test for maker/taker distribution.
-        
+
         Tests if the distribution of buy/sell trades significantly
         differs from a 50/50 expected distribution.
-        
+
         Args:
             market: Market to analyze
             category: Optional category filter
             alpha: Significance level
-        
+
         Returns:
             StatTestResult or None if insufficient data
         """
         table = f"{market}_trades"
         side_col = "taker_side" if market == "kalshi" else "side"
-        
+
         query = f"""
             SELECT {side_col} as side, COUNT(*) as count
             FROM {table}
@@ -1492,28 +1492,28 @@ class StatisticalTester:
         if category:
             query += f" AND category = '{category}'"
         query += f" GROUP BY {side_col}"
-        
+
         df = self.db.query(query)
-        
+
         if df.empty or len(df) < 2:
             return None
-        
+
         observed = df["count"].values
         total = observed.sum()
         expected = np.array([total / len(observed)] * len(observed))
-        
+
         chi2, p_value = stats.chisquare(observed, expected)
-        
+
         # Cramér's V effect size
         effect_size = np.sqrt(chi2 / (total * (len(observed) - 1))) if total > 0 else 0
-        
+
         is_sig = p_value < alpha
-        
+
         if not is_sig:
             interpretation = "Buy/sell distribution is consistent with expected 50/50"
         else:
             interpretation = f"Significant imbalance in buy/sell distribution (Cramér's V={effect_size:.3f})"
-        
+
         return StatTestResult(
             test_name="Chi-square goodness of fit",
             statistic=round(float(chi2), 4),
@@ -1574,13 +1574,13 @@ from src.analysis.statistical_tests import StatisticalTester, StatTestResult
 
 class TestVolumeTrendAnalyzer:
     """Tests voor VolumeTrendAnalyzer."""
-    
+
     @pytest.fixture
     def db_with_volume_data(self):
         """DuckDB met volume test data."""
         db = DuckDBManager()
         db.initialize()
-        
+
         now = datetime.utcnow()
         rows = []
         for i in range(200):
@@ -1597,32 +1597,32 @@ class TestVolumeTrendAnalyzer:
                 "taker_side": "buy" if i % 2 == 0 else "sell",
                 "created_at": now
             })
-        
+
         df = pd.DataFrame(rows)
         db.insert_dataframe("kalshi_trades", df)
-        
+
         yield db
         db.close()
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_analyze_returns_results(self, db_with_volume_data):
         """Happy path: Analyse retourneert resultaten."""
         analyzer = VolumeTrendAnalyzer(db_with_volume_data)
         results = analyzer.analyze(market="kalshi")
-        
+
         assert isinstance(results, list)
-    
+
     def test_happy_path_result_has_trend(self, db_with_volume_data):
         """Happy path: Resultaat heeft trend indicator."""
         analyzer = VolumeTrendAnalyzer(db_with_volume_data)
         results = analyzer.analyze(market="kalshi")
-        
+
         if results:
             assert results[0].trend in ["increasing", "decreasing", "stable"]
-    
+
     def test_happy_path_signal_strength_bounded(self):
         """Happy path: Signal strength is 0-1."""
         result = VolumeTrendResult(
@@ -1633,11 +1633,11 @@ class TestVolumeTrendAnalyzer:
             period_end=datetime.now()
         )
         assert 0 <= result.signal_strength <= 1
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_empty_database(self):
         """Unhappy path: Lege database retourneert lege lijst."""
         with DuckDBManager() as db:
@@ -1648,16 +1648,16 @@ class TestVolumeTrendAnalyzer:
 
 class TestStatisticalTester:
     """Tests voor StatisticalTester."""
-    
+
     @pytest.fixture
     def db_with_stat_data(self):
         """DuckDB met data voor statistische tests."""
         db = DuckDBManager()
         db.initialize()
-        
+
         np.random.seed(42)
         n = 500
-        
+
         df = pd.DataFrame({
             "id": [f"s{i}" for i in range(n)],
             "ticker": ["BTC-YES"] * n,
@@ -1675,61 +1675,61 @@ class TestStatisticalTester:
             "created_at": pd.to_datetime(["2026-01-15"] * n)
         })
         db.insert_dataframe("kalshi_trades", df)
-        
+
         yield db
         db.close()
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_ttest_returns_result(self, db_with_stat_data):
         """Happy path: T-test retourneert resultaat."""
         tester = StatisticalTester(db_with_stat_data)
         result = tester.ttest_maker_vs_taker(market="kalshi")
-        
+
         assert result is not None
         assert isinstance(result, StatTestResult)
         assert result.test_name == "Independent t-test (Welch's)"
-    
+
     def test_happy_path_ttest_detects_significance(self, db_with_stat_data):
         """Happy path: T-test detecteert significant verschil."""
         tester = StatisticalTester(db_with_stat_data)
         result = tester.ttest_maker_vs_taker(market="kalshi")
-        
+
         # With our deliberately different means, should be significant
         assert result is not None
         assert result.p_value < 0.05
         assert result.is_significant is True
-    
+
     def test_happy_path_chi_square_returns_result(self, db_with_stat_data):
         """Happy path: Chi-square test retourneert resultaat."""
         tester = StatisticalTester(db_with_stat_data)
         result = tester.chi_square_distribution(market="kalshi")
-        
+
         assert result is not None
         assert result.test_name == "Chi-square goodness of fit"
-    
+
     def test_happy_path_effect_size_present(self, db_with_stat_data):
         """Happy path: Effect size is berekend."""
         tester = StatisticalTester(db_with_stat_data)
         result = tester.ttest_maker_vs_taker(market="kalshi")
-        
+
         assert result is not None
         assert result.effect_size is not None
         assert result.effect_size >= 0
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_empty_database(self):
         """Unhappy path: Lege database retourneert None."""
         with DuckDBManager() as db:
             tester = StatisticalTester(db)
             result = tester.ttest_maker_vs_taker(market="kalshi")
             assert result is None
-    
+
     def test_unhappy_path_insufficient_data(self):
         """Unhappy path: Te weinig data retourneert None."""
         with DuckDBManager() as db:
@@ -1747,7 +1747,7 @@ class TestStatisticalTester:
                 "created_at": pd.to_datetime(["2026-01-01"])
             })
             db.insert_dataframe("kalshi_trades", df)
-            
+
             tester = StatisticalTester(db)
             result = tester.ttest_maker_vs_taker(market="kalshi")
             assert result is None
@@ -1757,30 +1757,30 @@ class TestStatisticalTester:
 
 ### 📎 MICROTASK 3.3.1: Implement VolumeTrendAnalyzer
 
-**Microtask ID:** MT-PM-011-001  
-**Geschatte tijd:** 60 min  
+**Microtask ID:** MT-PM-011-001
+**Geschatte tijd:** 60 min
 **Status:** 🔴 TODO
 
 ### 📎 MICROTASK 3.3.2: Implement StatisticalTester
 
-**Microtask ID:** MT-PM-011-002  
-**Geschatte tijd:** 60 min  
+**Microtask ID:** MT-PM-011-002
+**Geschatte tijd:** 60 min
 **Status:** 🔴 TODO
 
 ### 📎 MICROTASK 3.3.3: Write & Run TDD Tests
 
-**Microtask ID:** MT-PM-011-003  
-**Geschatte tijd:** 60 min  
+**Microtask ID:** MT-PM-011-003
+**Geschatte tijd:** 60 min
 **Status:** 🔴 TODO
 
 ---
 
 ## 📌 TASK 3.4: Signal Generator Engine
 
-**Task ID:** TASK-PM-012  
-**Status:** ✅ COMPLETE (15/15 tests passing)  
-**Voltooide tijd:** ~2.5 uur  
-**Dependencies:** TASK-PM-010, TASK-PM-011  
+**Task ID:** TASK-PM-012
+**Status:** ✅ COMPLETE (15/15 tests passing)
+**Voltooide tijd:** ~2.5 uur
+**Dependencies:** TASK-PM-010, TASK-PM-011
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -1856,20 +1856,20 @@ CATEGORY_SYMBOL_MAP = {
 class SignalGenerator:
     """
     Generates trading signals from prediction market analyses.
-    
+
     Combines maker/taker advantage, volume trends, and statistical
     tests into composite market signals.
     """
-    
+
     # Minimum confidence to emit a signal
     MIN_CONFIDENCE = 0.3
-    
+
     def __init__(self, db: DuckDBManager):
         self.db = db
         self.maker_taker = MakerTakerAnalyzer(db)
         self.volume = VolumeTrendAnalyzer(db)
         self.stats = StatisticalTester(db)
-    
+
     def generate_signals(
         self,
         market: str = "kalshi",
@@ -1877,36 +1877,36 @@ class SignalGenerator:
     ) -> List[MarketSignal]:
         """
         Generate signals for a market.
-        
+
         Runs all analyses and combines results into MarketSignal objects.
-        
+
         Args:
             market: "kalshi" or "polymarket"
             category: Optional category filter
-        
+
         Returns:
             List of generated MarketSignal objects
         """
         logger.info(f"Generating signals for {market} (category={category})")
-        
+
         # Run analyses
         if market == "kalshi":
             mt_results = self.maker_taker.analyze_kalshi(category=category)
         else:
             mt_results = self.maker_taker.analyze_polymarket(category=category)
-        
+
         vol_results = self.volume.analyze(market=market, category=category)
         stat_result = self.stats.ttest_maker_vs_taker(market=market, category=category)
-        
+
         # Build signal per category from combined analysis
         signals = []
-        
+
         categories_seen = set()
         for mt in mt_results:
             categories_seen.add(mt.category)
         for vol in vol_results:
             categories_seen.add(vol.category)
-        
+
         for cat in categories_seen:
             signal = self._build_composite_signal(
                 category=cat,
@@ -1915,14 +1915,14 @@ class SignalGenerator:
                 vol_results=[r for r in vol_results if r.category == cat],
                 stat_result=stat_result
             )
-            
+
             if signal and signal.confidence >= self.MIN_CONFIDENCE:
                 signals.append(signal)
                 self._store_signal(signal)
-        
+
         logger.info(f"Generated {len(signals)} signals")
         return signals
-    
+
     def _build_composite_signal(
         self,
         category: str,
@@ -1932,57 +1932,57 @@ class SignalGenerator:
         stat_result: Optional[StatTestResult]
     ) -> Optional[MarketSignal]:
         """Build composite signal from multiple analyses."""
-        
+
         indicators: Dict[str, float] = {}
         direction_votes: Dict[str, float] = {}  # direction -> weight
-        
+
         # Maker/Taker component
         if mt_results:
             mt = mt_results[0]
             indicators["maker_advantage"] = mt.advantage
             indicators["maker_confidence"] = mt.confidence
-            
+
             if mt.signal_direction == "bullish":
                 direction_votes["bullish"] = mt.confidence
             elif mt.signal_direction == "bearish":
                 direction_votes["bearish"] = mt.confidence
             else:
                 direction_votes["neutral"] = mt.confidence
-        
+
         # Volume component
         if vol_results:
             vol = vol_results[0]
             indicators["volume_change_24h"] = vol.volume_change_pct / 100
             indicators["volume_z_score"] = vol.z_score
             indicators["volume_unusual"] = 1.0 if vol.is_unusual else 0.0
-        
+
         # Statistical component
         if stat_result:
             indicators["stat_p_value"] = stat_result.p_value
             indicators["stat_effect_size"] = stat_result.effect_size or 0
             indicators["stat_significant"] = 1.0 if stat_result.is_significant else 0.0
-        
+
         if not indicators:
             return None
-        
+
         # Determine overall direction (weighted vote)
         if not direction_votes:
             signal_type = SignalType.NEUTRAL
         else:
             winning = max(direction_votes, key=direction_votes.get)
             signal_type = SignalType(winning)
-        
+
         # Calculate composite confidence
         confidences = [v for v in direction_votes.values()]
         confidence = sum(confidences) / len(confidences) if confidences else 0.5
-        
+
         # Map category
         signal_category = CATEGORY_MAP.get(category, SignalCategory.OTHER)
         symbol = CATEGORY_SYMBOL_MAP.get(category)
-        
+
         # Map market
         market_source = MarketSource.KALSHI if market == "kalshi" else MarketSource.POLYMARKET
-        
+
         return MarketSignal(
             id=f"sig_{uuid.uuid4().hex[:12]}",
             market=market_source,
@@ -1997,14 +1997,14 @@ class SignalGenerator:
                 "components": list(indicators.keys())
             }
         )
-    
+
     def _store_signal(self, signal: MarketSignal) -> None:
         """Store generated signal in database."""
         try:
             import json
             self.db.execute(
                 """
-                INSERT INTO generated_signals 
+                INSERT INTO generated_signals
                 (signal_id, market, category, signal_type, confidence, symbol, indicators, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
@@ -2064,16 +2064,16 @@ from src.api.schemas.signal import MarketSignal, SignalType
 
 class TestSignalGenerator:
     """Tests voor SignalGenerator."""
-    
+
     @pytest.fixture
     def db_with_full_data(self):
         """DuckDB met volledige test dataset."""
         db = DuckDBManager()
         db.initialize()
-        
+
         np.random.seed(42)
         n = 200
-        
+
         df = pd.DataFrame({
             "id": [f"t{i}" for i in range(n)],
             "ticker": ["BTC-YES"] * n,
@@ -2091,72 +2091,72 @@ class TestSignalGenerator:
             "created_at": pd.to_datetime(["2026-01-15"] * n)
         })
         db.insert_dataframe("kalshi_trades", df)
-        
+
         yield db
         db.close()
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_generate_returns_signals(self, db_with_full_data):
         """Happy path: Generator produceert signals."""
         gen = SignalGenerator(db_with_full_data)
         signals = gen.generate_signals(market="kalshi")
-        
+
         assert isinstance(signals, list)
         if signals:
             assert all(isinstance(s, MarketSignal) for s in signals)
-    
+
     def test_happy_path_signal_has_indicators(self, db_with_full_data):
         """Happy path: Signal bevat indicators."""
         gen = SignalGenerator(db_with_full_data)
         signals = gen.generate_signals(market="kalshi")
-        
+
         if signals:
             signal = signals[0]
             assert len(signal.indicators) > 0
             assert "maker_advantage" in signal.indicators
-    
+
     def test_happy_path_signal_confidence_bounded(self, db_with_full_data):
         """Happy path: Confidence is altijd 0-1."""
         gen = SignalGenerator(db_with_full_data)
         signals = gen.generate_signals(market="kalshi")
-        
+
         for signal in signals:
             assert 0 <= signal.confidence <= 1
-    
+
     def test_happy_path_signal_stored_in_db(self, db_with_full_data):
         """Happy path: Generated signals worden opgeslagen in DB."""
         gen = SignalGenerator(db_with_full_data)
         signals = gen.generate_signals(market="kalshi")
-        
+
         count = db_with_full_data.get_table_count("generated_signals")
         assert count == len(signals)
-    
+
     def test_happy_path_signal_type_valid(self, db_with_full_data):
         """Happy path: Signal type is valid enum."""
         gen = SignalGenerator(db_with_full_data)
         signals = gen.generate_signals(market="kalshi")
-        
+
         for signal in signals:
             assert signal.signal_type in [
                 SignalType.BULLISH,
                 SignalType.BEARISH,
                 SignalType.NEUTRAL
             ]
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_empty_database(self):
         """Unhappy path: Lege database → geen signals."""
         with DuckDBManager() as db:
             gen = SignalGenerator(db)
             signals = gen.generate_signals(market="kalshi")
             assert signals == []
-    
+
     def test_unhappy_path_low_confidence_filtered(self):
         """Unhappy path: Signals met lage confidence worden gefilterd."""
         with DuckDBManager() as db:
@@ -2175,11 +2175,11 @@ class TestSignalGenerator:
                 "created_at": pd.to_datetime(["2026-01-01"] * 2)
             })
             db.insert_dataframe("kalshi_trades", df)
-            
+
             gen = SignalGenerator(db)
             gen.MIN_CONFIDENCE = 0.9  # Set high threshold
             signals = gen.generate_signals(market="kalshi")
-            
+
             # Should produce no signals (too few trades → low confidence)
             assert len(signals) == 0
 ```
@@ -2188,20 +2188,20 @@ class TestSignalGenerator:
 
 ### 📎 MICROTASK 3.4.1: Implement SignalGenerator
 
-**Microtask ID:** MT-PM-012-001  
-**Geschatte tijd:** 90 min  
+**Microtask ID:** MT-PM-012-001
+**Geschatte tijd:** 90 min
 **Status:** 🔴 TODO
 
 ### 📎 MICROTASK 3.4.2: Wire Generator into API Endpoints
 
-**Microtask ID:** MT-PM-012-002  
-**Geschatte tijd:** 45 min  
+**Microtask ID:** MT-PM-012-002
+**Geschatte tijd:** 45 min
 **Status:** 🔴 TODO
 
 ### 📎 MICROTASK 3.4.3: Write & Run TDD Tests
 
-**Microtask ID:** MT-PM-012-003  
-**Geschatte tijd:** 45 min  
+**Microtask ID:** MT-PM-012-003
+**Geschatte tijd:** 45 min
 **Status:** 🔴 TODO
 
 ---

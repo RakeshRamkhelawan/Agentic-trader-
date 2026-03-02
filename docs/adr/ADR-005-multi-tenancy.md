@@ -1,9 +1,9 @@
 # ADR-005: Multi-Tenant Isolatie End-to-End
 
-**Status**: Proposed  
-**Date**: 2026-02-20  
-**Author**: Architecture Team  
-**Scope**: Auth, API, Storage, Caching, Rate Limiting  
+**Status**: Proposed
+**Date**: 2026-02-20
+**Author**: Architecture Team
+**Scope**: Auth, API, Storage, Caching, Rate Limiting
 
 ---
 
@@ -125,19 +125,19 @@ class TenantContext:
     quotas: TenantQuotas
     features: List[str]
     settings: Dict[str, any]
-    
+
     # Tier definitions
     TIERS = {
         'free': TenantQuotas(60, 10, 1, 10_000, 1),
         'professional': TenantQuotas(600, 1000, 10, 1_000_000, 5),
         'enterprise': TenantQuotas(6000, 999_999, 100, 999_999_999, 999)
     }
-    
+
     @classmethod
     def from_jwt(cls, jwt_claims: dict) -> "TenantContext":
         tenant_id = jwt_claims.get('tenant_id', 'default')
         tier = jwt_claims.get('quota_tier', 'free')
-        
+
         return cls(
             tenant_id=tenant_id,
             tier=tier,
@@ -145,10 +145,10 @@ class TenantContext:
             features=jwt_claims.get('features', []),
             settings=jwt_claims.get('settings', {})
         )
-    
+
     def set_current(self):
         _tenant_context.set(self)
-    
+
     @classmethod
     def get_current(cls) -> Optional["TenantContext"]:
         return _tenant_context.get()
@@ -165,39 +165,39 @@ class TenantMiddleware(BaseHTTPMiddleware):
     """
     Extracts tenant context from JWT and validates access.
     """
-    
+
     async def dispatch(self, request: Request, call_next):
         # Skip for public paths
         if request.url.path in PUBLIC_PATHS:
             return await call_next(request)
-        
+
         # Extract tenant from JWT (set by auth middleware)
         jwt_claims = getattr(request.state, 'jwt_claims', {})
-        
+
         tenant_ctx = TenantContext.from_jwt(jwt_claims)
         tenant_ctx.set_current()
-        
+
         # Store in request state
         request.state.tenant = tenant_ctx
-        
+
         # Add tenant to correlation context
         from backend.core.telemetry.correlation import CorrelationContext
         corr_ctx = CorrelationContext.get_current()
         corr_ctx.tenant_id = tenant_ctx.tenant_id
         corr_ctx.set_current()
-        
+
         # Check if tenant is active
         if not await self._is_tenant_active(tenant_ctx.tenant_id):
             raise HTTPException(status_code=403, detail="Tenant inactive or suspended")
-        
+
         response = await call_next(request)
-        
+
         # Add tenant headers
         response.headers['X-Tenant-ID'] = tenant_ctx.tenant_id
         response.headers['X-Tenant-Tier'] = tenant_ctx.tier
-        
+
         return response
-    
+
     async def _is_tenant_active(self, tenant_id: str) -> bool:
         # Check tenant status in database
         # Cache result for 60 seconds
@@ -216,52 +216,52 @@ class TenantRateLimiter:
     """
     Sliding window rate limiter per tenant.
     """
-    
+
     def __init__(self, redis_client: redis.Redis):
         self.redis = redis_client
-    
+
     async def check_rate_limit(
-        self, 
-        tenant_id: str, 
+        self,
+        tenant_id: str,
         resource: str,  # 'api', 'orders', 'ws'
         limit: int,
         window_seconds: int = 60
     ) -> tuple[bool, dict]:
         """
         Check if request is within rate limit.
-        
+
         Returns:
             (allowed, headers_dict)
         """
         key = f"ratelimit:{tenant_id}:{resource}"
         now = time.time()
         window_start = now - window_seconds
-        
+
         # Remove old entries
         pipe = self.redis.pipeline()
         pipe.zremrangebyscore(key, 0, window_start)
-        
+
         # Count current entries
         pipe.zcard(key)
-        
+
         # Add current request
         pipe.zadd(key, {str(now): now})
         pipe.expire(key, window_seconds)
-        
+
         results = pipe.execute()
         current_count = results[1]
-        
+
         allowed = current_count <= limit
-        
+
         headers = {
             'X-RateLimit-Limit': str(limit),
             'X-RateLimit-Remaining': str(max(0, limit - current_count)),
             'X-RateLimit-Reset': str(int(now + window_seconds)),
             'X-RateLimit-Resource': resource
         }
-        
+
         return allowed, headers
-    
+
     async def check_quota(
         self,
         tenant_id: str,
@@ -271,20 +271,20 @@ class TenantRateLimiter:
         """Check daily/monthly quota."""
         key = f"quota:{tenant_id}:{quota_type}"
         current = int(self.redis.get(key) or 0)
-        
+
         if current >= limit:
             return False
-        
+
         # Increment with TTL
         pipe = self.redis.pipeline()
         pipe.incr(key)
-        
+
         # Set expiry based on quota type
         if 'day' in quota_type:
             pipe.expire(key, 86400)
         elif 'month' in quota_type:
             pipe.expire(key, 2592000)
-        
+
         pipe.execute()
         return True
 ```
@@ -297,21 +297,21 @@ class TenantAwareStorage:
     """
     Storage wrapper that enforces tenant isolation.
     """
-    
+
     def __init__(self, storage_backend):
         self.backend = storage_backend
-    
+
     def _get_tenant_id(self) -> str:
         from backend.core.tenant.context import TenantContext
         ctx = TenantContext.get_current()
         if not ctx:
             raise PermissionError("No tenant context")
         return ctx.tenant_id
-    
+
     # PostgreSQL with RLS
     async def query_postgres(self, query: str, params: tuple):
         tenant_id = self._get_tenant_id()
-        
+
         # RLS automatically filters by tenant_id
         # Query must include tenant_id or use RLS-enabled tables
         async with self.backend.acquire() as conn:
@@ -320,31 +320,31 @@ class TenantAwareStorage:
                 "SET app.current_tenant = %s", (tenant_id,)
             )
             return await conn.fetch(query, *params)
-    
+
     # ClickHouse with filtering
     async def query_clickhouse(self, query: str, params: dict):
         tenant_id = self._get_tenant_id()
-        
+
         # Inject tenant filter
         if 'WHERE' in query:
             query = query.replace('WHERE', f'WHERE tenant_id = %(tenant_id)s AND')
         else:
             query += f' WHERE tenant_id = %(tenant_id)s'
-        
+
         params['tenant_id'] = tenant_id
         return await self.backend.query(query, params)
-    
+
     # Redis with key prefixing
     async def get_cache(self, key: str):
         tenant_id = self._get_tenant_id()
         tenant_key = f"tenant:{tenant_id}:{key}"
         return await self.backend.get(tenant_key)
-    
+
     async def set_cache(self, key: str, value, ttl: int = 3600):
         tenant_id = self._get_tenant_id()
         tenant_key = f"tenant:{tenant_id}:{key}"
         return await self.backend.set(tenant_key, value, ex=ttl)
-    
+
     # ChromaDB with collection prefix
     async def query_chroma(self, collection: str, query: str):
         tenant_id = self._get_tenant_id()
@@ -391,23 +391,23 @@ def rate_limit(resource: str, limit_override: int = None):
         async def wrapper(request: Request, *args, **kwargs):
             from backend.core.tenant.context import TenantContext
             from backend.core.tenant.rate_limiter import limiter
-            
+
             ctx = TenantContext.get_current()
             if not ctx:
                 raise HTTPException(403, "Tenant context required")
-            
+
             limit = limit_override or getattr(ctx.quotas, f"{resource}_per_minute", 60)
-            
+
             allowed, headers = await limiter.check_rate_limit(
                 ctx.tenant_id, resource, limit
             )
-            
+
             if not allowed:
                 raise HTTPException(429, "Rate limit exceeded", headers=headers)
-            
+
             # Store headers for response
             request.state.rate_limit_headers = headers
-            
+
             return await func(request, *args, **kwargs)
         return wrapper
     return decorator
@@ -423,7 +423,7 @@ class TenantAuditLogger:
     """
     Audit logging per tenant for compliance.
     """
-    
+
     async def log_event(
         self,
         event_type: str,      # 'trade_executed', 'settings_changed'
@@ -435,7 +435,7 @@ class TenantAuditLogger:
     ):
         from backend.core.tenant.context import TenantContext
         ctx = TenantContext.get_current()
-        
+
         audit_entry = {
             'timestamp': datetime.utcnow().isoformat(),
             'tenant_id': ctx.tenant_id if ctx else 'unknown',
@@ -448,10 +448,10 @@ class TenantAuditLogger:
             'ip_address': self._get_client_ip(),
             'user_agent': self._get_user_agent()
         }
-        
+
         # Write to ClickHouse for analytics
         await self._write_to_clickhouse(audit_entry)
-        
+
         # Write to secure PostgreSQL table
         await self._write_to_postgres(audit_entry)
 ```
@@ -475,7 +475,7 @@ class TenantAuditLogger:
 - alert: HighRateLimitHits
   expr: rate(http_requests_total{status="429"}[5m]) > 10
   severity: warning
-  
+
 - alert: TenantResourceExhaustion
   expr: tenant_resource_usage / tenant_resource_limit > 0.9
   severity: critical

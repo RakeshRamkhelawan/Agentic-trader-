@@ -2,9 +2,9 @@
 
 ## Executive Summary
 
-**Test Periods:** 2021, 2022, 2024 (H1), 2025 (FY)  
-**Total Candles Analyzed:** 73,392  
-**Market Conditions Tested:** Bull, Bear, Mixed, Recovery  
+**Test Periods:** 2021, 2022, 2024 (H1), 2025 (FY)
+**Total Candles Analyzed:** 73,392
+**Market Conditions Tested:** Bull, Bear, Mixed, Recovery
 **Result:** **PROFITABLE IN ALL MARKET CONDITIONS**
 
 ---
@@ -293,8 +293,8 @@ The Unified Consciousness Trading System has proven:
 
 ---
 
-*Test Period: 2021-2025 (4 years)*  
-*Total Candles: 73,392*  
-*Assets: BTC, ETH, SOL*  
-*System Version: Unified Consciousness v1.0*  
+*Test Period: 2021-2025 (4 years)*
+*Total Candles: 73,392*
+*Assets: BTC, ETH, SOL*
+*System Version: Unified Consciousness v1.0*
 *Report Date: 2026-02-18*

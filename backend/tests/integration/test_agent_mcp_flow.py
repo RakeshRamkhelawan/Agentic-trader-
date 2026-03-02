@@ -6,7 +6,7 @@ and process the results.
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 from backend.agents.elemental_consensus_agent import ElementalConsensusAgent
 from backend.agents.risk_check_agent import RiskCheckAgent

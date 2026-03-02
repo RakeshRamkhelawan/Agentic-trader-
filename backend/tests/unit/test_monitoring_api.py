@@ -10,8 +10,6 @@ Tests cover:
 - Unhappy: partial failure, missing confirmation, redis down
 """
 
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient

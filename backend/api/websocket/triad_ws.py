@@ -68,12 +68,11 @@ class TriadWebSocketManager:
             streams = [
                 self.event_bus.STREAM_DELIBERATIONS,
                 self.event_bus.STREAM_DECISIONS,
-                self.event_bus.STREAM_EXECUTIONS
+                self.event_bus.STREAM_EXECUTIONS,
             ]
 
             tasks = [
-                asyncio.create_task(self._subscribe_and_broadcast(stream))
-                for stream in streams
+                asyncio.create_task(self._subscribe_and_broadcast(stream)) for stream in streams
             ]
 
             await asyncio.gather(*tasks)
@@ -90,10 +89,7 @@ class TriadWebSocketManager:
                 if not self._running:
                     break
 
-                await self.broadcast({
-                    "type": stream.replace("triad.", ""),
-                    "data": event
-                })
+                await self.broadcast({"type": stream.replace("triad.", ""), "data": event})
 
         except Exception as e:
             logger.error(f"Subscription error for {stream}: {e}")
@@ -124,11 +120,13 @@ async def triad_websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
 
     try:
-        await websocket.send_json({
-            "type": "connected",
-            "message": "Connected to Triad WebSocket",
-            "connections": len(manager.active_connections)
-        })
+        await websocket.send_json(
+            {
+                "type": "connected",
+                "message": "Connected to Triad WebSocket",
+                "connections": len(manager.active_connections),
+            }
+        )
 
         while True:
             data = await websocket.receive_text()

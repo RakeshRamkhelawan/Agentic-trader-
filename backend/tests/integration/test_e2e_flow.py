@@ -1,5 +1,4 @@
 import asyncio
-import os
 
 import msgpack
 import redis.asyncio as redis
@@ -99,7 +98,7 @@ async def test_e2e_market_data_flow():
                                 print(f"  Signal Data: {event.get('data')}")
                                 found_signal = True
                                 break
-                        except Exception as e:
+                        except Exception:
                             pass  # Ignore decode errors
             if found_signal:
                 break

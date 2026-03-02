@@ -1,7 +1,7 @@
 # ⚠️ DEPRECATED - Legacy Code Archive
 
-**Status:** Archived / Deprecated  
-**Date:** March 2026  
+**Status:** Archived / Deprecated
+**Date:** March 2026
 **Reason:** Superseded by new implementations
 
 ## Contents

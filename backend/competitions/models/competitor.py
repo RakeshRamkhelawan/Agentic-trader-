@@ -7,6 +7,7 @@ from enum import Enum
 
 class LeagueTier(Enum):
     """League tiers from beginner to expert."""
+
     BRONZE = "bronze"
     SILVER = "silver"
     GOLD = "gold"
@@ -16,6 +17,7 @@ class LeagueTier(Enum):
 @dataclass
 class CompetitorStats:
     """Statistics for a competitor."""
+
     total_trades: int = 0
     winning_trades: int = 0
     losing_trades: int = 0
@@ -37,6 +39,7 @@ class CompetitorStats:
 @dataclass
 class Competitor:
     """A competitor in the trading competitions."""
+
     id: str
     name: str
     email: str
@@ -78,10 +81,10 @@ class Competitor:
 
         # Update reputation score
         self.stats.reputation_score = (
-            self.stats.total_pnl * 0.4 +
-            self.stats.win_rate * 100 * 0.3 +
-            self.stats.sharpe_ratio * 10 * 0.2 +
-            self.stats.followers * 10 * 0.1
+            self.stats.total_pnl * 0.4
+            + self.stats.win_rate * 100 * 0.3
+            + self.stats.sharpe_ratio * 10 * 0.2
+            + self.stats.followers * 10 * 0.1
         )
 
         self.last_active = datetime.utcnow()

@@ -394,7 +394,7 @@ async def test_integration_7_4_no_stubs_remaining():
 async def test_production_phase7_full_system():
     """
     PRODUCTIE TEST: Complete end-to-end system verification.
-    
+
     1. MiFID II compliance checks passeren
     2. Pre-trade risk controls werken
     3. LLM budget management actief

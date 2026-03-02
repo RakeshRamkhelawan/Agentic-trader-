@@ -1,7 +1,7 @@
 # Security Runbook - Agentic Trader Platform
 
-> **Classification:** INTERNAL USE ONLY  
-> **Last Updated:** March 2026  
+> **Classification:** INTERNAL USE ONLY
+> **Last Updated:** March 2026
 > **Owner:** Security Team
 
 ## Table of Contents
@@ -74,8 +74,8 @@
 2. Review tenant isolation:
    ```sql
    -- Check for cross-tenant data access
-   SELECT * FROM audit_log 
-   WHERE action = 'DATA_ACCESS' 
+   SELECT * FROM audit_log
+   WHERE action = 'DATA_ACCESS'
    AND tenant_id != user_tenant_id;
    ```
 
@@ -95,7 +95,7 @@
    ```bash
    # Generate new key
    openssl rand -hex 32
-   
+
    # Update secret in Vault/Kubernetes
    kubectl create secret generic jwt-secret \
      --from-literal=JWT_SECRET_KEY="$(openssl rand -hex 32)" \
@@ -145,8 +145,8 @@ kubectl logs deployment/api | grep -i "unauthorized\|forbidden" | tail -20
 # 4. Database audit
 echo "Checking database access..."
 psql $DATABASE_URL -c "
-SELECT tenant_id, COUNT(*) 
-FROM audit_log 
+SELECT tenant_id, COUNT(*)
+FROM audit_log
 WHERE timestamp > NOW() - INTERVAL '24 hours'
 GROUP BY tenant_id;
 "

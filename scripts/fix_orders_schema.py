@@ -29,25 +29,25 @@ COLUMNS_TO_ADD = [
 
 async def fix_schema():
     """Add missing columns to orders table."""
-    
+
     async with engine.begin() as conn:
         for col_name, col_type in COLUMNS_TO_ADD:
             result = await conn.execute(text(f"""
-                SELECT column_name 
-                FROM information_schema.columns 
+                SELECT column_name
+                FROM information_schema.columns
                 WHERE table_name = 'orders' AND column_name = '{col_name}'
             """))
-            
+
             if result.scalar() is None:
                 print(f"Adding missing '{col_name}' column to orders table...")
                 await conn.execute(text(f"""
-                    ALTER TABLE orders 
+                    ALTER TABLE orders
                     ADD COLUMN {col_name} {col_type}
                 """))
                 print(f"[OK] Column '{col_name}' added successfully")
             else:
                 print(f"Column '{col_name}' already exists")
-    
+
     print("\n[OK] Schema fix complete!")
 
 

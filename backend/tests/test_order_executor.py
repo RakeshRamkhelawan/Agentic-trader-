@@ -2,13 +2,11 @@
 Tests voor OrderExecutor - Order Execution Engine
 """
 
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock
 
 import pytest
 
 from backend.core.schemas.ooda_types import ExecutionPlan, Order
-from backend.execution.order_executor import ExchangeAdapter, ExecutionError, OrderExecutor
+from backend.execution.order_executor import ExchangeAdapter, OrderExecutor
 
 
 @pytest.fixture

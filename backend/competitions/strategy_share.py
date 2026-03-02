@@ -170,17 +170,15 @@ class StrategySharingService:
         if query:
             query_lower = query.lower()
             results = [
-                s for s in results
+                s
+                for s in results
                 if query_lower in s.name.lower() or query_lower in s.description.lower()
             ]
 
         # Filter by tags
         if tags:
             tag_set = set(t.lower() for t in tags)
-            results = [
-                s for s in results
-                if tag_set & set(t.lower() for t in s.tags)
-            ]
+            results = [s for s in results if tag_set & set(t.lower() for t in s.tags)]
 
         # Filter by language
         if language:
@@ -226,7 +224,8 @@ class StrategySharingService:
         """Get strategies with best performance metrics."""
         # Filter strategies with actual trades
         valid_strategies = [
-            s for s in self._strategies.values()
+            s
+            for s in self._strategies.values()
             if s.metrics.total_trades > 5  # Minimum trades for validity
         ]
 
@@ -245,10 +244,7 @@ class StrategySharingService:
     def get_author_strategies(self, author_id: str) -> dict[str, Any]:
         """Get all strategies by an author."""
         strategy_ids = self._author_strategies.get(author_id, [])
-        strategies = [
-            self._strategies[sid] for sid in strategy_ids
-            if sid in self._strategies
-        ]
+        strategies = [self._strategies[sid] for sid in strategy_ids if sid in self._strategies]
 
         return {
             "author_id": author_id,
@@ -259,8 +255,7 @@ class StrategySharingService:
     def get_trending_tags(self, limit: int = 20) -> list[dict[str, Any]]:
         """Get most popular strategy tags."""
         tag_counts = [
-            {"tag": tag, "count": len(strategies)}
-            for tag, strategies in self._tag_index.items()
+            {"tag": tag, "count": len(strategies)} for tag, strategies in self._tag_index.items()
         ]
 
         # Sort by count

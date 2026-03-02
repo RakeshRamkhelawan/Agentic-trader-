@@ -4,7 +4,6 @@ Unit tests for OODA type definitions.
 Tests validation, immutability, and field constraints.
 """
 
-from datetime import datetime
 
 import pytest
 from pydantic import ValidationError

@@ -357,13 +357,13 @@ class SmartOrderRouter:
         if remaining > 0 and sorted_exchanges:
             name, pricing = sorted_exchanges[0]
             price = pricing.ask if side == OrderSide.BUY else pricing.bid
-            
+
             # Validate price hasn't moved significantly from VWAP price
             if allocations:
                 vwap_price = allocations[0].expected_price
                 price_deviation = abs(price - vwap_price) / vwap_price
                 max_deviation = 0.01  # 1% max deviation
-                
+
                 if price_deviation > max_deviation:
                     logger.warning(
                         f"Price deviation {price_deviation:.2%} exceeds {max_deviation:.2%}, "
@@ -371,7 +371,7 @@ class SmartOrderRouter:
                     )
                     # Don't allocate remaining - reject it
                     return allocations
-            
+
             allocations.append(
                 OrderAllocation(
                     exchange=name,
