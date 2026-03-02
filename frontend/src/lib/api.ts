@@ -791,27 +791,28 @@ export interface FederatedState {
 export const federatedApi = {
   /** GET /api/v1/federated/state - Get complete Federated Triad state */
   getState: async (): Promise<FederatedState> => {
-    try {
-      const response = await api.get<FederatedState>('/federated/state');
-      return response.data;
-    } catch {
-      // Return mock data if endpoint doesn't exist yet
-      console.warn('Federated API not available, using mock data');
-      return {
-        coherence: {
-          total: 75,
-          harmony: 80,
-          performance: 100,
-          chitta_health: 85,
-          deliberation_quality: 70,
-          buddhi_clarity: 75
-        },
-        councils: [],
-        chitta: { nodes: [], total_nodes: 0, verified_nodes: 0 },
-        latest_decision: null,
-        deliberation_steps: []
-      };
-    }
+    const response = await api.get<FederatedState>('/federated/state');
+    return response.data;
+  },
+
+  /** GET /api/v1/federated/agents - Get list of federated agents */
+  getAgents: async (): Promise<{ agents: Array<{
+    id: string;
+    name: string;
+    status: string;
+    type: string;
+    trades: number;
+    pnl: number;
+    confidence: number;
+  }> }> => {
+    const response = await api.get('/federated/agents');
+    return response.data;
+  },
+
+  /** POST /api/v1/federated/sync - Trigger federated sync */
+  triggerSync: async (): Promise<{ status: string; round_id: string; agents_synced: number }> => {
+    const response = await api.post('/federated/sync', {});
+    return response.data;
   },
 
   /** POST /api/v1/federated/cycle - Trigger a full Federated Triad cycle */
@@ -820,34 +821,8 @@ export const federatedApi = {
     coherence: FederatedState['coherence'];
     insights: string;
   }> => {
-    try {
-      const response = await api.post('/federated/cycle', {});
-      return response.data;
-    } catch {
-      console.warn('Federated cycle API not available, falling back to agents API');
-      // Fallback to regular agents API
-      const result = await agentsApi.runCycle();
-      return {
-        decision: {
-          action: 'hold',
-          confidence: 0.5,
-          rationale: result.insights,
-          supporting: [],
-          opposing: [],
-          contradictions: 0,
-          timestamp: new Date().toISOString()
-        },
-        coherence: {
-          total: 75,
-          harmony: 80,
-          performance: 100,
-          chitta_health: 85,
-          deliberation_quality: 70,
-          buddhi_clarity: 75
-        },
-        insights: result.insights
-      };
-    }
+    const response = await api.post('/federated/cycle', {});
+    return response.data;
   },
 };
 
