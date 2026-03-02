@@ -1,4 +1,6 @@
-# Python
+# ============================================================================
+# PYTHON
+# ============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -20,26 +22,36 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
+# ============================================================================
+# VIRTUAL ENVIRONMENTS
+# ============================================================================
 venv/
 env/
 ENV/
 .venv/
 
-# IDE
+# ============================================================================
+# IDE / EDITORS
+# ============================================================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+Thumbs.db
+desktop.ini
 
-# Logs
+# ============================================================================
+# LOGS
+# ============================================================================
 *.log
 logs/
 *.out
 
-# Testing
+# ============================================================================
+# TESTING & COVERAGE
+# ============================================================================
 .coverage
 htmlcov/
 .pytest_cache/
@@ -48,23 +60,34 @@ htmlcov/
 .tox/
 .nox/
 
-# Cache
+# ============================================================================
+# CACHE
+# ============================================================================
 .cache/
 .ruff_cache/
 .tmp/
+__pycache__/
 
-# Environment variables
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
 .env
 .env.local
 .env.*.local
+.env.prod
 !.env.example
+!.env.prod.example
 
-# Database
+# ============================================================================
+# DATABASE
+# ============================================================================
 *.db
 *.sqlite
 *.sqlite3
 
-# Secrets (NEVER commit these!)
+# ============================================================================
+# SECRETS - NEVER COMMIT THESE!
+# ============================================================================
 secrets/
 *.pem
 *.key
@@ -76,58 +99,84 @@ id_dsa
 id_ecdsa
 id_ed25519
 
-# SSL certificates
+# ============================================================================
+# SSL CERTIFICATES
+# ============================================================================
 ssl/
 *.csr
 
-# Backtest results
+# ============================================================================
+# BACKTEST RESULTS & LOGS
+# ============================================================================
+backtest_results/
+backtest_logs/
 backtest_results/*.csv
 backtest_results/*.json
-backtest_logs/
+backtest_results/*.pt
+backtest_results/*.joblib
 
-# Paper trading sessions
+# ============================================================================
+# PAPER TRADING SESSIONS
+# ============================================================================
 paper_trading_session_*.json
 real_paper_session_*.json
 realtime_paper_session_*.json
 paper_trading_analytics/
+paper_trading_*.log
 
-# Model training logs
+# ============================================================================
+# MODEL TRAINING
+# ============================================================================
 models/production/history_*.json
 models/production/*.log
 models/production/*.log.error
+*.pt
+*.joblib
+*.pkl
+*.pickle
 
-# Data
+# ============================================================================
+# DATA DIRECTORIES
+# ============================================================================
 data/backup/
 data/processed/
 data/episodic_memory/
 data/ab_testing/
 
-# Reports
+# ============================================================================
+# REPORTS
+# ============================================================================
 reports/
 
-# Bandit
-bandit_*.json
+# ============================================================================
+# SECURITY SCANS
+# ============================================================================
+bandit*.json
+bandit-report.json
+safety_report.json
 
-# Temporary files
+# ============================================================================
+# TEMPORARY FILES
+# ============================================================================
 *.tmp
 *.temp
 *.bak
 *.orig
+*.session
 
-# Docker
-.dockerignore
-
-# Node.js
+# ============================================================================
+# NODE.JS / FRONTEND
+# ============================================================================
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# Frontend build
 frontend/dist/
 frontend/build/
 
-# Continue/Gemini/Claude
+# ============================================================================
+# AI / DEV TOOLS
+# ============================================================================
 .continue/
 .gemini/
 .claude/
@@ -135,18 +184,79 @@ frontend/build/
 .qoder/
 .serena/
 
-# Test artifacts
+# ============================================================================
+# TEST ARTIFACTS (root level)
+# ============================================================================
 test_*.log
+test_*.py
 verify_*.log
+verify_*.py
 verification*.log
 trading_engine*.log
 training_output.log
 v*_full_output.log
+epic*_full.txt
+fase*_full.txt
+handover_full.txt
 
-# Session files
-*.session
+# ============================================================================
+# ANALYSIS SCRIPTS (root level - dev only)
+# ============================================================================
+analyze_*.py
+generate_*.py
+check_*.py
+diagnose_*.py
+extract_*.py
+read_*.py
+verify_*.py
+reproduce_*.py
+import_*.py
+force_apply_*.py
+setup_app_user.py
+start_*.py
+run_*.py
 
-# OS files
-Thumbs.db
-.DS_Store
-desktop.ini
+# ============================================================================
+# OLD/DEPRECATED
+# ============================================================================
+frontend_old/
+prediction-market-analysis/
+prompts/
+libs/
+analysis/
+cache/
+downloads/
+logs/
+model/
+tests/
+
+# ============================================================================
+# DOCUMENTATION ARCHIVE (historical docs - keep locally but not in git)
+# ============================================================================
+WEEK*_IMPLEMENTATION_SUMMARY.md
+FASE*_IMPLEMENTATION_SUMMARY.md
+V*_RESULTS_SUMMARY.md
+*_AUDIT_REPORT.md
+*_FIXES_SUMMARY.md
+*_IMPLEMENTATION_PLAN.md
+MASTERPROMPT*.md
+MASTER_PROMPTS_INDEX.md
+PRD_*.md
+PROMPTS_*.md
+GTM_*.md
+BELANGRIJK*
+
+# ============================================================================
+# PDF AND BINARY REPORTS
+# ============================================================================
+*.pdf
+*.xlsx
+*.xls
+
+# ============================================================================
+# MISC
+# ============================================================================
+nul
+installed_packages.txt
+project_files_list.txt
+REPOSITORY_CLEANUP_PROPOSAL.md
