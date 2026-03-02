@@ -1,6 +1,6 @@
 # AGENTS.md - Agentic Trader Platform
 
-> **Guide for AI Coding Agents**  
+> **Guide for AI Coding Agents**
 > This document provides essential information for AI agents working on the Agentic Trader Platform. It covers the project architecture, development workflow, testing strategies, and conventions specific to this codebase.
 
 > **⚠️ CRITICAL: Before any network/port configuration task, read [PORT_ALLOCATION_SSOT.md](PORT_ALLOCATION_SSOT.md)**
@@ -392,10 +392,10 @@ from typing import Optional, Dict, List, Any
 # Class structure
 class MyClass:
     """One-line summary docstring."""
-    
+
     def __init__(self, name: str) -> None:
         self.name = name
-    
+
     async def async_method(self, param: str) -> Dict[str, Any]:
         """Multi-line docstring with full details."""
         return {"result": "value"}
@@ -500,10 +500,10 @@ async def test_my_feature():
     # Arrange
     mock_service = Mock()
     mock_service.fetch = AsyncMock(return_value={"data": "value"})
-    
+
     # Act
     result = await my_function(mock_service)
-    
+
     # Assert
     assert result == expected_value
     mock_service.fetch.assert_called_once()
@@ -589,10 +589,10 @@ from backend.agents.base_agent import BaseAgent, AgentConfig
 
 class MyAgent(BaseAgent):
     """My specialized agent."""
-    
+
     def __init__(self, config: AgentConfig):
         super().__init__(config)
-    
+
     async def think(self, observation: dict) -> dict:
         """Process observation and return decision."""
         # Implementation
@@ -895,7 +895,7 @@ def __init__(self, secret_key: str | None = None):
 
 ---
 
-*Last Updated: March 1, 2026*  
-*Platform Version: 1.0.0*  
+*Last Updated: March 1, 2026*
+*Platform Version: 1.0.0*
 *Status: PRODUCTION READY*
 *Build: Security Hardening & Reliability Release*
