@@ -81,7 +81,7 @@ class EnhancedSentimentAgent(AgentWithTools):
             "tool__external_sentiment_analysis", {"symbol": symbol, "source": "combined"}
         )
         sentiment_score = sentiment_result.get("sentiment_score", 0.0)
-        sentiment_confidence = sentiment_result.get("confidence", 0.5)
+        sentiment_result.get("confidence", 0.5)
 
         # 1.2 Technical Indicators
         tech_result = await self.call_tool(

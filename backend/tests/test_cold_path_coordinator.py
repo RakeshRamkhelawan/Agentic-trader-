@@ -340,7 +340,7 @@ class TestColdPathConfigUpdates:
                 "confidence": 0.6,
                 "reasoning": "weak bullish",
             }
-            decision1 = coordinator.make_decision()
+            coordinator.make_decision()
 
             # Second decision: action=1, confidence=0.8 (higher)
             agent.analyze.return_value = {
@@ -348,7 +348,7 @@ class TestColdPathConfigUpdates:
                 "confidence": 0.8,
                 "reasoning": "strong bullish",
             }
-            decision2 = coordinator.make_decision()
+            coordinator.make_decision()
 
             # Write best decision (should auto-use highest confidence decision)
             coordinator.write_config(None)  # Should use last_best_decision

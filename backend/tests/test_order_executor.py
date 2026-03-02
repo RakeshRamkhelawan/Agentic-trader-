@@ -118,7 +118,7 @@ class TestSlippageCalculation:
             trace_id="test-slippage-trace",
         )
 
-        outcome = await order_executor.execute_trade(low_price_plan)
+        await order_executor.execute_trade(low_price_plan)
 
         # Should log warning (slippage > 50 bps)
         assert "slippage" in caplog.text.lower()

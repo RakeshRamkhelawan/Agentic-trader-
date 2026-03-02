@@ -16,7 +16,7 @@ class KafkaBroker(MessageBroker):
     Uses AIOKafka for high-performance async I/O.
     """
 
-    def __init__(self, bootstrap_servers: str = "localhost:6000"  # Zie PORT_ALLOCATION.md):
+    def __init__(self, bootstrap_servers: str = "localhost:6000"):  # Zie PORT_ALLOCATION.md
         if AIOKafkaProducer is None:
             raise ImportError("aiokafka not installed. Run: pip install aiokafka")
 

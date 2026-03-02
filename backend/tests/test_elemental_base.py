@@ -100,7 +100,7 @@ async def test_system_identity_registration(base_config):
     """Test interaction with SystemIdentity."""
     mock_identity = MagicMock()
 
-    agent = TestElementalAgent(**base_config, system_identity=mock_identity)
+    TestElementalAgent(**base_config, system_identity=mock_identity)
 
     # Verify registration call
     mock_identity.register_elemental_agent.assert_called_once_with(

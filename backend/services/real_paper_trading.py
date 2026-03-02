@@ -550,7 +550,7 @@ async def main():
         print("\n[INTERRUPT] Stopping...")
     finally:
         await trader.close()
-        filename = trader.save_results()
+        trader.save_results()
 
         # Import to database
         print("[IMPORT] Saving to database...")

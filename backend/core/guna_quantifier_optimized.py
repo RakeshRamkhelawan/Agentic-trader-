@@ -267,7 +267,7 @@ class GunaQuantifierOptimized:
         volume_surge = data.get("volume_surge", 0.0)
 
         # Vectorized thresholds
-        v = np.array([volatility, trend_strength, abs(volume_surge)])
+        np.array([volatility, trend_strength, abs(volume_surge)])
 
         # Base Guna vector
         sattva = 0.33

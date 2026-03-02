@@ -129,7 +129,7 @@ async def health_check():
             "details": {"error": str(e)},
         }
 
-    total_latency = (time.time() - start_time) * 1000
+    (time.time() - start_time) * 1000
 
     return HealthResponse(
         status="healthy" if all_healthy else "degraded",

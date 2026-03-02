@@ -77,10 +77,10 @@ class TestIcebergExecutor:
         await executor.cancel()
 
         # Start execution - should stop quickly
-        task = asyncio.create_task(executor.execute())
+        asyncio.create_task(executor.execute())
         await asyncio.sleep(0.1)
 
-        assert executor._cancelled == True
+        assert executor._cancelled
         assert executor.status == AdvancedOrderStatus.CANCELLED
 
     @pytest.mark.asyncio
@@ -148,7 +148,7 @@ class TestTWAPExecutor:
 
         await executor.cancel()
 
-        assert executor._cancelled == True
+        assert executor._cancelled
 
 
 class TestStopLimitExecutor:
@@ -179,7 +179,7 @@ class TestStopLimitExecutor:
 
         results = await executor.execute()
 
-        assert executor._triggered == True
+        assert executor._triggered
         assert len(results) == 1
         assert executor.status == AdvancedOrderStatus.COMPLETED
 
@@ -208,7 +208,7 @@ class TestStopLimitExecutor:
 
         results = await executor.execute()
 
-        assert executor._triggered == True
+        assert executor._triggered
         assert len(results) == 1
 
     @pytest.mark.asyncio
@@ -237,7 +237,7 @@ class TestStopLimitExecutor:
 
         await executor.cancel()
 
-        assert executor._cancelled == True
+        assert executor._cancelled
 
 
 class TestAdvancedOrderManager:
@@ -285,7 +285,7 @@ class TestAdvancedOrderManager:
 
         result = await manager.cancel_order(order_id)
 
-        assert result == True
+        assert result
 
     @pytest.mark.asyncio
     async def test_get_order_status(self, manager, mock_adapter):
@@ -328,7 +328,7 @@ class TestOrderConfigurations:
         assert config.total_quantity == 50.0
         assert config.num_slices == 10
         assert config.duration_seconds == 300
-        assert config.randomize == True
+        assert config.randomize
 
     def test_stop_limit_config(self):
         """Test StopLimitConfig creation."""

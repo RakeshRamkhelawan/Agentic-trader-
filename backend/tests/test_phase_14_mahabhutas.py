@@ -74,7 +74,6 @@ class TestPhase14AkashaEther:
     async def test_api_requests_traverse_akasha(self, system_identity, market_data):
         """Test that API requests properly traverse Akasha layer."""
         # Use context to simulate network condition
-        context = {"network_latency_ms": 25.0}
 
         # Process cycle
         result = await system_identity.process_market_cycle(

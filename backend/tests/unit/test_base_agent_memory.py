@@ -97,7 +97,7 @@ class TestBaseAgentAct:
 
     def test_act_adds_to_history(self, base_agent):
         """Test that act() adds entry to history."""
-        result = base_agent.act("buy", "Strong momentum")
+        base_agent.act("buy", "Strong momentum")
 
         assert len(base_agent.reasoning_history) == 1
         entry = base_agent.reasoning_history[0]

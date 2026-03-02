@@ -27,11 +27,6 @@ async def test_websocket_navagraha_stream():
         # For this integration test, we'll try to trigger a broadcast manually
         # to avoid waiting for the background task loop.
 
-        test_payload = {
-            "planets": {},
-            "guna_distribution": {"sattva": 0.5, "rajas": 0.3, "tamas": 0.2},
-            "timestamp": "2024-01-01T00:00:00Z",
-        }
 
         # We need to run the broadcast in the event loop.
         # Since TestClient runs synchronously, we might need a different approach

@@ -373,7 +373,7 @@ class TestPhaseBEndToEnd:
 
         # Act
         with patch.object(coordinator, "_execute_ooda_loop", new_callable=AsyncMock):
-            result = await coordinator.run_cycle("BTC/USD", 50000.0)
+            await coordinator.run_cycle("BTC/USD", 50000.0)
 
         # Assert
         assert coordinator._current_guna is not None

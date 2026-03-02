@@ -406,7 +406,7 @@ JSON only:"""
         elif message.type == "NEWS_UPDATE":
             # Auto-analyze news when received
             news = message.payload.get("news", {})
-            sentiments = message.payload.get("sentiments", {})
+            message.payload.get("sentiments", {})
 
             for coin, items in news.items():
                 if isinstance(items, list) and len(items) > 0:

@@ -116,7 +116,7 @@ async def test_rahu_kala_penalty(
 
     # Verify: Coherence should be reduced.
     perception = result["perception"]
-    assert perception["rahu_kala_active"] == True
+    assert perception["rahu_kala_active"]
     mock_navagraha_service.get_current_state.assert_called_once()
 
 

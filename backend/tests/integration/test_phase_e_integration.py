@@ -143,8 +143,8 @@ class TestPhaseESystemIdentityIntegration:
     def test_system_state_adapts_to_outcomes(self, system_identity):
         """Test dat system state zich aanpast aan outcomes."""
         # Arrange
-        initial_coherence = system_identity.system_state["coherence"]
-        initial_confidence = system_identity.system_state["confidence"]
+        system_identity.system_state["coherence"]
+        system_identity.system_state["confidence"]
 
         # Act - multiple positive outcomes
         for i in range(10):

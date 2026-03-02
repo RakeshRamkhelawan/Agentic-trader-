@@ -272,7 +272,7 @@ class TestUnifiedConsciousnessE2E:
     async def test_e2e_risk_orchestrator_integration(self, unified_system):
         """Test E2E: RiskOrchestrator in de trading flow."""
         # Arrange
-        coordinator = unified_system["coordinator"]
+        unified_system["coordinator"]
         risk_orch = unified_system["risk_orchestrator"]
 
         # Create test signal

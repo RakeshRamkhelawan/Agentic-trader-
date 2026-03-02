@@ -341,7 +341,7 @@ class BacktestEngineV18:
         """Get price history for symbol (mock implementation)."""
         # Generate 30 days of mock prices
         prices = []
-        base_price = await self._get_price(symbol, date)
+        await self._get_price(symbol, date)
 
         for i in range(30):
             prev_date = date - timedelta(days=i)

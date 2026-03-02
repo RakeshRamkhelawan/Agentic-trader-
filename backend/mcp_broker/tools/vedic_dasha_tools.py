@@ -428,8 +428,8 @@ async def vedic_calculate_transits(
             )
 
         # Calculate market prediction based on transits
-        jupiter = next((t for t in transit_data if t["planet"] == "Jupiter"), None)
-        saturn = next((t for t in transit_data if t["planet"] == "Saturn"), None)
+        next((t for t in transit_data if t["planet"] == "Jupiter"), None)
+        next((t for t in transit_data if t["planet"] == "Saturn"), None)
 
         market_sentiment = _analyze_market_sentiment(transit_data)
 

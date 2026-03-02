@@ -156,5 +156,5 @@ async def test_integration_secret_manager_caching_flow():
     mock_vault.get_secret.assert_called_once_with("service", "key")
 
     manager.clear_cache()
-    value3 = manager.get_secret("service", "key")
+    manager.get_secret("service", "key")
     assert mock_vault.get_secret.call_count == 2

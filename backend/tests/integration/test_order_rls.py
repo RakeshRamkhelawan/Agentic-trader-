@@ -28,7 +28,7 @@ async def test_13_create_order(async_client, system_db):
     login_res = await async_client.post(
         "/api/v1/auth/login", json={"email": email, "password": password}
     )
-    token = login_res.json()["access_token"]
+    login_res.json()["access_token"]
 
     # 2. Create Order via API (assuming endpoint exists, or direct DB if not)
     # Since we are testing Architecture/RLS, if API doesn't exist we insert via DB and read back via API

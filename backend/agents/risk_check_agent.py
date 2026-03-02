@@ -71,7 +71,7 @@ class RiskCheckAgent(AgentWithTools):
         """
         symbol = features.get("symbol", "BTC")
         price = features.get("price", 0.0)
-        side = features.get("side", "buy").lower()
+        features.get("side", "buy").lower()
         proposed_qty = features.get("proposed_quantity", 0.0)
         portfolio_value = features.get("portfolio_value", 0.0)
 

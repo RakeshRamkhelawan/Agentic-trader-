@@ -156,7 +156,7 @@ class TestPhaseAIntegration:
         """Test dat ColdPathCoordinator deprecated is."""
         import warnings
 
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
 
             # Try to instantiate ColdPathCoordinator
@@ -166,7 +166,7 @@ class TestPhaseAIntegration:
 
                 with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
                     config_path = f.name
-                coordinator = ColdPathCoordinator(
+                ColdPathCoordinator(
                     config_path=config_path,
                 )
                 # If we get here, it works but should be deprecated

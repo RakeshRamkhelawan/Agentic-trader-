@@ -204,7 +204,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
                 continue
 
             planet_data = planets[planet_name]
-            planet_sign_idx = self.SIGNS.index(planet_data["sign"])
+            self.SIGNS.index(planet_data["sign"])
 
             # Get benefic positions for this planet from each sign
             planet_scores = {sign: 0 for sign in self.SIGNS}
@@ -265,7 +265,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
         sign = self._longitude_to_sign(longitude)
 
         # Get bindu from Moon's Ashtakavarga (standard for Gochara)
-        moon_sign = birth_kundli.get("planets", {}).get("Moon", {}).get("sign", "Aries")
+        birth_kundli.get("planets", {}).get("Moon", {}).get("sign", "Aries")
         bhinnashtaka = ashtaka.get("bhinnashtaka", {})
 
         return bhinnashtaka.get(planet, {}).get(sign, 0)
@@ -286,7 +286,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
 
         moon_data = kundli.get("planets", {}).get("Moon", {})
         moon_nakshatra = moon_data.get("nakshatra", "Ashwini")
-        moon_pada = moon_data.get("pada", 1)
+        moon_data.get("pada", 1)
 
         # Nakshatra lords (same order as DASHA_SEQUENCE)
         nakshatra_lords = [
@@ -375,7 +375,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
         ref_date: datetime,
     ) -> tuple[str, datetime, datetime, str]:
         """Calculate Antardasha within Mahadasha."""
-        maha_years = self.DASHA_YEARS[maha_lord]
+        self.DASHA_YEARS[maha_lord]
         total_days = (maha_end - maha_start).days
 
         start_index = self.DASHA_SEQUENCE.index(maha_lord)
@@ -470,7 +470,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
 
         for planet, pos in transits.get("current_positions", {}).items():
             planet_long = pos.get("longitude", 0)
-            planet_sign = pos.get("sign", "")
+            pos.get("sign", "")
 
             # Conjunction with Saham
             angle = abs(planet_long - saham_long) % 360
@@ -605,7 +605,6 @@ class EnhancedVedAstroConnector(VedAstroConnector):
 
         # Scoring
         score = 0
-        max_score = 100
 
         # Dasha lords (40 points)
         benefic_planets = ["Jupiter", "Venus", "Mercury", "Moon"]

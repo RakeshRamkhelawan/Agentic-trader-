@@ -216,7 +216,7 @@ class MarketEmotionCalibrator:
         import json
 
         with open(path) as f:
-            data = json.load(f)
+            json.load(f)
         # Reconstruct thresholds from dict...
         return self._default_thresholds()  # Simplified
 

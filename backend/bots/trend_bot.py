@@ -36,7 +36,7 @@ class TrendFollowerBot(BaseTradingBot):
         ma_long = sum(price_data[-20:]) / 20  # 20-period MA
 
         current_price = price_data[-1]
-        prev_price = price_data[-2] if len(price_data) > 1 else current_price
+        price_data[-2] if len(price_data) > 1 else current_price
 
         # Determine trend
         trend_up = ma_short > ma_long

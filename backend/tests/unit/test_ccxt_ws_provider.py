@@ -92,20 +92,6 @@ class TestCCXTWSProvider:
         When: Subscribe to BTC/USDT orderbook
         Then: Receive orderbook updates with bids, asks, timestamp
         """
-        orderbook_data = {
-            "symbol": "BTC/USDT",
-            "timestamp": 1707900000000,
-            "bids": [
-                [49500.0, 1.5],
-                [49490.0, 2.0],
-                [49480.0, 3.0],
-            ],
-            "asks": [
-                [49510.0, 1.5],
-                [49520.0, 2.0],
-                [49530.0, 3.0],
-            ],
-        }
 
         received_data = []
 
@@ -124,15 +110,6 @@ class TestCCXTWSProvider:
         When: Subscribe to account orders
         Then: Receive order updates (created, filled, cancelled)
         """
-        order_update = {
-            "id": "order_123",
-            "symbol": "BTC/USDT",
-            "status": "open",
-            "side": "buy",
-            "amount": 1.0,
-            "price": 49500.0,
-            "timestamp": 1707900000000,
-        }
 
         received_data = []
 
@@ -177,7 +154,6 @@ class TestCCXTWSProvider:
         When: Retries occur
         Then: Delays are: 1s, 2s, 4s (then succeeds or gives up at 5 retries)
         """
-        delays = []
 
         async def mock_connect_with_failures():
             """Simulate 3 failures, then success."""

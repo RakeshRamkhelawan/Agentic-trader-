@@ -129,14 +129,6 @@ class TestIntegrationPipeline:
 
         # 4b. Smart Routing
         # Mock exchange quotes
-        mock_quotes = [
-            {"exchange": "kraken", "price": 50000.0, "fee": 10.0},
-            {
-                "exchange": "binance",
-                "price": 49950.0,
-                "fee": 5.0,
-            },  # Lower price + lower fee = Better
-        ]
 
         # Note: SmartRouter uses get_best_route(asset, side, amount)
         # We patch _fetch_quotes or just the internal logic if needed,

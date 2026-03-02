@@ -539,9 +539,7 @@ class WaterAgentV6:
             )
 
         # Calculate macro signals
-        price_change_7d = (
-            (prices[-1] - prices[-min(7, len(prices))]) / prices[-min(7, len(prices))] * 100
-        )
+        ((prices[-1] - prices[-min(7, len(prices))]) / prices[-min(7, len(prices))] * 100)
         price_change_30d = (
             (prices[-1] - prices[-min(30, len(prices))]) / prices[-min(30, len(prices))] * 100
         )
