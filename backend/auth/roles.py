@@ -7,6 +7,7 @@ from typing import Any
 
 class Permission(Enum):
     """System permissions."""
+
     # User management
     USER_CREATE = "user:create"
     USER_READ = "user:read"
@@ -51,6 +52,7 @@ class Permission(Enum):
 @dataclass
 class Role:
     """A role with associated permissions."""
+
     id: str
     name: str
     description: str
@@ -291,11 +293,13 @@ class RoleManager:
         users = []
         for user_id, role_id in self._user_roles.get(tenant_id, {}).items():
             role = self._roles.get(role_id)
-            users.append({
-                "user_id": user_id,
-                "role_id": role_id,
-                "role_name": role.name if role else "Unknown",
-            })
+            users.append(
+                {
+                    "user_id": user_id,
+                    "role_id": role_id,
+                    "role_name": role.name if role else "Unknown",
+                }
+            )
         return users
 
 

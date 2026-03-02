@@ -10,6 +10,7 @@ import numpy as np
 
 class SignalDirection(Enum):
     """Trade signal directions."""
+
     BUY = "buy"
     SELL = "sell"
     HOLD = "hold"
@@ -17,15 +18,17 @@ class SignalDirection(Enum):
 
 class ConfidenceLevel(Enum):
     """Prediction confidence levels."""
-    LOW = "low"       # 50-65%
-    MEDIUM = "medium" # 65-80%
-    HIGH = "high"     # 80-95%
+
+    LOW = "low"  # 50-65%
+    MEDIUM = "medium"  # 65-80%
+    HIGH = "high"  # 80-95%
     VERY_HIGH = "very_high"  # >95%
 
 
 @dataclass
 class PredictionResult:
     """Result of a trade prediction."""
+
     symbol: str
     direction: SignalDirection
     confidence: float  # 0-1
@@ -94,9 +97,7 @@ class TradePredictor:
         features = self._extract_features(price_history, volume_history)
 
         # Ensemble prediction (mock implementation)
-        direction, confidence, predicted_return = self._ensemble_predict(
-            features, market_context
-        )
+        direction, confidence, predicted_return = self._ensemble_predict(features, market_context)
 
         # Calculate risk score
         risk_score = self._calculate_risk(features, predicted_return)
@@ -145,27 +146,22 @@ class TradePredictor:
             return {}
 
         # Calculate returns
-        returns = [(prices[i] - prices[i-1]) / prices[i-1]
-                   for i in range(1, len(prices))]
+        returns = [(prices[i] - prices[i - 1]) / prices[i - 1] for i in range(1, len(prices))]
 
         features = {
             # Trend features
             "sma_10": np.mean(prices[-10:]),
             "sma_20": np.mean(prices[-20:]),
             "trend_slope": self._calculate_slope(prices[-20:]),
-
             # Volatility
             "volatility_20": np.std(returns[-20:]) if len(returns) >= 20 else 0,
             "atr": self._calculate_atr(prices),
-
             # Momentum
             "rsi": self._calculate_rsi(prices),
             "momentum_10": (prices[-1] - prices[-10]) / prices[-10] if len(prices) >= 10 else 0,
-
             # Volume
             "volume_sma_10": np.mean(volumes[-10:]) if len(volumes) >= 10 else 0,
             "volume_ratio": volumes[-1] / np.mean(volumes[-10:]) if len(volumes) >= 10 else 1,
-
             # Price action
             "distance_from_high": (max(prices[-20:]) - prices[-1]) / prices[-1],
             "distance_from_low": (prices[-1] - min(prices[-20:])) / prices[-1],
@@ -186,7 +182,7 @@ class TradePredictor:
 
         tr_values = []
         for i in range(1, min(period + 1, len(prices))):
-            tr = abs(prices[-i] - prices[-i-1])
+            tr = abs(prices[-i] - prices[-i - 1])
             tr_values.append(tr)
 
         return np.mean(tr_values) if tr_values else 0
@@ -196,7 +192,7 @@ class TradePredictor:
         if len(prices) < period + 1:
             return 50
 
-        deltas = [prices[i] - prices[i-1] for i in range(1, len(prices))]
+        deltas = [prices[i] - prices[i - 1] for i in range(1, len(prices))]
         gains = [d if d > 0 else 0 for d in deltas[-period:]]
         losses = [-d if d < 0 else 0 for d in deltas[-period:]]
 
@@ -294,14 +290,30 @@ class TradePredictor:
 
         rsi = features.get("rsi", 50)
         if rsi < 30:
-            signals.append({"signal": "RSI_OVERSOLD", "strength": (30 - rsi) / 30, "direction": "buy"})
+            signals.append(
+                {"signal": "RSI_OVERSOLD", "strength": (30 - rsi) / 30, "direction": "buy"}
+            )
         elif rsi > 70:
-            signals.append({"signal": "RSI_OVERBOUGHT", "strength": (rsi - 70) / 30, "direction": "sell"})
+            signals.append(
+                {"signal": "RSI_OVERBOUGHT", "strength": (rsi - 70) / 30, "direction": "sell"}
+            )
 
         if features.get("trend_slope", 0) > 0:
-            signals.append({"signal": "UPTREND", "strength": min(features["trend_slope"] * 100, 1), "direction": "buy"})
+            signals.append(
+                {
+                    "signal": "UPTREND",
+                    "strength": min(features["trend_slope"] * 100, 1),
+                    "direction": "buy",
+                }
+            )
         elif features.get("trend_slope", 0) < 0:
-            signals.append({"signal": "DOWNTREND", "strength": min(abs(features["trend_slope"]) * 100, 1), "direction": "sell"})
+            signals.append(
+                {
+                    "signal": "DOWNTREND",
+                    "strength": min(abs(features["trend_slope"]) * 100, 1),
+                    "direction": "sell",
+                }
+            )
 
         return signals[:3]  # Top 3 signals
 
@@ -323,12 +335,12 @@ class TradePredictor:
         days: int = 30,
     ) -> dict[str, float]:
         """Calculate prediction accuracy metrics."""
-        cutoff = datetime.utcnow() - __import__('datetime').timedelta(days=days)
+        cutoff = datetime.utcnow() - __import__("datetime").timedelta(days=days)
 
         relevant = [
-            p for p in self.prediction_history
-            if p.timestamp > cutoff
-            and (symbol is None or p.symbol == symbol)
+            p
+            for p in self.prediction_history
+            if p.timestamp > cutoff and (symbol is None or p.symbol == symbol)
         ]
 
         if not relevant:
@@ -343,8 +355,14 @@ class TradePredictor:
             "f1_score": 0.71,
             "count": len(relevant),
             "by_direction": {
-                "buy": {"accuracy": 0.70, "count": len([p for p in relevant if p.direction == SignalDirection.BUY])},
-                "sell": {"accuracy": 0.74, "count": len([p for p in relevant if p.direction == SignalDirection.SELL])},
+                "buy": {
+                    "accuracy": 0.70,
+                    "count": len([p for p in relevant if p.direction == SignalDirection.BUY]),
+                },
+                "sell": {
+                    "accuracy": 0.74,
+                    "count": len([p for p in relevant if p.direction == SignalDirection.SELL]),
+                },
             },
         }
 

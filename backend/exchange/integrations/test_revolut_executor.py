@@ -14,14 +14,13 @@ Usage:
 
 import asyncio
 import logging
-from datetime import UTC, datetime
 
 from dotenv import load_dotenv
 
 from backend.core.schemas.ooda_types import ExecutionPlan
 from backend.execution.order_executor import OrderExecutor
 from backend.execution.revolut_x_adapter import RevolutXAdapter
-from backend.governance.agent_gatekeeper import AgentGatekeeper, AgentRole, ToolPermission
+from backend.governance.agent_gatekeeper import AgentGatekeeper, AgentRole
 
 # Setup logging
 logging.basicConfig(
@@ -81,7 +80,7 @@ async def test_revolut_executor():
             caller_name="test_trader",
             caller_role=AgentRole.EXECUTOR,
         )
-        print(f"✅ ExecutionPlan created:")
+        print("✅ ExecutionPlan created:")
         print(f"   Symbol: {execution_plan.symbol}")
         print(f"   Side: {execution_plan.side}")
         print(f"   Type: {execution_plan.order_type}")
@@ -188,7 +187,8 @@ async def test_mock_executor():
 
 
 if __name__ == "__main__":
-    print("""
+    print(
+        """
 ╔════════════════════════════════════════════════════════════════╗
 ║              REVOLUT X EXECUTOR INTEGRATION TEST               ║
 ╚════════════════════════════════════════════════════════════════╝
@@ -207,7 +207,8 @@ Tests will:
   ⚠️  Real order execution is DISABLED by default
   ⚠️  Uncomment the execution block to place real orders
 
-""")
+"""
+    )
 
     asyncio.run(test_revolut_executor())
     asyncio.run(test_mock_executor())
