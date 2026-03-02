@@ -7,10 +7,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from backend.competitions.advanced_tournaments import (
-    AdvancedTournamentEngine,
-    TournamentVariant,
-)
+from backend.competitions.advanced_tournaments import AdvancedTournamentEngine, TournamentVariant
 
 
 class ScheduleFrequency(Enum):

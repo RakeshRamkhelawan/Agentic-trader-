@@ -9,7 +9,6 @@ from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-
 from backend.core.config.settings import settings
 from backend.core.context import set_tenant_context
 
