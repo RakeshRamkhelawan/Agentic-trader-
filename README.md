@@ -7,7 +7,7 @@
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB.svg?logo=react)](https://react.dev)
-<!-- TODO: Add license badge once decided: [![License](https://img.shields.io/badge/license-TODO-blue.svg)](LICENSE) -->
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-734+-success.svg)](docs/TESTING.md)
 [![Coverage](https://img.shields.io/badge/coverage-88%25-brightgreen.svg)](docs/TESTING.md)
 [![Security](https://img.shields.io/badge/security-88%2F100-brightgreen.svg)](docs/SECURITY_RUNBOOK.md)
@@ -248,14 +248,19 @@ See [NEXT_STEPS.md](NEXT_STEPS.md) and [VERSIONING.md](VERSIONING.md) for upcomi
 
 ## 📄 License
 
-<!-- TODO: Add license information once decided -->
-License to be determined. Contact the repository owner for licensing information.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
-Possible options:
-- **MIT** - Permissive, allows commercial use
-- **Apache 2.0** - Permissive with patent protection
-- **GPL v3** - Copyleft, requires open source derivatives
-- **Proprietary** - Closed source, contact for usage rights
+The Apache 2.0 license allows you to:
+- ✅ Use the software commercially
+- ✅ Modify the software
+- ✅ Distribute the software
+- ✅ Use patent claims
+- ✅ Place warranty
+
+With the conditions:
+- Include copyright notice
+- State changes made
+- Include license text
 
 ---
 
