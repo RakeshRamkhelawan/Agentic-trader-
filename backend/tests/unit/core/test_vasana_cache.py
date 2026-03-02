@@ -211,14 +211,14 @@ class TestMemorySystemWithCache:
             memory._update_clusters(memory.memory_buffer[-1])
 
         # First call - cache miss, should query clusters
-        result1 = memory.get_tendency(perception)
+        memory.get_tendency(perception)
 
         # Stats should show cache miss
         stats = memory.get_statistics()
         assert stats["vasana_cache"]["misses"] >= 1
 
         # Second call with same perception - should hit cache
-        result2 = memory.get_tendency(perception)
+        memory.get_tendency(perception)
 
         # Stats should show cache hit
         stats = memory.get_statistics()

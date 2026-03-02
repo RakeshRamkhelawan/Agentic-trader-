@@ -217,7 +217,7 @@ class XGBoostOracle:
         booster = self.model.get_booster()
 
         # Update with new data
-        lr = learning_rate or self.model_params.get("learning_rate", 0.1) * 0.5
+        learning_rate or self.model_params.get("learning_rate", 0.1) * 0.5
 
         self.model.fit(X, y, xgb_model=booster, verbose=False)
 

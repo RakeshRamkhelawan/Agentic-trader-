@@ -30,7 +30,7 @@ def test_memory_agent_init(memory_agent, mock_chroma_client):
 def test_get_collection_default_tenant(memory_agent, mock_chroma_client):
     # Test without tenant context (should default to "default")
     with patch("backend.core.memory_agent.get_current_tenant_optional", return_value=None):
-        collection = memory_agent._get_collection()
+        memory_agent._get_collection()
 
         mock_chroma_client.get_or_create_collection.assert_called_with(
             name="default_test_thoughts", metadata={"hnsw:space": "cosine"}
@@ -44,7 +44,7 @@ def test_get_collection_specific_tenant(memory_agent, mock_chroma_client):
         "backend.core.memory_agent.get_current_tenant_optional",
         return_value="tenant-abc",
     ):
-        collection = memory_agent._get_collection()
+        memory_agent._get_collection()
 
         mock_chroma_client.get_or_create_collection.assert_called_with(
             name="tenant-abc_test_thoughts", metadata={"hnsw:space": "cosine"}

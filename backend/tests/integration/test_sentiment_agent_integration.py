@@ -268,14 +268,14 @@ async def test_sentiment_agent_context_preservation():
 
     # First call with context
     context1 = {"symbol": "BTC/USD", "exchange": "Binance"}
-    result1 = await agent.analyze({"price": 50000.0}, context1)
+    await agent.analyze({"price": 50000.0}, context1)
 
     # Store context in state
     agent.update_state({"last_context": context1})
 
     # Second call
     context2 = {"symbol": "ETH/USD", "exchange": "Coinbase"}
-    result2 = await agent.analyze({"price": 3000.0}, context2)
+    await agent.analyze({"price": 3000.0}, context2)
 
     # Verify context was preserved
     state = agent.get_state()

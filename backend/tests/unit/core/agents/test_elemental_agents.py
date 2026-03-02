@@ -10,7 +10,7 @@ class TestElementalAgents:
         assert agent.name == "Prithvi"
         assert agent.element == ElementType.EARTH
         assert agent.prana == 1.0
-        assert agent.is_active == True
+        assert agent.is_active
 
     def test_jala_agent_initialization(self):
         agent = JalaAgent()
@@ -50,13 +50,13 @@ class TestElementalAgents:
         # Test exhaustion
         agent.expend_prana(0.95)  # 1.0 - 0.95 = 0.05
         assert agent.prana < 0.1
-        assert agent.is_active == False
+        assert not agent.is_active
 
         # Test wake up
         agent.regenerate_prana(0.2)
         assert agent.prana > 0.2
         agent.wake_up()
-        assert agent.is_active == True
+        assert agent.is_active
 
     def test_prithvi_process_cycle_high_risk(self):
         agent = PrithviAgent()
@@ -64,7 +64,7 @@ class TestElementalAgents:
         decision = agent.process_cycle(perception, {})
 
         assert decision["action"] == "hold"
-        assert decision["veto"] == True
+        assert decision["veto"]
         assert agent.prana < 1.0  # Expended energy to hold
 
     def test_jala_process_cycle_flow(self):

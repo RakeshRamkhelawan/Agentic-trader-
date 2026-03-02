@@ -66,13 +66,11 @@ def retry(
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs) -> T:
-            last_exception: Exception | None = None
 
             for attempt in range(config.max_attempts):
                 try:
                     return await func(*args, **kwargs)
                 except config.retryable_exceptions as e:
-                    last_exception = e
 
                     if attempt == config.max_attempts - 1:
                         logger.error(

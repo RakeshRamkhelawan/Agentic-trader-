@@ -345,7 +345,7 @@ class TestPhase13TattvaLayerTraversal:
 
     def test_traverse_tattva_layer_updates_system_state(self, system_identity):
         """Test that layer traversal updates system state."""
-        initial_coherence = system_identity.system_state["tattva_coherence"][5]
+        system_identity.system_state["tattva_coherence"][5]
         system_identity._traverse_tattva_layer(5, "ascend")
         # Should be updated (even if to same value)
         assert 5 in system_identity.system_state["tattva_coherence"]
@@ -612,7 +612,7 @@ class TestPhase13BackwardCompatibility:
     @pytest.mark.asyncio
     async def test_memory_system_still_functioning(self, system_identity, market_data):
         """Test that memory system still works with Tattva integration."""
-        result = await system_identity.process_market_cycle(
+        await system_identity.process_market_cycle(
             price_data=market_data["price_data"],
             volume_data=market_data["volume_data"],
             orderbook_imbalance=market_data["orderbook_imbalance"],

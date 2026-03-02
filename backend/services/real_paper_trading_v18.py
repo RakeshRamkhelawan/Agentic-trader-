@@ -393,7 +393,7 @@ class RealPaperTradingV18:
                 return False
 
             quantity = position["quantity"]
-            entry_price = position["entry_price"]
+            position["entry_price"]
 
             # 3. Execute exit via MCP (same as backtest)
             result = await self.mcp_client.call_tool(

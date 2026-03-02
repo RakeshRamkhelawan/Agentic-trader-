@@ -216,7 +216,7 @@ async def test_trading_flow_error_recovery():
 
         # First attempt
         result1 = await agent.analyze({"price": 50000.0}, {"symbol": "BTC/USD"})
-        msg_id1 = await agent.publish_thought("First", 0.8, result1)
+        await agent.publish_thought("First", 0.8, result1)
         # First call failed, so publish_thought catches error and returns None
         # The error is in EventBus.publish, which agent.publish_thought catches
 

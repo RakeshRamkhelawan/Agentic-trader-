@@ -450,7 +450,7 @@ class TestSystemIdentityOutcomeUpdate:
         mock_identity = MagicMock(spec=SystemIdentity)
         mock_identity.update_outcome = MagicMock()
 
-        coordinator = OODALoopCoordinator(
+        OODALoopCoordinator(
             data_scout=MagicMock(),
             analyst=MagicMock(),
             trader=MagicMock(),
@@ -464,10 +464,6 @@ class TestSystemIdentityOutcomeUpdate:
         )
 
         # Simulate execution result
-        execution_result = {
-            "status": "executed",
-            "pnl_percent": 0.05,
-        }
 
         # We need to test through _execute_ooda_loop
         # This is tested more thoroughly in integration tests

@@ -14,7 +14,9 @@ except ImportError:
     print("Installing required dependencies...")
     import subprocess
 
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "redis", "psycopg", "httpx"])  # nosec B603 - Installing known dependencies
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "redis", "psycopg", "httpx"]
+    )  # nosec B603 - Installing known dependencies
     import httpx
     import psycopg
     import redis.asyncio as aioredis
@@ -55,8 +57,12 @@ class InfrastructureVerifier:
                 "DATABASE_URL",
                 "postgresql://trader:trading_secure@localhost:5432/trading_db",
             ),
-            "backend_url": os.getenv("BACKEND_URL", "http://localhost:8000")  # Zie PORT_ALLOCATION.md,
-            "clickhouse_url": os.getenv("CLICKHOUSE_URL", "http://localhost:5000")  # Zie PORT_ALLOCATION.md,
+            "backend_url": os.getenv(
+                "BACKEND_URL", "http://localhost:8000"
+            ),  # Zie PORT_ALLOCATION.md
+            "clickhouse_url": os.getenv(
+                "CLICKHOUSE_URL", "http://localhost:5000"
+            ),  # Zie PORT_ALLOCATION.md
         }
 
     async def check_redis(self) -> ServiceCheck:

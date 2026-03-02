@@ -66,7 +66,7 @@ class TestHotPathTracer:
         mock_span = MagicMock()
         mock_tracer.start_span.return_value = mock_span
 
-        with hot_tracer.start_span("test") as span:
+        with hot_tracer.start_span("test"):
             pass
 
         mock_tracer.start_span.assert_called_once()
@@ -143,14 +143,14 @@ class TestTracePropagation:
     @pytest.mark.asyncio
     async def test_trace_propagation(self):
         """Test that trace ID propagates across async tasks."""
-        trace_id = TraceCorrelation.start_trace("parent")
+        TraceCorrelation.start_trace("parent")
 
         async def child_task():
             # Should inherit trace context
             return TraceCorrelation.get_current_trace_id()
 
         # In async context, should propagate
-        result = await child_task()
+        await child_task()
 
         # Note: ContextVars propagate automatically in asyncio.gather/create_task
         TraceCorrelation.clear_current_trace()
@@ -174,10 +174,10 @@ class TestTracingIntegration:
             mock_get.return_value = mock_tracer
 
             # Simulate hot path operation
-            hot_tracer = get_hot_path_tracer("hot_path")
+            get_hot_path_tracer("hot_path")
 
             # Simulate cold path operation
-            cold_tracer = get_tracer("cold_path")
+            get_tracer("cold_path")
 
         TraceCorrelation.clear_current_trace()
 

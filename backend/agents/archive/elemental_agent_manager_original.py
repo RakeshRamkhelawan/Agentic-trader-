@@ -791,9 +791,8 @@ class ElementalAgentManager:
             execution_urgency = "none"
 
         # Asset class focus
-        asset_class_focus = "crypto"
         if asset := self._get_asset_info(air.symbol):
-            asset_class_focus = asset.asset_class.value
+            pass
 
         # Cosmic narrative
         narrative = f"Onder {navagraha.dominant_planet}'s invloed: {water.regime} regime, "

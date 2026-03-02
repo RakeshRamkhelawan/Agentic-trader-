@@ -194,12 +194,6 @@ class TestXSSPrevention:
         """Verify responses don't contain executable HTML."""
         # This would be tested against actual API endpoints
         # For now, document the requirement
-        dangerous_patterns = [
-            "<script>",
-            "javascript:",
-            "onerror=",
-            "onload=",
-        ]
 
         # Placeholder - actual implementation would test API responses
         assert True
@@ -295,13 +289,6 @@ class TestAuditLogging:
         """Verify sensitive data is not logged."""
         # This would check log files/output
         # For now, document the requirement
-        sensitive_fields = [
-            "password",
-            "secret",
-            "token",
-            "api_key",
-            "private_key",
-        ]
 
         # Placeholder - actual implementation would parse logs
         assert True

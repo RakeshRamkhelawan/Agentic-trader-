@@ -423,7 +423,7 @@ class PortfolioManager:
         for asset, target_pct in self._target_allocations.items():
             current = portfolio.assets.get(asset)
             current_pct = current.allocation_pct if current else Decimal("0")
-            current_value = current.value_usd if current else Decimal("0")
+            current.value_usd if current else Decimal("0")
 
             # Calculate difference
             diff_pct = target_pct - current_pct

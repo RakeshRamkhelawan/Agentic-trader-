@@ -257,7 +257,7 @@ async def test_memory_capacity_management(system_identity, market_data):
 
     # Fill memory beyond initial capacity
     for i in range(200):
-        result = await system_identity.process_market_cycle(
+        await system_identity.process_market_cycle(
             price_data=market_data["price"],
             volume_data=market_data["volume"],
             orderbook_imbalance=market_data["orderbook_imbalance"],

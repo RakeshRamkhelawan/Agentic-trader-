@@ -1,0 +1,13 @@
+# Ruff configuration for Agentic Trader Platform
+# See: https://docs.astral.sh/ruff/configuration/
+
+[lint]
+# Ignore pre-existing lint patterns in the codebase:
+# E741: ambiguous variable names (common in math/ML code: l, O, I)
+# E402: module-level import not at top (conditional imports for optional deps)
+# E722: bare except (gradual migration to specific exceptions)
+# F401: unused imports (used in __init__.py re-exports)
+# F811: redefinition of unused name
+# F821: undefined name (dynamic imports)
+# F823: undefined name in __all__
+ignore = ["E741", "E402", "E722", "F401", "F811", "F821", "F823"]

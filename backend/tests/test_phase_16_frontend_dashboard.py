@@ -502,8 +502,8 @@ class TestAlertService:
         alert_service.add_alert("Recent alert", "info")
 
         # Clear old alerts only
-        initial_count = len(alert_service.alerts)
-        count = alert_service.clear_alerts()
+        len(alert_service.alerts)
+        alert_service.clear_alerts()
 
         # Recent alert should remain
         alerts = alert_service.get_recent_alerts()

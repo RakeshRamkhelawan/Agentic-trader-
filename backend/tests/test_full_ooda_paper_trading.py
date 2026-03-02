@@ -316,7 +316,6 @@ class PaperTradingTest:
             if assessment.modified_size:
                 logger.warning("   [WARNING] Size Reduced: %s", assessment.modified_size)
 
-            approved = assessment.decision == RiskDecision.APPROVE
 
             return assessment
 

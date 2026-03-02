@@ -174,7 +174,7 @@ class TestOrientPhaseGunaInjection:
 
         # Assert - analyst.orient werd aangeroepen
         mock_analyst.orient.assert_called_once()
-        call_kwargs = mock_analyst.orient.call_args[1]
+        mock_analyst.orient.call_args[1]
 
         # Check dat guna modulation werd toegepast (indirect via confidence)
         assert orientation is not None
@@ -285,7 +285,7 @@ class TestMarketTickDelegation:
         # Act
         with patch.object(
             coordinator, "_execute_ooda_loop", new_callable=AsyncMock
-        ) as mock_execute:
+        ):
             await coordinator.run_cycle("BTC/USD", 50000.0)
 
         # Assert

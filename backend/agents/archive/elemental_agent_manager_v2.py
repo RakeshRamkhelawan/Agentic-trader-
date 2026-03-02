@@ -726,9 +726,8 @@ class ElementalAgentManagerV2:
             final_decision = "BLOCK"
             execution_urgency = "none"
 
-        asset_class_focus = "crypto"
         if asset := self._get_asset_info(air.symbol):
-            asset_class_focus = asset.asset_class.value
+            pass
 
         return EtherSynthesis(
             final_decision=final_decision,
@@ -762,7 +761,7 @@ class ElementalAgentManagerV2:
         navagraha = self._get_current_navagraha_state()
 
         # FIX 1: Adjust base harmony by planet threshold
-        threshold = HARMONY_THRESHOLDS.get(navagraha.dominant_planet, 0.48)
+        HARMONY_THRESHOLDS.get(navagraha.dominant_planet, 0.48)
         base_harmony = 0.5 + (prana_level / 100) * 0.3
 
         # 1. Water Agent: Analyze regime (FIX 2: Dynamic confidence)

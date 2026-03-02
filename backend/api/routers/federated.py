@@ -104,7 +104,7 @@ async def get_state():
 
             # Calculate coherence from agent performance
             avg_confidence = sum(a.performance.avg_confidence for a in agents) / len(agents)
-            total_trades = sum(a.performance.trades_executed for a in agents)
+            sum(a.performance.trades_executed for a in agents)
             total_pnl = sum(a.performance.total_pnl for a in agents)
 
             # Get portfolio positions for chitta nodes
