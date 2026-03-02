@@ -1,4 +1,3 @@
-import pytest
 
 from backend.core.agents.base import ElementType
 from backend.core.agents.elements import AgniAgent, AkashaAgent, JalaAgent, PrithviAgent, VayuAgent

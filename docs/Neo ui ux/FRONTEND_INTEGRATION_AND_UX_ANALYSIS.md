@@ -1,8 +1,8 @@
 # Frontend Integration & UX Analysis
 ## Samkhya Yoga Agentic Trader — Dashboard & Visualization Strategy
 
-**Generated:** 2026-02-15  
-**Document Version:** 1.0  
+**Generated:** 2026-02-15
+**Document Version:** 1.0
 **Purpose:** Define frontend architecture and UX patterns for Samkhya philosophical concepts
 
 ---
@@ -55,7 +55,7 @@ router = APIRouter(prefix="/navagraha", tags=["navagraha"])
 async def get_current_navagraha_state():
     """
     Returns current Navagraha state for dashboard visualization.
-    
+
     Response:
     {
         "planets": [
@@ -96,7 +96,7 @@ async def get_current_navagraha_state():
 async def get_planetary_aspects():
     """
     Returns current planetary aspects (conjunctions, oppositions, trines, etc.)
-    
+
     Response:
     {
         "aspects": [
@@ -117,7 +117,7 @@ async def get_planetary_aspects():
 async def get_trading_gate_status():
     """
     Returns whether trading is currently allowed based on Navagraha gates.
-    
+
     Response:
     {
         "trading_allowed": true,
@@ -133,7 +133,7 @@ async def get_trading_gate_status():
 async def get_current_ooda_cycle():
     """
     Returns current OODA cycle state for transparency dashboard.
-    
+
     Response:
     {
         "cycle_id": "ooda-20260215-141530",
@@ -170,7 +170,7 @@ async def get_current_ooda_cycle():
 async def get_agent_status():
     """
     Returns status of all 5 elemental agents.
-    
+
     Response:
     {
         "agents": [
@@ -319,7 +319,7 @@ const NavagrahaWheel: React.FC<{planets: PlanetPosition[]}> = ({planets}) => {
             <svg viewBox="0 0 400 400">
                 {/* Zodiac background */}
                 <circle cx="200" cy="200" r="180" fill="none" stroke="#ddd" strokeWidth="2"/>
-                
+
                 {/* 12 zodiac divisions */}
                 {[...Array(12)].map((_, i) => (
                     <line
@@ -332,13 +332,13 @@ const NavagrahaWheel: React.FC<{planets: PlanetPosition[]}> = ({planets}) => {
                         strokeWidth="1"
                     />
                 ))}
-                
+
                 {/* Planets */}
                 {planets.map(planet => {
                     const angle = (planet.longitude - 90) * Math.PI / 180;
                     const x = 200 + 150 * Math.cos(angle);
                     const y = 200 + 150 * Math.sin(angle);
-                    
+
                     return (
                         <g key={planet.name}>
                             <circle
@@ -368,7 +368,7 @@ const NavagrahaWheel: React.FC<{planets: PlanetPosition[]}> = ({planets}) => {
 // components/RahuKalaGate.tsx
 const RahuKalaGate: React.FC<{rahuKala: RahuKalaState}> = ({rahuKala}) => {
     if (!rahuKala.is_active) return null;
-    
+
     return (
         <div className="rahu-kala-overlay">
             <div className="rahu-kala-modal">
@@ -446,7 +446,7 @@ const OODATransparency: React.FC<{cycle: OODACycle}> = ({cycle}) => {
     return (
         <div className="ooda-transparency">
             <h3>OODA Cycle: {cycle.cycle_id}</h3>
-            
+
             <div className="ooda-phases">
                 {['Observe', 'Orient', 'Decide', 'Act'].map(phase => (
                     <div key={phase} className={`phase phase-${cycle.phases[phase].status}`}>
@@ -454,7 +454,7 @@ const OODATransparency: React.FC<{cycle: OODACycle}> = ({cycle}) => {
                             <h4>{phase}</h4>
                             <StatusBadge status={cycle.phases[phase].status} />
                         </div>
-                        
+
                         {cycle.phases[phase].status === 'completed' && (
                             <div className="phase-details">
                                 <p>Duration: {cycle.phases[phase].duration_ms}ms</p>
@@ -471,7 +471,7 @@ const OODATransparency: React.FC<{cycle: OODACycle}> = ({cycle}) => {
                     </div>
                 ))}
             </div>
-            
+
             <div className="navagraha-influence-summary">
                 <h4>Navagraha Influence on This Cycle</h4>
                 <ul>
@@ -508,7 +508,7 @@ const AgentPranaCards: React.FC<{agents: Agent[]}> = ({agents}) => {
         water: '💧',
         earth: '🌍'
     };
-    
+
     return (
         <div className="agent-prana-grid">
             {agents.map(agent => (
@@ -517,10 +517,10 @@ const AgentPranaCards: React.FC<{agents: Agent[]}> = ({agents}) => {
                         <span className="element-icon">{elementIcons[agent.element]}</span>
                         <h4>{agent.name}</h4>
                     </div>
-                    
+
                     <div className="prana-meter">
-                        <div 
-                            className="prana-fill" 
+                        <div
+                            className="prana-fill"
                             style={{
                                 width: `${agent.prana_level}%`,
                                 backgroundColor: getPranaColor(agent.prana_level)
@@ -528,13 +528,13 @@ const AgentPranaCards: React.FC<{agents: Agent[]}> = ({agents}) => {
                         />
                         <span className="prana-value">{agent.prana_level.toFixed(1)}%</span>
                     </div>
-                    
+
                     <div className="agent-stats">
                         <p>Status: {agent.active ? '✓ Active' : '✗ Inactive'}</p>
                         <p>Contributions: {agent.recent_contributions}</p>
                         <p>Last Signal: {formatTimeAgo(agent.last_signal)}</p>
                     </div>
-                    
+
                     {agent.prana_level < 20 && (
                         <div className="warning-badge">⚠️ Low Prana</div>
                     )}
@@ -558,7 +558,7 @@ function getPranaColor(level: number): string {
 
 ### 3.1 Recommended Stack
 
-**Framework:** Next.js 14+ (App Router)  
+**Framework:** Next.js 14+ (App Router)
 **Rationale:**
 - Server-side rendering for SEO and performance
 - API routes for BFF pattern (Backend For Frontend)
@@ -566,7 +566,7 @@ function getPranaColor(level: number): string {
 - TypeScript support
 - React Server Components for data fetching
 
-**State Management:** Zustand + React Query  
+**State Management:** Zustand + React Query
 **Rationale:**
 - **Zustand:** Lightweight global state (user prefs, theme, auth)
 - **React Query:** Server state management (caching, revalidation, real-time updates)
@@ -614,7 +614,7 @@ import useWebSocket from 'react-use-websocket';
 
 export function useRealtimeNavagraha() {
     const queryClient = useQueryClient();
-    
+
     const { lastJsonMessage } = useWebSocket('wss://api.example.com/ws', {
         onOpen: () => {
             // Subscribe to navagraha updates
@@ -627,12 +627,12 @@ export function useRealtimeNavagraha() {
         reconnectAttempts: 10,
         reconnectInterval: 3000,
     });
-    
+
     useEffect(() => {
         if (lastJsonMessage?.channel === 'navagraha.state') {
             // Invalidate React Query cache to trigger refetch
             queryClient.invalidateQueries(['navagraha', 'current-state']);
-            
+
             // Or directly update cache
             queryClient.setQueryData(['navagraha', 'current-state'], lastJsonMessage.data);
         }
@@ -664,7 +664,7 @@ export async function GET(request: Request) {
         fetch('http://backend:8000/ooda/current-cycle'),
         fetch('http://backend:8000/trading/portfolio'),
     ]);
-    
+
     const dashboard = {
         navagraha: await navagraha.json(),
         agents: await agents.json(),
@@ -672,7 +672,7 @@ export async function GET(request: Request) {
         portfolio: await portfolio.json(),
         timestamp: new Date().toISOString(),
     };
-    
+
     return NextResponse.json(dashboard);
 }
 ```
@@ -690,9 +690,9 @@ export default function Dashboard() {
         },
         refetchInterval: 30000, // 30 seconds
     });
-    
+
     if (isLoading) return <Skeleton />;
-    
+
     return (
         <>
             <NavagrahaWheel planets={data.navagraha.planets} />
@@ -715,9 +715,9 @@ import { throttle } from 'lodash';
 
 export function useThrottledNavagrahaUpdates(onUpdate: (data: any) => void, delay: number = 1000) {
     const throttledUpdate = useRef(throttle(onUpdate, delay)).current;
-    
+
     const { lastJsonMessage } = useWebSocket('wss://api.example.com/ws');
-    
+
     useEffect(() => {
         if (lastJsonMessage?.channel === 'navagraha.state') {
             throttledUpdate(lastJsonMessage.data);
@@ -734,14 +734,14 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 
 export function TradeHistoryTable({ trades }: { trades: Trade[] }) {
     const parentRef = useRef<HTMLDivElement>(null);
-    
+
     const virtualizer = useVirtualizer({
         count: trades.length,
         getScrollElement: () => parentRef.current,
         estimateSize: () => 50, // Each row ~50px
         overscan: 10,
     });
-    
+
     return (
         <div ref={parentRef} style={{ height: '600px', overflow: 'auto' }}>
             <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>

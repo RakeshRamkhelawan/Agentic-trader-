@@ -146,8 +146,5 @@ class TenantAwareDB:
         """Execute query with tenant isolation."""
         # Add tenant filter to query
         # In production, use proper parameterized queries
-        tenant_aware_query = query.replace(
-            "WHERE ",
-            f"WHERE tenant_id = '{tenant_id}' AND "
-        )
+        tenant_aware_query = query.replace("WHERE ", f"WHERE tenant_id = '{tenant_id}' AND ")
         return tenant_aware_query, params

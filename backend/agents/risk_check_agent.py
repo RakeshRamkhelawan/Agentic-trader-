@@ -34,13 +34,13 @@ class RiskCheckAgent(AgentWithTools):
         max_portfolio_var: float = 0.05,  # Max 5% VaR
         max_drawdown: float = 0.15,  # Max 15% drawdown
         kelly_fraction: float = 0.5,  # Half-Kelly for safety
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             agent_name=agent_name,
             agent_role=AgentRole.STRATEGIST,
             tool_broker_url=tool_broker_url,
-            **kwargs
+            **kwargs,
         )
         self.max_position_size = max_position_size
         self.max_portfolio_var = max_portfolio_var
@@ -51,11 +51,7 @@ class RiskCheckAgent(AgentWithTools):
             f"max_position={max_position_size}, max_var={max_portfolio_var}"
         )
 
-    async def analyze(
-        self,
-        features: dict[str, Any],
-        context: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """
         Analyze risk and return approved/modified/rejected decision.
 
@@ -85,7 +81,7 @@ class RiskCheckAgent(AgentWithTools):
                 "approved_quantity": 0.0,
                 "confidence": 0.0,
                 "reason": "Invalid portfolio value",
-                "risk_metrics": {}
+                "risk_metrics": {},
             }
 
         if price <= 0:
@@ -94,14 +90,12 @@ class RiskCheckAgent(AgentWithTools):
                 "approved_quantity": 0.0,
                 "confidence": 0.0,
                 "reason": "Invalid price",
-                "risk_metrics": {}
+                "risk_metrics": {},
             }
 
         try:
             # Gather risk metrics
-            risk_metrics = await self._gather_risk_metrics(
-                symbol, price, portfolio_value
-            )
+            risk_metrics = await self._gather_risk_metrics(symbol, price, portfolio_value)
 
             # Check VaR limit
             portfolio_var = risk_metrics.get("portfolio_var", 0.0)
@@ -114,7 +108,7 @@ class RiskCheckAgent(AgentWithTools):
                     "approved_quantity": 0.0,
                     "confidence": 0.0,
                     "reason": f"VaR {portfolio_var:.2%} exceeds limit {self.max_portfolio_var:.2%}",
-                    "risk_metrics": risk_metrics
+                    "risk_metrics": risk_metrics,
                 }
 
             # Check drawdown
@@ -128,7 +122,7 @@ class RiskCheckAgent(AgentWithTools):
                     "approved_quantity": 0.0,
                     "confidence": 0.0,
                     "reason": f"Drawdown {current_drawdown:.2%} exceeds limit {self.max_drawdown:.2%}",
-                    "risk_metrics": risk_metrics
+                    "risk_metrics": risk_metrics,
                 }
 
             # Calculate Kelly criterion position size
@@ -167,7 +161,7 @@ class RiskCheckAgent(AgentWithTools):
                     "reason": reason,
                     "risk_metrics": risk_metrics,
                     "kelly_recommended": kelly_size,
-                    "original_quantity": proposed_qty
+                    "original_quantity": proposed_qty,
                 }
 
             # Also cap by Kelly criterion
@@ -179,7 +173,9 @@ class RiskCheckAgent(AgentWithTools):
                     f"based on Kelly criterion (fraction: {self.kelly_fraction})"
                 )
 
-                logger.info(f"{self.agent_name}: {symbol} position capped by Kelly to {approved_qty}")
+                logger.info(
+                    f"{self.agent_name}: {symbol} position capped by Kelly to {approved_qty}"
+                )
 
                 return {
                     "action": "modify",
@@ -188,7 +184,7 @@ class RiskCheckAgent(AgentWithTools):
                     "reason": reason,
                     "risk_metrics": risk_metrics,
                     "kelly_recommended": kelly_size,
-                    "original_quantity": proposed_qty
+                    "original_quantity": proposed_qty,
                 }
 
             # All checks passed
@@ -204,7 +200,7 @@ class RiskCheckAgent(AgentWithTools):
                     f"Size {position_pct:.1%} of portfolio"
                 ),
                 "risk_metrics": risk_metrics,
-                "kelly_recommended": kelly_size
+                "kelly_recommended": kelly_size,
             }
 
         except Exception as e:
@@ -214,14 +210,11 @@ class RiskCheckAgent(AgentWithTools):
                 "approved_quantity": 0.0,
                 "confidence": 0.0,
                 "reason": f"Risk analysis error: {str(e)}",
-                "risk_metrics": {}
+                "risk_metrics": {},
             }
 
     async def _gather_risk_metrics(
-        self,
-        symbol: str,
-        price: float,
-        portfolio_value: float
+        self, symbol: str, price: float, portfolio_value: float
     ) -> dict[str, Any]:
         """
         Gather risk metrics for the portfolio.
@@ -240,7 +233,7 @@ class RiskCheckAgent(AgentWithTools):
             "avg_win": 0.08,  # 8% average win
             "avg_loss": 0.04,  # 4% average loss
             "sharpe_ratio": 1.2,
-            "beta": 0.85
+            "beta": 0.85,
         }
 
         # TODO: In production, call risk MCP tools:
@@ -250,12 +243,7 @@ class RiskCheckAgent(AgentWithTools):
         return metrics
 
     def _calculate_kelly_size(
-        self,
-        win_rate: float,
-        avg_win: float,
-        avg_loss: float,
-        portfolio_value: float,
-        price: float
+        self, win_rate: float, avg_win: float, avg_loss: float, portfolio_value: float, price: float
     ) -> float:
         """
         Calculate Kelly criterion position size.
@@ -309,8 +297,4 @@ class RiskCheckAgent(AgentWithTools):
         # - Correlation spikes
         # - Liquidity crises
 
-        return {
-            "emergency_stop": False,
-            "reason": None,
-            "timestamp": None
-        }
+        return {"emergency_stop": False, "reason": None, "timestamp": None}

@@ -223,20 +223,20 @@ sequenceDiagram
         MDO->>MDO: Normalize & validate data
         MDO->>Redis: Update markets:tier1
         MDO->>AMP: Trigger tick event
-        
+
         AMP->>AMP: Build market context
         AMP->>AMP: Filter relevant assets
-        
+
         par Process by Agent Type
             AMP->>Agents: Research Agent (momentum)
             AMP->>Agents: Risk Agent (volatility)
             AMP->>Agents: Macro Agent (correlations)
         end
-        
+
         Agents->>AMP: Signal decisions
         AMP->>Redis: Store agent actions
     end
-    
+
     Redis->>Frontend: WebSocket broadcast
 ```
 
@@ -286,22 +286,22 @@ CREATE TABLE assets (
     base_asset VARCHAR(10) NOT NULL,           -- BTC
     quote_asset VARCHAR(10) NOT NULL,          -- EUR
     name VARCHAR(100) NOT NULL,                -- Bitcoin
-    
+
     -- Categorization
     category VARCHAR(50),                      -- layer1, defi, meme, gaming, ai, rwa
     subcategory VARCHAR(50),                   -- payment, smart_contract, dex, etc
     tags TEXT[],                               -- ['proof-of-work', 'store-of-value']
-    
+
     -- Market Data
     exchange VARCHAR(50) NOT NULL,             -- bitvavo, revolut
     is_active BOOLEAN DEFAULT true,
     tier INTEGER DEFAULT 3,                    -- 1, 2, 3
-    
+
     -- Metadata
     market_cap_rank INTEGER,
     volume_24h_rank INTEGER,
     listing_date TIMESTAMP,
-    
+
     -- Timestamps
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -362,7 +362,7 @@ market_data_tiers:
       - top_volume_24h
       - agent_watchlist
       - user_watchlist
-    
+
   tier2:
     count: 150
     update_interval: 10       # seconds
@@ -370,7 +370,7 @@ market_data_tiers:
       - high_volume
       - trending
       - portfolio_holdings
-      
+
   tier3:
     count: 448
     update_interval: 60       # seconds
@@ -386,14 +386,14 @@ class TieredMarketDataService:
         self.tier1 = Tier1Manager(interval=1)
         self.tier2 = Tier2Manager(interval=10)
         self.tier3 = Tier3Manager(interval=60)
-        
+
     async def start(self):
         await asyncio.gather(
             self.tier1.start(),
             self.tier2.start(),
             self.tier3.start(),
         )
-        
+
     async def promote_asset(self, symbol: str, to_tier: int):
         """Move asset to higher tier based on activity"""
         ...
@@ -409,16 +409,16 @@ class AgentContextBuilder:
     def build_context(self, tick_data: TickData, agent_id: str) -> AgentContext:
         # 1. Get agent's watched assets
         watched_assets = self.get_agent_watchlist(agent_id)
-        
+
         # 2. Get relevant market data
         market_data = self.cache.get_multi([f"asset:{s}" for s in watched_assets])
-        
+
         # 3. Calculate category performance
         categories = self.calculate_category_metrics(market_data)
-        
+
         # 4. Find correlations
         correlations = self.calculate_correlations(market_data)
-        
+
         # 5. Build final context
         return AgentContext(
             timestamp=tick_data.timestamp,
@@ -437,20 +437,20 @@ interface AssetStore {
   // All assets
   allAssets: Asset[];
   totalAssets: number;
-  
+
   // Categorized
   categories: AssetCategory[];
   assetsByCategory: Record<string, Asset[]>;
-  
+
   // User preferences
   watchlist: string[];
   recentlyViewed: string[];
-  
+
   // UI State
   selectedAsset: string | null;
   searchQuery: string;
   activeCategory: string | null;
-  
+
   // Actions
   fetchAssets: (params?: AssetFilter) => Promise<void>;
   fetchCategories: () => Promise<void>;

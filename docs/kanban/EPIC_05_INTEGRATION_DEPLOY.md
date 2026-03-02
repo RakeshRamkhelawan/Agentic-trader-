@@ -1,8 +1,8 @@
 # 🚢 EPIC 5: Integration Tests & Deploy
 
-**Epic ID:** EPIC-PM-005  
-**Status:** ✅ COMPLETE  
-**Geschatte doorlooptijd:** 2-3 dagen  
+**Epic ID:** EPIC-PM-005
+**Status:** ✅ COMPLETE
+**Geschatte doorlooptijd:** 2-3 dagen
 **Dependencies:** EPIC 4 (Platform Integration) ✅ COMPLETE
 
 ---
@@ -30,10 +30,10 @@ Dit epic valideert de volledige integratie met end-to-end tests en bereidt de de
 
 ## 📌 TASK 5.1: Docker Stack Integration Tests
 
-**Task ID:** TASK-PM-017  
-**Status:** ✅ COMPLETE  
-**Geschatte tijd:** 3 uur  
-**Dependencies:** EPIC 4 completed  
+**Task ID:** TASK-PM-017
+**Status:** ✅ COMPLETE
+**Geschatte tijd:** 3 uur
+**Dependencies:** EPIC 4 completed
 **Assignee:** Agent
 
 ### Task Beschrijving
@@ -76,87 +76,87 @@ HEALTH_CHECK_INTERVAL = 2  # seconds
 class TestDockerStackIntegration:
     """
     Integration tests for Docker stack.
-    
+
     Prerequisites:
     - Docker and docker-compose installed
     - Stack started with: docker-compose up -d
     """
-    
+
     @pytest.fixture(scope="class")
     def stack_ready(self) -> Generator[bool, None, None]:
         """
         Fixture that waits for stack to be ready.
-        
+
         Waits for both prediction-intelligence and api-server
         to report healthy before running tests.
         """
         start_time = time.time()
-        
+
         while time.time() - start_time < STARTUP_TIMEOUT:
             try:
                 # Check prediction service
                 pred_response = httpx.get(f"{PREDICTION_SERVICE_URL}/health", timeout=5)
                 pred_healthy = pred_response.status_code == 200
-                
+
                 # Check main API
                 api_response = httpx.get(f"{API_SERVICE_URL}/health", timeout=5)
                 api_healthy = api_response.status_code == 200
-                
+
                 if pred_healthy and api_healthy:
                     yield True
                     return
-                    
+
             except httpx.RequestError:
                 pass
-            
+
             time.sleep(HEALTH_CHECK_INTERVAL)
-        
+
         pytest.fail(f"Stack not ready after {STARTUP_TIMEOUT}s")
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_prediction_service_healthy(self, stack_ready):
         """Happy path: Prediction service is healthy."""
         response = httpx.get(f"{PREDICTION_SERVICE_URL}/health")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
         assert data["service"] == "prediction-intelligence"
-    
+
     def test_happy_path_prediction_service_docs_available(self, stack_ready):
         """Happy path: OpenAPI docs zijn beschikbaar."""
         response = httpx.get(f"{PREDICTION_SERVICE_URL}/docs")
         assert response.status_code == 200
-    
+
     def test_happy_path_signals_endpoint_works(self, stack_ready):
         """Happy path: Signals endpoint retourneert data."""
         response = httpx.get(f"{PREDICTION_SERVICE_URL}/api/v1/signals")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "signals" in data
         assert isinstance(data["signals"], list)
-    
+
     def test_happy_path_main_api_can_reach_prediction(self, stack_ready):
         """Happy path: Main API kan prediction service bereiken."""
         response = httpx.get(f"{API_SERVICE_URL}/api/v1/prediction/status")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["enabled"] is True
         assert data["healthy"] is True
-    
+
     def test_happy_path_proxy_signals_works(self, stack_ready):
         """Happy path: Proxy signals endpoint werkt."""
         response = httpx.get(f"{API_SERVICE_URL}/api/v1/prediction/signals")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "signals" in data
-    
+
     def test_happy_path_analysis_can_be_triggered(self, stack_ready):
         """Happy path: Analysis kan getriggerd worden."""
         response = httpx.post(
@@ -166,22 +166,22 @@ class TestDockerStackIntegration:
                 "market": "kalshi"
             }
         )
-        
+
         assert response.status_code == 202
         data = response.json()
         assert "analysis_id" in data
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_invalid_signal_id_returns_404(self, stack_ready):
         """Unhappy path: Invalid signal ID geeft 404."""
         response = httpx.get(
             f"{PREDICTION_SERVICE_URL}/api/v1/signals/nonexistent_id"
         )
         assert response.status_code == 404
-    
+
     def test_unhappy_path_invalid_analysis_type_returns_422(self, stack_ready):
         """Unhappy path: Invalid analysis type geeft 422."""
         response = httpx.post(
@@ -196,36 +196,36 @@ class TestDockerStackIntegration:
 
 class TestContainerNetworking:
     """Tests for container networking."""
-    
+
     def test_happy_path_containers_on_same_network(self):
         """Happy path: Containers kunnen elkaar bereiken."""
         # This test runs inside docker-compose network
         # Verify DNS resolution works
         result = subprocess.run(
-            ["docker-compose", "exec", "-T", "api-server", 
-             "python", "-c", 
+            ["docker-compose", "exec", "-T", "api-server",
+             "python", "-c",
              "import socket; print(socket.gethostbyname('prediction-intelligence'))"],
             capture_output=True,
             text=True
         )
-        
+
         # Should resolve to container IP, not fail
         assert result.returncode == 0 or "prediction-intelligence" in result.stdout
 
 
 class TestDataFlow:
     """Tests for end-to-end data flow."""
-    
+
     @pytest.fixture
     def async_client(self):
         """Async HTTP client."""
         return httpx.AsyncClient(timeout=30.0)
-    
+
     @pytest.mark.asyncio
     async def test_happy_path_full_signal_flow(self, async_client):
         """
         Happy path: Complete signal flow van prediction -> main API.
-        
+
         1. Trigger analysis op prediction service
         2. Wait for completion
         3. Fetch signals
@@ -238,35 +238,35 @@ class TestDataFlow:
         )
         assert trigger_response.status_code == 202
         analysis_id = trigger_response.json()["analysis_id"]
-        
+
         # Step 2: Poll for completion (max 30 seconds)
         for _ in range(15):
             status_response = await async_client.get(
                 f"{PREDICTION_SERVICE_URL}/api/v1/analysis/{analysis_id}"
             )
             status = status_response.json()
-            
+
             if status["status"] in ["completed", "failed"]:
                 break
-            
+
             await asyncio.sleep(2)
-        
+
         # Step 3: Get signals from prediction service
         pred_signals = await async_client.get(
             f"{PREDICTION_SERVICE_URL}/api/v1/signals?limit=5"
         )
         assert pred_signals.status_code == 200
-        
+
         # Step 4: Verify signals via proxy
         proxy_signals = await async_client.get(
             f"{API_SERVICE_URL}/api/v1/prediction/signals?limit=5"
         )
         assert proxy_signals.status_code == 200
-        
+
         # Both should return same structure
         pred_data = pred_signals.json()
         proxy_data = proxy_signals.json()
-        
+
         assert "signals" in pred_data
         assert "signals" in proxy_data
 
@@ -284,7 +284,7 @@ import os
 def pytest_configure(config):
     """Configure pytest for integration tests."""
     config.addinivalue_line(
-        "markers", 
+        "markers",
         "integration: marks tests as integration tests (deselect with '-m \"not integration\"')"
     )
 
@@ -293,8 +293,8 @@ def pytest_configure(config):
 def docker_compose_file():
     """Path to docker-compose file."""
     return os.path.join(
-        os.path.dirname(__file__), 
-        "..", "..", 
+        os.path.dirname(__file__),
+        "..", "..",
         "docker-compose.yml"
     )
 
@@ -328,34 +328,34 @@ docker-compose logs prediction-intelligence
 
 ### 📎 MICROTASK 5.1.1: Create Integration Test File
 
-**Microtask ID:** MT-PM-017-001  
-**Geschatte tijd:** 60 min  
+**Microtask ID:** MT-PM-017-001
+**Geschatte tijd:** 60 min
 **Status:** ✅ COMPLETE
 
 ---
 
 ### 📎 MICROTASK 5.1.2: Create Test Fixtures
 
-**Microtask ID:** MT-PM-017-002  
-**Geschatte tijd:** 30 min  
+**Microtask ID:** MT-PM-017-002
+**Geschatte tijd:** 30 min
 **Status:** ✅ COMPLETE
 
 ---
 
 ### 📎 MICROTASK 5.1.3: Run & Validate Tests
 
-**Microtask ID:** MT-PM-017-003  
-**Geschatte tijd:** 60 min  
+**Microtask ID:** MT-PM-017-003
+**Geschatte tijd:** 60 min
 **Status:** ✅ COMPLETE
 
 ---
 
 ## 📌 TASK 5.2: Performance Tests
 
-**Task ID:** TASK-PM-018  
-**Status:** ✅ COMPLETE  
-**Geschatte tijd:** 2 uur  
-**Dependencies:** TASK-PM-017  
+**Task ID:** TASK-PM-018
+**Status:** ✅ COMPLETE
+**Geschatte tijd:** 2 uur
+**Dependencies:** TASK-PM-017
 **Assignee:** Agent
 
 ### Task Beschrijving
@@ -383,35 +383,35 @@ from locust import HttpUser, task, between
 class PredictionServiceUser(HttpUser):
     """
     Simulated user for prediction service load testing.
-    
+
     Simulates typical usage patterns:
     - Frequent signal requests
     - Occasional analysis triggers
     - Health checks
     """
-    
+
     wait_time = between(1, 3)  # Wait 1-3 seconds between tasks
-    
+
     @task(10)
     def get_signals(self):
         """Fetch signals - most common operation."""
         self.client.get("/api/v1/signals?limit=10")
-    
+
     @task(5)
     def get_signals_with_filter(self):
         """Fetch filtered signals."""
         self.client.get("/api/v1/signals?category=crypto&min_confidence=0.5")
-    
+
     @task(3)
     def get_market_summary(self):
         """Fetch market summary."""
         self.client.get("/api/v1/markets/summary?market=kalshi")
-    
+
     @task(2)
     def health_check(self):
         """Health check endpoint."""
         self.client.get("/health")
-    
+
     @task(1)
     def trigger_analysis(self):
         """Trigger analysis - least frequent."""
@@ -426,18 +426,18 @@ class MainAPIProxyUser(HttpUser):
     Simulated user for main API proxy endpoints.
     Tests the proxy path through api-server.
     """
-    
+
     wait_time = between(2, 5)
-    
+
     def on_start(self):
         """Set host to main API."""
         self.host = "http://localhost:8003"
-    
+
     @task(10)
     def get_proxy_signals(self):
         """Fetch signals via proxy."""
         self.client.get("/api/v1/prediction/signals")
-    
+
     @task(5)
     def get_proxy_status(self):
         """Check prediction service status."""
@@ -481,10 +481,10 @@ locust -f tests/performance/locustfile.py \
 
 ## 📌 TASK 5.3: Deployment Checklist
 
-**Task ID:** TASK-PM-019  
-**Status:** ✅ COMPLETE  
-**Geschatte tijd:** 1 uur  
-**Dependencies:** TASK-PM-018  
+**Task ID:** TASK-PM-019
+**Status:** ✅ COMPLETE
+**Geschatte tijd:** 1 uur
+**Dependencies:** TASK-PM-018
 **Assignee:** Agent
 
 ### Task Summary
@@ -627,10 +627,10 @@ curl http://localhost:8002/health
 
 ## 📌 TASK 5.4: Monitoring Setup
 
-**Task ID:** TASK-PM-020  
-**Status:** ✅ COMPLETE  
-**Geschatte tijd:** 2 uur  
-**Dependencies:** TASK-PM-019  
+**Task ID:** TASK-PM-020
+**Status:** ✅ COMPLETE
+**Geschatte tijd:** 2 uur
+**Dependencies:** TASK-PM-019
 **Assignee:** Agent
 
 ### Task Beschrijving
@@ -737,26 +737,26 @@ from src.observability.metrics import REQUEST_COUNT, REQUEST_LATENCY
 
 class MetricsMiddleware(BaseHTTPMiddleware):
     """Middleware to collect request metrics."""
-    
+
     async def dispatch(self, request: Request, call_next):
         start_time = time.time()
-        
+
         response = await call_next(request)
-        
+
         duration = time.time() - start_time
-        
+
         # Record metrics
         REQUEST_COUNT.labels(
             method=request.method,
             endpoint=request.url.path,
             status=response.status_code
         ).inc()
-        
+
         REQUEST_LATENCY.labels(
             method=request.method,
             endpoint=request.url.path
         ).observe(duration)
-        
+
         return response
 
 ───────────────────────────────────────────────────────────────────────────────

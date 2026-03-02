@@ -21,7 +21,7 @@ class ChittaLSTM(nn.Module):
         hidden_size: int = 128,
         num_layers: int = 2,
         output_size: int = 1,
-        dropout: float = 0.2
+        dropout: float = 0.2,
     ):
         super(ChittaLSTM, self).__init__()
 
@@ -34,15 +34,12 @@ class ChittaLSTM(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=dropout if num_layers > 1 else 0
+            dropout=dropout if num_layers > 1 else 0,
         )
 
         # Fully connected output layer
         self.fc = nn.Sequential(
-            nn.Linear(hidden_size, 64),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(64, output_size)
+            nn.Linear(hidden_size, 64), nn.ReLU(), nn.Dropout(dropout), nn.Linear(64, output_size)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -74,7 +71,7 @@ class ModelTrainer:
         self,
         model: nn.Module,
         learning_rate: float = 0.001,
-        device: str = "cuda" if torch.cuda.is_available() else "cpu"
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
         self.model = model.to(device)
         self.device = device
@@ -134,15 +131,18 @@ class ModelTrainer:
 
     def save_model(self, path: str):
         """Sla model op."""
-        torch.save({
-            'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-        }, path)
+        torch.save(
+            {
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+            },
+            path,
+        )
         logger.info(f"Model saved to {path}")
 
     def load_model(self, path: str):
         """Laad model."""
         checkpoint = torch.load(path, map_location=self.device)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         logger.info(f"Model loaded from {path}")

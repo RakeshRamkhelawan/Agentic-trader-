@@ -4,7 +4,7 @@ Tests voor DataScout Agent.
 Test observation collection, normalization, en failure handling.
 """
 
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
 import pytest
 

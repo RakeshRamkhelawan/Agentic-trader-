@@ -82,7 +82,9 @@ class AggregatedPrice:
         """Volume-weighted average price across exchanges."""
         total_volume = sum(p.volume_24h for p in self.prices.values())
         if total_volume == 0:
-            return sum(p.last for p in self.prices.values()) / len(self.prices) if self.prices else 0.0
+            return (
+                sum(p.last for p in self.prices.values()) / len(self.prices) if self.prices else 0.0
+            )
 
         weighted_sum = sum(p.last * p.volume_24h for p in self.prices.values())
         return weighted_sum / total_volume
@@ -182,6 +184,7 @@ class MultiExchangeAggregator:
         # Initialize Bitvavo adapter
         try:
             from backend.execution.bitvavo_adapter import BitvavoAdapter
+
             self._exchange_adapters["bitvavo"] = BitvavoAdapter()
             await self._exchange_adapters["bitvavo"].initialize()
             logger.info("[INIT] Bitvavo adapter initialized")
@@ -191,6 +194,7 @@ class MultiExchangeAggregator:
         # Initialize Revolut X adapter
         try:
             from backend.execution.revolut_x_adapter import RevolutXAdapter
+
             self._exchange_adapters["revolutx"] = RevolutXAdapter()
             await self._exchange_adapters["revolutx"].connect()
             logger.info("[INIT] Revolut X adapter initialized")
@@ -390,12 +394,14 @@ class MultiExchangeAggregator:
         for agg in cached:
             if agg.price_discrepancy_pct >= threshold_pct:
                 prices = {ex: p.last for ex, p in agg.prices.items()}
-                discrepancies.append({
-                    "symbol": agg.symbol,
-                    "discrepancy_pct": agg.price_discrepancy_pct,
-                    "prices": prices,
-                    "vwap": agg.vwap,
-                })
+                discrepancies.append(
+                    {
+                        "symbol": agg.symbol,
+                        "discrepancy_pct": agg.price_discrepancy_pct,
+                        "prices": prices,
+                        "vwap": agg.vwap,
+                    }
+                )
 
         return sorted(discrepancies, key=lambda x: x["discrepancy_pct"], reverse=True)
 

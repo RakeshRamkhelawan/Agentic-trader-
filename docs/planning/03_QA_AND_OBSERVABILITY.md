@@ -47,7 +47,7 @@ class TestNavagrahaInvariants:
     @pytest.fixture
     async def engine(self):
         return NavagrahaEngine(cache=None)  # No cache for invariant tests
-    
+
     @pytest.mark.asyncio
     @pytest.mark.parametrize("timestamp,location", [
         (datetime(2024, 1, 1, 12, 0), (28.6139, 77.2090)),  # Delhi
@@ -58,7 +58,7 @@ class TestNavagrahaInvariants:
         state = await engine.calculate_state(timestamp, location, "test_tenant")
         assert state.planetary_positions["Rahu"].retrograde is True
         assert state.planetary_positions["Rahu"].speed < 0
-    
+
     @pytest.mark.asyncio
     async def test_exactly_nine_planets(self, engine):
         state = await engine.calculate_state(
@@ -67,7 +67,7 @@ class TestNavagrahaInvariants:
         assert len(state.planetary_positions) == 9
         expected_planets = {"Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"}
         assert set(state.planetary_positions.keys()) == expected_planets
-    
+
     @pytest.mark.asyncio
     async def test_rahu_ketu_opposition(self, engine):
         state = await engine.calculate_state(
@@ -75,10 +75,10 @@ class TestNavagrahaInvariants:
         )
         rahu_lon = state.planetary_positions["Rahu"].longitude
         ketu_lon = state.planetary_positions["Ketu"].longitude
-        
+
         angle_diff = abs((rahu_lon - ketu_lon) % 360)
         assert abs(angle_diff - 180.0) < 1.0  # Within 1° tolerance
-    
+
     @pytest.mark.asyncio
     async def test_longitude_range(self, engine):
         state = await engine.calculate_state(
@@ -86,7 +86,7 @@ class TestNavagrahaInvariants:
         )
         for planet, pos in state.planetary_positions.items():
             assert 0 <= pos.longitude < 360, f"{planet} longitude {pos.longitude} out of range"
-    
+
     @pytest.mark.asyncio
     async def test_nakshatra_validity(self, engine):
         state = await engine.calculate_state(
@@ -94,7 +94,7 @@ class TestNavagrahaInvariants:
         )
         for planet, pos in state.planetary_positions.items():
             assert pos.nakshatra in NAKSHATRAS_27, f"{planet} has invalid nakshatra: {pos.nakshatra}"
-    
+
     @pytest.mark.asyncio
     async def test_retrograde_speed_consistency(self, engine):
         state = await engine.calculate_state(
@@ -112,7 +112,7 @@ class TestNavagrahaInvariants:
 @pytest.mark.slow
 async def test_rahu_retrograde_over_year(engine):
     start_date = datetime(2024, 1, 1)
-    
+
     for day in range(0, 365, 7):  # Test every week
         timestamp = start_date + timedelta(days=day)
         state = await engine.calculate_state(timestamp, (0, 0), "test_tenant")
@@ -139,78 +139,78 @@ class TestOODAIntegration:
             execution_service=MockExecutionService(),
             cache=MultiLevelCache([MemoryAdapter()], [300])
         )
-    
+
     @pytest.mark.asyncio
     @pytest.mark.integration
     async def test_full_ooda_cycle(self, coordinator):
         start_time = datetime.utcnow()
-        
+
         result = await coordinator.execute_cycle(
             tenant_id="test_tenant",
             location=(28.6139, 77.2090)
         )
-        
+
         duration = (datetime.utcnow() - start_time).total_seconds()
         assert duration < 5.0, f"OODA cycle took {duration}s, target <5s"
-        
+
         assert result.observe_complete is True
         assert result.orient_complete is True
         assert result.decide_complete is True
         assert result.act_complete is True
-        
+
         assert result.navagraha_state is not None
         assert result.guna_weights is not None
         assert result.decision in ["HOLD", "BUY", "SELL", "WAIT"]
-    
+
     @pytest.mark.asyncio
     @pytest.mark.integration
     async def test_rahu_kala_gate(self, coordinator):
         rahu_kala_time = _calculate_next_rahu_kala()
-        
+
         result = await coordinator.execute_cycle(
             tenant_id="test_tenant",
             location=(28.6139, 77.2090),
             override_time=rahu_kala_time
         )
-        
+
         assert result.rahu_kala_blocked is True
         assert result.decision == "WAIT"
         assert result.orders_placed == []
-    
+
     @pytest.mark.asyncio
     @pytest.mark.integration
     async def test_cache_performance(self, coordinator):
         timestamp = datetime(2024, 1, 1, 12, 0)
         location = (28.6139, 77.2090)
-        
+
         first_call_start = datetime.utcnow()
         await coordinator.execute_cycle("test_tenant", location, override_time=timestamp)
         first_call_duration = (datetime.utcnow() - first_call_start).total_seconds()
-        
+
         second_call_start = datetime.utcnow()
         await coordinator.execute_cycle("test_tenant", location, override_time=timestamp)
         second_call_duration = (datetime.utcnow() - second_call_start).total_seconds()
-        
+
         speedup = first_call_duration / second_call_duration
         assert speedup > 5, f"Cache speedup {speedup}x, expected >5x"
-    
+
     @pytest.mark.asyncio
     @pytest.mark.integration
     async def test_circuit_breaker_fallback(self, coordinator):
         coordinator.navagraha_engine.circuit_breaker = CircuitBreaker("ephemeris")
-        
+
         for _ in range(6):
             coordinator.navagraha_engine._force_failure = True
             try:
                 await coordinator.execute_cycle("test_tenant", (0, 0))
             except:
                 pass
-        
+
         assert coordinator.navagraha_engine.circuit_breaker.state == CircuitState.OPEN
-        
+
         coordinator.navagraha_engine._force_failure = False
         result = await coordinator.execute_cycle("test_tenant", (0, 0))
-        
+
         assert result.navagraha_state is not None
         assert result.navagraha_state.cache_hit is False
         assert "fallback" in result.navagraha_state.details
@@ -234,31 +234,31 @@ class TestExchangeContracts:
             'secret': 'dummy',
             'enableRateLimit': True
         })
-    
+
     @pytest.mark.contract
     @pytest.mark.vcr  # Use VCR.py to record/replay HTTP
     def test_fetch_ticker_schema(self, exchange):
         ticker = exchange.fetch_ticker('BTC/USDT')
-        
+
         required_fields = {'symbol', 'last', 'bid', 'ask', 'timestamp'}
         assert required_fields.issubset(ticker.keys())
-        
+
         assert isinstance(ticker['last'], (int, float))
         assert ticker['last'] > 0
         assert ticker['bid'] < ticker['ask']
         assert ticker['timestamp'] > 0
-    
+
     @pytest.mark.contract
     def test_create_order_schema(self, exchange):
         order = exchange.create_limit_buy_order('BTC/USDT', 0.001, 20000)
-        
+
         required_fields = {'id', 'symbol', 'side', 'type', 'price', 'amount', 'status'}
         assert required_fields.issubset(order.keys())
-        
+
         assert order['side'] == 'buy'
         assert order['type'] == 'limit'
         assert order['status'] in ['open', 'closed', 'pending']
-    
+
     @pytest.mark.contract
     def test_exchange_specific_quirks(self):
         binance_quirks = {
@@ -266,10 +266,10 @@ class TestExchangeContracts:
             'funding_interval_hours': 8,
             'rate_limit_per_second': 10
         }
-        
+
         with open('docs/exchanges/binance_profile.json') as f:
             documented_quirks = json.load(f)
-        
+
         assert documented_quirks == binance_quirks
 ```
 
@@ -341,7 +341,7 @@ class TestExchangeContracts:
 6. Guna Distribution (Bar Gauge) — Sattva/Rajas/Tamas weights
 7. Active Strategies (Table) — Strategy names + execution count
 
-**Refresh:** 10 seconds  
+**Refresh:** 10 seconds
 **Use Case:** Real-time OODA loop health monitoring
 
 #### Dashboard 2: Navagraha Monitor
@@ -356,7 +356,7 @@ class TestExchangeContracts:
 7. Ephemeris Calculation Duration (Graph) — P95/P99 latency
 8. Nakshatra Influence (Bar Gauge) — Weight distribution across 27 Nakshatras
 
-**Refresh:** 30 seconds  
+**Refresh:** 30 seconds
 **Use Case:** Vedic astrology state + ephemeris performance
 
 #### Dashboard 3: Compliance & Risk Monitor
@@ -370,7 +370,7 @@ class TestExchangeContracts:
 6. Circuit Breaker Trips (Stat) — Last hour trip count
 7. PnL by Tenant (Graph) — Multi-tenant portfolio performance
 
-**Refresh:** 15 seconds  
+**Refresh:** 15 seconds
 **Use Case:** Regulatory compliance + risk management
 
 ---
@@ -438,21 +438,21 @@ tracer = trace.get_tracer(__name__)
 async def execute_ooda_cycle(tenant_id: str):
     with tracer.start_as_current_span("ooda_cycle") as span:
         span.set_attribute("tenant_id", tenant_id)
-        
+
         with tracer.start_as_current_span("observe_phase"):
             state = await get_navagraha_state()
-        
+
         with tracer.start_as_current_span("orient_phase"):
             guna_weights = calculate_guna_weights(state)
-        
+
         with tracer.start_as_current_span("decide_phase"):
             decision = await decide_action(state, guna_weights)
-        
+
         with tracer.start_as_current_span("act_phase"):
             await execute_decision(decision)
 ```
 
-**Trace Sampling:** 10% of requests, 100% of errors  
+**Trace Sampling:** 10% of requests, 100% of errors
 **Trace Storage:** Tempo (30 days retention)
 
 ---

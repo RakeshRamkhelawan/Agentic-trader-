@@ -9,6 +9,7 @@ from typing import Any
 
 class ActivityType(Enum):
     """Types of activities."""
+
     # Trading activities
     TRADE_EXECUTED = "trade_executed"
     POSITION_CLOSED = "position_closed"
@@ -34,6 +35,7 @@ class ActivityType(Enum):
 @dataclass
 class Activity:
     """An activity entry."""
+
     id: str
     user_id: str
     type: ActivityType
@@ -95,7 +97,7 @@ class ActivityFeed:
 
         # Trim user feed
         if len(self._activities[user_id]) > self._max_per_user:
-            self._activities[user_id] = self._activities[user_id][-self._max_per_user:]
+            self._activities[user_id] = self._activities[user_id][-self._max_per_user :]
 
         # Add to global feed if public
         if is_public:
@@ -103,7 +105,7 @@ class ActivityFeed:
 
             # Trim global feed
             if len(self._global_activities) > self._max_global:
-                self._global_activities = self._global_activities[-self._max_global:]
+                self._global_activities = self._global_activities[-self._max_global :]
 
         return activity
 
@@ -119,7 +121,7 @@ class ActivityFeed:
         # Sort by created_at desc
         activities = sorted(activities, key=lambda a: a.created_at, reverse=True)
 
-        return activities[offset:offset + limit]
+        return activities[offset : offset + limit]
 
     def get_following_feed(
         self,
@@ -158,10 +160,7 @@ class ActivityFeed:
         limit: int = 50,
     ) -> list[Activity]:
         """Get activities of a specific type."""
-        activities = [
-            a for a in self._global_activities
-            if a.type == activity_type
-        ]
+        activities = [a for a in self._global_activities if a.type == activity_type]
 
         # Sort by created_at desc
         activities.sort(key=lambda a: a.created_at, reverse=True)
@@ -279,17 +278,13 @@ class ActivityFeed:
         for user_id in self._activities:
             original_count = len(self._activities[user_id])
             self._activities[user_id] = [
-                a for a in self._activities[user_id]
-                if a.created_at > cutoff
+                a for a in self._activities[user_id] if a.created_at > cutoff
             ]
             deleted_count += original_count - len(self._activities[user_id])
 
         # Clean global activities
         original_count = len(self._global_activities)
-        self._global_activities = [
-            a for a in self._global_activities
-            if a.created_at > cutoff
-        ]
+        self._global_activities = [a for a in self._global_activities if a.created_at > cutoff]
         deleted_count += original_count - len(self._global_activities)
 
         return deleted_count

@@ -115,7 +115,8 @@ class TenantAwareClickHouseClient(ClickHouseClient):
             raise ValueError("Invalid tenant_id")
         # Validate tenant_id format (alphanumeric, hyphens, underscores only)
         import re
-        if not re.match(r'^[a-zA-Z0-9_-]+$', tenant_id):
+
+        if not re.match(r"^[a-zA-Z0-9_-]+$", tenant_id):
             raise ValueError(f"Invalid tenant_id format: {tenant_id}")
         tenant_filter = f"tenant_id = '{tenant_id}'"
 

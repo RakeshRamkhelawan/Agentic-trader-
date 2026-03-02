@@ -4,7 +4,7 @@ Fetch all assets from Bitvavo exchange and export to CSV.
 
 Usage:
     python scripts/fetch_bitvavo_assets.py
-    
+
 Output:
     - data/bitvavo_assets.csv
     - data/bitvavo_assets.json

@@ -4,7 +4,6 @@ Tests voor Circuit Breaker.
 Test safety limits, trip conditions, reset logic, en persistence.
 """
 
-from datetime import datetime, timedelta
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -14,8 +13,6 @@ from backend.core.database import Base
 from backend.governance.circuit_breaker import (
     BreakerState,
     CircuitBreaker,
-    CircuitBreakerState,
-    CircuitBreakerTrippedError,
     TripReason,
 )
 

@@ -20,19 +20,23 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     # Relax RLS to allow Login/Seeding (Global Access via system_admin)
     op.execute("DROP POLICY IF EXISTS tenant_isolation_users ON users")
-    op.execute("""
+    op.execute(
+        """
         CREATE POLICY tenant_isolation_users ON users
         USING (
             tenant_id = current_setting('app.current_tenant', true)::text
             OR current_setting('app.current_tenant', true)::text = 'system_admin'
         )
-    """)
+    """
+    )
 
 
 def downgrade() -> None:
     # Revert to strict policy
     op.execute("DROP POLICY IF EXISTS tenant_isolation_users ON users")
-    op.execute("""
+    op.execute(
+        """
         CREATE POLICY tenant_isolation_users ON users
         USING (tenant_id = current_setting('app.current_tenant')::text)
-    """)
+    """
+    )

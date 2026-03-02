@@ -1,7 +1,5 @@
 import pytest
-import asyncio
 import time
-from enum import Enum
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.assets.models import Asset, AssetStatus
 from backend.assets.manager import AssetManager

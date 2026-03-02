@@ -1,8 +1,8 @@
 # Revised Architecture Design
 ## Samkhya Yoga Agentic Trader — State Management & Performance Architecture
 
-**Generated:** 2026-02-15  
-**Document Version:** 1.0  
+**Generated:** 2026-02-15
+**Document Version:** 1.0
 **Focus Areas:** NavagrahaState Threading, Caching Strategy, Circuit Breaker Patterns
 
 ---
@@ -215,11 +215,11 @@ class CacheInvalidator:
         redis.delete(f"navagraha:dasha:{event.date}")
         redis.delete(f"navagraha:state:*")  # Invalidate all states
         logger.info(f"Dasha transition: {event.old} → {event.new}")
-    
+
     def on_midnight_utc(self):
         redis.delete("navagraha:rahu_kala:*")  # Clear all Rahu Kala cache
         logger.info("Daily Rahu Kala cache cleared")
-    
+
     def on_system_restart(self):
         redis.flushdb()  # Nuclear option: clear all cache
         logger.warning("Full cache invalidation on system restart")
@@ -336,16 +336,16 @@ class CircuitBreaker:
         self._state_key = f"circuit:{name}:state"
         self._failure_key = f"circuit:{name}:failures"
         self._last_failure_key = f"circuit:{name}:last_failure"
-    
+
     def call(self, func: Callable, *args, **kwargs) -> Any:
         state = self._get_state()
-        
+
         if state == CircuitState.OPEN:
             if self._should_attempt_reset():
                 self._transition_to_half_open()
             else:
                 raise CircuitBreakerOpenError(f"Circuit {self.name} is OPEN")
-        
+
         try:
             result = func(*args, **kwargs)
             self._record_success()
@@ -353,49 +353,49 @@ class CircuitBreaker:
         except Exception as e:
             self._record_failure()
             raise
-    
+
     def _get_state(self) -> CircuitState:
         state_str = self.redis.get(self._state_key)
         if state_str:
             return CircuitState(state_str.decode())
         return CircuitState.CLOSED
-    
+
     def _record_failure(self):
         self.redis.incr(self._failure_key)
         self.redis.expire(self._failure_key, self.config.window_seconds)
         self.redis.set(self._last_failure_key, datetime.utcnow().isoformat())
-        
+
         failures = int(self.redis.get(self._failure_key) or 0)
         if failures >= self.config.failure_threshold:
             self._transition_to_open()
-    
+
     def _record_success(self):
         state = self._get_state()
         if state == CircuitState.HALF_OPEN:
             self._transition_to_closed()
         self.redis.delete(self._failure_key)
-    
+
     def _transition_to_open(self):
         self.redis.set(self._state_key, CircuitState.OPEN.value)
         logger.warning(f"Circuit {self.name} transitioned to OPEN")
         prometheus_gauge.labels(circuit=self.name).set(2)  # 2 = OPEN
-    
+
     def _transition_to_half_open(self):
         self.redis.set(self._state_key, CircuitState.HALF_OPEN.value)
         logger.info(f"Circuit {self.name} transitioned to HALF-OPEN")
         prometheus_gauge.labels(circuit=self.name).set(1)  # 1 = HALF-OPEN
-    
+
     def _transition_to_closed(self):
         self.redis.set(self._state_key, CircuitState.CLOSED.value)
         self.redis.delete(self._failure_key)
         logger.info(f"Circuit {self.name} transitioned to CLOSED")
         prometheus_gauge.labels(circuit=self.name).set(0)  # 0 = CLOSED
-    
+
     def _should_attempt_reset(self) -> bool:
         last_failure_str = self.redis.get(self._last_failure_key)
         if not last_failure_str:
             return True
-        
+
         last_failure = datetime.fromisoformat(last_failure_str.decode())
         return datetime.utcnow() - last_failure > timedelta(seconds=self.config.timeout_seconds)
 
@@ -403,7 +403,7 @@ class CircuitBreakerRegistry:
     def __init__(self, redis_client: redis.Redis):
         self.redis = redis_client
         self.breakers = {}
-    
+
     def get_breaker(self, name: str, config: CircuitBreakerConfig = None) -> CircuitBreaker:
         if name not in self.breakers:
             config = config or CircuitBreakerConfig()
@@ -437,7 +437,7 @@ except Exception as e:
 class CascadeBreaker:
     def __init__(self, breakers: List[CircuitBreaker]):
         self.breakers = breakers
-    
+
     def check_cascade(self) -> bool:
         open_count = sum(1 for b in self.breakers if b._get_state() == CircuitState.OPEN)
         if open_count >= len(self.breakers) * 0.5:
@@ -445,7 +445,7 @@ class CascadeBreaker:
             self._trigger_emergency_mode()
             return True
         return False
-    
+
     def _trigger_emergency_mode(self):
         redis.set("system:emergency_mode", "true")
         alert_pagerduty("Circuit breaker cascade detected")
@@ -464,15 +464,15 @@ class NavagrahaStateCalculator:
             return self._calculate_real(dt, location)
         except EphemerisCalculationError as e:
             logger.error(f"Ephemeris calculation failed: {e}")
-            
+
             last_known = self._get_last_known_state(dt)
             if last_known and (dt - last_known.calculated_at) < timedelta(minutes=15):
                 logger.warning("Using last known state (age: <15min)")
                 return last_known
-            
+
             logger.critical("No recent state available, using safe defaults")
             return self._create_safe_default_state(dt)
-    
+
     def _create_safe_default_state(self, dt: datetime) -> NavagrahaState:
         return NavagrahaState(
             planets=[],  # Empty positions

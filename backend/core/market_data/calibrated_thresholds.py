@@ -111,52 +111,50 @@ class CalibratedThresholds:
                 "std": float(vol_series.std()),
                 "min": float(vol_series.min()),
                 "max": float(vol_series.max()),
-                "median": float(vol_series.median())
+                "median": float(vol_series.median()),
             },
             "imbalance": {
                 "count": len(imb_series),
                 "mean": float(imb_series.mean()),
-                "std": float(imb_series.std())
+                "std": float(imb_series.std()),
             },
             "volume_ratio": {
                 "count": len(vol_ratio_series),
                 "mean": float(vol_ratio_series.mean()),
-                "median": float(vol_ratio_series.median())
+                "median": float(vol_ratio_series.median()),
             },
             "rsi": {
                 "count": len(rsi_series),
                 "mean": float(rsi_series.mean()),
-                "std": float(rsi_series.std())
-            }
+                "std": float(rsi_series.std()),
+            },
         }
 
         thresholds = {
             # Volatility percentiles
             "capitulation_vol": float(vol_series.quantile(0.90)),  # Extreme fear
-            "euphoria_vol": float(vol_series.quantile(0.85)),     # Extreme greed
+            "euphoria_vol": float(vol_series.quantile(0.85)),  # Extreme greed
             "uncertainty_vol": float(vol_series.quantile(0.70)),  # High vol
-            "normal_vol": float(vol_series.quantile(0.50)),       # Median
-
+            "normal_vol": float(vol_series.quantile(0.50)),  # Median
             # Imbalance (using bb_position as proxy)
             "extreme_imbalance": float(imb_series.quantile(0.90)),
             "high_imbalance": float(imb_series.quantile(0.75)),
-
             # Volume
             "high_volume": float(vol_ratio_series.quantile(0.80)),
             "extreme_volume": float(vol_ratio_series.quantile(0.95)),
-
             # RSI
-            "oversold_rsi": float(rsi_series.quantile(0.10)),     # 10th percentile
-            "overbought_rsi": float(rsi_series.quantile(0.90)),   # 90th percentile
-
+            "oversold_rsi": float(rsi_series.quantile(0.10)),  # 10th percentile
+            "overbought_rsi": float(rsi_series.quantile(0.90)),  # 90th percentile
             # Metadata
             "sample_size": len(vol_series),
-            "calibration_date": pd.Timestamp.now().isoformat()
+            "calibration_date": pd.Timestamp.now().isoformat(),
         }
 
         logger.info(f"Calibration complete! Sample size: {thresholds['sample_size']}")
         logger.info(f"Volatility 90th percentile: {thresholds['capitulation_vol']:.4f}")
-        logger.info(f"RSI extremes: {thresholds['oversold_rsi']:.1f} - {thresholds['overbought_rsi']:.1f}")
+        logger.info(
+            f"RSI extremes: {thresholds['oversold_rsi']:.1f} - {thresholds['overbought_rsi']:.1f}"
+        )
 
         return thresholds
 
@@ -175,7 +173,7 @@ class CalibratedThresholds:
             "overbought_rsi": 70,
             "sample_size": 0,
             "calibration_date": "default",
-            "note": "Using hardcoded defaults - no backtest data found"
+            "note": "Using hardcoded defaults - no backtest data found",
         }
 
     def _save_cache(self, cache_file: Path):
@@ -184,16 +182,17 @@ class CalibratedThresholds:
             cache_data = {
                 "thresholds": self.thresholds,
                 "stats": self.stats,
-                "cached_at": pd.Timestamp.now().isoformat()
+                "cached_at": pd.Timestamp.now().isoformat(),
             }
-            with open(cache_file, 'w') as f:
+            with open(cache_file, "w") as f:
                 json.dump(cache_data, f, indent=2)
             logger.info(f"Cached calibration to {cache_file}")
         except Exception as e:
             logger.warning(f"Failed to save cache: {e}")
 
-    def detect_emotion(self, volatility_1m: float, imbalance: float,
-                       volume_ratio: float = 1.0) -> str:
+    def detect_emotion(
+        self, volatility_1m: float, imbalance: float, volume_ratio: float = 1.0
+    ) -> str:
         """
         Detecteer markt emotie gebaseerd op kalibreerde drempels.
 
@@ -206,13 +205,11 @@ class CalibratedThresholds:
             str: "Capitulation", "Euphoria", "Uncertainty", of "Neutral"
         """
         # Capitulation = extreme vol + selling pressure
-        if (volatility_1m > self.thresholds["capitulation_vol"] and
-            imbalance < -0.2):
+        if volatility_1m > self.thresholds["capitulation_vol"] and imbalance < -0.2:
             return "Capitulation"
 
         # Euphoria = high vol + buying pressure
-        elif (volatility_1m > self.thresholds["euphoria_vol"] and
-              imbalance > 0.2):
+        elif volatility_1m > self.thresholds["euphoria_vol"] and imbalance > 0.2:
             return "Euphoria"
 
         # Extreme volume can indicate both
@@ -223,8 +220,7 @@ class CalibratedThresholds:
                 return "Capitulation"
 
         # Uncertainty = elevated vol maar geen duidelijke richting
-        elif (volatility_1m > self.thresholds["uncertainty_vol"] and
-              abs(imbalance) < 0.1):
+        elif volatility_1m > self.thresholds["uncertainty_vol"] and abs(imbalance) < 0.1:
             return "Uncertainty"
 
         return "Neutral"
@@ -239,9 +235,11 @@ class CalibratedThresholds:
 
     def is_extreme_condition(self, volatility: float, rsi: float) -> bool:
         """Check of we in een extreme marktconditie zijn."""
-        return (volatility > self.thresholds["capitulation_vol"] or
-                rsi < self.thresholds["oversold_rsi"] or
-                rsi > self.thresholds["overbought_rsi"])
+        return (
+            volatility > self.thresholds["capitulation_vol"]
+            or rsi < self.thresholds["oversold_rsi"]
+            or rsi > self.thresholds["overbought_rsi"]
+        )
 
 
 # Singleton instance voor gebruik in de applicatie
@@ -256,8 +254,7 @@ def get_thresholds() -> CalibratedThresholds:
     return _calibrated_thresholds
 
 
-def detect_market_emotion(volatility_1m: float, imbalance: float,
-                          volume_ratio: float = 1.0) -> str:
+def detect_market_emotion(volatility_1m: float, imbalance: float, volume_ratio: float = 1.0) -> str:
     """Convenience functie voor emotion detection."""
     return get_thresholds().detect_emotion(volatility_1m, imbalance, volume_ratio)
 

@@ -9,9 +9,7 @@ Validates the triple-layer consciousness architecture integration:
 """
 
 import asyncio
-import tempfile
 from datetime import datetime
-from typing import Any, Dict
 
 import numpy as np
 import pytest

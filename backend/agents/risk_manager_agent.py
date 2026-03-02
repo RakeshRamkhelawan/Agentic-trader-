@@ -80,13 +80,13 @@ class RiskManagerAgent(BaseAgent):
             self.risk_validator = OrderRiskValidator(
                 RiskLimits(
                     max_position_pct=Decimal(str(max_position_size)),
-                    max_order_pct=Decimal("0.10"),         # Max 10% per order
-                    min_order_size=Decimal("10"),          # Min $10
+                    max_order_pct=Decimal("0.10"),  # Max 10% per order
+                    min_order_size=Decimal("10"),  # Min $10
                     max_daily_trades=50,
-                    max_daily_volume_pct=Decimal("2.0"),   # Max 2x portfolio daily
-                    max_daily_loss_pct=Decimal("0.05"),    # Max 5% daily loss
-                    max_slippage_pct=Decimal("0.01"),      # Max 1% slippage
-                    max_spread_pct=Decimal("0.02"),        # Max 2% spread
+                    max_daily_volume_pct=Decimal("2.0"),  # Max 2x portfolio daily
+                    max_daily_loss_pct=Decimal("0.05"),  # Max 5% daily loss
+                    max_slippage_pct=Decimal("0.01"),  # Max 1% slippage
+                    max_spread_pct=Decimal("0.02"),  # Max 2% spread
                 )
             )
             logger.info("[RiskManagerAgent] Enhanced validator enabled")
@@ -142,10 +142,7 @@ class RiskManagerAgent(BaseAgent):
             )
 
     async def _assess_with_validator(
-        self,
-        proposal: TradeProposal,
-        current_regime: MarketRegime,
-        current_position_size: float
+        self, proposal: TradeProposal, current_regime: MarketRegime, current_position_size: float
     ) -> RiskAssessment:
         """
         Assess risk using OrderRiskValidator.
@@ -171,7 +168,7 @@ class RiskManagerAgent(BaseAgent):
             portfolio_value=portfolio_value,
             current_positions=current_positions,
             exchange=None,  # Could pass exchange adapter
-            balance=None    # Could pass balance
+            balance=None,  # Could pass balance
         )
 
         # Combine with base risk assessment
@@ -211,7 +208,9 @@ class RiskManagerAgent(BaseAgent):
         if decision == RiskDecision.APPROVE:
             self.trades_approved += 1
             # Record for daily stats
-            order_value = order_request.quantity * (order_request.price or order_request.expected_price)
+            order_value = order_request.quantity * (
+                order_request.price or order_request.expected_price
+            )
             self.risk_validator.record_trade(order_value)
         else:
             self.trades_rejected += 1
@@ -224,8 +223,8 @@ class RiskManagerAgent(BaseAgent):
                 "trade_id": proposal.trade_id,
                 "risk_score": risk_score,
                 "checks_performed": len(validation.checks),
-                "validation_status": validation.status.value
-            }
+                "validation_status": validation.status.value,
+            },
         )
 
         return RiskAssessment(
@@ -256,19 +255,15 @@ class RiskManagerAgent(BaseAgent):
             expected_price=expected,
             strategy_id=proposal.strategy_id,
             time_in_force=TimeInForce.GTC,
-            post_only=False
+            post_only=False,
         )
 
-    def _calculate_base_risk(
-        self,
-        proposal: TradeProposal,
-        current_regime: MarketRegime
-    ) -> float:
+    def _calculate_base_risk(self, proposal: TradeProposal, current_regime: MarketRegime) -> float:
         """Calculate base risk score from proposal."""
         base_risk = 0.3  # Start at 30%
 
         # Adjust based on confidence
-        base_risk *= (1.0 - proposal.confidence)
+        base_risk *= 1.0 - proposal.confidence
 
         # Adjust based on leverage
         if proposal.leverage and proposal.leverage > 1:
@@ -282,20 +277,13 @@ class RiskManagerAgent(BaseAgent):
 
         return min(base_risk, 1.0)
 
-    def _calculate_win_probability(
-        self,
-        proposal: TradeProposal,
-        risk_score: float
-    ) -> float:
+    def _calculate_win_probability(self, proposal: TradeProposal, risk_score: float) -> float:
         """Estimate win probability."""
         win_prob = proposal.confidence * (1.0 - risk_score)
         return max(0.0, min(1.0, win_prob))
 
     async def _legacy_assess_risk(
-        self,
-        proposal: TradeProposal,
-        current_regime: MarketRegime,
-        current_position_size: float
+        self, proposal: TradeProposal, current_regime: MarketRegime, current_position_size: float
     ) -> RiskAssessment:
         """Legacy risk assessment (without OrderRiskValidator)."""
         violations = []
@@ -315,9 +303,7 @@ class RiskManagerAgent(BaseAgent):
         # Position size check
         new_position = current_position_size + proposal.size
         if new_position > self.max_position_size:
-            violations.append(
-                f"Position {new_position:.2f} > max {self.max_position_size:.2f}"
-            )
+            violations.append(f"Position {new_position:.2f} > max {self.max_position_size:.2f}")
 
         # Leverage check
         if proposal.leverage and proposal.leverage > self.max_leverage:
@@ -351,14 +337,12 @@ class RiskManagerAgent(BaseAgent):
         else:
             self.trades_rejected += 1
 
-        rationale = (
-            f"Violations: {', '.join(violations)}" if violations else "Risk checks passed"
-        )
+        rationale = f"Violations: {', '.join(violations)}" if violations else "Risk checks passed"
 
         await self.publish_thought(
             reasoning=rationale,
             confidence=proposal.confidence,
-            data={"violations": violations, "risk_score": risk_score}
+            data={"violations": violations, "risk_score": risk_score},
         )
 
         return RiskAssessment(
@@ -395,8 +379,7 @@ class RiskManagerAgent(BaseAgent):
             "trades_approved": self.trades_approved,
             "trades_rejected": self.trades_rejected,
             "approval_rate": (
-                self.trades_approved / self.assessments_made
-                if self.assessments_made > 0 else 0
+                self.trades_approved / self.assessments_made if self.assessments_made > 0 else 0
             ),
             "enhanced_validator": self.use_enhanced_validator,
         }
@@ -442,7 +425,7 @@ class RiskManagerAgent(BaseAgent):
                 take_profit=features.get("take_profit", take_profit_default),
                 rationale=features.get("rationale", "Analysis from features"),
                 strategy_id=features.get("strategy_id", "default"),
-                confidence=features.get("confidence", 0.5)
+                confidence=features.get("confidence", 0.5),
             )
 
         regime = context.get("market_regime", MarketRegime.SIDEWAYS)
@@ -457,5 +440,5 @@ class RiskManagerAgent(BaseAgent):
             "rationale": assessment.rationale,
             "win_probability": assessment.win_probability,
             "modified_size": assessment.modified_size,
-            "trade_id": assessment.trade_id
+            "trade_id": assessment.trade_id,
         }

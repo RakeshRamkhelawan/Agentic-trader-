@@ -6,13 +6,12 @@ and updated RiskValidator with daily loss tracking.
 """
 
 from datetime import date
-from unittest.mock import patch
 
 import pytest
 
 from backend.risk.drawdown_monitor import DrawdownMonitor, DrawdownStatus
-from backend.risk.position_sizer import IntegratedPositionSizer, SizingResult
-from backend.risk.risk_orchestrator import RiskDecision, RiskOrchestrator, TradeSignal
+from backend.risk.position_sizer import IntegratedPositionSizer
+from backend.risk.risk_orchestrator import RiskOrchestrator, TradeSignal
 
 # ===========================================================================
 # DrawdownMonitor Tests

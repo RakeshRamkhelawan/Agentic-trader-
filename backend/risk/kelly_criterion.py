@@ -168,12 +168,12 @@ class KellyCriterion:
 
         # Also apply max risk constraint
         max_risk_amount = portfolio_value * max_risk_per_trade
-        
+
         # FIX: Prevent division by zero when win_probability approaches 1
         # Cap denominator at minimum 0.05 (equivalent to max 20x multiplier)
         loss_probability = max(1 - win_probability, 0.05)
         risk_based_size = max_risk_amount / loss_probability
-        
+
         # Also cap at reasonable maximum (20x the risk amount)
         risk_based_size = min(risk_based_size, max_risk_amount * 20)
 

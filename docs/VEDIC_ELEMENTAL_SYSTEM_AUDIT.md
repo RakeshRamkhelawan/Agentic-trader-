@@ -1,9 +1,9 @@
 # Vedic Elemental System - Complete Architecture Audit
 
-**Document Version:** 1.0  
-**Audit Date:** 2026-02-20  
-**Auditor:** Kimi Code CLI  
-**Scope:** Complete Vedic/Elemental architecture inventory  
+**Document Version:** 1.0
+**Audit Date:** 2026-02-20
+**Auditor:** Kimi Code CLI
+**Scope:** Complete Vedic/Elemental architecture inventory
 
 ---
 
@@ -167,29 +167,29 @@ async def process_market_cycle(self, ...):
     # ========== ASCEND: Layers 1-5 ==========
     for layer_num in range(1, 6):
         coherence = self._traverse_tattva_layer(layer_num, "ascend")
-    
+
     # ========== FILTER: Layers 6-12 ==========
     for layer_num in range(6, 13):
         coherence = self._traverse_tattva_layer(layer_num, "filter")
-    
+
     # ========== INTERFACE: Layers 13-15 ==========
     for layer_num in range(13, 16):
         coherence = self._traverse_tattva_layer(layer_num, "interface")
-    
+
     # ========== SENSE: Layers 16-25 ==========
     perception = self.sensory_processor.process_input(...)
-    
+
     # ========== DECIDE: Layer 14 (Buddhi) ==========
     action, confidence, rationale = self.decision_maker.discriminate(...)
-    
+
     # ========== ACT: Layers 26-31 ==========
     for layer_num in range(26, 32):
         coherence = self._traverse_tattva_layer(layer_num, "act")
-    
+
     # ========== MATERIALIZE: Layers 32-36 ==========
     for layer_num in range(32, 37):
         coherence = self._traverse_tattva_layer(layer_num, "materialize")
-    
+
     # ========== DESCEND: Layers 36-1 ==========
     for layer_num in range(36, 0, -1):
         coherence = self._traverse_tattva_layer(layer_num, "descend")
@@ -260,10 +260,10 @@ tamas_weights = {
 def trading_gate_open(self) -> bool:
     if self.rahu_kala_active:
         return False  # Don't trade during Rahu Kala
-    
+
     if self.guna_distribution.tamas > 0.6:
         return False  # Too much inertia/darkness
-    
+
     return True
 
 @property
@@ -341,7 +341,7 @@ class EphemerisCalculator:
         PlanetName.RAHU: swe.MEAN_NODE,
         PlanetName.KETU: swe.MEAN_NODE,  # +180° offset
     }
-    
+
     def calculate_planet_position(self, planet_name, jd):
         # Returns: longitude, latitude, distance_au, speed
         # Uses sidereal zodiac (Lahiri ayanamsa)
@@ -777,7 +777,7 @@ class TradingAgent:
     name: str
     strategy: str
     risk_per_trade: float = 0.05
-    
+
     def decide_trade(self, symbol, price, history):
         if random.random() < 0.3:  # Random trading
             return {'side': OrderSide.BUY, 'confidence': 0.7}

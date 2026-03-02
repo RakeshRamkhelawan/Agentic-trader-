@@ -12,7 +12,6 @@ Run with: pytest backend/tests/security/test_secrets_hardening.py -v
 
 import glob
 import os
-import re
 
 import pytest
 
@@ -77,7 +76,6 @@ class TestSettingsJWTField:
 
     def test_jwt_field_is_not_property(self):
         """JWT_SECRET_KEY must be a Pydantic Field, not a @property override."""
-        import inspect
 
         from backend.core.config.settings import Settings
 

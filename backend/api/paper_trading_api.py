@@ -56,9 +56,7 @@ async def _run_trading_engine(duration_hours: int, capital: float):
     project_root = Path(__file__).parent.parent.parent
     sys.path.insert(0, str(project_root))
 
-    from backend.services.real_paper_trading_v18_direct import (
-        RealPaperTradingV18,
-    )
+    from backend.services.real_paper_trading_v18_direct import RealPaperTradingV18
 
     _session_start_time = datetime.utcnow()
     _trading_logs = []

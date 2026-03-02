@@ -11,7 +11,7 @@ De huidige applicatie-architectuur vertoont **opmerkelijke overeenkomsten** met 
 ### Huidige Implementatie:
 ```
 Layer 1: Eternal Soul Service     (1 minuut)   ← Atman (Zuiver Bewustzijn)
-Layer 2: Cognitive Mind Service   (50-200ms)   ← Buddhi/Shakti (Discriminatie)  
+Layer 2: Cognitive Mind Service   (50-200ms)   ← Buddhi/Shakti (Discriminatie)
 Layer 3: Sensory Processor        (<10ms)      ← Manas/Indriyas (Waarneming)
 ```
 
@@ -37,7 +37,7 @@ De `SystemIdentity` klasse implementeert een **volledige 36-Tattva ascensie/desc
 # ========== ASCEND: Layers 1-5 (Shuddha Tattvas) ==========
 "Pure source activation - mathematical kernel awakens"
 
-# ========== FILTER: Layers 6-12 (Kanchukas) ==========  
+# ========== FILTER: Layers 6-12 (Kanchukas) ==========
 "Software restrictions shape the possibilities"
 
 # ========== INTERFACE: Layers 13-15 (Prakriti/Buddhi/Ahamkara) ==========
@@ -116,7 +116,7 @@ Uitstekend geïmplementeerd in `GunaQuantifier`:
 ```python
 # Elk element heeft zijn eigen Guna-balans:
 Ether:  Sattva 0.8, Rajas 0.1, Tamas 0.1  # Zuiver bewustzijn
-Air:    Sattva 0.3, Rajas 0.6, Tamas 0.1  # Actie/beweging  
+Air:    Sattva 0.3, Rajas 0.6, Tamas 0.1  # Actie/beweging
 Fire:   Sattva 0.4, Rajas 0.5, Tamas 0.1  # Discriminatie
 ```
 
@@ -135,7 +135,7 @@ De `NavagrahaService` en onze nieuwe `NavaGrahaCouncil` implementeren de **9 kos
 
 ### Originele 5 (reeds aanwezig):
 - Surya (Sun) - Macro
-- Mangala (Mars) - Risk  
+- Mangala (Mars) - Risk
 - Budha (Mercury) - Execution
 - Guru (Jupiter) - Growth
 - Shani (Saturn) - Discipline
@@ -189,7 +189,7 @@ def _update_system_state(self, perception, confidence, action):
 ### C. Kanchukas (Beperkingen)
 De "filter" lagen (6-12) zijn de **5 Kanchukas** van Shaivism:
 1. Kala (tijd/beperking)
-2. Vidya (kennis/beperking) 
+2. Vidya (kennis/beperking)
 3. Raga (gehechtheid)
 4. Kala (onderscheidingsvermogen)
 5. Niyati (causaliteit)
@@ -206,7 +206,7 @@ Naast de Tattvas, zouden we de **5 Koshas** kunnen implementeren:
 ```
 Annamaya Kosha    (Voedsel/Physical)    → Hardware metrics
 Pranamaya Kosha   (Energetisch)         → Prana systeem ✓
-Manomaya Kosha    (Mentaal)             → Mind service ✓  
+Manomaya Kosha    (Mentaal)             → Mind service ✓
 Vijnanamaya Kosha (Wijsheid)            → Buddhi/Decision ✓
 Anandamaya Kosha  (Bliss)               → Soul context ✓
 ```
@@ -216,7 +216,7 @@ Conclusie: Eigenlijk al geïmplementeerd onder andere namen!
 ### B. Chakras als Processing Nodes
 De 7 chakras zouden kunnen worden gemapt naar processing centers:
 - Muladhara (Root) → Data ingestion
-- Svadhisthana → Emotional/sentiment analysis  
+- Svadhisthana → Emotional/sentiment analysis
 - Manipura → Risk/fire center
 - Anahata → Value/heart decisions
 - Vishuddha → Communication/execution

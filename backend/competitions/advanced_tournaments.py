@@ -10,21 +10,23 @@ from .tournament_engine import TournamentEngine
 
 class TournamentVariant(Enum):
     """Tournament variants with special rules."""
-    CRYPTO_ONLY = "crypto_only"           # Crypto pairs only
-    FOREX_ONLY = "forex_only"             # Forex pairs only
-    STOCKS_ONLY = "stocks_only"           # Stock pairs only
-    COMMODITIES_ONLY = "commodities_only" # Commodities only
-    SHORT_ONLY = "short_only"             # Only short positions allowed
-    LONG_ONLY = "long_only"               # Only long positions allowed
-    HIGH_LEVERAGE = "high_leverage"       # Higher leverage allowed
-    NO_LEVERAGE = "no_leverage"           # Spot trading only
-    ALGORITHMIC = "algorithmic"           # Bot-only tournament
-    SOLO = "solo"                         # Against bots only
+
+    CRYPTO_ONLY = "crypto_only"  # Crypto pairs only
+    FOREX_ONLY = "forex_only"  # Forex pairs only
+    STOCKS_ONLY = "stocks_only"  # Stock pairs only
+    COMMODITIES_ONLY = "commodities_only"  # Commodities only
+    SHORT_ONLY = "short_only"  # Only short positions allowed
+    LONG_ONLY = "long_only"  # Only long positions allowed
+    HIGH_LEVERAGE = "high_leverage"  # Higher leverage allowed
+    NO_LEVERAGE = "no_leverage"  # Spot trading only
+    ALGORITHMIC = "algorithmic"  # Bot-only tournament
+    SOLO = "solo"  # Against bots only
 
 
 @dataclass
 class TournamentRules:
     """Special rules for tournament variants."""
+
     allowed_symbols: list[str] | None = None
     blocked_symbols: list[str] | None = None
     allowed_sides: list[str] | None = None  # "buy", "sell"
@@ -51,19 +53,47 @@ class AdvancedTournamentEngine(TournamentEngine):
 
     VARIANT_SYMBOLS: dict[TournamentVariant, list[str]] = {
         TournamentVariant.CRYPTO_ONLY: [
-            "BTC-EUR", "ETH-EUR", "XRP-EUR", "ADA-EUR", "SOL-EUR",
-            "DOT-EUR", "LINK-EUR", "MATIC-EUR", "UNI-EUR", "AAVE-EUR",
+            "BTC-EUR",
+            "ETH-EUR",
+            "XRP-EUR",
+            "ADA-EUR",
+            "SOL-EUR",
+            "DOT-EUR",
+            "LINK-EUR",
+            "MATIC-EUR",
+            "UNI-EUR",
+            "AAVE-EUR",
         ],
         TournamentVariant.FOREX_ONLY: [
-            "EUR-USD", "GBP-USD", "USD-JPY", "USD-CHF", "AUD-USD",
-            "USD-CAD", "NZD-USD", "EUR-GBP", "EUR-JPY", "GBP-JPY",
+            "EUR-USD",
+            "GBP-USD",
+            "USD-JPY",
+            "USD-CHF",
+            "AUD-USD",
+            "USD-CAD",
+            "NZD-USD",
+            "EUR-GBP",
+            "EUR-JPY",
+            "GBP-JPY",
         ],
         TournamentVariant.STOCKS_ONLY: [
-            "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
-            "META", "NVDA", "NFLX", "AMD", "INTC",
+            "AAPL",
+            "MSFT",
+            "GOOGL",
+            "AMZN",
+            "TSLA",
+            "META",
+            "NVDA",
+            "NFLX",
+            "AMD",
+            "INTC",
         ],
         TournamentVariant.COMMODITIES_ONLY: [
-            "GOLD", "SILVER", "OIL", "NATGAS", "COPPER",
+            "GOLD",
+            "SILVER",
+            "OIL",
+            "NATGAS",
+            "COPPER",
         ],
     }
 
@@ -110,15 +140,12 @@ class AdvancedTournamentEngine(TournamentEngine):
         description: str,
         variant: TournamentVariant,
         base_rules: TournamentRules | None = None,
-        **kwargs
+        **kwargs,
     ) -> Tournament:
         """Create a tournament with special rules."""
         # Create base tournament
         tournament = self.create_tournament(
-            name=name,
-            description=description,
-            tournament_type=TournamentType.SPECIAL,
-            **kwargs
+            name=name, description=description, tournament_type=TournamentType.SPECIAL, **kwargs
         )
 
         # Store variant info
@@ -251,17 +278,19 @@ class AdvancedTournamentEngine(TournamentEngine):
             rules = self._get_rules_for_variant(variant)
             symbols = self.VARIANT_SYMBOLS.get(variant, [])
 
-            variants.append({
-                "id": variant.value,
-                "name": variant.value.replace("_", " ").title(),
-                "description": self._get_variant_description(variant),
-                "allowed_symbols": symbols[:5] if symbols else None,  # Show first 5
-                "rules": {
-                    "max_leverage": rules.max_leverage,
-                    "allow_bots": rules.allow_bots,
-                    "allow_humans": rules.allow_humans,
-                },
-            })
+            variants.append(
+                {
+                    "id": variant.value,
+                    "name": variant.value.replace("_", " ").title(),
+                    "description": self._get_variant_description(variant),
+                    "allowed_symbols": symbols[:5] if symbols else None,  # Show first 5
+                    "rules": {
+                        "max_leverage": rules.max_leverage,
+                        "allow_bots": rules.allow_bots,
+                        "allow_humans": rules.allow_humans,
+                    },
+                }
+            )
 
         return variants
 

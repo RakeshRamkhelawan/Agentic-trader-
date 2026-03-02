@@ -3,7 +3,7 @@ Unit tests for Advanced Order Types (Sprint 3).
 """
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

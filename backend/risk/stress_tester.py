@@ -10,6 +10,7 @@ import numpy as np
 
 class StressScenario(Enum):
     """Predefined stress scenarios."""
+
     MARKET_CRASH_2008 = "market_crash_2008"
     COVID_CRASH_2020 = "covid_crash_2020"
     INTEREST_RATE_SHOCK = "interest_rate_shock"
@@ -22,6 +23,7 @@ class StressScenario(Enum):
 @dataclass
 class StressTestResult:
     """Result of a stress test."""
+
     scenario: str
     portfolio_value_before: float
     portfolio_value_after: float
@@ -249,7 +251,9 @@ class StressTester:
                 "scenarios_tested": total_scenarios,
                 "negative_outcomes": negative_scenarios,
                 "worst_scenario": worst_name,
-                "worst_loss_percentage": f"{worst_result.pnl_percentage * 100:.2f}%" if worst_result else "N/A",
+                "worst_loss_percentage": (
+                    f"{worst_result.pnl_percentage * 100:.2f}%" if worst_result else "N/A"
+                ),
             },
             "statistics": {
                 "average_pnl": round(avg_loss, 2),
@@ -280,11 +284,11 @@ class StressTester:
                 "Portfolio shows vulnerability in most scenarios. Diversification recommended."
             )
 
-        high_var_count = sum(1 for r in results.values() if r.var_95 / r.portfolio_value_before > 0.05)
+        high_var_count = sum(
+            1 for r in results.values() if r.var_95 / r.portfolio_value_before > 0.05
+        )
         if high_var_count > 3:
-            recommendations.append(
-                "High VaR in multiple scenarios. Consider hedging strategies."
-            )
+            recommendations.append("High VaR in multiple scenarios. Consider hedging strategies.")
 
         return recommendations
 

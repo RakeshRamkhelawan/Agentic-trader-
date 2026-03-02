@@ -1,4 +1,3 @@
-import asyncio
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -7,7 +6,6 @@ import pytest
 from backend.core.eternal_soul_service import EternalSoulService
 from backend.core.navagraha.models import (
     GunaDistribution,
-    GunaType,
     NavagrahaState,
     PlanetName,
     PlanetState,

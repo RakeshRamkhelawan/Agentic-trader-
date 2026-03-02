@@ -12,6 +12,7 @@ from typing import Any
 try:
     import chromadb
     from chromadb.utils import embedding_functions
+
     CHROMADB_AVAILABLE = True
 except ImportError:
     CHROMADB_AVAILABLE = False
@@ -49,7 +50,7 @@ class ToolRegistry:
                 self.chroma_client = chromadb.Client()
                 self.collection = self.chroma_client.create_collection(
                     name="mcp_tools",
-                    embedding_function=embedding_functions.DefaultEmbeddingFunction()
+                    embedding_function=embedding_functions.DefaultEmbeddingFunction(),
                 )
                 logger.info("ToolRegistry initialized with ChromaDB embeddings")
             except Exception as e:
@@ -64,7 +65,7 @@ class ToolRegistry:
         description: str,
         category: str,
         parameters: dict[str, Any] | None = None,
-        examples: list[dict] | None = None
+        examples: list[dict] | None = None,
     ) -> None:
         """
         Register a tool in the registry.
@@ -82,7 +83,7 @@ class ToolRegistry:
             "category": category,
             "parameters": parameters or {},
             "examples": examples or [],
-            "search_text": f"{name} {description} {category}".lower()
+            "search_text": f"{name} {description} {category}".lower(),
         }
 
         self.tools[name] = tool_info
@@ -99,7 +100,7 @@ class ToolRegistry:
                 self.collection.add(
                     documents=[description],
                     metadatas=[{"name": name, "category": category}],
-                    ids=[name]
+                    ids=[name],
                 )
             except Exception as e:
                 logger.warning(f"Failed to add tool to embeddings: {e}")
@@ -158,7 +159,7 @@ class ToolRegistry:
             results = self.collection.query(
                 query_texts=[query],
                 n_results=min(top_k, len(self.tools)),
-                include=["metadatas", "distances"]
+                include=["metadatas", "distances"],
             )
 
             matches = []
@@ -170,13 +171,15 @@ class ToolRegistry:
                 similarity = 1.0 / (1.0 + distance)
 
                 tool_info = self.tools.get(name, {})
-                matches.append({
-                    "name": name,
-                    "category": metadata.get("category", "unknown"),
-                    "description": tool_info.get("description", ""),
-                    "similarity": round(similarity, 3),
-                    "match_type": "semantic"
-                })
+                matches.append(
+                    {
+                        "name": name,
+                        "category": metadata.get("category", "unknown"),
+                        "description": tool_info.get("description", ""),
+                        "similarity": round(similarity, 3),
+                        "match_type": "semantic",
+                    }
+                )
 
             return matches
 
@@ -215,13 +218,15 @@ class ToolRegistry:
         matches = []
         for name, score in scores[:top_k]:
             tool_info = self.tools[name]
-            matches.append({
-                "name": name,
-                "category": tool_info["category"],
-                "description": tool_info["description"],
-                "similarity": round(min(score / 5, 1.0), 3),  # Normalize to 0-1
-                "match_type": "keyword"
-            })
+            matches.append(
+                {
+                    "name": name,
+                    "category": tool_info["category"],
+                    "description": tool_info["description"],
+                    "similarity": round(min(score / 5, 1.0), 3),  # Normalize to 0-1
+                    "match_type": "keyword",
+                }
+            )
 
         return matches
 
@@ -254,11 +259,7 @@ class ToolRegistry:
         """
         return self.tools.get(name)
 
-    def recommend_tools(
-        self,
-        context: dict[str, Any],
-        top_k: int = 3
-    ) -> list[dict[str, Any]]:
+    def recommend_tools(self, context: dict[str, Any], top_k: int = 3) -> list[dict[str, Any]]:
         """
         Recommend tools based on current context.
 
@@ -281,7 +282,7 @@ class ToolRegistry:
                 "buy": "buy entry signal",
                 "sell": "sell exit signal",
                 "analyze": "analyze research",
-                "hedge": "hedge risk protection"
+                "hedge": "hedge risk protection",
             }
             query_parts.append(intent_queries.get(context["intent"], context["intent"]))
 
@@ -293,7 +294,7 @@ class ToolRegistry:
                 "scalp": "short term quick",
                 "day": "intraday daily",
                 "swing": "swing medium term",
-                "longterm": "long term investment"
+                "longterm": "long term investment",
             }
             query_parts.append(timeframe_queries.get(context["timeframe"], context["timeframe"]))
 
@@ -330,10 +331,8 @@ class ToolRegistry:
         return {
             "total_tools": len(self.tools),
             "categories": len(self.categories),
-            "tools_per_category": {
-                cat: len(tools) for cat, tools in self.categories.items()
-            },
-            "embedding_enabled": self.use_embeddings
+            "tools_per_category": {cat: len(tools) for cat, tools in self.categories.items()},
+            "embedding_enabled": self.use_embeddings,
         }
 
 
@@ -369,29 +368,23 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
         category="vedastro",
         parameters={
             "symbol": {"type": "string", "description": "Asset symbol"},
-            "current_price": {"type": "number", "description": "Current market price"}
+            "current_price": {"type": "number", "description": "Current market price"},
         },
-        examples=[
-            {"symbol": "BTC", "current_price": 45000}
-        ]
+        examples=[{"symbol": "BTC", "current_price": 45000}],
     )
 
     registry.register_tool(
         name="vedastro__get_dasha",
         description="Get Vimshottari Dasha planetary period information for timing analysis",
         category="vedastro",
-        parameters={
-            "symbol": {"type": "string", "description": "Asset symbol"}
-        }
+        parameters={"symbol": {"type": "string", "description": "Asset symbol"}},
     )
 
     registry.register_tool(
         name="vedastro__get_transits",
         description="Get current planetary transits (Gochara) for market timing",
         category="vedastro",
-        parameters={
-            "symbol": {"type": "string", "description": "Asset symbol"}
-        }
+        parameters={"symbol": {"type": "string", "description": "Asset symbol"}},
     )
 
     registry.register_tool(
@@ -401,8 +394,8 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
         parameters={
             "birth_nakshatra": {"type": "string", "description": "Birth nakshatra name"},
             "birth_nakshatra_pad": {"type": "integer", "description": "Nakshatra pad (1-4)"},
-            "birth_date": {"type": "string", "description": "Birth date (YYYY-MM-DD)"}
-        }
+            "birth_date": {"type": "string", "description": "Birth date (YYYY-MM-DD)"},
+        },
     )
 
     registry.register_tool(
@@ -411,8 +404,8 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
         category="vedastro",
         parameters={
             "nakshatra": {"type": "string", "description": "Nakshatra name"},
-            "pada": {"type": "integer", "description": "Pad/quarter (1-4)"}
-        }
+            "pada": {"type": "integer", "description": "Pad/quarter (1-4)"},
+        },
     )
 
     registry.register_tool(
@@ -421,8 +414,8 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
         category="vedastro",
         parameters={
             "date": {"type": "string", "description": "Date (YYYY-MM-DD)"},
-            "symbols": {"type": "array", "description": "List of asset symbols"}
-        }
+            "symbols": {"type": "array", "description": "List of asset symbols"},
+        },
     )
 
     # Elemental tools
@@ -434,18 +427,15 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "symbol": {"type": "string"},
             "portfolio_value": {"type": "number"},
             "vedastro_score": {"type": "number"},
-            "dominant_planet": {"type": "string"}
-        }
+            "dominant_planet": {"type": "string"},
+        },
     )
 
     registry.register_tool(
         name="elemental__earth_entry_check",
         description="Check if entry is allowed using Earth element (Prithvi) - stability and timing",
         category="elemental",
-        parameters={
-            "symbol": {"type": "string"},
-            "trade_history": {"type": "array"}
-        }
+        parameters={"symbol": {"type": "string"}, "trade_history": {"type": "array"}},
     )
 
     registry.register_tool(
@@ -458,18 +448,15 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "current_date": {"type": "string"},
             "entry_price": {"type": "number"},
             "current_price": {"type": "number"},
-            "peak_price": {"type": "number"}
-        }
+            "peak_price": {"type": "number"},
+        },
     )
 
     registry.register_tool(
         name="elemental__water_regime_check",
         description="Check market regime using Water element (Apas) - trend following and adaptability",
         category="elemental",
-        parameters={
-            "symbol": {"type": "string"},
-            "recent_closes": {"type": "array"}
-        }
+        parameters={"symbol": {"type": "string"}, "recent_closes": {"type": "array"}},
     )
 
     registry.register_tool(
@@ -480,8 +467,8 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "fire_vote": {"type": "number", "description": "Fire element score (-1 to 1)"},
             "earth_vote": {"type": "number", "description": "Earth element score (-1 to 1)"},
             "water_vote": {"type": "number", "description": "Water element score (-1 to 1)"},
-            "air_vote": {"type": "number", "description": "Air element score (-1 to 1)"}
-        }
+            "air_vote": {"type": "number", "description": "Air element score (-1 to 1)"},
+        },
     )
 
     # Execution tools
@@ -493,29 +480,27 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "symbol": {"type": "string"},
             "side": {"type": "string", "enum": ["buy", "sell"]},
             "quantity": {"type": "number"},
-            "price": {"type": "number"}
-        }
+            "price": {"type": "number"},
+        },
     )
 
     registry.register_tool(
         name="execution__get_open_positions",
         description="Get all currently open positions in portfolio",
-        category="execution"
+        category="execution",
     )
 
     registry.register_tool(
         name="execution__get_trade_history",
         description="Get historical trade execution records",
-        category="execution"
+        category="execution",
     )
 
     registry.register_tool(
         name="execution__close_position",
         description="Close an existing open position",
         category="execution",
-        parameters={
-            "position_id": {"type": "string"}
-        }
+        parameters={"position_id": {"type": "string"}},
     )
 
     # Data tools
@@ -527,23 +512,21 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "symbol": {"type": "string"},
             "start_date": {"type": "string"},
             "end_date": {"type": "string"},
-            "timeframe": {"type": "string", "enum": ["1m", "5m", "15m", "1h", "4h", "1d"]}
-        }
+            "timeframe": {"type": "string", "enum": ["1m", "5m", "15m", "1h", "4h", "1d"]},
+        },
     )
 
     registry.register_tool(
         name="data__get_portfolio_status",
         description="Get current portfolio status including positions and P&L",
-        category="data"
+        category="data",
     )
 
     registry.register_tool(
         name="data__get_market_regime",
         description="Analyze current market regime (trending, ranging, volatile)",
         category="data",
-        parameters={
-            "symbol": {"type": "string"}
-        }
+        parameters={"symbol": {"type": "string"}},
     )
 
     logger.info(f"Registered {len(registry.list_all_tools())} default tools")

@@ -93,7 +93,7 @@ async def test_notify_only_mode():
     coord = OODALoopCoordinator(trading_mode="notify_only")
     # ... setup mocks ...
     await coord.run_cycle("BTC")
-    
+
     assert execution_engine.execute.call_count == 0
     assert event_bus.emit.call_args[0][0] == "trade_proposal"
 ```
@@ -135,7 +135,7 @@ async def test_search_database_down_resilience():
     """Systemic Unhappy Path: Database Down"""
     vm = VectorMemory(connection_string="postgresql+asyncpg://bad:port/db")
     with pytest.raises(VectorStoreError):
-        await vm.search_similar(...) 
+        await vm.search_similar(...)
 ```
 
 ---

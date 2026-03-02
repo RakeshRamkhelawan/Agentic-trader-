@@ -157,7 +157,9 @@ class LeagueSystem:
             if prev_tier:
                 self._demote_competitor(competitor, prev_tier)
                 result["demoted"] = True
-                result["message"] = f"Demoted to {prev_tier.value.upper()}. Keep trading to climb back!"
+                result["message"] = (
+                    f"Demoted to {prev_tier.value.upper()}. Keep trading to climb back!"
+                )
 
         return result
 
@@ -229,9 +231,7 @@ class LeagueSystem:
 
         # Get competitors in this league
         competitors = [
-            self._competitors[cid]
-            for cid in league.competitor_ids
-            if cid in self._competitors
+            self._competitors[cid] for cid in league.competitor_ids if cid in self._competitors
         ]
 
         # Sort by points (descending)
@@ -241,16 +241,18 @@ class LeagueSystem:
         standings = []
         for rank, competitor in enumerate(competitors[:limit], 1):
             competitor.rank = rank
-            standings.append({
-                "rank": rank,
-                "competitor_id": competitor.id,
-                "name": competitor.name,
-                "points": competitor.points,
-                "tier": competitor.tier.value,
-                "total_pnl": competitor.stats.total_pnl,
-                "win_rate": competitor.stats.win_rate,
-                "reputation": competitor.stats.reputation_score,
-            })
+            standings.append(
+                {
+                    "rank": rank,
+                    "competitor_id": competitor.id,
+                    "name": competitor.name,
+                    "points": competitor.points,
+                    "tier": competitor.tier.value,
+                    "total_pnl": competitor.stats.total_pnl,
+                    "win_rate": competitor.stats.win_rate,
+                    "reputation": competitor.stats.reputation_score,
+                }
+            )
 
         return standings
 
@@ -259,9 +261,11 @@ class LeagueSystem:
         return {
             tier.value: {
                 **league.get_tier_requirements(),
-                "best_performer": self._competitors.get(
-                    league.best_performer_id
-                ).name if league.best_performer_id else None,
+                "best_performer": (
+                    self._competitors.get(league.best_performer_id).name
+                    if league.best_performer_id
+                    else None
+                ),
             }
             for tier, league in self._leagues.items()
         }

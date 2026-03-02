@@ -1,4 +1,3 @@
-import pytest
 
 from backend.core.karma.karma_register import KarmaRegister, TradeOutcome
 from backend.core.karma.reinforcement import ParameterTuner

@@ -151,5 +151,5 @@ Edit files in `.github/workflows/` directory:
 
 ---
 
-**Last Updated:** February 4, 2026  
+**Last Updated:** February 4, 2026
 **Repository:** https://github.com/RakeshRamkhelawan/Agentic-trader-

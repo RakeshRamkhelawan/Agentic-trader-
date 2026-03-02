@@ -22,10 +22,10 @@ class V17BaselineStrategy:
         self.name = "v17_baseline"
 
     def decide(self, market_data: dict) -> dict:
-        if 'elemental_harmony' in market_data:
-            harmony = market_data['elemental_harmony']
-        elif 'rsi' in market_data:
-            rsi = market_data['rsi']
+        if "elemental_harmony" in market_data:
+            harmony = market_data["elemental_harmony"]
+        elif "rsi" in market_data:
+            rsi = market_data["rsi"]
             harmony = (rsi - 30) / 40
             harmony = max(0, min(1, harmony))
         else:
@@ -77,7 +77,7 @@ class ABTestingFramework:
         self.baselines = {
             "v17": V17BaselineStrategy(),
             "random": RandomBaselineStrategy(),
-            "buy_hold": BuyHoldStrategy()
+            "buy_hold": BuyHoldStrategy(),
         }
         self._load_experiments()
         logger.info("A/B Testing Framework initialized")
@@ -93,7 +93,7 @@ class ABTestingFramework:
 
     def _save_experiments(self):
         exp_file = self.storage_path / "experiments.json"
-        with open(exp_file, 'w') as f:
+        with open(exp_file, "w") as f:
             json.dump(self.experiments, f, indent=2, default=str)
 
     def start_experiment(self, experiment_id: str, baseline: str = "v17") -> dict:
@@ -107,7 +107,7 @@ class ABTestingFramework:
             "start_time": datetime.utcnow().isoformat(),
             "status": "running",
             "triad_results": [],
-            "baseline_results": []
+            "baseline_results": [],
         }
 
         self.experiments[experiment_id] = experiment
@@ -122,10 +122,7 @@ class ABTestingFramework:
 
     def record_outcome(self, experiment_id: str, variant: str, pnl: float):
         """Record trade outcome."""
-        result = {
-            "timestamp": datetime.utcnow().isoformat(),
-            "pnl": pnl
-        }
+        result = {"timestamp": datetime.utcnow().isoformat(), "pnl": pnl}
         self.experiments[experiment_id][f"{variant}_results"].append(result)
         self._save_experiments()
 
@@ -141,7 +138,7 @@ class ABTestingFramework:
         analysis = {
             "triad": self._calc_stats(triad_pnls),
             "baseline": self._calc_stats(baseline_pnls),
-            "comparison": self._compare(triad_pnls, baseline_pnls)
+            "comparison": self._compare(triad_pnls, baseline_pnls),
         }
 
         exp["analysis"] = analysis
@@ -157,7 +154,7 @@ class ABTestingFramework:
             "trades": len(pnls),
             "win_rate": wins / len(pnls),
             "total_pnl": sum(pnls),
-            "avg_pnl": statistics.mean(pnls)
+            "avg_pnl": statistics.mean(pnls),
         }
 
     def _compare(self, triad_pnls: list[float], baseline_pnls: list[float]) -> dict:
@@ -171,7 +168,7 @@ class ABTestingFramework:
             "triad_pnl": triad_total,
             "baseline_pnl": baseline_total,
             "difference": triad_total - baseline_total,
-            "winner": "triad" if triad_total > baseline_total else "baseline"
+            "winner": "triad" if triad_total > baseline_total else "baseline",
         }
 
     def get_report(self, experiment_id: str) -> str:
@@ -229,6 +226,7 @@ if __name__ == "__main__":
 
     # Simulate trades
     import random
+
     for i in range(20):
         market = {"rsi": random.uniform(30, 70)}
 

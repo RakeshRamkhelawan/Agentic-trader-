@@ -24,15 +24,15 @@ from backend.models.orders import Order, OrderStatus
 
 async def import_paper_trades(json_file: str, tenant_id: str = "paper_trading"):
     """Import paper trades from JSON file into database."""
-    
+
     print(f"Importing paper trades from: {json_file}")
-    
+
     with open(json_file, 'r') as f:
         data = json.load(f)
-    
+
     trades = data.get('trades', [])
     print(f"Found {len(trades)} trades to import")
-    
+
     async with AsyncSessionLocal() as session:
         imported = 0
         for trade in trades:
@@ -45,7 +45,7 @@ async def import_paper_trades(json_file: str, tenant_id: str = "paper_trading"):
                     created_at = created_at.replace(tzinfo=None)
             except:
                 created_at = datetime.utcnow()
-            
+
             # Create order record
             order = Order(
                 tenant_id=tenant_id,
@@ -60,19 +60,19 @@ async def import_paper_trades(json_file: str, tenant_id: str = "paper_trading"):
                 created_at=created_at,
                 updated_at=created_at,
             )
-            
+
             session.add(order)
             imported += 1
-            
+
             # Commit every 10 records
             if imported % 10 == 0:
                 await session.commit()
                 print(f"  Committed {imported} trades...")
-        
+
         # Final commit
         await session.commit()
         print(f"\n[OK] Successfully imported {imported} paper trades to database")
-        
+
         # Show summary
         from sqlalchemy import func, select
         count_result = await session.execute(
@@ -95,11 +95,11 @@ def main():
         print(f"Using most recent file: {json_file}")
     else:
         json_file = sys.argv[1]
-    
+
     if not os.path.exists(json_file):
         print(f"Error: File not found: {json_file}")
         sys.exit(1)
-    
+
     asyncio.run(import_paper_trades(json_file))
 
 

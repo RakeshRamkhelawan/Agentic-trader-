@@ -44,9 +44,7 @@ async def live_trading_place_order(
         ctx.info(f"[LIVE TRADE] {side.upper()} {quantity} {symbol} on {exchange or 'auto'}")
 
     try:
-        from backend.execution.live_multi_exchange_trading import (
-            get_live_trading_service,
-        )
+        from backend.execution.live_multi_exchange_trading import get_live_trading_service
 
         # Validate inputs
         side_lower = side.lower()
@@ -55,7 +53,10 @@ async def live_trading_place_order(
 
         type_lower = order_type.lower()
         if type_lower not in ["market", "limit"]:
-            return {"success": False, "error": f"Invalid order_type: {order_type}. Must be 'market' or 'limit'"}
+            return {
+                "success": False,
+                "error": f"Invalid order_type: {order_type}. Must be 'market' or 'limit'",
+            }
 
         if type_lower == "limit" and price is None:
             return {"success": False, "error": "Price is required for limit orders"}
@@ -124,9 +125,7 @@ async def live_trading_get_order_status(order_id: str, ctx=None) -> dict[str, An
         ctx.info(f"Checking order status: {order_id}")
 
     try:
-        from backend.execution.live_multi_exchange_trading import (
-            get_live_trading_service,
-        )
+        from backend.execution.live_multi_exchange_trading import get_live_trading_service
 
         trading = await get_live_trading_service()
         order = await trading.get_order_status(order_id)
@@ -171,9 +170,7 @@ async def live_trading_cancel_order(order_id: str, ctx=None) -> dict[str, Any]:
         ctx.info(f"Cancelling order: {order_id}")
 
     try:
-        from backend.execution.live_multi_exchange_trading import (
-            get_live_trading_service,
-        )
+        from backend.execution.live_multi_exchange_trading import get_live_trading_service
 
         trading = await get_live_trading_service()
         success = await trading.cancel_order(order_id)
@@ -211,30 +208,30 @@ async def live_trading_get_positions(ctx=None) -> dict[str, Any]:
         ctx.info("Fetching live positions")
 
     try:
-        from backend.execution.live_multi_exchange_trading import (
-            get_live_trading_service,
-        )
+        from backend.execution.live_multi_exchange_trading import get_live_trading_service
 
         trading = await get_live_trading_service()
         positions = await trading.get_positions()
 
         position_data = []
         for pos in positions:
-            position_data.append({
-                "symbol": pos.symbol,
-                "total_quantity": pos.total_quantity,
-                "avg_entry_price": pos.avg_entry_price,
-                "total_unrealized_pnl": pos.total_unrealized_pnl,
-                "total_realized_pnl": pos.total_realized_pnl,
-                "exchanges": {
-                    ex: {
-                        "quantity": p.quantity,
-                        "avg_entry": p.avg_entry_price,
-                        "unrealized_pnl": p.unrealized_pnl,
-                    }
-                    for ex, p in pos.positions.items()
-                },
-            })
+            position_data.append(
+                {
+                    "symbol": pos.symbol,
+                    "total_quantity": pos.total_quantity,
+                    "avg_entry_price": pos.avg_entry_price,
+                    "total_unrealized_pnl": pos.total_unrealized_pnl,
+                    "total_realized_pnl": pos.total_realized_pnl,
+                    "exchanges": {
+                        ex: {
+                            "quantity": p.quantity,
+                            "avg_entry": p.avg_entry_price,
+                            "unrealized_pnl": p.unrealized_pnl,
+                        }
+                        for ex, p in pos.positions.items()
+                    },
+                }
+            )
 
         return {
             "success": True,
@@ -259,9 +256,7 @@ async def live_trading_get_stats(ctx=None) -> dict[str, Any]:
         Trading statistics and status
     """
     try:
-        from backend.execution.live_multi_exchange_trading import (
-            get_live_trading_service,
-        )
+        from backend.execution.live_multi_exchange_trading import get_live_trading_service
 
         trading = await get_live_trading_service()
         stats = trading.get_stats()
@@ -305,9 +300,7 @@ async def live_trading_validate_order(
         ctx.info(f"Validating {side} order: {quantity} {symbol}")
 
     try:
-        from backend.execution.live_multi_exchange_trading import (
-            LiveMultiExchangeTrading,
-        )
+        from backend.execution.live_multi_exchange_trading import LiveMultiExchangeTrading
 
         # Create temporary trading instance for validation
         trading = LiveMultiExchangeTrading()
@@ -315,9 +308,7 @@ async def live_trading_validate_order(
         # Estimate price if not provided
         if price is None:
             # Use smart routing to get best price
-            from backend.mcp_broker.tools.multi_exchange_tools import (
-                multi_exchange_get_best_price,
-            )
+            from backend.mcp_broker.tools.multi_exchange_tools import multi_exchange_get_best_price
 
             base = symbol.split("-")[0].split("/")[0]
             best_price = await multi_exchange_get_best_price(base, side)

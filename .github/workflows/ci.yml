@@ -213,7 +213,7 @@ jobs:
     name: Container Security Scan
     needs: docker-build
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

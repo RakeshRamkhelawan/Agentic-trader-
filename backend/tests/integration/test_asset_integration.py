@@ -7,7 +7,6 @@ from backend.assets.models import Asset, AssetStatus, Base
 from backend.assets.manager import AssetManager
 import os
 import time
-from datetime import datetime, UTC
 
 # Use the environment URL or a default for testing
 DATABASE_URL = os.getenv(

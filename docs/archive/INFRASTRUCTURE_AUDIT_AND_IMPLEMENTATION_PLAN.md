@@ -1,7 +1,7 @@
 # Infrastructure Audit & Realistic Implementation Plan
 
-**Date:** 2025-01-18  
-**Auditor:** Code Analysis  
+**Date:** 2025-01-18
+**Auditor:** Code Analysis
 **Status:** READY FOR IMPLEMENTATION
 
 ---
@@ -100,7 +100,7 @@ De huidige infrastructuur is **productie-ready** en kan de volledige 448-asset i
 
 -- MISSING for Asset System (TO BE ADDED)
 ❌ assets                    -- Master asset registry
-❌ asset_categories          -- Category definitions  
+❌ asset_categories          -- Category definitions
 ❌ asset_exchanges           -- Exchange-specific asset data
 ❌ agent_asset_watchlists    -- Per-agent watched assets
 ❌ asset_tiers               -- Tier assignments
@@ -340,7 +340,7 @@ def upgrade():
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('slug')
     )
-    
+
     # Seed categories
     op.bulk_insert('asset_categories', [
         {'slug': 'layer1', 'name': 'Layer 1', 'sort_order': 1},
@@ -383,7 +383,7 @@ from backend.data.models import Asset
 
 def seed_assets():
     db = SessionLocal()
-    
+
     with open('data/bitvavo_assets.csv', 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -393,12 +393,12 @@ def seed_assets():
                 quote_asset=row['quoteAsset'],
                 name=row['baseAsset'],  # Use base as name initially
                 exchange='bitvavo',
-                tier=1 if row['baseAsset'] in ['BTC', 'ETH', 'SOL'] else 
+                tier=1 if row['baseAsset'] in ['BTC', 'ETH', 'SOL'] else
                       2 if float(row.get('volume_24h', 0)) > 1000000 else 3,
                 category=assign_category(row['baseAsset'])
             )
             db.add(asset)
-    
+
     db.commit()
     db.close()
 
@@ -428,20 +428,20 @@ def assign_category(base_asset: str) -> str:
 class MarketDataSync:
     def __init__(self, sync_interval: int = 10):
         # ... existing code ...
-        
+
         # ENHANCEMENT: Load all 448 assets from DB
         self.target_symbols = self._load_symbols_from_db()
-        
+
         # ENHANCEMENT: Tier assignment
         self.tier1_symbols = self._get_tier_symbols(1)  # 50 assets
         self.tier2_symbols = self._get_tier_symbols(2)  # 150 assets
         self.tier3_symbols = self._get_tier_symbols(3)  # 248 assets
-        
+
     def _load_symbols_from_db(self) -> List[str]:
         """Load active assets from database"""
         # Query DB for all active assets
         pass
-    
+
     async def _sync_loop(self):
         """Enhanced loop with tiered updates"""
         iteration = 0
@@ -449,30 +449,30 @@ class MarketDataSync:
             try:
                 # Every iteration: Tier 1 (1-5s)
                 await self._update_tier1()
-                
+
                 # Every 3 iterations: Tier 2 (10-15s)
                 if iteration % 3 == 0:
                     await self._update_tier2()
-                
+
                 # Every 12 iterations: Tier 3 (60s)
                 if iteration % 12 == 0:
                     await self._update_tier3()
-                
+
                 iteration += 1
                 await asyncio.sleep(5)
             except Exception as e:
                 logger.error(f"Market sync error: {e}")
-    
+
     async def _update_tier1(self):
         """Update hot assets"""
         data = await self._fetch_symbols(self.tier1_symbols)
         await self.cache.set("markets:tier1", data, ttl=10)
-    
+
     async def _update_tier2(self):
         """Update warm assets"""
         data = await self._fetch_symbols(self.tier2_symbols)
         await self.cache.set("markets:tier2", data, ttl=60)
-    
+
     async def _update_tier3(self):
         """Update cold assets"""
         data = await self._fetch_symbols(self.tier3_symbols)
@@ -488,10 +488,10 @@ from backend.data.models import Asset, AssetCategory
 
 class AssetRegistry:
     """Central asset registry service"""
-    
+
     def __init__(self, db: Session):
         self.db = db
-    
+
     def get_all_assets(
         self,
         category: Optional[str] = None,
@@ -501,7 +501,7 @@ class AssetRegistry:
         offset: int = 0
     ) -> List[Asset]:
         query = self.db.query(Asset).filter(Asset.is_active == True)
-        
+
         if category:
             query = query.filter(Asset.category == category)
         if tier:
@@ -514,12 +514,12 @@ class AssetRegistry:
                     Asset.name.ilike(f"%{search}%")
                 )
             )
-        
+
         return query.offset(offset).limit(limit).all()
-    
+
     def get_categories(self) -> List[AssetCategory]:
         return self.db.query(AssetCategory).order_by(AssetCategory.sort_order).all()
-    
+
     def get_agent_watchlist(self, agent_id: str) -> List[Asset]:
         """Get assets watched by specific agent"""
         return self.db.query(Asset).join(
@@ -595,14 +595,14 @@ async def get_market_context(
 interface AssetStore {
   // Existing
   assets: Asset[];
-  
+
   // New
   allAssets: Asset[];
   assetCategories: Category[];
   assetsByCategory: Record<string, Asset[]>;
   selectedCategory: string | null;
   searchQuery: string;
-  
+
   // Actions
   fetchAllAssets: () => Promise<void>;
   fetchCategories: () => Promise<void>;
@@ -617,11 +617,11 @@ interface AssetStore {
 
 export function AssetSelector() {
   const { allAssets, categories, filterByCategory } = useAssetStore();
-  
+
   return (
     <div className="asset-selector">
       <SearchBar />
-      
+
       <div className="categories-grid">
         {categories.map(cat => (
           <CategoryDropdown

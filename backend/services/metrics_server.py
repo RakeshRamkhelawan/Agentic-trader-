@@ -26,4 +26,6 @@ async def get_metrics():
 
 if __name__ == "__main__":
     # Start uvicorn server
-    uvicorn.run(app, host="0.0.0.0", port=settings.METRICS_SERVER_PORT)  # nosec B104 - Required for Docker/containerized deployment
+    uvicorn.run(
+        app, host="0.0.0.0", port=settings.METRICS_SERVER_PORT
+    )  # nosec B104 - Required for Docker/containerized deployment

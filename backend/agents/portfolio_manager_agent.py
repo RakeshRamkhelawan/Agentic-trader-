@@ -32,7 +32,7 @@ class PortfolioManagerAgent(BaseAgent):
         self,
         llm_provider: Any | None = None,
         event_bus: Any | None = None,
-        portfolio_manager: PortfolioManager | None = None
+        portfolio_manager: PortfolioManager | None = None,
     ):
         """
         Initialize PortfolioManagerAgent.
@@ -65,6 +65,7 @@ class PortfolioManagerAgent(BaseAgent):
         if settings.BITVAVO_API_KEY:
             try:
                 from backend.execution.bitvavo_adapter import BitvavoAdapter
+
                 bitvavo = BitvavoAdapter()
                 if await bitvavo.initialize():
                     self.portfolio_manager.register_adapter("bitvavo", bitvavo)
@@ -76,6 +77,7 @@ class PortfolioManagerAgent(BaseAgent):
         if settings.REVOLUT_API_KEY:
             try:
                 from backend.execution.revolut_x_adapter import RevolutXAdapter
+
                 revolut = RevolutXAdapter()
                 if await revolut.connect():
                     self.portfolio_manager.register_adapter("revolut", revolut)
@@ -85,11 +87,7 @@ class PortfolioManagerAgent(BaseAgent):
 
         self._adapters_initialized = True
 
-    async def analyze(
-        self,
-        features: dict[str, Any],
-        context: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """
         Analyze portfolio state (ReAct pattern).
 
@@ -115,26 +113,23 @@ class PortfolioManagerAgent(BaseAgent):
                 "exposure_pct": portfolio.total_exposure_pct,
                 "open_positions": portfolio.num_open_positions,
                 "risk_level": self._assess_risk_level(portfolio),
-                "can_trade": portfolio.available_capital > 1000  # Min $1000
+                "can_trade": portfolio.available_capital > 1000,  # Min $1000
             }
 
             # Publish thought
             await self.publish_thought(
                 reasoning=f"Portfolio exposure: {portfolio.total_exposure_pct:.1%}, "
-                         f"Available: ${portfolio.available_capital:,.2f}, "
-                         f"Risk level: {analysis['risk_level']}",
+                f"Available: ${portfolio.available_capital:,.2f}, "
+                f"Risk level: {analysis['risk_level']}",
                 confidence=0.95,
-                data=analysis
+                data=analysis,
             )
 
             return analysis
 
         except Exception as e:
             self.logger.error(f"[PortfolioManagerAgent] Analysis failed: {e}")
-            return {
-                "error": str(e),
-                "can_trade": False
-            }
+            return {"error": str(e), "can_trade": False}
 
     async def get_portfolio_state(self) -> PortfolioState:
         """
@@ -184,8 +179,6 @@ class PortfolioManagerAgent(BaseAgent):
 
 
 # Factory function
-def get_portfolio_manager_agent(
-    event_bus: Any | None = None
-) -> PortfolioManagerAgent:
+def get_portfolio_manager_agent(event_bus: Any | None = None) -> PortfolioManagerAgent:
     """Get or create PortfolioManagerAgent."""
     return PortfolioManagerAgent(event_bus=event_bus)

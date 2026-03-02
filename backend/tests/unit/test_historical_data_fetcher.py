@@ -2,7 +2,6 @@
 Unit tests for Historical Data Fetcher.
 """
 
-import asyncio
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -211,7 +210,6 @@ class TestIntegration:
 
     def test_csv_format_compatibility(self):
         """Verify CSV format works with HistoricalCSVData feed."""
-        import pandas as pd
 
         from backend.backtesting.data_feed_historical import HistoricalCSVData
 

@@ -56,11 +56,7 @@ class EnhancedSentimentAgent(AgentWithTools):
         self.sentiment_threshold = 0.6
         self.confidence_threshold = 0.7
 
-    async def analyze(
-        self,
-        features: dict[str, Any],
-        context: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """
         Analyze market using external tools.
 
@@ -82,8 +78,7 @@ class EnhancedSentimentAgent(AgentWithTools):
 
         # 1.1 Sentiment Analysis
         sentiment_result = await self.call_tool(
-            "tool__external_sentiment_analysis",
-            {"symbol": symbol, "source": "combined"}
+            "tool__external_sentiment_analysis", {"symbol": symbol, "source": "combined"}
         )
         sentiment_score = sentiment_result.get("sentiment_score", 0.0)
         sentiment_confidence = sentiment_result.get("confidence", 0.5)
@@ -94,25 +89,21 @@ class EnhancedSentimentAgent(AgentWithTools):
             {
                 "symbol": symbol,
                 "price_history": price_history,
-                "indicators": ["rsi", "macd", "sma", "bb"]
-            }
+                "indicators": ["rsi", "macd", "sma", "bb"],
+            },
         )
         tech_signal = tech_result.get("overall_signal", "neutral")
         tech_indicators = tech_result.get("indicators", {})
 
         # 1.3 Market News
         news_result = await self.call_tool(
-            "tool__external_market_news",
-            {"symbol": symbol, "category": "crypto", "limit": 3}
+            "tool__external_market_news", {"symbol": symbol, "category": "crypto", "limit": 3}
         )
         articles = news_result.get("articles", [])
         news_sentiment = self._aggregate_news_sentiment(articles)
 
         # 1.4 Macro Context
-        macro_result = await self.call_tool(
-            "tool__external_macro_indicators",
-            {"indicator": "all"}
-        )
+        macro_result = await self.call_tool("tool__external_macro_indicators", {"indicator": "all"})
         macro_trend = self._assess_macro_trend(macro_result)
 
         # === STEP 2: Get VedAstro Signal ===
@@ -143,12 +134,14 @@ class EnhancedSentimentAgent(AgentWithTools):
 
         # Weight different signals
         final_score = (
-            sentiment_score * 0.25 +
-            self._vote_to_score(sentiment_vote) * 0.15 +
-            self._vote_to_score(tech_vote) * 0.20 +
-            self._vote_to_score(news_vote) * 0.15 +
-            (1 if vedastro_signal == "buy" else -1 if vedastro_signal == "sell" else 0) * vedastro_confidence * 0.15 +
-            self._vote_to_score(macro_vote) * 0.10
+            sentiment_score * 0.25
+            + self._vote_to_score(sentiment_vote) * 0.15
+            + self._vote_to_score(tech_vote) * 0.20
+            + self._vote_to_score(news_vote) * 0.15
+            + (1 if vedastro_signal == "buy" else -1 if vedastro_signal == "sell" else 0)
+            * vedastro_confidence
+            * 0.15
+            + self._vote_to_score(macro_vote) * 0.10
         )
 
         # Determine signal
@@ -189,11 +182,15 @@ class EnhancedSentimentAgent(AgentWithTools):
         )
 
         # Publish thought
-        await self.publish_thought(reasoning, confidence, {
-            "symbol": symbol,
-            "signal": signal,
-            "sentiment": sentiment_score,
-        })
+        await self.publish_thought(
+            reasoning,
+            confidence,
+            {
+                "symbol": symbol,
+                "signal": signal,
+                "sentiment": sentiment_score,
+            },
+        )
 
         return {
             "agent": self.agent_name,
@@ -210,7 +207,7 @@ class EnhancedSentimentAgent(AgentWithTools):
                 "harmony_score": harmony_score,
                 "indicators": tech_indicators,
                 "timestamp": datetime.now(UTC).isoformat(),
-            }
+            },
         }
 
     def _sentiment_to_vote(self, sentiment: float) -> float:
@@ -314,13 +311,12 @@ class EnhancedSentimentAgent(AgentWithTools):
 # Example usage
 # ============================================================================
 
+
 async def example():
     """Example of using EnhancedSentimentAgent."""
 
     # Create agent
-    agent = EnhancedSentimentAgent(
-        tool_broker_url="http://localhost:8001"
-    )
+    agent = EnhancedSentimentAgent(tool_broker_url="http://localhost:8001")
 
     # Check ToolBroker health
     health = await agent.check_toolbroker_health()
@@ -339,7 +335,7 @@ async def example():
         },
         context={
             "portfolio_value": 100000.0,
-        }
+        },
     )
 
     print(f"\nDecision: {result['signal']}")
@@ -352,4 +348,5 @@ async def example():
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(example())

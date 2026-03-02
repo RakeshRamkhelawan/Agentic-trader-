@@ -351,6 +351,6 @@ Phase 1 WP1.2 (Cache) ───────┤                               ├
 Phase 1 WP1.3 (Guna) ────────┘                               └──> Phase 6 (Optimization)
                                                               │
 Phase 3 (Infra) ──────────────────────────────────────────> Phase 7 (Hardening)
-                                                              
+
 Phase 2 (Security) ──────────> (Runs parallel, gates production)
 Phase 5 (Frontend) ──────────> (Runs parallel, demo-ready Week 8)

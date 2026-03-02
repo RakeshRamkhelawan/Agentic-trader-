@@ -38,7 +38,7 @@ order = await client.place_order(
 
 #### 4. Cancel Order
 ```python
-cancelled = await client.cancel_order(order_id="xxx")  
+cancelled = await client.cancel_order(order_id="xxx")
 # ✅ IMPLEMENTED
 ```
 

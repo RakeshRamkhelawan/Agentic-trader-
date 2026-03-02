@@ -42,23 +42,25 @@ class LeaderboardService:
         )
 
         # Apply pagination
-        paginated = sorted_competitors[offset:offset + limit]
+        paginated = sorted_competitors[offset : offset + limit]
 
         # Build leaderboard
         leaderboard = []
         for rank, competitor in enumerate(paginated, offset + 1):
-            leaderboard.append({
-                "rank": rank,
-                "competitor_id": competitor.id,
-                "name": competitor.name,
-                "tier": competitor.tier.value,
-                "points": competitor.points,
-                "total_pnl": round(competitor.stats.total_pnl, 2),
-                "win_rate": round(competitor.stats.win_rate, 2),
-                "sharpe_ratio": round(competitor.stats.sharpe_ratio, 2),
-                "competitions_won": competitor.stats.competitions_won,
-                "reputation": round(competitor.stats.reputation_score, 2),
-            })
+            leaderboard.append(
+                {
+                    "rank": rank,
+                    "competitor_id": competitor.id,
+                    "name": competitor.name,
+                    "tier": competitor.tier.value,
+                    "points": competitor.points,
+                    "total_pnl": round(competitor.stats.total_pnl, 2),
+                    "win_rate": round(competitor.stats.win_rate, 2),
+                    "sharpe_ratio": round(competitor.stats.sharpe_ratio, 2),
+                    "competitions_won": competitor.stats.competitions_won,
+                    "reputation": round(competitor.stats.reputation_score, 2),
+                }
+            )
 
         return {
             "leaderboard": leaderboard,
@@ -75,10 +77,7 @@ class LeaderboardService:
     ) -> dict[str, Any]:
         """Get leaderboard for a specific league tier."""
         # Filter by tier
-        tier_competitors = [
-            c for c in self._competitors.values()
-            if c.tier == tier
-        ]
+        tier_competitors = [c for c in self._competitors.values() if c.tier == tier]
 
         # Sort by points
         sorted_competitors = sorted(
@@ -90,15 +89,17 @@ class LeaderboardService:
         # Build leaderboard
         leaderboard = []
         for rank, competitor in enumerate(sorted_competitors[:limit], 1):
-            leaderboard.append({
-                "rank": rank,
-                "competitor_id": competitor.id,
-                "name": competitor.name,
-                "points": competitor.points,
-                "total_pnl": round(competitor.stats.total_pnl, 2),
-                "win_rate": round(competitor.stats.win_rate, 2),
-                "reputation": round(competitor.stats.reputation_score, 2),
-            })
+            leaderboard.append(
+                {
+                    "rank": rank,
+                    "competitor_id": competitor.id,
+                    "name": competitor.name,
+                    "points": competitor.points,
+                    "total_pnl": round(competitor.stats.total_pnl, 2),
+                    "win_rate": round(competitor.stats.win_rate, 2),
+                    "reputation": round(competitor.stats.reputation_score, 2),
+                }
+            )
 
         return {
             "tier": tier.value,
@@ -124,14 +125,16 @@ class LeaderboardService:
         for rank, (competitor_id, score) in enumerate(sorted_scores[:limit], 1):
             competitor = self._competitors.get(competitor_id)
             if competitor:
-                leaderboard.append({
-                    "rank": rank,
-                    "competitor_id": competitor_id,
-                    "name": competitor.name,
-                    "tier": competitor.tier.value,
-                    "weekly_score": round(score, 2),
-                    "total_pnl": round(competitor.stats.total_pnl, 2),
-                })
+                leaderboard.append(
+                    {
+                        "rank": rank,
+                        "competitor_id": competitor_id,
+                        "name": competitor.name,
+                        "tier": competitor.tier.value,
+                        "weekly_score": round(score, 2),
+                        "total_pnl": round(competitor.stats.total_pnl, 2),
+                    }
+                )
 
         return {
             "week": week_key,
@@ -155,14 +158,16 @@ class LeaderboardService:
         for rank, (competitor_id, score) in enumerate(sorted_scores[:limit], 1):
             competitor = self._competitors.get(competitor_id)
             if competitor:
-                leaderboard.append({
-                    "rank": rank,
-                    "competitor_id": competitor_id,
-                    "name": competitor.name,
-                    "tier": competitor.tier.value,
-                    "monthly_score": round(score, 2),
-                    "total_pnl": round(competitor.stats.total_pnl, 2),
-                })
+                leaderboard.append(
+                    {
+                        "rank": rank,
+                        "competitor_id": competitor_id,
+                        "name": competitor.name,
+                        "tier": competitor.tier.value,
+                        "monthly_score": round(score, 2),
+                        "total_pnl": round(competitor.stats.total_pnl, 2),
+                    }
+                )
 
         return {
             "month": month_key,
@@ -202,7 +207,9 @@ class LeaderboardService:
 
         # Percentiles
         total_competitors = len(all_competitors)
-        global_percentile = (1 - (global_rank / total_competitors)) * 100 if total_competitors > 0 else 0
+        global_percentile = (
+            (1 - (global_rank / total_competitors)) * 100 if total_competitors > 0 else 0
+        )
 
         return {
             "competitor_id": competitor_id,
@@ -271,8 +278,7 @@ class LeaderboardService:
         # This would require historical data
         # Simplified: return newest high-performers
         recent_high_performers = [
-            c for c in self._competitors.values()
-            if c.points > 500 and c.stats.total_trades > 10
+            c for c in self._competitors.values() if c.points > 500 and c.stats.total_trades > 10
         ]
 
         # Sort by reputation growth (simplified)

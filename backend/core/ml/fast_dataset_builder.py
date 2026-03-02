@@ -33,7 +33,7 @@ def process_single_file(args):
     json_file, sequence_length, prediction_horizon = args
 
     try:
-        with open(json_file, encoding='utf-8') as f:
+        with open(json_file, encoding="utf-8") as f:
             data = json.load(f)
 
         equity = data.get("equity_curve", [])
@@ -65,8 +65,12 @@ def process_single_file(args):
         n = len(features)
         for i in range(n - sequence_length - prediction_horizon):
             if i % 10 == 0:  # Sample elke 10e sequence voor snelheid
-                seq = features[i:i + sequence_length]
-                label = df["returns"].iloc[i + sequence_length:i + sequence_length + prediction_horizon].sum()
+                seq = features[i : i + sequence_length]
+                label = (
+                    df["returns"]
+                    .iloc[i + sequence_length : i + sequence_length + prediction_horizon]
+                    .sum()
+                )
 
                 sequences.append(seq)
                 labels.append(label)
@@ -92,7 +96,7 @@ class FastBacktestDatasetBuilder:
         sequence_length: int = 50,
         prediction_horizon: int = 5,
         max_files: int | None = None,
-        n_workers: int = 4
+        n_workers: int = 4,
     ) -> "FastLSTMDataset":
         """
         Bouw dataset met parallel processing.
@@ -111,7 +115,7 @@ class FastBacktestDatasetBuilder:
 
         if self.use_cache and cache_path.exists():
             logger.info(f"Loading from cache: {cache_path}")
-            with open(cache_path, 'rb') as f:
+            with open(cache_path, "rb") as f:
                 sequences, labels = pickle.load(f)
             return FastLSTMDataset(sequences, labels)
 
@@ -132,7 +136,7 @@ class FastBacktestDatasetBuilder:
 
         # Cache result
         if self.use_cache:
-            with open(cache_path, 'wb') as f:
+            with open(cache_path, "wb") as f:
                 pickle.dump((all_sequences, all_labels), f)
             logger.info(f"Cached to: {cache_path}")
 

@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS llm_usage_logs (
     cost_usd Float64,
     agent_name String,
     request_id UUID,
-    
+
     INDEX idx_tenant (tenant_id) TYPE set(100)
 ) ENGINE = MergeTree()
 ORDER BY (tenant_id, timestamp)

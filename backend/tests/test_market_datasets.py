@@ -4,7 +4,7 @@ Tests voor Market Datasets.
 Test OHLCV, MarketScenario, en EvaluationDataset.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
 

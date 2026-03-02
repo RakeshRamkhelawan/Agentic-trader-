@@ -16,7 +16,7 @@ from backend.core.navagraha.models import GunaDistribution, NavagrahaState, Plan
 from backend.core.navagraha.service import NavagrahaService
 from backend.core.schemas.ooda_types import MarketRegime, Observation, Orientation
 from backend.core.system_identity import SystemIdentity
-from backend.orchestration.ooda_coordinator import OODALoopCoordinator, TradingMode
+from backend.orchestration.ooda_coordinator import OODALoopCoordinator
 
 
 class TestPhaseBNavagrahaIntegration:

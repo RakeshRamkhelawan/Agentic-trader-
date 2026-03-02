@@ -1,8 +1,8 @@
 # 🚀 EPIC 2: FastAPI Service Core
 
-**Epic ID:** EPIC-PM-002  
-**Status:** ✅ COMPLETE  
-**Voltooide doorlooptijd:** ~2-3 dagen  
+**Epic ID:** EPIC-PM-002
+**Status:** ✅ COMPLETE
+**Voltooide doorlooptijd:** ~2-3 dagen
 **Dependencies:** EPIC 1 (Container Infrastructuur) - COMPLETE
 
 ---
@@ -34,10 +34,10 @@ Dit epic implementeert de core FastAPI service voor de Prediction Market Intelli
 
 ## 📌 TASK 2.1: FastAPI Application Setup
 
-**Task ID:** TASK-PM-005  
-**Status:** 🔴 TODO  
-**Geschatte tijd:** 2 uur  
-**Dependencies:** TASK-PM-004  
+**Task ID:** TASK-PM-005
+**Status:** 🔴 TODO
+**Geschatte tijd:** 2 uur
+**Dependencies:** TASK-PM-004
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -127,12 +127,12 @@ async def lifespan(app: FastAPI):
     # === STARTUP ===
     logger.info("🚀 Starting Prediction Market Intelligence Service...")
     logger.info("📊 Initializing DuckDB connection...")
-    
+
     # Initialize connections (kan later uitgebreid worden)
     app.state.startup_time = __import__("datetime").datetime.now()
-    
+
     yield
-    
+
     # === SHUTDOWN ===
     logger.info("👋 Shutting down Prediction Market Intelligence Service...")
 
@@ -253,50 +253,50 @@ from fastapi.testclient import TestClient
 
 class TestAPIServer:
     """Tests voor FastAPI applicatie setup."""
-    
+
     @pytest.fixture
     def client(self):
         """Test client voor API."""
         from api_server import app
         return TestClient(app)
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_app_has_correct_metadata(self):
         """Happy path: App metadata is correct."""
         from api_server import app
-        
+
         assert app.title == "Prediction Market Intelligence API"
         assert app.version == "1.0.0"
         assert app.docs_url == "/docs"
-    
+
     def test_happy_path_root_endpoint_returns_service_info(self, client):
         """Happy path: Root endpoint retourneert service info."""
         response = client.get("/")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["service"] == "prediction-market-intelligence"
         assert data["version"] == "1.0.0"
         assert "docs" in data
         assert "health" in data
-    
+
     def test_happy_path_docs_endpoint_accessible(self, client):
         """Happy path: OpenAPI docs zijn toegankelijk."""
         response = client.get("/docs")
         assert response.status_code == 200
-    
+
     def test_happy_path_openapi_schema_accessible(self, client):
         """Happy path: OpenAPI schema is toegankelijk."""
         response = client.get("/openapi.json")
         assert response.status_code == 200
-        
+
         schema = response.json()
         assert "openapi" in schema
         assert schema["info"]["title"] == "Prediction Market Intelligence API"
-    
+
     def test_happy_path_cors_headers_present(self, client):
         """Happy path: CORS headers zijn aanwezig."""
         response = client.options(
@@ -305,16 +305,16 @@ class TestAPIServer:
         )
         # CORS preflight moet werken
         assert response.status_code in [200, 405]
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_unknown_endpoint_returns_404(self, client):
         """Unhappy path: Onbekend endpoint geeft 404."""
         response = client.get("/some/unknown/endpoint")
         assert response.status_code == 404
-    
+
     def test_unhappy_path_method_not_allowed(self, client):
         """Unhappy path: Verkeerde HTTP method geeft 405."""
         response = client.delete("/")  # Root ondersteunt alleen GET
@@ -325,8 +325,8 @@ class TestAPIServer:
 
 ### 📎 MICROTASK 2.1.1: Create Directory Structure
 
-**Microtask ID:** MT-PM-005-001  
-**Geschatte tijd:** 10 min  
+**Microtask ID:** MT-PM-005-001
+**Geschatte tijd:** 10 min
 **Status:** 🔴 TODO
 
 #### MASTERPROMPT
@@ -360,8 +360,8 @@ Get-ChildItem -Path "src/api" -Recurse
 
 ### 📎 MICROTASK 2.1.2: Create api_server.py
 
-**Microtask ID:** MT-PM-005-002  
-**Geschatte tijd:** 45 min  
+**Microtask ID:** MT-PM-005-002
+**Geschatte tijd:** 45 min
 **Status:** 🔴 TODO
 
 #### MASTERPROMPT
@@ -387,10 +387,10 @@ python -c "from api_server import app; print('Import OK')"
 
 ## 📌 TASK 2.2: Health Endpoint
 
-**Task ID:** TASK-PM-006  
-**Status:** 🔴 TODO  
-**Geschatte tijd:** 1 uur  
-**Dependencies:** TASK-PM-005  
+**Task ID:** TASK-PM-006
+**Status:** 🔴 TODO
+**Geschatte tijd:** 1 uur
+**Dependencies:** TASK-PM-005
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -451,12 +451,12 @@ class ReadinessResponse(BaseModel):
 async def health_check() -> HealthResponse:
     """
     Health check endpoint.
-    
+
     Used by:
     - Docker HEALTHCHECK
     - Kubernetes liveness probe
     - Load balancer health checks
-    
+
     Returns:
         HealthResponse with status and component checks
     """
@@ -465,10 +465,10 @@ async def health_check() -> HealthResponse:
         "api": True,
         "duckdb": await _check_duckdb(),
     }
-    
+
     # Determine overall status
     all_healthy = all(checks.values())
-    
+
     return HealthResponse(
         status="healthy" if all_healthy else "unhealthy",
         service="prediction-intelligence",
@@ -487,13 +487,13 @@ async def health_check() -> HealthResponse:
 async def readiness_check() -> ReadinessResponse:
     """
     Readiness check endpoint.
-    
+
     Used by Kubernetes readiness probe to determine
     if service should receive traffic.
     """
     # Check if critical components are ready
     duckdb_ready = await _check_duckdb()
-    
+
     if duckdb_ready:
         return ReadinessResponse(ready=True, message="Service is ready")
     else:
@@ -508,7 +508,7 @@ async def readiness_check() -> ReadinessResponse:
 async def liveness_check() -> Dict[str, str]:
     """
     Simple liveness check.
-    
+
     Just confirms the process is running.
     Used by Kubernetes liveness probe.
     """
@@ -533,7 +533,7 @@ async def _check_redis(redis_url: Optional[str] = None) -> bool:
         redis_url = os.getenv("REDIS_URL")
     if not redis_url:
         return True  # Redis is optional
-    
+
     try:
         import redis.asyncio as redis
         client = redis.from_url(redis_url)
@@ -595,75 +595,75 @@ from datetime import datetime
 
 class TestHealthEndpoints:
     """Tests voor /health endpoints."""
-    
+
     @pytest.fixture
     def client(self):
         """Test client."""
         from api_server import app
         return TestClient(app)
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_health_returns_200(self, client):
         """Happy path: /health retourneert 200."""
         response = client.get("/health")
         assert response.status_code == 200
-    
+
     def test_happy_path_health_returns_healthy_status(self, client):
         """Happy path: Status is healthy wanneer alles werkt."""
         response = client.get("/health")
         data = response.json()
-        
+
         assert data["status"] == "healthy"
         assert data["service"] == "prediction-intelligence"
         assert data["version"] == "1.0.0"
-    
+
     def test_happy_path_health_includes_timestamp(self, client):
         """Happy path: Response bevat timestamp."""
         response = client.get("/health")
         data = response.json()
-        
+
         assert "timestamp" in data
         # Timestamp moet parseerbaar zijn
         timestamp = datetime.fromisoformat(data["timestamp"].replace("Z", "+00:00"))
         assert timestamp is not None
-    
+
     def test_happy_path_health_includes_checks(self, client):
         """Happy path: Response bevat component checks."""
         response = client.get("/health")
         data = response.json()
-        
+
         assert "checks" in data
         assert isinstance(data["checks"], dict)
         assert "duckdb" in data["checks"]
-    
+
     def test_happy_path_readiness_returns_ready(self, client):
         """Happy path: /health/ready retourneert ready=true."""
         response = client.get("/health/ready")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["ready"] is True
-    
+
     def test_happy_path_liveness_returns_alive(self, client):
         """Happy path: /health/live retourneert status alive."""
         response = client.get("/health/live")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["status"] == "alive"
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_health_post_not_allowed(self, client):
         """Unhappy path: POST naar /health geeft 405."""
         response = client.post("/health")
         assert response.status_code == 405
-    
+
     def test_unhappy_path_health_with_body_ignored(self, client):
         """Unhappy path: Request body wordt genegeerd."""
         response = client.get(
@@ -678,8 +678,8 @@ class TestHealthEndpoints:
 
 ### 📎 MICROTASK 2.2.1: Create Health Router
 
-**Microtask ID:** MT-PM-006-001  
-**Geschatte tijd:** 30 min  
+**Microtask ID:** MT-PM-006-001
+**Geschatte tijd:** 30 min
 **Status:** 🔴 TODO
 
 #### MASTERPROMPT
@@ -703,10 +703,10 @@ python -c "from src.api.routes.health import router; print('Health router OK')"
 
 ## 📌 TASK 2.3: Signals Endpoint
 
-**Task ID:** TASK-PM-007  
-**Status:** 🔴 TODO  
-**Geschatte tijd:** 3 uur  
-**Dependencies:** TASK-PM-006  
+**Task ID:** TASK-PM-007
+**Status:** 🔴 TODO
+**Geschatte tijd:** 3 uur
+**Dependencies:** TASK-PM-006
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -764,7 +764,7 @@ class SignalCategory(str, Enum):
 class MarketSignal(BaseModel):
     """
     Market intelligence signal from prediction markets.
-    
+
     Represents a trading signal derived from prediction market data,
     including maker/taker analysis, volume patterns, and sentiment.
     """
@@ -790,7 +790,7 @@ class MarketSignal(BaseModel):
             }
         }
     )
-    
+
     id: str = Field(..., description="Unique signal identifier")
     market: MarketSource = Field(..., description="Source prediction market")
     category: SignalCategory = Field(..., description="Market category")
@@ -863,10 +863,10 @@ async def get_signals(
 ) -> SignalsResponse:
     """
     Get market intelligence signals.
-    
+
     Signals are derived from prediction market data and can be used by
     OODA agents for decision making.
-    
+
     Args:
         market: Filter by prediction market source
         category: Filter by market category
@@ -875,13 +875,13 @@ async def get_signals(
         symbol: Filter by related trading symbol
         limit: Maximum number of results
         offset: Pagination offset
-    
+
     Returns:
         SignalsResponse with list of matching signals
     """
     # TODO: Replace with actual signal generation from analysis engine
     # For now, return mock data for API contract validation
-    
+
     signals = _generate_mock_signals(
         market=market,
         category=category,
@@ -891,7 +891,7 @@ async def get_signals(
         limit=limit,
         offset=offset
     )
-    
+
     return SignalsResponse(
         signals=signals,
         total=len(signals),
@@ -909,25 +909,25 @@ async def get_signals(
 async def get_signal_by_id(signal_id: str) -> MarketSignal:
     """
     Get a specific signal by ID.
-    
+
     Args:
         signal_id: Unique signal identifier
-    
+
     Returns:
         MarketSignal if found
-    
+
     Raises:
         HTTPException 404 if signal not found
     """
     # TODO: Replace with actual lookup
     # For now, return mock or 404
-    
+
     if not signal_id.startswith("sig_"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Signal {signal_id} not found"
         )
-    
+
     return MarketSignal(
         id=signal_id,
         market=MarketSource.KALSHI,
@@ -954,7 +954,7 @@ def _generate_mock_signals(
     offset: int
 ) -> List[MarketSignal]:
     """Generate mock signals for API development."""
-    
+
     mock_signals = [
         MarketSignal(
             id=f"sig_{uuid.uuid4().hex[:8]}",
@@ -1010,10 +1010,10 @@ def _generate_mock_signals(
             }
         )
     ]
-    
+
     # Apply filters
     filtered = mock_signals
-    
+
     if market:
         filtered = [s for s in filtered if s.market == market]
     if category:
@@ -1024,7 +1024,7 @@ def _generate_mock_signals(
         filtered = [s for s in filtered if s.confidence >= min_confidence]
     if symbol:
         filtered = [s for s in filtered if s.symbol and symbol.upper() in s.symbol.upper()]
-    
+
     # Apply pagination
     return filtered[offset:offset + limit]
 
@@ -1067,30 +1067,30 @@ from fastapi.testclient import TestClient
 
 class TestSignalsEndpoint:
     """Tests voor /api/v1/signals endpoints."""
-    
+
     @pytest.fixture
     def client(self):
         from api_server import app
         return TestClient(app)
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_get_signals_returns_list(self, client):
         """Happy path: GET /signals retourneert lijst van signals."""
         response = client.get("/api/v1/signals")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "signals" in data
         assert isinstance(data["signals"], list)
-    
+
     def test_happy_path_signals_have_required_fields(self, client):
         """Happy path: Signals bevatten alle vereiste velden."""
         response = client.get("/api/v1/signals")
         data = response.json()
-        
+
         if data["signals"]:
             signal = data["signals"][0]
             assert "id" in signal
@@ -1099,67 +1099,67 @@ class TestSignalsEndpoint:
             assert "signal_type" in signal
             assert "confidence" in signal
             assert "timestamp" in signal
-    
+
     def test_happy_path_filter_by_market(self, client):
         """Happy path: Filter by market werkt."""
         response = client.get("/api/v1/signals?market=kalshi")
-        
+
         assert response.status_code == 200
         data = response.json()
         for signal in data["signals"]:
             assert signal["market"] == "kalshi"
-    
+
     def test_happy_path_filter_by_min_confidence(self, client):
         """Happy path: Filter by min_confidence werkt."""
         response = client.get("/api/v1/signals?min_confidence=0.7")
-        
+
         assert response.status_code == 200
         data = response.json()
         for signal in data["signals"]:
             assert signal["confidence"] >= 0.7
-    
+
     def test_happy_path_pagination_works(self, client):
         """Happy path: Pagination parameters werken."""
         response = client.get("/api/v1/signals?limit=1&offset=0")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["limit"] == 1
         assert data["offset"] == 0
         assert len(data["signals"]) <= 1
-    
+
     def test_happy_path_get_signal_by_id(self, client):
         """Happy path: GET /signals/{id} retourneert single signal."""
         response = client.get("/api/v1/signals/sig_test123")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == "sig_test123"
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_invalid_market_filter(self, client):
         """Unhappy path: Invalid market value geeft 422."""
         response = client.get("/api/v1/signals?market=invalid_market")
         assert response.status_code == 422
-    
+
     def test_unhappy_path_invalid_confidence_range(self, client):
         """Unhappy path: Confidence > 1.0 geeft 422."""
         response = client.get("/api/v1/signals?min_confidence=1.5")
         assert response.status_code == 422
-    
+
     def test_unhappy_path_negative_limit(self, client):
         """Unhappy path: Negative limit geeft 422."""
         response = client.get("/api/v1/signals?limit=-1")
         assert response.status_code == 422
-    
+
     def test_unhappy_path_signal_not_found(self, client):
         """Unhappy path: Unknown signal ID geeft 404."""
         response = client.get("/api/v1/signals/nonexistent_id")
         assert response.status_code == 404
-    
+
     def test_unhappy_path_limit_exceeds_max(self, client):
         """Unhappy path: Limit > 100 geeft 422."""
         response = client.get("/api/v1/signals?limit=500")
@@ -1170,34 +1170,34 @@ class TestSignalsEndpoint:
 
 ### 📎 MICROTASK 2.3.1: Create Signal Schemas
 
-**Microtask ID:** MT-PM-007-001  
-**Geschatte tijd:** 45 min  
+**Microtask ID:** MT-PM-007-001
+**Geschatte tijd:** 45 min
 **Status:** 🔴 TODO
 
 ---
 
 ### 📎 MICROTASK 2.3.2: Create Signals Router
 
-**Microtask ID:** MT-PM-007-002  
-**Geschatte tijd:** 60 min  
+**Microtask ID:** MT-PM-007-002
+**Geschatte tijd:** 60 min
 **Status:** 🔴 TODO
 
 ---
 
 ### 📎 MICROTASK 2.3.3: Implement Signal Filtering
 
-**Microtask ID:** MT-PM-007-003  
-**Geschatte tijd:** 45 min  
+**Microtask ID:** MT-PM-007-003
+**Geschatte tijd:** 45 min
 **Status:** 🔴 TODO
 
 ---
 
 ## 📌 TASK 2.4: Analysis Endpoint
 
-**Task ID:** TASK-PM-008  
-**Status:** 🔴 TODO  
-**Geschatte tijd:** 3 uur  
-**Dependencies:** TASK-PM-007  
+**Task ID:** TASK-PM-008
+**Status:** 🔴 TODO
+**Geschatte tijd:** 3 uur
+**Dependencies:** TASK-PM-007
 **Assignee:** _____
 
 ### Task Beschrijving
@@ -1323,19 +1323,19 @@ async def run_analysis(
 ) -> AnalysisResult:
     """
     Trigger an analysis job.
-    
+
     Analysis runs asynchronously in the background.
     Poll GET /analysis/{id} for status and results.
-    
+
     Args:
         request: Analysis configuration
         background_tasks: FastAPI background tasks
-    
+
     Returns:
         AnalysisResult with job ID and queued status
     """
     analysis_id = f"analysis_{uuid.uuid4().hex[:12]}"
-    
+
     result = AnalysisResult(
         analysis_id=analysis_id,
         analysis_type=request.analysis_type,
@@ -1350,12 +1350,12 @@ async def run_analysis(
             "parameters": request.parameters
         }
     )
-    
+
     _analyses[analysis_id] = result
-    
+
     # Queue background task
     background_tasks.add_task(_execute_analysis, analysis_id, request)
-    
+
     return result
 
 
@@ -1368,13 +1368,13 @@ async def run_analysis(
 async def get_analysis(analysis_id: str) -> AnalysisResult:
     """
     Get analysis status and results.
-    
+
     Args:
         analysis_id: Unique analysis ID
-    
+
     Returns:
         AnalysisResult with current status
-    
+
     Raises:
         HTTPException 404 if analysis not found
     """
@@ -1383,7 +1383,7 @@ async def get_analysis(analysis_id: str) -> AnalysisResult:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Analysis {analysis_id} not found"
         )
-    
+
     return _analyses[analysis_id]
 
 
@@ -1399,23 +1399,23 @@ async def list_analyses(
 ) -> AnalysisListResponse:
     """
     List recent analyses.
-    
+
     Args:
         status_filter: Filter by status
         limit: Maximum results
-    
+
     Returns:
         List of recent analyses
     """
     analyses = list(_analyses.values())
-    
+
     if status_filter:
         analyses = [a for a in analyses if a.status == status_filter]
-    
+
     # Sort by created_at descending
     analyses.sort(key=lambda x: x.created_at, reverse=True)
     analyses = analyses[:limit]
-    
+
     return AnalysisListResponse(analyses=analyses, total=len(analyses))
 
 
@@ -1430,10 +1430,10 @@ async def get_market_summary(
 ) -> MarketSummary:
     """
     Get market summary statistics.
-    
+
     Args:
         market: Market source (kalshi/polymarket)
-    
+
     Returns:
         MarketSummary with statistics
     """
@@ -1451,17 +1451,17 @@ async def get_market_summary(
 async def _execute_analysis(analysis_id: str, request: AnalysisRequest):
     """Execute analysis in background."""
     import asyncio
-    
+
     if analysis_id not in _analyses:
         return
-    
+
     # Update status to running
     _analyses[analysis_id].status = AnalysisStatus.RUNNING
-    
+
     try:
         # Simulate analysis (replace with actual implementation)
         await asyncio.sleep(2)  # Simulate work
-        
+
         # Mock result
         result = {
             "analysis_type": request.analysis_type.value,
@@ -1475,11 +1475,11 @@ async def _execute_analysis(analysis_id: str, request: AnalysisRequest):
                 {"metric": "volume_trend", "value": "increasing"}
             ]
         }
-        
+
         _analyses[analysis_id].status = AnalysisStatus.COMPLETED
         _analyses[analysis_id].completed_at = datetime.utcnow()
         _analyses[analysis_id].result = result
-        
+
     except Exception as e:
         _analyses[analysis_id].status = AnalysisStatus.FAILED
         _analyses[analysis_id].error = str(e)
@@ -1530,28 +1530,28 @@ import time
 
 class TestAnalysisEndpoints:
     """Tests voor /api/v1/analysis endpoints."""
-    
+
     @pytest.fixture
     def client(self):
         from api_server import app
         return TestClient(app)
-    
+
     # =========================================================================
     # HAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_happy_path_run_analysis_returns_202(self, client):
         """Happy path: POST /analysis/run retourneert 202."""
         response = client.post("/api/v1/analysis/run", json={
             "analysis_type": "maker_taker",
             "market": "kalshi"
         })
-        
+
         assert response.status_code == 202
         data = response.json()
         assert "analysis_id" in data
         assert data["status"] == "queued"
-    
+
     def test_happy_path_get_analysis_status(self, client):
         """Happy path: GET /analysis/{id} retourneert status."""
         # First create an analysis
@@ -1560,37 +1560,37 @@ class TestAnalysisEndpoints:
             "market": "kalshi"
         })
         analysis_id = create_resp.json()["analysis_id"]
-        
+
         # Then get its status
         response = client.get(f"/api/v1/analysis/{analysis_id}")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["analysis_id"] == analysis_id
-    
+
     def test_happy_path_list_analyses(self, client):
         """Happy path: GET /analysis retourneert lijst."""
         response = client.get("/api/v1/analysis")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "analyses" in data
         assert "total" in data
-    
+
     def test_happy_path_market_summary(self, client):
         """Happy path: GET /markets/summary retourneert statistics."""
         response = client.get("/api/v1/markets/summary?market=kalshi")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["market"] == "kalshi"
         assert "total_markets" in data
         assert "active_markets" in data
-    
+
     # =========================================================================
     # UNHAPPY PATH TESTS
     # =========================================================================
-    
+
     def test_unhappy_path_invalid_analysis_type(self, client):
         """Unhappy path: Invalid analysis_type geeft 422."""
         response = client.post("/api/v1/analysis/run", json={
@@ -1598,12 +1598,12 @@ class TestAnalysisEndpoints:
             "market": "kalshi"
         })
         assert response.status_code == 422
-    
+
     def test_unhappy_path_analysis_not_found(self, client):
         """Unhappy path: Unknown analysis ID geeft 404."""
         response = client.get("/api/v1/analysis/nonexistent_id")
         assert response.status_code == 404
-    
+
     def test_unhappy_path_missing_required_field(self, client):
         """Unhappy path: Missing analysis_type geeft 422."""
         response = client.post("/api/v1/analysis/run", json={

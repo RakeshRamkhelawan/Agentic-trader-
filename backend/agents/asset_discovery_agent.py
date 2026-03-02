@@ -468,12 +468,14 @@ class AssetDiscoveryAgent(BaseAgent):
                     async with self._async_session() as session:
                         for symbol, ticker in tickers.items():
                             await session.execute(
-                                text("""
+                                text(
+                                    """
                                     UPDATE assets
                                     SET metadata_info = metadata_info || :metadata,
                                         last_updated = NOW()
                                     WHERE symbol = :symbol
-                                """),
+                                """
+                                ),
                                 {
                                     "symbol": symbol,
                                     "metadata": json.dumps(

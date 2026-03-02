@@ -23,14 +23,16 @@ def upgrade() -> None:
 
     # Create Policy
     # Allow tenant matching OR system_admin bypass
-    op.execute("""
+    op.execute(
+        """
         CREATE POLICY tenant_isolation_policy ON orders
         USING (
             tenant_id = current_setting('app.current_tenant', true)::VARCHAR
             OR
             current_setting('app.current_tenant', true)::VARCHAR = 'system_admin'
         );
-    """)
+    """
+    )
 
 
 def downgrade() -> None:

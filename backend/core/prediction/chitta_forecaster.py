@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Forecast:
     """Voorspelling van toekomstige marktstaat."""
+
     predicted_volatility: float
     predicted_trend: str  # up, down, sideways
     confidence: float
@@ -65,7 +66,7 @@ class HeuristicForecaster(BaseForecaster):
                 confidence=0.3,
                 expected_shifts=[],
                 model_type="heuristic",
-                training_samples=0
+                training_samples=0,
             )
 
         # Analyseer recente emotions
@@ -79,7 +80,7 @@ class HeuristicForecaster(BaseForecaster):
             trend = "down"  # Mean reversion
             confidence = 0.55
         elif recent_emotion in ["Capitulation", "Fear"]:
-            trend = "up"    # Bounce expected
+            trend = "up"  # Bounce expected
             confidence = 0.6
         else:
             trend = "sideways"
@@ -92,11 +93,13 @@ class HeuristicForecaster(BaseForecaster):
         # Expected council shifts
         shifts = []
         if recent_emotion == "Euphoria":
-            shifts.append({
-                "council": "guna",
-                "shift": "rajas → sattva",
-                "reason": "volatility_compression_expected"
-            })
+            shifts.append(
+                {
+                    "council": "guna",
+                    "shift": "rajas → sattva",
+                    "reason": "volatility_compression_expected",
+                }
+            )
 
         return Forecast(
             predicted_volatility=predicted_vol,
@@ -104,7 +107,7 @@ class HeuristicForecaster(BaseForecaster):
             confidence=confidence,
             expected_shifts=shifts,
             model_type="heuristic",
-            training_samples=len(nodes)
+            training_samples=len(nodes),
         )
 
     def is_ready(self) -> bool:
@@ -171,7 +174,7 @@ class LinearRegressionForecaster(BaseForecaster):
             confidence=min(0.8, 0.5 + self.training_samples / 1000),
             expected_shifts=[],
             model_type="linear",
-            training_samples=self.training_samples
+            training_samples=self.training_samples,
         )
 
     def _extract_features(self, chitta_state: dict) -> np.ndarray:
@@ -189,7 +192,7 @@ class LinearRegressionForecaster(BaseForecaster):
             np.std(recent_vols) if len(recent_vols) > 1 else 0.0,
             len([n for n in nodes if n.get("emotion") == "Euphoria"]),
             len([n for n in nodes if n.get("emotion") == "Fear"]),
-            len(nodes)  # Activity level
+            len(nodes),  # Activity level
         ]
 
         return np.array(features)
@@ -228,10 +231,7 @@ class ChittaForecaster:
         """
         Sla op voor online learning. Train periodiek nieuw model.
         """
-        self._training_data.append({
-            "state": chitta_state,
-            "return": actual_return
-        })
+        self._training_data.append({"state": chitta_state, "return": actual_return})
 
         # Train linear model als we genoeg data hebben (maar niet te vaak)
         if len(self._training_data) >= 100 and len(self._training_data) % 50 == 0:
@@ -263,7 +263,8 @@ class ChittaForecaster:
         """
         try:
             import pickle
-            with open(path, 'rb') as f:
+
+            with open(path, "rb") as f:
                 self.lstm = pickle.load(f)
             logger.info(f"Loaded LSTM model from {path}")
         except FileNotFoundError:

@@ -103,7 +103,7 @@ services:
       - "10091:9090"
     profiles:
       - monitoring
-      
+
   grafana:
     ports:
       - "4100:3000"
@@ -214,7 +214,7 @@ services:
       - "9091:9090"
     profiles:
       - monitoring
-      
+
   grafana:
     ports:
       - "3100:3000"
@@ -253,7 +253,7 @@ function Show-PortStatus {
     foreach ($p in $ports) {
         $port = $p.Port
         $name = $p.Name
-        
+
         try {
             $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Any, $port)
             $listener.Start()
@@ -353,7 +353,7 @@ function Switch-ToDefaultPorts {
 
 # Main execution
 switch ($Mode) {
-    "check" { 
+    "check" {
         $allAvailable = Show-PortStatus
         Write-Host "`nUSAGE:" -ForegroundColor White
         Write-Host "  .\scripts\switch-ports.ps1 -Mode alt     # Use alternative ports" -ForegroundColor Gray

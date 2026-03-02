@@ -502,15 +502,19 @@ async def get_paper_trading_status():
             duration = (datetime.now() - _paper_trading_engine.start_time).total_seconds() / 3600
 
         # Get trades from state
-        trades = _paper_trading_engine.state.trades if hasattr(_paper_trading_engine.state, 'trades') else []
+        trades = (
+            _paper_trading_engine.state.trades
+            if hasattr(_paper_trading_engine.state, "trades")
+            else []
+        )
 
         # Get logs
         logs = get_paper_trading_logs()
 
         # Build stats
-        buy_trades = len([t for t in trades if t.get('side') == 'buy'])
-        sell_trades = len([t for t in trades if t.get('side') == 'sell'])
-        avg_trade_value = sum([t.get('value', 0) for t in trades]) / len(trades) if trades else 0
+        buy_trades = len([t for t in trades if t.get("side") == "buy"])
+        sell_trades = len([t for t in trades if t.get("side") == "sell"])
+        avg_trade_value = sum([t.get("value", 0) for t in trades]) / len(trades) if trades else 0
 
         # Calculate uptime
         uptime_seconds = 0
@@ -548,7 +552,7 @@ async def get_paper_trading_status():
                 "total_value": round(portfolio_value, 2),
                 "pnl": round(pnl, 2),
                 "positions": _paper_trading_engine.state.open_positions,
-            }
+            },
         }
     except Exception as e:
         logger.error(f"Error getting paper trading status: {e}")

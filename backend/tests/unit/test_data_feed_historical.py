@@ -5,8 +5,6 @@ Validates CSV loading, date filtering, and bar iteration
 using the custom DataFeed ABC.
 """
 
-import os
-import tempfile
 from datetime import datetime
 
 import pytest

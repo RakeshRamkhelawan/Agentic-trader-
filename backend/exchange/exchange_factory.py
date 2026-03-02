@@ -22,7 +22,7 @@ warnings.warn(
     "backend.exchange.exchange_factory_v2 instead. "
     "See ADR-008 for migration guide.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ class ExchangeFactory:
         exchange_type: str,
         exchange_id: str | None = None,
         config: dict[str, Any] | None = None,
-        auto_connect: bool = True
+        auto_connect: bool = True,
     ) -> Any | None:
         """
         Create and initialize an exchange connector.

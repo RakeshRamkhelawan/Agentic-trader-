@@ -30,7 +30,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.api.metrics_middleware import MetricsMiddleware
-from backend.api.security_middleware import SecurityHeadersMiddleware
 from backend.api.paper_trading_api import router as paper_trading_router
 from backend.api.paper_trading_ws_simple import router as paper_trading_ws_router
 from backend.api.routers import (
@@ -43,6 +42,7 @@ from backend.api.routers import (
     routing,
     trading,
 )
+from backend.api.security_middleware import SecurityHeadersMiddleware
 from backend.api.websocket_endpoints import router as websocket_router
 from backend.core.config.settings import settings
 from backend.observability.metrics import metrics_endpoint
@@ -82,7 +82,6 @@ app.get("/metrics")(metrics_endpoint)
 
 # CORS middleware for React frontend
 # In production, use specific origins from settings
-from backend.core.config.settings import settings
 
 cors_origins = settings.BACKEND_CORS_ORIGINS or [
     "http://localhost:3000",
@@ -134,6 +133,7 @@ app.include_router(paper_trading_ws_router)
 # Include MCP ToolBroker router (if available)
 try:
     from backend.api.mcp_api import router as mcp_router
+
     app.include_router(mcp_router, prefix="/api/v1")
     logger.info("MCP ToolBroker router registered")
 except ImportError:
@@ -216,4 +216,6 @@ if __name__ == "__main__":
     import uvicorn
 
     logger.info("Starting Uvicorn server...")
-    uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")  # nosec B104 - Required for Docker/containerized deployment
+    uvicorn.run(
+        "backend.api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info"
+    )  # nosec B104 - Required for Docker/containerized deployment

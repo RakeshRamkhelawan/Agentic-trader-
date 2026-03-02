@@ -3,7 +3,6 @@ Tests for Prediction Market Client.
 Run: pytest backend/tests/test_prediction_market_client.py -v
 """
 
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx

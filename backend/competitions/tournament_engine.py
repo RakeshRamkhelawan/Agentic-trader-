@@ -254,13 +254,15 @@ class TournamentEngine:
         for entry in tournament.entries[:10]:  # Top 10
             prize = tournament.get_prize_for_position(entry.rank)
             if prize:
-                winners.append({
-                    "rank": entry.rank,
-                    "competitor_id": entry.competitor_id,
-                    "points_awarded": prize.points,
-                    "badge": prize.badge,
-                    "title": prize.title,
-                })
+                winners.append(
+                    {
+                        "rank": entry.rank,
+                        "competitor_id": entry.competitor_id,
+                        "points_awarded": prize.points,
+                        "badge": prize.badge,
+                        "title": prize.title,
+                    }
+                )
 
         return {
             "success": True,
@@ -274,15 +276,17 @@ class TournamentEngine:
         active = []
         for tournament in self._tournaments.values():
             if tournament.is_active():
-                active.append({
-                    "id": tournament.id,
-                    "name": tournament.name,
-                    "type": tournament.type.value,
-                    "participants": len(tournament.entries),
-                    "max_participants": tournament.max_participants,
-                    "ends_at": tournament.end_time.isoformat(),
-                    "time_remaining": str(tournament.end_time - datetime.utcnow()),
-                })
+                active.append(
+                    {
+                        "id": tournament.id,
+                        "name": tournament.name,
+                        "type": tournament.type.value,
+                        "participants": len(tournament.entries),
+                        "max_participants": tournament.max_participants,
+                        "ends_at": tournament.end_time.isoformat(),
+                        "time_remaining": str(tournament.end_time - datetime.utcnow()),
+                    }
+                )
         return active
 
     def get_upcoming_tournaments(self) -> list[dict[str, Any]]:
@@ -290,14 +294,16 @@ class TournamentEngine:
         upcoming = []
         for tournament in self._tournaments.values():
             if tournament.status == TournamentStatus.PENDING:
-                upcoming.append({
-                    "id": tournament.id,
-                    "name": tournament.name,
-                    "type": tournament.type.value,
-                    "starts_at": tournament.start_time.isoformat(),
-                    "tier_requirement": tournament.tier_requirement,
-                    "entry_fee": tournament.entry_fee_points,
-                })
+                upcoming.append(
+                    {
+                        "id": tournament.id,
+                        "name": tournament.name,
+                        "type": tournament.type.value,
+                        "starts_at": tournament.start_time.isoformat(),
+                        "tier_requirement": tournament.tier_requirement,
+                        "entry_fee": tournament.entry_fee_points,
+                    }
+                )
         return upcoming
 
     def get_competitor_tournaments(self, competitor_id: str) -> list[dict[str, Any]]:
@@ -310,15 +316,17 @@ class TournamentEngine:
             if entry:
                 tournament = self._tournaments.get(entry.tournament_id)
                 if tournament:
-                    tournaments.append({
-                        "tournament_id": tournament.id,
-                        "tournament_name": tournament.name,
-                        "status": tournament.status.value,
-                        "rank": entry.rank,
-                        "pnl": entry.pnl,
-                        "pnl_percentage": entry.pnl_percentage,
-                        "trades": entry.trades_count,
-                    })
+                    tournaments.append(
+                        {
+                            "tournament_id": tournament.id,
+                            "tournament_name": tournament.name,
+                            "status": tournament.status.value,
+                            "rank": entry.rank,
+                            "pnl": entry.pnl,
+                            "pnl_percentage": entry.pnl_percentage,
+                            "trades": entry.trades_count,
+                        }
+                    )
 
         return tournaments
 

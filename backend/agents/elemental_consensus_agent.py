@@ -32,22 +32,18 @@ class ElementalConsensusAgent(AgentWithTools):
         agent_name: str = "elemental_consensus",
         tool_broker_url: str | None = None,
         consensus_threshold: float = 0.6,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             agent_name=agent_name,
             agent_role=AgentRole.STRATEGIST,
             tool_broker_url=tool_broker_url,
-            **kwargs
+            **kwargs,
         )
         self.consensus_threshold = consensus_threshold
         logger.info(f"{agent_name} initialized with threshold={consensus_threshold}")
 
-    async def analyze(
-        self,
-        features: dict[str, Any],
-        context: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """
         Analyze features using 4-element voting system.
 
@@ -76,16 +72,13 @@ class ElementalConsensusAgent(AgentWithTools):
             "fire": max(-1.0, min(1.0, fire_vote)),
             "earth": max(-1.0, min(1.0, earth_vote)),
             "water": max(-1.0, min(1.0, water_vote)),
-            "air": max(-1.0, min(1.0, air_vote))
+            "air": max(-1.0, min(1.0, air_vote)),
         }
 
         try:
             # Get elemental consensus via MCP
             consensus_result = await self.get_elemental_consensus(
-                votes["fire"],
-                votes["earth"],
-                votes["water"],
-                votes["air"]
+                votes["fire"], votes["earth"], votes["water"], votes["air"]
             )
 
             if not consensus_result.get("success", False):
@@ -95,7 +88,7 @@ class ElementalConsensusAgent(AgentWithTools):
                     "action": "hold",
                     "confidence": 0.0,
                     "reason": f"Consensus error: {error}",
-                    "element_votes": votes
+                    "element_votes": votes,
                 }
 
             consensus_data = consensus_result.get("result", {})
@@ -108,19 +101,21 @@ class ElementalConsensusAgent(AgentWithTools):
                 "buy": "buy",
                 "hold": "hold",
                 "sell": "sell",
-                "strong_sell": "sell"
+                "strong_sell": "sell",
             }
             action = action_map.get(consensus_signal, "hold")
 
             # Check consensus threshold
             if abs(consensus_score) < self.consensus_threshold:
-                logger.info(f"Consensus score {consensus_score} below threshold {self.consensus_threshold}")
+                logger.info(
+                    f"Consensus score {consensus_score} below threshold {self.consensus_threshold}"
+                )
                 return {
                     "action": "hold",
                     "confidence": abs(consensus_score),
                     "reason": f"Weak consensus ({consensus_score:.2f}) - holding",
                     "element_votes": votes,
-                    "consensus_data": consensus_data
+                    "consensus_data": consensus_data,
                 }
 
             # Build detailed reasoning
@@ -136,7 +131,9 @@ class ElementalConsensusAgent(AgentWithTools):
             reason = f"Elemental consensus: {consensus_signal} (score: {consensus_score:+.2f}). "
             reason += "Votes: " + ", ".join(vote_descriptions)
 
-            logger.info(f"{self.agent_name}: {action} {symbol} @ {price} (consensus: {consensus_score:.2f})")
+            logger.info(
+                f"{self.agent_name}: {action} {symbol} @ {price} (consensus: {consensus_score:.2f})"
+            )
 
             return {
                 "action": action,
@@ -145,7 +142,7 @@ class ElementalConsensusAgent(AgentWithTools):
                 "element_votes": votes,
                 "consensus_data": consensus_data,
                 "dominant_element": consensus_data.get("dominant_element"),
-                "suppressed_element": consensus_data.get("suppressed_element")
+                "suppressed_element": consensus_data.get("suppressed_element"),
             }
 
         except Exception as e:
@@ -154,14 +151,11 @@ class ElementalConsensusAgent(AgentWithTools):
                 "action": "hold",
                 "confidence": 0.0,
                 "reason": f"Analysis error: {str(e)}",
-                "element_votes": votes
+                "element_votes": votes,
             }
 
     async def analyze_with_indicators(
-        self,
-        symbol: str,
-        price: float,
-        indicators: dict[str, float]
+        self, symbol: str, price: float, indicators: dict[str, float]
     ) -> dict[str, Any]:
         """
         Analyze using technical indicators to generate element votes.
@@ -204,7 +198,7 @@ class ElementalConsensusAgent(AgentWithTools):
             "fire_vote": fire_vote,
             "earth_vote": earth_vote,
             "water_vote": water_vote,
-            "air_vote": air_vote
+            "air_vote": air_vote,
         }
 
         return await self.analyze(features, {})
@@ -224,6 +218,6 @@ class ElementalConsensusAgent(AgentWithTools):
             "earth": "Prithvi - Entry/exit timing and stability. High earth = good timing, stable conditions.",
             "water": "Apas - Trend following and adaptability. High water = strong trend, adaptive strategy.",
             "air": "Vayu - Market regime and volatility. High air = volatile regime, cautious approach.",
-            "ether": "Akasha - Final consensus and coordination. Balances all elements."
+            "ether": "Akasha - Final consensus and coordination. Balances all elements.",
         }
         return explanations.get(element.lower(), "Unknown element")

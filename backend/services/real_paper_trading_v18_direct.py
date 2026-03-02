@@ -304,7 +304,9 @@ class RealPaperTradingV18:
 
         trades_this_cycle = 0
 
-        logger.debug(f"Cycle {self._cycle_count}: Checking {len(open_position_symbols)} positions + {len(new_symbols_to_check)} new symbols")
+        logger.debug(
+            f"Cycle {self._cycle_count}: Checking {len(open_position_symbols)} positions + {len(new_symbols_to_check)} new symbols"
+        )
 
         for symbol in to_analyze:
             try:
@@ -319,7 +321,9 @@ class RealPaperTradingV18:
                         trades_this_cycle += 1
                 else:
                     # Entry check - get price history only when needed
-                    price_history_data = await self.data_agent.get_price_history(symbol, lookback=30)
+                    price_history_data = await self.data_agent.get_price_history(
+                        symbol, lookback=30
+                    )
                     price_history = [p.price for p in price_history_data]
 
                     entry_triggered = await self._evaluate_entry(

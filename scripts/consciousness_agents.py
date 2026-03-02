@@ -6,7 +6,7 @@ Based on Samkhya Philosophy: 36 Tattvas, 9 Navagrahas, 3 Gunas
 Architecture:
 - ConsciousnessOrchestrator: Tri-guna balance coordinator
 - BullResearcher (Jupiter): Growth & expansion analysis
-- BearResearcher (Saturn): Contraction & risk analysis  
+- BearResearcher (Saturn): Contraction & risk analysis
 - MacroAnalyst (Sun): Macro economic trends
 - FundManager (Mercury): Execution & allocation
 - RiskManager (Mars): Protection & stop losses
@@ -86,7 +86,7 @@ You embody the Tri-Guna balance: Sattva (clarity), Rajas (action), and Tamas (in
 **The 36 Tattvas Framework:**
 1. **5 Maha-bhutas (Elements):**
    - Ether: Market sentiment and space
-   - Air: Volatility and price movement  
+   - Air: Volatility and price movement
    - Fire: Momentum and breakout energy
    - Water: Liquidity and capital flow
    - Earth: Fundamental value and support

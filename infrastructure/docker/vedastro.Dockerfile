@@ -1,5 +1,5 @@
 # VedAstro C# Bridge Dockerfile
-# 
+#
 # This Dockerfile sets up a container with:
 # - .NET 8.0 runtime for VedAstro C# calculations
 # - Python 3.13 with pythonnet for interop

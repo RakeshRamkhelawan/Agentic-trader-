@@ -24,14 +24,12 @@ class ToolBrokerClient:
     async def _get_http_client(self):
         if self._http_client is None:
             import httpx
+
             self._http_client = httpx.AsyncClient(timeout=30.0)
         return self._http_client
 
     async def call_tool(
-        self,
-        tool_name: str,
-        params: dict[str, Any],
-        timeout: float = 30.0
+        self, tool_name: str, params: dict[str, Any], timeout: float = 30.0
     ) -> dict[str, Any]:
         """Call a tool via the ToolBroker."""
         try:
@@ -39,7 +37,7 @@ class ToolBrokerClient:
 
             response = await client.post(
                 f"{self.http_url}/tools/call",
-                json={"tool_name": tool_name, "params": params, "timeout": timeout}
+                json={"tool_name": tool_name, "params": params, "timeout": timeout},
             )
 
             if response.status_code == 200:
@@ -120,17 +118,21 @@ class AgentWithTools(BaseAgent):
     async def get_vedastro_signal(self, symbol: str, current_price: float) -> dict:
         """Get VedAstro trading signal."""
         return await self.call_tool(
-            "vedastro__generate_signal",
-            {"symbol": symbol, "current_price": current_price}
+            "vedastro__generate_signal", {"symbol": symbol, "current_price": current_price}
         )
 
-    async def get_elemental_consensus(self, fire_vote: float, earth_vote: float,
-                                     water_vote: float, air_vote: float) -> dict:
+    async def get_elemental_consensus(
+        self, fire_vote: float, earth_vote: float, water_vote: float, air_vote: float
+    ) -> dict:
         """Get elemental consensus."""
         return await self.call_tool(
             "elemental__ether_consensus",
-            {"fire_vote": fire_vote, "earth_vote": earth_vote,
-             "water_vote": water_vote, "air_vote": air_vote}
+            {
+                "fire_vote": fire_vote,
+                "earth_vote": earth_vote,
+                "water_vote": water_vote,
+                "air_vote": air_vote,
+            },
         )
 
     async def close(self):

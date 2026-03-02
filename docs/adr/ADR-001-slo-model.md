@@ -1,9 +1,9 @@
 # ADR-001: SLO/SLI Model per Kritieke Flow
 
-**Status**: Proposed  
-**Date**: 2026-02-20  
-**Author**: Architecture Team  
-**Scope**: Alle kritieke gebruikersflows  
+**Status**: Proposed
+**Date**: 2026-02-20
+**Author**: Architecture Team
+**Scope**: Alle kritieke gebruikersflows
 
 ---
 
@@ -165,7 +165,7 @@ import time
 
 class SLITracker:
     """Track SLIs for SLO compliance."""
-    
+
     def __init__(self):
         # Latency histograms per flow
         self.latency = Histogram(
@@ -174,32 +174,32 @@ class SLITracker:
             ['flow', 'stage'],
             buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0]
         )
-        
+
         # Success counters
         self.requests = Counter(
             'slo_requests_total',
             'Total requests',
             ['flow', 'status']  # status: success, error, timeout
         )
-        
+
         # Error budget tracking
         self.error_budget_remaining = Gauge(
           'slo_error_budget_remaining',
             'Remaining error budget (0-1)',
             ['flow']
         )
-        
+
         # SLO compliance ratio
         self.compliance = Gauge(
             'slo_compliance_ratio',
             'Current SLO compliance (0-1)',
             ['flow']
         )
-    
+
     def track_latency(self, flow: str, latency_seconds: float, stage: str = "total"):
         """Record latency for a flow."""
         self.latency.labels(flow=flow, stage=stage).observe(latency_seconds)
-    
+
     def track_request(self, flow: str, success: bool, timeout: bool = False):
         """Record request outcome."""
         if timeout:
@@ -207,17 +207,17 @@ class SLITracker:
         else:
             status = "success" if success else "error"
         self.requests.labels(flow=flow, status=status).inc()
-    
+
     def record_order_execution(self, latency_ms: float, success: bool):
         """Track order execution SLI."""
         self.track_latency("order_execution", latency_ms / 1000, "total")
         self.track_request("order_execution", success)
-    
+
     def record_market_data_delivery(self, latency_ms: float, delivered: bool):
         """Track market data delivery SLI."""
         self.track_latency("market_data_streaming", latency_ms / 1000, "delivery")
         self.track_request("market_data_streaming", delivered)
-    
+
     def record_agent_decision(self, latency_ms: float, quality_score: float):
         """Track agent decision SLI."""
         self.track_latency("agent_decision", latency_ms / 1000, "total")
@@ -235,9 +235,9 @@ slo_tracker = SLITracker()
 # In websocket_manager_v2.py
 async def broadcast(self, stream: str, data: dict):
     start_time = time.time()
-    
+
     # ... broadcast logic ...
-    
+
     latency = time.time() - start_time
     slo_tracker.record_market_data_delivery(
         latency_ms=latency * 1000,
@@ -250,7 +250,7 @@ async def broadcast(self, stream: str, data: dict):
 # In backend/execution/smart_order_router.py
 async def route_order(self, order: OrderRequest):
     start_time = time.time()
-    
+
     try:
         # ... execution logic ...
         success = True
@@ -270,15 +270,15 @@ async def route_order(self, order: OrderRequest):
 # In backend/core/cognitive_mind_service.py
 async def make_decision(self, context: DecisionContext):
     start_time = time.time()
-    
+
     decision = await self._generate_decision(context)
-    
+
     latency = time.time() - start_time
     slo_tracker.record_agent_decision(
         latency_ms=latency * 1000,
         quality_score=decision.confidence
     )
-    
+
     return decision
 ```
 
@@ -309,18 +309,18 @@ groups:
           sum(rate(slo_requests_total{flow="market_data_streaming",status="success"}[5m]))
           /
           sum(rate(slo_requests_total{flow="market_data_streaming"}[5m]))
-      
+
       # Order Execution SLO
       - record: slo:order_execution:success_rate
         expr: |
           sum(rate(slo_requests_total{flow="order_execution",status="success"}[5m]))
           /
           sum(rate(slo_requests_total{flow="order_execution"}[5m]))
-      
+
       # Latency percentiles
       - record: slo:latency:p99
         expr: histogram_quantile(0.99, slo_latency_seconds_bucket)
-      
+
       - record: slo:latency:p95
         expr: histogram_quantile(0.95, slo_latency_seconds_bucket)
 ```
@@ -341,7 +341,7 @@ groups:
         annotations:
           summary: "Market Data SLO breach"
           description: "Availability {{ $value }} < 99.9%"
-      
+
       - alert: ErrorBudgetBurn_OrderExecution
         expr: |
           (

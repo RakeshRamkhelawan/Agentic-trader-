@@ -53,7 +53,7 @@ class OutcomePredictor(nn.Module):
             nn.ReLU(),
             nn.Dropout(0.2),
             nn.Linear(32, 1),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
     def forward(self, x):
@@ -104,17 +104,21 @@ class TriadMLTrainer:
                 ep.confidence,
                 ep.coherence,
                 ep.karma_score,
-                ep.guna_vector.get('sattva', 0.33),
-                ep.guna_vector.get('rajas', 0.33),
-                ep.guna_vector.get('tamas', 0.33),
-                1.0 if ep.action == 'buy' else 0.0,
-                1.0 if ep.trend == 'up' else 0.0 if ep.trend == 'down' else 0.5,
-                1.0 if ep.volume_profile == 'high' else 0.5 if ep.volume_profile == 'normal' else 0.0,
-                1.0 if ep.execution_quality == 'excellent' else 0.5
+                ep.guna_vector.get("sattva", 0.33),
+                ep.guna_vector.get("rajas", 0.33),
+                ep.guna_vector.get("tamas", 0.33),
+                1.0 if ep.action == "buy" else 0.0,
+                1.0 if ep.trend == "up" else 0.0 if ep.trend == "down" else 0.5,
+                (
+                    1.0
+                    if ep.volume_profile == "high"
+                    else 0.5 if ep.volume_profile == "normal" else 0.0
+                ),
+                1.0 if ep.execution_quality == "excellent" else 0.5,
             ]
 
             # Label: 1 = success, 0 = failure
-            label = 1.0 if ep.outcome == 'success' else 0.0
+            label = 1.0 if ep.outcome == "success" else 0.0
 
             features.append(feat)
             labels.append(label)
@@ -190,7 +194,9 @@ class TriadMLTrainer:
             history.append({"epoch": epoch + 1, "loss": avg_loss, "acc": acc})
 
             if (epoch + 1) % 10 == 0:
-                logger.info(f"Epoch {epoch+1}: Loss={avg_loss:.4f}, Acc={acc:.2%}, Best={best_acc:.2%}")
+                logger.info(
+                    f"Epoch {epoch+1}: Loss={avg_loss:.4f}, Acc={acc:.2%}, Best={best_acc:.2%}"
+                )
 
         # Save final
         torch.save(self.model.state_dict(), self.model_path / "outcome_predictor_final.pt")
@@ -200,13 +206,12 @@ class TriadMLTrainer:
             "best_accuracy": best_acc,
             "final_accuracy": acc,
             "training_episodes": len(X),
-            "history": history
+            "history": history,
         }
 
-    def predict_outcome(self, market_context: dict,
-                       council_views: list[dict],
-                       confidence: float,
-                       coherence: float) -> float:
+    def predict_outcome(
+        self, market_context: dict, council_views: list[dict], confidence: float, coherence: float
+    ) -> float:
         """
         Predict probability of success for a decision.
 
@@ -225,21 +230,21 @@ class TriadMLTrainer:
                 return 0.5  # Neutral
 
         # Build feature vector
-        guna = council_views[0].get('guna_vector', {}) if council_views else {}
+        guna = council_views[0].get("guna_vector", {}) if council_views else {}
 
         feat = [
-            market_context.get('volatility_1m', 0.02),
-            council_views[1].get('fear_greed_index', 50) / 100 if len(council_views) > 1 else 0.5,
+            market_context.get("volatility_1m", 0.02),
+            council_views[1].get("fear_greed_index", 50) / 100 if len(council_views) > 1 else 0.5,
             confidence,
             coherence,
             0.5,  # karma score (unknown for new trade)
-            guna.get('sattva', 0.33),
-            guna.get('rajas', 0.33),
-            guna.get('tamas', 0.33),
+            guna.get("sattva", 0.33),
+            guna.get("rajas", 0.33),
+            guna.get("tamas", 0.33),
             0.5,  # action (neutral)
             0.5,  # trend
             0.5,  # volume
-            0.5   # execution
+            0.5,  # execution
         ]
 
         x = torch.FloatTensor([feat])
@@ -261,29 +266,33 @@ class TriadMLTrainer:
         if len(episodes) < 5:
             return {"status": "insufficient_data"}
 
-        successful = [ep for ep in episodes if ep.outcome == 'success']
-        failed = [ep for ep in episodes if ep.outcome == 'failure']
+        successful = [ep for ep in episodes if ep.outcome == "success"]
+        failed = [ep for ep in episodes if ep.outcome == "failure"]
 
         insights = {
             "status": "success",
             "total_analyzed": len(episodes),
             "success_count": len(successful),
             "failure_count": len(failed),
-            "win_rate": len(successful) / len(episodes) if episodes else 0
+            "win_rate": len(successful) / len(episodes) if episodes else 0,
         }
 
         # Compare successful vs failed
         if successful and failed:
-            insights["avg_confidence_success"] = sum(ep.confidence for ep in successful) / len(successful)
+            insights["avg_confidence_success"] = sum(ep.confidence for ep in successful) / len(
+                successful
+            )
             insights["avg_confidence_failure"] = sum(ep.confidence for ep in failed) / len(failed)
 
-            insights["avg_coherence_success"] = sum(ep.coherence for ep in successful) / len(successful)
+            insights["avg_coherence_success"] = sum(ep.coherence for ep in successful) / len(
+                successful
+            )
             insights["avg_coherence_failure"] = sum(ep.coherence for ep in failed) / len(failed)
 
             # Best action
             action_success = {}
             for ep in episodes:
-                if ep.outcome == 'success':
+                if ep.outcome == "success":
                     action_success[ep.action] = action_success.get(ep.action, 0) + 1
 
             if action_success:
@@ -332,7 +341,7 @@ if __name__ == "__main__":
         patterns = trainer.analyze_patterns()
         print("\nPatterns:")
         print(f"  Win rate: {patterns.get('win_rate', 0):.1%}")
-        if 'avg_confidence_success' in patterns:
+        if "avg_confidence_success" in patterns:
             print(f"  Avg confidence (success): {patterns['avg_confidence_success']:.2f}")
             print(f"  Avg confidence (failure): {patterns['avg_confidence_failure']:.2f}")
     else:

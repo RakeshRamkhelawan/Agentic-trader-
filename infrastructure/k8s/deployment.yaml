@@ -33,8 +33,11 @@ spec:
         fsGroup: 1000
       containers:
       - name: backend
-        image: samkhya/backend:latest
-        imagePullPolicy: Always
+        # IMAGE_TAG should be set by CI/CD to a Git SHA or semantic version.
+        # NEVER use :latest in production - it causes non-reproducible deployments.
+        # Example: samkhya/backend:abc123f or samkhya/backend:v1.2.3
+        image: samkhya/backend:IMAGE_TAG  # Replace via CI/CD: sed -i 's|IMAGE_TAG|'$GIT_SHA'|'
+        imagePullPolicy: IfNotPresent  # Immutable tags don't need Always
         ports:
         - name: http
           containerPort: 8000

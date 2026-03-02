@@ -11,14 +11,13 @@ Tests cover:
 
 import pytest
 from datetime import datetime, timedelta, UTC
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 from backend.governance.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerState,
     BreakerState,
     TripReason,
-    CircuitBreakerTrippedError,
 )
 
 

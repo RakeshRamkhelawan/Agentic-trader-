@@ -238,11 +238,13 @@ class TradingMetrics:
     @classmethod
     def set_platform_info(cls, version: str, environment: str):
         """Set platform information."""
-        cls.trading_info.info({
-            "version": version,
-            "environment": environment,
-            "start_time": datetime.utcnow().isoformat(),
-        })
+        cls.trading_info.info(
+            {
+                "version": version,
+                "environment": environment,
+                "start_time": datetime.utcnow().isoformat(),
+            }
+        )
 
 
 class AlertManager:

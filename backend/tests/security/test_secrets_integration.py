@@ -8,7 +8,6 @@ Requirements: docker-compose up db redis
 Run with: pytest backend/tests/security/test_secrets_integration.py -v -m integration
 """
 
-import os
 
 import pytest
 

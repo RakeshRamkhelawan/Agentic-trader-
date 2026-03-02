@@ -22,10 +22,12 @@ class TournamentStream:
 
         # Send recent history
         if self.message_history:
-            await websocket.send_json({
-                "type": "history",
-                "data": self.message_history[-20:],  # Last 20 messages
-            })
+            await websocket.send_json(
+                {
+                    "type": "history",
+                    "data": self.message_history[-20:],  # Last 20 messages
+                }
+            )
 
     def disconnect(self, websocket: WebSocket) -> None:
         """Remove WebSocket connection."""
@@ -39,7 +41,7 @@ class TournamentStream:
         # Store in history
         self.message_history.append(message)
         if len(self.message_history) > self.max_history:
-            self.message_history = self.message_history[-self.max_history:]
+            self.message_history = self.message_history[-self.max_history :]
 
         # Broadcast to all connections
         disconnected = set()
@@ -55,48 +57,58 @@ class TournamentStream:
 
     async def send_leaderboard_update(self, leaderboard: list[dict]) -> None:
         """Send leaderboard update."""
-        await self.broadcast({
-            "type": "leaderboard_update",
-            "tournament_id": self.tournament_id,
-            "leaderboard": leaderboard,
-        })
+        await self.broadcast(
+            {
+                "type": "leaderboard_update",
+                "tournament_id": self.tournament_id,
+                "leaderboard": leaderboard,
+            }
+        )
 
     async def send_trade_notification(self, competitor_id: str, trade: dict) -> None:
         """Send trade notification."""
-        await self.broadcast({
-            "type": "trade",
-            "tournament_id": self.tournament_id,
-            "competitor_id": competitor_id,
-            "trade": trade,
-        })
+        await self.broadcast(
+            {
+                "type": "trade",
+                "tournament_id": self.tournament_id,
+                "competitor_id": competitor_id,
+                "trade": trade,
+            }
+        )
 
     async def send_chat_message(self, competitor_id: str, name: str, message: str) -> None:
         """Send chat message."""
-        await self.broadcast({
-            "type": "chat",
-            "tournament_id": self.tournament_id,
-            "competitor_id": competitor_id,
-            "name": name,
-            "message": message,
-        })
+        await self.broadcast(
+            {
+                "type": "chat",
+                "tournament_id": self.tournament_id,
+                "competitor_id": competitor_id,
+                "name": name,
+                "message": message,
+            }
+        )
 
     async def send_price_tick(self, symbol: str, price: float, change: float) -> None:
         """Send price tick update."""
-        await self.broadcast({
-            "type": "price_tick",
-            "tournament_id": self.tournament_id,
-            "symbol": symbol,
-            "price": price,
-            "change": change,
-        })
+        await self.broadcast(
+            {
+                "type": "price_tick",
+                "tournament_id": self.tournament_id,
+                "symbol": symbol,
+                "price": price,
+                "change": change,
+            }
+        )
 
     async def send_system_message(self, message: str) -> None:
         """Send system announcement."""
-        await self.broadcast({
-            "type": "system",
-            "tournament_id": self.tournament_id,
-            "message": message,
-        })
+        await self.broadcast(
+            {
+                "type": "system",
+                "tournament_id": self.tournament_id,
+                "message": message,
+            }
+        )
 
     def get_connection_count(self) -> int:
         """Get number of active connections."""
@@ -209,11 +221,13 @@ class WebSocketManager:
         conn = self._user_connections.get(user_id)
         if conn:
             try:
-                await conn.send_json({
-                    "type": "notification",
-                    "data": notification,
-                    "timestamp": datetime.utcnow().isoformat(),
-                })
+                await conn.send_json(
+                    {
+                        "type": "notification",
+                        "data": notification,
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                )
             except Exception:
                 self.disconnect_user(user_id)
 
@@ -226,14 +240,14 @@ class WebSocketManager:
     def get_active_streams(self) -> dict[str, int]:
         """Get count of active connections per tournament."""
         return {
-            tid: stream.get_connection_count()
-            for tid, stream in self._tournament_streams.items()
+            tid: stream.get_connection_count() for tid, stream in self._tournament_streams.items()
         }
 
     def cleanup_inactive_streams(self) -> None:
         """Remove streams with no connections."""
         inactive = [
-            tid for tid, stream in self._tournament_streams.items()
+            tid
+            for tid, stream in self._tournament_streams.items()
             if stream.get_connection_count() == 0
         ]
         for tid in inactive:

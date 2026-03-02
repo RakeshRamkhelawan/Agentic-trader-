@@ -1,7 +1,6 @@
 import asyncio
 from unittest.mock import AsyncMock
 
-import msgpack
 import pytest
 import redis.asyncio as redis
 

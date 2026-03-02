@@ -10,10 +10,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from backend.core.cognitive_mind_service import CognitiveMindService
 from backend.core.eternal_soul_service import EternalSoulService
 from backend.core.karma.episode_memory import EpisodeMemory, KarmaEpisode
-from backend.core.zero_copy_bridge import ZeroCopyBridge
 
 # ---------------------------------------------------------------------------
 # Fixtures

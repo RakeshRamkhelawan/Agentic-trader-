@@ -1,7 +1,6 @@
 import time
 import uuid
 
-import numpy as np
 import pytest
 
 from backend.core.zero_copy_bridge import ZeroCopyBridge

@@ -1,10 +1,7 @@
-import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-import pytest_asyncio
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.analyst_agent import AnalystAgent
 from backend.agents.data_scout_agent import DataScoutAgent
@@ -17,7 +14,6 @@ from backend.core.adapters.system_bridge import CognitiveBridge
 from backend.core.database import SessionManager
 from backend.core.schemas.ooda_types import (
     CapitalAllocation,
-    MarketRegime,
     Observation,
     Orientation,
     ResearchHypothesis,

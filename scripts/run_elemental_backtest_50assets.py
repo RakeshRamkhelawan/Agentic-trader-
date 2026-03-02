@@ -32,9 +32,9 @@ def get_all_symbols(limit=50):
         result = conn.execute(
             text(
                 """
-            SELECT symbol, COUNT(*) as candle_count 
-            FROM market_candles 
-            WHERE timestamp >= '2020-01-01' 
+            SELECT symbol, COUNT(*) as candle_count
+            FROM market_candles
+            WHERE timestamp >= '2020-01-01'
             GROUP BY symbol
             ORDER BY candle_count DESC
             LIMIT :limit
@@ -71,7 +71,7 @@ def fetch_price_data(symbols, start_date, end_date):
                 SELECT timestamp, open, high, low, close, volume
                 FROM market_candles
                 WHERE symbol = :symbol
-                  AND timestamp >= :start 
+                  AND timestamp >= :start
                   AND timestamp <= :end
                 ORDER BY timestamp ASC
             """

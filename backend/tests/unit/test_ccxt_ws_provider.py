@@ -9,16 +9,14 @@ Date: 14 Feb 2026
 """
 
 import asyncio
-from datetime import datetime
 from typing import Any, Dict
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from unittest.mock import patch
 
 import pytest
 
 from backend.market_data.providers.ccxt_ws_provider import (
     CCXTWSProvider,
     ConnectionConfig,
-    SubscriptionType,
 )
 
 

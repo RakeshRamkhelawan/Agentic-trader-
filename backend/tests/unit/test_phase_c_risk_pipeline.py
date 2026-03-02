@@ -7,18 +7,13 @@ Tests voor RiskOrchestrator als Kanchuka-laag:
 - Position sizing integratie
 """
 
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
-from backend.core.schemas.ooda_types import MarketRegime, RiskDecision, TradeProposal
 from backend.risk.drawdown_monitor import DrawdownMonitor, DrawdownStatus
-from backend.risk.kelly_criterion import KellyCriterion, KellyResult
-from backend.risk.position_sizer import IntegratedPositionSizer, SizingResult
-from backend.risk.risk_orchestrator import RiskDecision as RiskOrchestratorDecision
+from backend.risk.kelly_criterion import KellyCriterion
 from backend.risk.risk_orchestrator import RiskOrchestrator, TradeSignal
-from backend.risk.var_calculator import VaRCalculator
 
 
 class TestRiskOrchestratorPreTradeCheck:

@@ -2,7 +2,6 @@
 Unit tests for OpenTelemetry Tracing (Sprint 4 S4-1).
 """
 
-import asyncio
 import time
 from unittest.mock import MagicMock, patch
 

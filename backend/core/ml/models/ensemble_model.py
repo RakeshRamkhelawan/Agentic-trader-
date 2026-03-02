@@ -38,7 +38,7 @@ class ChittaEnsemble(nn.Module):
         transformer_heads: int = 8,
         dropout: float = 0.2,
         output_size: int = 1,
-        ensemble_method: str = "weighted"  # "weighted", "average", "meta"
+        ensemble_method: str = "weighted",  # "weighted", "average", "meta"
     ):
         super(ChittaEnsemble, self).__init__()
 
@@ -50,7 +50,7 @@ class ChittaEnsemble(nn.Module):
             hidden_size=lstm_hidden,
             num_layers=lstm_layers,
             output_size=output_size,
-            dropout=dropout
+            dropout=dropout,
         )
 
         # Transformer branch
@@ -60,7 +60,7 @@ class ChittaEnsemble(nn.Module):
             nhead=transformer_heads,
             num_layers=transformer_layers,
             output_size=output_size,
-            dropout=dropout
+            dropout=dropout,
         )
 
         # Ensemble weights (learnable indien weighted)
@@ -73,7 +73,7 @@ class ChittaEnsemble(nn.Module):
                 nn.Linear(output_size * 2, 32),
                 nn.ReLU(),
                 nn.Dropout(dropout),
-                nn.Linear(32, output_size)
+                nn.Linear(32, output_size),
             )
 
         logger.info(f"ChittaEnsemble initialized: method={ensemble_method}")
@@ -100,10 +100,7 @@ class ChittaEnsemble(nn.Module):
         elif self.ensemble_method == "weighted":
             # Learnable weighted average
             # Softmax zorgt dat weights sum to 1
-            weights = torch.softmax(
-                torch.stack([self.lstm_weight, self.transformer_weight]),
-                dim=0
-            )
+            weights = torch.softmax(torch.stack([self.lstm_weight, self.transformer_weight]), dim=0)
             output = weights[0] * lstm_pred + weights[1] * transformer_pred
 
         elif self.ensemble_method == "meta":
@@ -119,14 +116,8 @@ class ChittaEnsemble(nn.Module):
     def get_model_weights(self) -> dict:
         """Get current ensemble weights."""
         if self.ensemble_method == "weighted":
-            weights = torch.softmax(
-                torch.stack([self.lstm_weight, self.transformer_weight]),
-                dim=0
-            )
-            return {
-                "lstm": weights[0].item(),
-                "transformer": weights[1].item()
-            }
+            weights = torch.softmax(torch.stack([self.lstm_weight, self.transformer_weight]), dim=0)
+            return {"lstm": weights[0].item(), "transformer": weights[1].item()}
         return {"method": self.ensemble_method}
 
 
@@ -139,34 +130,29 @@ class StackingEnsemble(nn.Module):
     """
 
     def __init__(
-        self,
-        input_size: int,
-        n_models: int = 3,
-        hidden_size: int = 128,
-        dropout: float = 0.2
+        self, input_size: int, n_models: int = 3, hidden_size: int = 128, dropout: float = 0.2
     ):
         super().__init__()
 
         self.n_models = n_models
 
         # Create diverse base models
-        self.models = nn.ModuleList([
-            ChittaLSTM(
-                input_size=input_size,
-                hidden_size=hidden_size,
-                num_layers=2 + i,  # Different depths
-                dropout=dropout,
-                output_size=1
-            )
-            for i in range(n_models)
-        ])
+        self.models = nn.ModuleList(
+            [
+                ChittaLSTM(
+                    input_size=input_size,
+                    hidden_size=hidden_size,
+                    num_layers=2 + i,  # Different depths
+                    dropout=dropout,
+                    output_size=1,
+                )
+                for i in range(n_models)
+            ]
+        )
 
         # Meta-learner
         self.meta = nn.Sequential(
-            nn.Linear(n_models, 16),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(16, 1)
+            nn.Linear(n_models, 16), nn.ReLU(), nn.Dropout(dropout), nn.Linear(16, 1)
         )
 
     def forward(self, x):

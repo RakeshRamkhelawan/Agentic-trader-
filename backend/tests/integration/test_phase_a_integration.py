@@ -163,7 +163,6 @@ class TestPhaseAIntegration:
             # This should ideally emit a deprecation warning
             # For now, we just verify it exists and can be created
             try:
-                from pathlib import Path
 
                 with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
                     config_path = f.name
@@ -171,7 +170,7 @@ class TestPhaseAIntegration:
                     config_path=config_path,
                 )
                 # If we get here, it works but should be deprecated
-            except Exception as e:
+            except Exception:
                 # If it fails, that's also acceptable for deprecated code
                 pass
 

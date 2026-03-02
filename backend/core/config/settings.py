@@ -77,34 +77,21 @@ class Settings(BaseSettings):
         min_length=32,
     )
 
-
-
     DATABASE_URL_ENV: str | None = Field(None, validation_alias="DATABASE_URL")
 
     # --- DATABASE CONNECTION POOLING ---
-    DB_POOL_SIZE: int = Field(
-        default=10,
-        ge=5,
-        le=50,
-        description="Database connection pool size"
-    )
+    DB_POOL_SIZE: int = Field(default=10, ge=5, le=50, description="Database connection pool size")
     DB_MAX_OVERFLOW: int = Field(
-        default=20,
-        ge=0,
-        le=30,
-        description="Max overflow connections beyond pool_size"
+        default=20, ge=0, le=30, description="Max overflow connections beyond pool_size"
     )
     DB_POOL_TIMEOUT: int = Field(
-        default=30,
-        ge=5,
-        le=60,
-        description="Seconds to wait for connection from pool"
+        default=30, ge=5, le=60, description="Seconds to wait for connection from pool"
     )
     DB_POOL_RECYCLE: int = Field(
         default=3600,  # 1 hour
         ge=300,
         le=7200,
-        description="Seconds after which to recycle connections"
+        description="Seconds after which to recycle connections",
     )
 
     # --- AUTH0 CONFIGURATION ---
@@ -223,10 +210,7 @@ class Settings(BaseSettings):
             value = self._vault_manager.get_secret("database", "url")
             if value:
                 return value
-        return (
-            self.DATABASE_URL_ENV
-            or "postgresql+asyncpg://localhost:5432/agentic_trader"
-        )
+        return self.DATABASE_URL_ENV or "postgresql+asyncpg://localhost:5432/agentic_trader"
 
 
 # Singleton instance

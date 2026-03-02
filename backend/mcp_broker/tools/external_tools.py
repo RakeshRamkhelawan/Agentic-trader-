@@ -31,6 +31,7 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 # Sentiment Analysis Tools
 # ============================================================================
 
+
 @circuit_breaker(failure_threshold=3, timeout_seconds=60)
 @retry(max_attempts=2)
 async def external__sentiment_analysis(
@@ -72,6 +73,7 @@ async def external__sentiment_analysis(
 
     # Fallback: simulated sentiment based on symbol hash
     import hashlib
+
     hash_val = int(hashlib.blake2b(symbol.encode(), digest_size=8).hexdigest(), 16)
     sentiment_score = ((hash_val % 100) / 50) - 1.0  # -1.0 to 1.0
 
@@ -80,7 +82,11 @@ async def external__sentiment_analysis(
         "sentiment_score": round(sentiment_score, 2),
         "confidence": 0.6,
         "source": "fallback",
-        "trend": "bullish" if sentiment_score > 0.2 else "bearish" if sentiment_score < -0.2 else "neutral",
+        "trend": (
+            "bullish"
+            if sentiment_score > 0.2
+            else "bearish" if sentiment_score < -0.2 else "neutral"
+        ),
         "key_factors": ["market_momentum", "volume_trend"],
     }
 
@@ -107,15 +113,15 @@ async def _llm_sentiment_analysis(symbol: str, source: str) -> dict[str, Any] | 
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are a financial sentiment analyzer. Analyze the sentiment for the given symbol. Respond ONLY with a JSON object: {'score': float (-1.0 to 1.0), 'confidence': float (0.0 to 1.0), 'trend': 'bullish|bearish|neutral', 'key_factors': [list of strings]}"
+                            "content": "You are a financial sentiment analyzer. Analyze the sentiment for the given symbol. Respond ONLY with a JSON object: {'score': float (-1.0 to 1.0), 'confidence': float (0.0 to 1.0), 'trend': 'bullish|bearish|neutral', 'key_factors': [list of strings]}",
                         },
                         {
                             "role": "user",
-                            "content": f"Analyze sentiment for {symbol} based on recent market data and {source}"
-                        }
+                            "content": f"Analyze sentiment for {symbol} based on recent market data and {source}",
+                        },
                     ],
                     "temperature": 0.3,
-                }
+                },
             )
 
             if response.status_code == 200:
@@ -127,7 +133,7 @@ async def _llm_sentiment_analysis(symbol: str, source: str) -> dict[str, Any] | 
                 import re
 
                 # Extract JSON from markdown if present
-                json_match = re.search(r'```json\n(.*?)\n```', content, re.DOTALL)
+                json_match = re.search(r"```json\n(.*?)\n```", content, re.DOTALL)
                 if json_match:
                     content = json_match.group(1)
 
@@ -179,6 +185,7 @@ async def external__social_sentiment(
 # ============================================================================
 # Macro Economic Tools
 # ============================================================================
+
 
 @circuit_breaker(failure_threshold=3, timeout_seconds=30)
 @retry(max_attempts=2)
@@ -289,6 +296,7 @@ async def external__market_correlation(
 # News Tools
 # ============================================================================
 
+
 @circuit_breaker(failure_threshold=3, timeout_seconds=30)
 @retry(max_attempts=2)
 async def external__market_news(
@@ -360,7 +368,7 @@ async def _fetch_news_api(symbol: str | None, category: str, limit: int) -> dict
                     "sortBy": "publishedAt",
                     "pageSize": limit,
                     "apiKey": NEWS_API_KEY,
-                }
+                },
             )
 
             if response.status_code == 200:
@@ -368,14 +376,16 @@ async def _fetch_news_api(symbol: str | None, category: str, limit: int) -> dict
                 articles = []
 
                 for article in data.get("articles", [])[:limit]:
-                    articles.append({
-                        "title": article.get("title"),
-                        "summary": article.get("description"),
-                        "url": article.get("url"),
-                        "published_at": article.get("publishedAt"),
-                        "source": article.get("source", {}).get("name"),
-                        "sentiment": "neutral",  # Would analyze with NLP
-                    })
+                    articles.append(
+                        {
+                            "title": article.get("title"),
+                            "summary": article.get("description"),
+                            "url": article.get("url"),
+                            "published_at": article.get("publishedAt"),
+                            "source": article.get("source", {}).get("name"),
+                            "sentiment": "neutral",  # Would analyze with NLP
+                        }
+                    )
 
                 return {
                     "articles": articles,
@@ -393,6 +403,7 @@ async def _fetch_news_api(symbol: str | None, category: str, limit: int) -> dict
 # ============================================================================
 # Technical Analysis Tools
 # ============================================================================
+
 
 @circuit_breaker(failure_threshold=5, timeout_seconds=30)
 async def external__technical_indicators(
@@ -434,7 +445,9 @@ async def external__technical_indicators(
     # Calculate SMA
     if "sma" in indicators:
         result["indicators"]["sma_20"] = _calculate_sma(price_history, 20)
-        result["indicators"]["sma_50"] = _calculate_sma(price_history, 50) if len(price_history) >= 50 else None
+        result["indicators"]["sma_50"] = (
+            _calculate_sma(price_history, 50) if len(price_history) >= 50 else None
+        )
 
     # Calculate EMA
     if "ema" in indicators:
@@ -464,7 +477,7 @@ def _calculate_rsi(prices: list[float], period: int = 14) -> dict[str, Any]:
     losses = []
 
     for i in range(1, len(prices)):
-        change = prices[i] - prices[i-1]
+        change = prices[i] - prices[i - 1]
         if change > 0:
             gains.append(change)
             losses.append(0)
@@ -532,14 +545,16 @@ def _calculate_macd(prices: list[float]) -> dict[str, Any]:
     }
 
 
-def _calculate_bollinger_bands(prices: list[float], period: int = 20, std_dev: float = 2.0) -> dict[str, Any]:
+def _calculate_bollinger_bands(
+    prices: list[float], period: int = 20, std_dev: float = 2.0
+) -> dict[str, Any]:
     """Calculate Bollinger Bands."""
     if len(prices) < period:
         return {"upper": None, "middle": None, "lower": None}
 
     sma = sum(prices[-period:]) / period
     variance = sum((p - sma) ** 2 for p in prices[-period:]) / period
-    std = variance ** 0.5
+    std = variance**0.5
 
     upper = sma + (std * std_dev)
     lower = sma - (std * std_dev)
@@ -563,7 +578,11 @@ def _technical_signal(indicators: dict) -> str:
     if "rsi" in indicators:
         rsi = indicators["rsi"]
         if isinstance(rsi, dict):
-            signals.append(1 if rsi.get("signal") == "oversold" else -1 if rsi.get("signal") == "overbought" else 0)
+            signals.append(
+                1
+                if rsi.get("signal") == "oversold"
+                else -1 if rsi.get("signal") == "overbought" else 0
+            )
 
     if "macd" in indicators:
         macd = indicators["macd"]
@@ -573,7 +592,11 @@ def _technical_signal(indicators: dict) -> str:
     if "bollinger_bands" in indicators:
         bb = indicators["bollinger_bands"]
         if isinstance(bb, dict):
-            signals.append(1 if bb.get("signal") == "lower_band" else -1 if bb.get("signal") == "upper_band" else 0)
+            signals.append(
+                1
+                if bb.get("signal") == "lower_band"
+                else -1 if bb.get("signal") == "upper_band" else 0
+            )
 
     total = sum(signals)
 

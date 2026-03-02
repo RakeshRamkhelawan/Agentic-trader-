@@ -4,7 +4,6 @@ Tests voor Analyst Agent.
 Test orientation generation, regime detection, en confidence calculation.
 """
 
-from unittest.mock import AsyncMock, Mock
 
 import pytest
 

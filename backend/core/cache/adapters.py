@@ -87,7 +87,9 @@ class RedisAdapter(CacheAdapter):
             value = await self._redis.get(key)
             if value is None:
                 return None
-            return pickle.loads(value)  # nosec B301 - Internal cache only, Redis not exposed externally
+            return pickle.loads(
+                value
+            )  # nosec B301 - Internal cache only, Redis not exposed externally
         except Exception:
             return None
 
@@ -123,12 +125,14 @@ class RedisAdapter(CacheAdapter):
 class ClickHouseAdapter(CacheAdapter):
     # Whitelist of allowed table names to prevent SQL injection
     ALLOWED_TABLES = {"cache_store", "analytics_cache", "session_cache"}
-    
+
     def __init__(self, clickhouse_client, table_name: str = "cache_store"):
         self._client = clickhouse_client
         # Validate table name against whitelist to prevent SQL injection
         if table_name not in self.ALLOWED_TABLES:
-            raise ValueError(f"Invalid table name: {table_name}. Must be one of: {self.ALLOWED_TABLES}")
+            raise ValueError(
+                f"Invalid table name: {table_name}. Must be one of: {self.ALLOWED_TABLES}"
+            )
         self._table = table_name
 
     async def get(self, key: str) -> Any | None:
@@ -139,7 +143,9 @@ class ClickHouseAdapter(CacheAdapter):
                 WHERE key = %(key)s
                 AND expires_at > now()
                 LIMIT 1
-            """.format(table=self._table)
+            """.format(
+                table=self._table
+            )
             result = await self._client.execute(query, {"key": key})
 
             if not result:
@@ -156,7 +162,9 @@ class ClickHouseAdapter(CacheAdapter):
             query = """
                 INSERT INTO {table} (key, value, expires_at, created_at)
                 VALUES (%(key)s, %(value)s, now() + INTERVAL %(ttl)s SECOND, now())
-            """.format(table=self._table)
+            """.format(
+                table=self._table
+            )
             await self._client.execute(query, {"key": key, "value": value_json, "ttl": ttl})
             return True
         except Exception:
@@ -180,12 +188,10 @@ class ClickHouseAdapter(CacheAdapter):
 
     async def exists(self, key: str) -> bool:
         try:
-            query = (  # nosec B608
-                f"""
+            query = f"""
                 SELECT count(*) FROM {self._table}
                 WHERE key = %(key)s AND expires_at > now()
-            """
-            )
+            """  # nosec B608
             result = await self._client.execute(query, {"key": key})
             return result[0][0] > 0
         except Exception:

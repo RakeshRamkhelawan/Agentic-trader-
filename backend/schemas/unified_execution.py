@@ -29,12 +29,14 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 class OrderSide(str, Enum):
     """Order side enumeration."""
+
     BUY = "buy"
     SELL = "sell"
 
 
 class OrderType(str, Enum):
     """Order type enumeration."""
+
     MARKET = "market"
     LIMIT = "limit"
     STOP = "stop"
@@ -44,15 +46,17 @@ class OrderType(str, Enum):
 
 class TimeInForce(str, Enum):
     """Time in force enumeration."""
-    GTC = "gtc"           # Good Till Cancelled
-    IOC = "ioc"           # Immediate Or Cancel
-    FOK = "fok"           # Fill Or Kill
-    GTD = "gtd"           # Good Till Date
+
+    GTC = "gtc"  # Good Till Cancelled
+    IOC = "ioc"  # Immediate Or Cancel
+    FOK = "fok"  # Fill Or Kill
+    GTD = "gtd"  # Good Till Date
     POST_ONLY = "post_only"
 
 
 class OrderStatus(str, Enum):
     """Order status enumeration."""
+
     PENDING = "pending"
     OPEN = "open"
     PARTIALLY_FILLED = "partially_filled"
@@ -87,19 +91,15 @@ class UnifiedOrderRequest(BaseModel):
 
     # Identification
     client_order_id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()),
-        description="Unique client order ID"
+        default_factory=lambda: str(uuid.uuid4()), description="Unique client order ID"
     )
-    trace_id: str = Field(
-        ...,
-        description="Distributed trace ID for audit logging"
-    )
+    trace_id: str = Field(..., description="Distributed trace ID for audit logging")
 
     # Symbol (unified format: BASE/QUOTE)
     symbol: str = Field(
         ...,
         pattern=r"^[A-Z0-9]+/[A-Z0-9]+$",
-        description="Trading pair in BASE/QUOTE format (e.g., BTC/EUR)"
+        description="Trading pair in BASE/QUOTE format (e.g., BTC/EUR)",
     )
 
     # Order details
@@ -107,59 +107,30 @@ class UnifiedOrderRequest(BaseModel):
     order_type: OrderType = Field(..., description="Order type (market/limit/stop)")
 
     # Financial values as Decimal (CRITICAL for precision)
-    quantity: Decimal = Field(
-        ...,
-        gt=0,
-        description="Order quantity as Decimal for precision"
-    )
-    price: Decimal | None = Field(
-        None,
-        gt=0,
-        description="Limit price (None for market orders)"
-    )
-    stop_price: Decimal | None = Field(
-        None,
-        gt=0,
-        description="Stop price for stop orders"
-    )
+    quantity: Decimal = Field(..., gt=0, description="Order quantity as Decimal for precision")
+    price: Decimal | None = Field(None, gt=0, description="Limit price (None for market orders)")
+    stop_price: Decimal | None = Field(None, gt=0, description="Stop price for stop orders")
     expected_price: Decimal = Field(
-        ...,
-        gt=0,
-        description="Expected fill price for slippage calculation"
+        ..., gt=0, description="Expected fill price for slippage calculation"
     )
 
     # Advanced options (from exchange/)
-    time_in_force: TimeInForce = Field(
-        default=TimeInForce.GTC,
-        description="Order time in force"
-    )
+    time_in_force: TimeInForce = Field(default=TimeInForce.GTC, description="Order time in force")
     post_only: bool = Field(
-        default=False,
-        description="Post-only flag (fail if would take liquidity)"
+        default=False, description="Post-only flag (fail if would take liquidity)"
     )
-    reduce_only: bool = Field(
-        default=False,
-        description="Reduce-only flag (only reduce position)"
-    )
+    reduce_only: bool = Field(default=False, description="Reduce-only flag (only reduce position)")
 
     # OODA integration fields
     strategy_id: str | None = Field(
-        default="manual",
-        description="Strategy identifier for audit trail"
+        default="manual", description="Strategy identifier for audit trail"
     )
-    caller_name: str = Field(
-        default="unknown",
-        description="Agent or service requesting execution"
-    )
-    caller_role: str = Field(
-        default="untrusted",
-        description="Security role of caller"
-    )
+    caller_name: str = Field(default="unknown", description="Agent or service requesting execution")
+    caller_role: str = Field(default="untrusted", description="Security role of caller")
 
     # Metadata for extensibility
     metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Exchange-specific parameters"
+        default_factory=dict, description="Exchange-specific parameters"
     )
 
     model_config = ConfigDict(frozen=True, validate_assignment=True)
@@ -227,7 +198,7 @@ class UnifiedOrderRequest(BaseModel):
             "strategy_id": self.strategy_id,
             "caller_name": self.caller_name,
             "caller_role": self.caller_role,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
     @classmethod
@@ -240,7 +211,7 @@ class UnifiedOrderRequest(BaseModel):
         expected_price: float | None = None,
         trace_id: str | None = None,
         strategy_id: str = "manual",
-        **kwargs
+        **kwargs,
     ) -> UnifiedOrderRequest:
         """
         Create from legacy float-based order (backward compatibility).
@@ -264,8 +235,10 @@ class UnifiedOrderRequest(BaseModel):
         # Convert via string to minimize floating point errors
         decimal_qty = Decimal(str(qty))
         decimal_price = Decimal(str(price)) if price is not None else None
-        decimal_expected = Decimal(str(expected_price)) if expected_price is not None else (
-            decimal_price or Decimal("0")
+        decimal_expected = (
+            Decimal(str(expected_price))
+            if expected_price is not None
+            else (decimal_price or Decimal("0"))
         )
 
         # Generate trace_id if not provided
@@ -281,14 +254,12 @@ class UnifiedOrderRequest(BaseModel):
             price=decimal_price,
             expected_price=decimal_expected,
             strategy_id=strategy_id,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
     def from_ooda_execution_plan(
-        cls,
-        plan: Any,  # ExecutionPlan
-        trace_id: str | None = None
+        cls, plan: Any, trace_id: str | None = None  # ExecutionPlan
     ) -> UnifiedOrderRequest:
         """
         Convert OODA ExecutionPlan to UnifiedOrderRequest.
@@ -311,10 +282,10 @@ class UnifiedOrderRequest(BaseModel):
             quantity=Decimal(str(plan.quantity)),
             price=Decimal(str(plan.price)) if plan.price else None,
             expected_price=Decimal(str(plan.expected_price)),
-            strategy_id=getattr(plan, 'strategy_id', 'ooda'),
-            caller_name=getattr(plan, 'caller_name', 'unknown'),
-            caller_role=getattr(plan, 'caller_role', 'untrusted'),
-            metadata=getattr(plan, 'params', {})
+            strategy_id=getattr(plan, "strategy_id", "ooda"),
+            caller_name=getattr(plan, "caller_name", "unknown"),
+            caller_role=getattr(plan, "caller_role", "untrusted"),
+            metadata=getattr(plan, "params", {}),
         )
 
 
@@ -330,47 +301,21 @@ class UnifiedOrderResponse(BaseModel):
     status: OrderStatus = Field(..., description="Order status")
 
     # Fill details
-    filled_quantity: Decimal = Field(
-        default=Decimal("0"),
-        ge=0,
-        description="Filled quantity"
-    )
-    remaining_quantity: Decimal = Field(
-        ...,
-        ge=0,
-        description="Remaining quantity to fill"
-    )
-    average_price: Decimal | None = Field(
-        None,
-        ge=0,
-        description="Average fill price"
-    )
+    filled_quantity: Decimal = Field(default=Decimal("0"), ge=0, description="Filled quantity")
+    remaining_quantity: Decimal = Field(..., ge=0, description="Remaining quantity to fill")
+    average_price: Decimal | None = Field(None, ge=0, description="Average fill price")
 
     # Fees
-    fee: Decimal = Field(
-        default=Decimal("0"),
-        ge=0,
-        description="Trading fee paid"
-    )
-    fee_currency: str = Field(
-        default="",
-        description="Currency of fee"
-    )
+    fee: Decimal = Field(default=Decimal("0"), ge=0, description="Trading fee paid")
+    fee_currency: str = Field(default="", description="Currency of fee")
 
     # Error handling
-    error_message: str | None = Field(
-        None,
-        description="Error message if rejected/failed"
-    )
-    raw_response: dict[str, Any] | None = Field(
-        None,
-        description="Raw exchange response"
-    )
+    error_message: str | None = Field(None, description="Error message if rejected/failed")
+    raw_response: dict[str, Any] | None = Field(None, description="Raw exchange response")
 
     # Timing
     timestamp: float = Field(
-        default_factory=lambda: datetime.now(UTC).timestamp(),
-        description="Response timestamp"
+        default_factory=lambda: datetime.now(UTC).timestamp(), description="Response timestamp"
     )
 
     model_config = ConfigDict(frozen=True)

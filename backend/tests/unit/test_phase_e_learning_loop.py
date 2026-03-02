@@ -7,14 +7,12 @@ Tests voor Karma feedback en consciousness updates:
 - Reinforcement learning integratie
 """
 
-from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
 
 from backend.core.karma.karma_register import KarmaRegister, TradeOutcome
 from backend.core.karma.reinforcement import ParameterTuner
-from backend.core.memory_system import MemorySystem
 from backend.core.system_identity import SystemIdentity
 
 

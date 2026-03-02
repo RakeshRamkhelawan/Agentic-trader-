@@ -779,7 +779,7 @@ met zodiac_type="Sidereal" en sidereal_mode="LAHIRI" (Chitrapaksha ayanamsha).
 Returned Dict[Graha, GrahaPosition] met alle 9 planeten.
 Kerykeion planet mapping:
   sun, moon, mars, mercury, jupiter, venus, saturn,
-  true_north_lunar_node (=Rahu), true_south_lunar_node (=Ketu niet beschikbaar als 
+  true_north_lunar_node (=Rahu), true_south_lunar_node (=Ketu niet beschikbaar als
   direct attribuut, maar Ketu = Rahu + 180°)
 Moet offline werken (online=False).
 Locatie standaard: Amsterdam (52.3676°N, 4.9041°E) — configureerbaar.
@@ -802,7 +802,7 @@ class TestEphemerisCalculator:
     def calculator(self):
         return EphemerisCalculator(
             latitude=52.3676,  # Amsterdam
-            longitude_geo=4.9041,  
+            longitude_geo=4.9041,
             altitude=0
         )
 
@@ -939,7 +939,7 @@ NAKSHATRA_DATA = [
     ("Mula", Graha.KETU), ("Purva Ashadha", Graha.SHUKRA),
     ("Uttara Ashadha", Graha.SURYA), ("Shravana", Graha.CHANDRA),
     ("Dhanishta", Graha.MANGALA), ("Shatabhisha", Graha.RAHU),
-    ("Purva Bhadrapada", Graha.BRIHASPATI), 
+    ("Purva Bhadrapada", Graha.BRIHASPATI),
     ("Uttara Bhadrapada", Graha.SHANI),
     ("Revati", Graha.BUDHA),
 ]
@@ -964,7 +964,7 @@ KERYKEION_PLANET_MAP = {
 class EphemerisCalculator:
     """
     Real sidereal ephemeris calculator.
-    
+
     Uses Kerykeion with Lahiri ayanamsha for the 7 visible planets
     and pyswisseph directly for Rahu/Ketu lunar nodes.
     """
@@ -1003,10 +1003,10 @@ class EphemerisCalculator:
     def get_positions(self, dt: datetime) -> Dict[Graha, GrahaPosition]:
         """
         Calculate real sidereal positions for all 9 Grahas.
-        
+
         Args:
             dt: Datetime (must be timezone-aware, preferably UTC)
-            
+
         Returns:
             Dict mapping each Graha to its GrahaPosition
         """
@@ -1082,7 +1082,7 @@ class EphemerisCalculator:
     ) -> Tuple[datetime, datetime]:
         """
         Calculate Hindu sunrise and sunset using pyswisseph.
-        
+
         Falls back to geometric calculation for extreme latitudes.
         """
         import swisseph as swe
@@ -1247,7 +1247,7 @@ class TestNakshatraCalculator:
 
 **Masterprompt**:
 ```
-120-jaar Vimshottari Dasha systeem. 
+120-jaar Vimshottari Dasha systeem.
 Systeem-"geboorte" = eerste deployment datetime (configureerbaar).
 Maan-positie op dat moment → Janma Nakshatra → startende Mahadasha.
 Dasha jaren: Ketu=7, Venus=20, Sun=6, Moon=10, Mars=7, Rahu=18, Jupiter=16, Saturn=19, Mercury=17.
@@ -1367,7 +1367,7 @@ async def test_integration_1_3_dasha_with_real_ephemeris():
         moon_longitude_at_birth=moon_lng
     )
     state = dasha.get_state(datetime.now(timezone.utc))
-    
+
     assert state.mahadasha_lord is not None
     assert state.janma_nakshatra is not None
     assert 0.0 <= state.mahadasha_progress <= 1.0
@@ -1655,7 +1655,7 @@ class TestHoraCalculator:
         sunrise = datetime(2026, 2, 15, 7, 0, tzinfo=timezone.utc)
         sunset = datetime(2026, 2, 15, 17, 0, tzinfo=timezone.utc)
         day_hour_len = (sunset - sunrise).total_seconds() / 12
-        
+
         # 2e dag-uur op zondag
         state = calc.get_hora(sunrise, sunset, weekday=6,
                              current_time=sunrise + timedelta(seconds=day_hour_len + 60))
@@ -1706,7 +1706,7 @@ async def test_integration_1_4_rahu_kala_with_real_sunrise():
 
     rahu = RahuKalaCalculator()
     state = rahu.calculate(sunrise, sunset, weekday=now.weekday())
-    
+
     assert state.sunrise == sunrise
     assert state.sunset == sunset
     duration_min = (state.end - state.start).total_seconds() / 60
@@ -1722,10 +1722,10 @@ async def test_integration_1_4_aspects_with_real_positions():
 
     eph = EphemerisCalculator()
     positions = eph.get_positions(datetime.now(timezone.utc))
-    
+
     analyzer = AspectAnalyzer()
     aspects = analyzer.find_aspects(positions)
-    
+
     # Er zijn ALTIJD aspecten (9 planeten = minstens enkele)
     assert len(aspects) >= 1
     for aspect in aspects:
@@ -2071,7 +2071,7 @@ Dit verschuift de hele 36-Tattva traversal.
 **Wijziging in system_identity.py:82**:
 ```python
 # VOOR:
-async def process_market_cycle(self, price_data, volume_data, 
+async def process_market_cycle(self, price_data, volume_data,
                                 orderbook_imbalance, funding_rate, social_sentiment):
 
 # NA:
@@ -2253,7 +2253,7 @@ def test_integration_1_9_prana_lifecycle_in_ooda():
     """
     Integratie: Volledige OODA cyclus met prana lifecycle.
     1. regenerate_prana() voor cycle
-    2. update_prana_from_graha() met NavagrahaState  
+    2. update_prana_from_graha() met NavagrahaState
     3. consume_prana() tijdens cycle
     4. prana feedback naar IntentMonitor
     """
@@ -2273,7 +2273,7 @@ Na afronding van ALLE taken in Fase 1:
 async def test_production_phase1_full_ooda_with_navagraha():
     """
     PRODUCTIE TEST: Complete OODA loop met echte Navagraha berekeningen.
-    
+
     Verificeert:
     1. EphemerisCalculator berekent echte posities (cross-check drikpanchang.com)
     2. NavagrahaEngine.assess() retourneert complete state
@@ -2287,19 +2287,19 @@ async def test_production_phase1_full_ooda_with_navagraha():
     engine = NavagrahaEngine(
         system_birth=datetime(2025, 1, 1, tzinfo=timezone.utc)
     )
-    
+
     # Assess real planetary state
     state = engine.assess(datetime.now(timezone.utc))
     assert len(state.positions) == 9
     assert state.positions[Graha.RAHU].retrograde is True
-    
+
     # Wire into OODA coordinator
     coordinator = _setup_full_coordinator(navagraha_engine=engine)
     result = await coordinator.run_cycle(symbol="BTC/USDT")
-    
+
     # Verify result includes navagraha context
     assert "navagraha" in result or "planetary" in str(result).lower()
-    
+
     # Verify planetary positions are reasonable
     sun = state.positions[Graha.SURYA]
     assert 0 <= sun.longitude < 360

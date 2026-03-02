@@ -30,7 +30,9 @@ tokenizer = None
 def load_agent():
     global model, tokenizer
     print(f"Loading agent on {DEVICE}...")
-    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, revision=MODEL_REVISION)  # nosec B615 - Model revision pinned above
+    tokenizer = AutoTokenizer.from_pretrained(
+        BASE_MODEL, revision=MODEL_REVISION
+    )  # nosec B615 - Model revision pinned above
 
     # Load base model in 4-bit for inference if CUDA is available
     if DEVICE == "cuda":
@@ -41,7 +43,9 @@ def load_agent():
             BASE_MODEL, revision=MODEL_REVISION, quantization_config=bnb_config, device_map="auto"
         )
     else:
-        base = AutoModelForCausalLM.from_pretrained(BASE_MODEL, revision=MODEL_REVISION)  # nosec B615 - Model revision pinned above
+        base = AutoModelForCausalLM.from_pretrained(
+            BASE_MODEL, revision=MODEL_REVISION
+        )  # nosec B615 - Model revision pinned above
 
     # Load LoRA adapters if they exist
     if os.path.exists(LORA_WEIGHTS):
@@ -102,4 +106,6 @@ if __name__ == "__main__":
 
     threading.Thread(target=shutdown, daemon=True).start()
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)  # nosec B104 - Required for Docker/containerized deployment
+    uvicorn.run(
+        app, host="0.0.0.0", port=8000
+    )  # nosec B104 - Required for Docker/containerized deployment

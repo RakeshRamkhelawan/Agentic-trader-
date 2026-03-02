@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GunaVector:
     """Guna balans vector - som altijd 1.0"""
+
     sattva: float
     rajas: float
     tamas: float
@@ -26,7 +27,7 @@ class GunaVector:
             "sattva": round(self.sattva, 3),
             "rajas": round(self.rajas, 3),
             "tamas": round(self.tamas, 3),
-            "dominant": self.dominant()
+            "dominant": self.dominant(),
         }
 
 
@@ -64,9 +65,7 @@ class DynamicGunaCouncil:
             guna = GunaVector(sattva=0.33, rajas=0.33, tamas=0.34)
         else:
             guna = GunaVector(
-                sattva=sattva_score / total,
-                rajas=rajas_score / total,
-                tamas=tamas_score / total
+                sattva=sattva_score / total, rajas=rajas_score / total, tamas=tamas_score / total
             )
 
         perspective, confidence = self._get_perspective(guna, trend)
@@ -80,8 +79,8 @@ class DynamicGunaCouncil:
             "raw_scores": {
                 "sattva": round(sattva_score, 3),
                 "rajas": round(rajas_score, 3),
-                "tamas": round(tamas_score, 3)
-            }
+                "tamas": round(tamas_score, 3),
+            },
         }
 
     def _calc_sattva(self, vol: float, spread: float, vol_ratio: float) -> float:
@@ -122,7 +121,12 @@ class DynamicGunaCouncil:
 
         trend_score = 1.0 if trend != 0 else 0.2
 
-        return (vol_score * 0.3) + (momentum_score * 0.3) + (vol_ratio_score * 0.2) + (trend_score * 0.2)
+        return (
+            (vol_score * 0.3)
+            + (momentum_score * 0.3)
+            + (vol_ratio_score * 0.2)
+            + (trend_score * 0.2)
+        )
 
     def _calc_tamas(self, vol: float, vol_ratio: float, spread: float, trend: int) -> float:
         """Tamas = inertie, stagnatie."""
@@ -145,7 +149,12 @@ class DynamicGunaCouncil:
         else:
             low_vol_score = 0.0
 
-        return (vol_ratio_score * 0.4) + (trend_score * 0.3) + (illiquid_score * 0.2) + (low_vol_score * 0.1)
+        return (
+            (vol_ratio_score * 0.4)
+            + (trend_score * 0.3)
+            + (illiquid_score * 0.2)
+            + (low_vol_score * 0.1)
+        )
 
     def _get_perspective(self, guna: GunaVector, trend: int) -> tuple:
         """Bepaal trading perspective."""
@@ -163,7 +172,9 @@ class DynamicGunaCouncil:
         else:
             return "neutral", guna.sattva
 
-    def _generate_insights(self, guna: GunaVector, vol: float, momentum: float, vol_ratio: float) -> list:
+    def _generate_insights(
+        self, guna: GunaVector, vol: float, momentum: float, vol_ratio: float
+    ) -> list:
         """Genereer insights."""
         insights = []
         dominant = guna.dominant()
@@ -193,12 +204,13 @@ def get_guna_council():
     if guna_council is None:
         try:
             from backend.core.market_data.calibrated_thresholds import get_thresholds
+
             cal = get_thresholds()
             thresholds = cal.get_thresholds()
             calibration = {
                 "normal_vol": thresholds.get("normal_vol", 0.02),
                 "high_vol": thresholds.get("euphoria_vol", 0.035),
-                "high_volume": thresholds.get("high_volume", 1.34)
+                "high_volume": thresholds.get("high_volume", 1.34),
             }
             guna_council = DynamicGunaCouncil(calibration)
         except Exception:
@@ -216,18 +228,42 @@ if __name__ == "__main__":
     council = get_guna_council()
 
     scenarios = [
-        ("Calm consolidation", {"volatility_1m": 0.015, "momentum_1d": 0.005,
-                               "volume_ratio": 0.9, "bid_ask_spread": 0.0005, "trend": 0}),
-        ("Strong uptrend", {"volatility_1m": 0.04, "momentum_1d": 0.035,
-                           "volume_ratio": 1.8, "bid_ask_spread": 0.001, "trend": 1}),
-        ("Crash", {"volatility_1m": 0.08, "momentum_1d": -0.05,
-                  "volume_ratio": 2.5, "bid_ask_spread": 0.003, "trend": -1}),
+        (
+            "Calm consolidation",
+            {
+                "volatility_1m": 0.015,
+                "momentum_1d": 0.005,
+                "volume_ratio": 0.9,
+                "bid_ask_spread": 0.0005,
+                "trend": 0,
+            },
+        ),
+        (
+            "Strong uptrend",
+            {
+                "volatility_1m": 0.04,
+                "momentum_1d": 0.035,
+                "volume_ratio": 1.8,
+                "bid_ask_spread": 0.001,
+                "trend": 1,
+            },
+        ),
+        (
+            "Crash",
+            {
+                "volatility_1m": 0.08,
+                "momentum_1d": -0.05,
+                "volume_ratio": 2.5,
+                "bid_ask_spread": 0.003,
+                "trend": -1,
+            },
+        ),
     ]
 
     for name, data in scenarios:
         print(f"\n{name}:")
         result = council.analyze(data)
-        guna = result['guna_vector']
+        guna = result["guna_vector"]
         print(f"  Guna: S={guna['sattva']}, R={guna['rajas']}, T={guna['tamas']}")
         print(f"  Dominant: {guna['dominant']}")
         print(f"  Perspective: {result['perspective']} (conf: {result['confidence']:.2f})")
