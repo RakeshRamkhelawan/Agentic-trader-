@@ -141,8 +141,12 @@ models/*.h5
 # ============================================================================
 backtest_results/
 backtest_logs/
+!backtest_results/.gitkeep
+!backtest_logs/.gitkeep
 backtest_results/*.csv
 backtest_results/*.json
+*.csv.gz
+*.parquet
 paper_trading_session_*.json
 real_paper_session_*.json
 realtime_paper_session_*.json
@@ -196,6 +200,15 @@ frontend/.cache/
 frontend_old/
 prediction-market-analysis/
 prompts/
+
+# ============================================================================
+# LARGE DATA DIRECTORIES (not for git)
+# ============================================================================
+downloads/
+cache/
+backtest_logs/*.log
+*.log.*
+logs/*.log.*
 
 # ============================================================================
 # MISC
