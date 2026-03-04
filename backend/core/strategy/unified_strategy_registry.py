@@ -3,6 +3,8 @@ Unified Strategy Registry - Phase D Integration.
 
 Verbindt DashaStrategyMap met NavagrahaService voor dynamische strategy selectie
 gebaseerd op planetaire periodes. Werkt als plugin systeem voor TraderAgent.
+
+Enhanced met multi-indicator strategieen (Sprint 1).
 """
 
 import logging
@@ -26,7 +28,7 @@ class UnifiedStrategyRegistry:
     Central strategy registry that integrates Dasha-based selection.
 
     Features:
-    - Register strategies by ID
+    - Register strategies by ID (basic + enhanced multi-indicator)
     - Get strategy based on Dasha period from Navagraha
     - Fallback strategies for different regimes
     """
@@ -39,7 +41,7 @@ class UnifiedStrategyRegistry:
         self.navagraha_service = navagraha_service
         self.dasha_map = dasha_map or DashaStrategyMap()
 
-        # Strategy registry
+        # Strategy registry - basic strategies
         self._strategies: dict[str, TradingStrategy] = {
             "trend_following": TrendFollowingStrategy(),
             "mean_reversion": MeanReversionStrategy(),
@@ -59,7 +61,7 @@ class UnifiedStrategyRegistry:
             "Ketu": "defensive",  # Detachment - use defensive
         }
 
-        logger.info(f"UnifiedStrategyRegistry initialized with {len(self._strategies)} strategies")
+        logger.info("UnifiedStrategyRegistry initialized with %d strategies", len(self._strategies))
 
     def register_strategy(self, strategy_id: str, strategy: TradingStrategy) -> None:
         """Register a new strategy."""
