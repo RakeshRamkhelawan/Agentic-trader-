@@ -9,12 +9,13 @@ import logging
 from typing import Any
 
 from backend.agents.base_agent import BaseAgent
+from backend.core.indicators.mtf import MultiTimeframeAnalyzer
+from backend.core.risk.kelly import KellyPositionSizer
+from backend.core.strategy.sentiment_scorer import SentimentScorer
 from backend.core.schemas.ooda_types import MarketRegime, Orientation, TradeProposal
+from backend.core.strategy.consensus import TradingConsensusEngine, Vote
 from backend.execution.fast_config import FastConfig
 from backend.governance.agent_gatekeeper import AgentRole
-from backend.core.indicators.mtf import MultiTimeframeAnalyzer
-from backend.core.strategy.consensus import TradingConsensusEngine, Vote
-from backend.core.risk.kelly import KellyPositionSizer
 
 logger = logging.getLogger(__name__)
 
@@ -58,13 +59,17 @@ class TraderAgent(BaseAgent):
         self.default_risk_reward = default_risk_reward
         self.base_position_size = base_position_size
         self.strategy_registry = strategy_registry
-        
+
         self.mtf_analyzer = MultiTimeframeAnalyzer()
         self.consensus_engine = TradingConsensusEngine(approval_threshold=0.20)
         self.kelly_sizer = KellyPositionSizer(default_kelly_fraction=0.25, max_position=0.15)
-        
+        self.sentiment_scorer = SentimentScorer()
+
         # Historical trade statistics for Kelly sizing (updated externally)
         self._trade_stats: dict[str, dict] = {}
+        
+        # Current sentiment data (updated externally per tick)
+        self._sentiment_data: dict[str, dict] = {}
 
         self.proposals_generated = 0
 
@@ -144,31 +149,40 @@ class TraderAgent(BaseAgent):
             # === ENSEMBLE CONSENSUS PHASE ===
             # We are evaluating a specific *proposal* (side), so support for that side must be positive.
             technical_score = orientation.confidence
-            
+
             # TODO: Integrate real MTF and Risk data sources
             mtf_data = {}  # Placeholder for actual multi-timeframe candle fetching
             raw_mtf = self.mtf_analyzer.analyze_macro_trend(mtf_data)
-            
+
             # If we propose "sell", a negative macro trend supports us (gives positive score to the proposal)
             mtf_score = raw_mtf if side == "buy" else -raw_mtf
-            
+
             risk_score = 0.5  # Temporary placeholder for RiskAgent output
-            
+
             votes: list[Vote] = [
                 {"provider": "technical_strategy", "score": technical_score, "reasoning": f"Tech signal {side.upper()} (conf: {orientation.confidence:.2f})"},
                 {"provider": "mtf_analyzer", "score": mtf_score, "reasoning": f"MTF Macro Trend: {mtf_score:.2f}"},
                 {"provider": "risk_manager", "score": risk_score, "reasoning": "Default risk assessment OK"},
             ]
             
+            # 4th vote: Sentiment
+            sentiment_data = self._sentiment_data.get(orientation.symbol, {})
+            sentiment_value = sentiment_data.get("sentiment", 0.0)
+            news_impact = sentiment_data.get("news_impact", 0.0)
+            sentiment_score = self.sentiment_scorer.score(sentiment_value, news_impact, side)
+            votes.append(
+                {"provider": "sentiment", "score": sentiment_score, "reasoning": f"Sentiment alignment: {sentiment_score:.2f}"}
+            )
+
             consensus = self.consensus_engine.evaluate_proposal(votes)
-            
+
             if not consensus["approved"]:
                 logger.info(
                     f"Trade proposal REJECTED by Consensus Engine for {orientation.symbol}: "
                     f"{consensus['reasoning']}"
                 )
                 return None
-                
+
             logger.info(
                 f"Trade proposal APPROVED by Consensus Engine for {orientation.symbol}: "
                 f"{consensus['reasoning']}"
