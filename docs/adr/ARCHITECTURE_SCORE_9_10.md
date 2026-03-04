@@ -1,8 +1,8 @@
 # Architectuur Score: 9/10 ✅
 
-**Status**: VOLTOOID  
-**Datum**: 2026-02-20  
-**Doel**: Enterprise-grade architecture met aantoonbare kwaliteit  
+**Status**: VOLTOOID
+**Datum**: 2026-02-20
+**Doel**: Enterprise-grade architecture met aantoonbare kwaliteit
 
 ---
 
@@ -139,7 +139,7 @@ infrastructure/grafana/dashboards/
 # Per-tenant isolatie
 TenantContext.from_jwt(claims)
     .set_current()
-    
+
 # Rate limiting
 limiter.check_rate_limit(tenant_id, 'api', limit=600)
 

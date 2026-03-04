@@ -304,7 +304,7 @@ class DataPreFetchAgent:
 
             async with self._cache_lock:
                 fresh_count = sum(1 for d in self._cache.values() if d.is_fresh(self.max_staleness))
-                total_count = len(self._cache)
+                len(self._cache)
 
             # Warm-up complete als we >80% van priority symbolen hebben
             if fresh_count >= len(self.PRIORITY_SYMBOLS) * 0.8:

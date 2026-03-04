@@ -16,7 +16,7 @@ from backend.core.navagraha.models import GunaDistribution, NavagrahaState, Plan
 from backend.core.navagraha.service import NavagrahaService
 from backend.core.schemas.ooda_types import MarketRegime, Observation, Orientation
 from backend.core.system_identity import SystemIdentity
-from backend.orchestration.ooda_coordinator import OODALoopCoordinator, TradingMode
+from backend.orchestration.ooda_coordinator import OODALoopCoordinator
 
 
 class TestPhaseBNavagrahaIntegration:
@@ -373,7 +373,7 @@ class TestPhaseBEndToEnd:
 
         # Act
         with patch.object(coordinator, "_execute_ooda_loop", new_callable=AsyncMock):
-            result = await coordinator.run_cycle("BTC/USD", 50000.0)
+            await coordinator.run_cycle("BTC/USD", 50000.0)
 
         # Assert
         assert coordinator._current_guna is not None

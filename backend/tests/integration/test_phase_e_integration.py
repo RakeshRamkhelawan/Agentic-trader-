@@ -7,15 +7,14 @@ Integratietests voor:
 - End-to-end learning cycle
 """
 
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from backend.core.karma.karma_register import KarmaRegister, TradeOutcome
 from backend.core.karma.reinforcement import ReinforcementLearner
 from backend.core.system_identity import SystemIdentity
-from backend.orchestration.ooda_coordinator import OODALoopCoordinator, TradingMode
+from backend.orchestration.ooda_coordinator import OODALoopCoordinator
 
 
 class TestPhaseEKarmaIntegration:
@@ -144,8 +143,8 @@ class TestPhaseESystemIdentityIntegration:
     def test_system_state_adapts_to_outcomes(self, system_identity):
         """Test dat system state zich aanpast aan outcomes."""
         # Arrange
-        initial_coherence = system_identity.system_state["coherence"]
-        initial_confidence = system_identity.system_state["confidence"]
+        system_identity.system_state["coherence"]
+        system_identity.system_state["confidence"]
 
         # Act - multiple positive outcomes
         for i in range(10):

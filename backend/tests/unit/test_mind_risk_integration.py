@@ -11,7 +11,6 @@ Tests verify that CognitiveMindService:
 - Handles missing soul context gracefully
 """
 
-import asyncio
 import json
 import logging
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -19,8 +18,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from backend.core.cognitive_mind_service import CognitiveMindService
-from backend.core.risk.portfolio_risk import PortfolioRiskCalculator, RiskDecisionResult, RiskState
-from backend.core.zero_copy_bridge import TradingIntent
+from backend.core.risk.portfolio_risk import PortfolioRiskCalculator, RiskDecisionResult
 
 
 @pytest.fixture

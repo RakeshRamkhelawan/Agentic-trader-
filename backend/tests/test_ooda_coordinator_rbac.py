@@ -4,7 +4,7 @@ Integration Tests: OODA Coordinator + RBAC.
 Test RBAC enforcement in OODACoordinator.set_trading_mode().
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -14,7 +14,6 @@ from backend.core.database import Base
 from backend.governance.permission_service import PermissionService
 from backend.governance.trading_permissions import (
     PermissionDeniedError,
-    TradingPermission,
     TradingRole,
 )
 from backend.orchestration.ooda_coordinator import OODALoopCoordinator, TradingMode

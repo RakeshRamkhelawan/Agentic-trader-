@@ -30,13 +30,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any
 
-from backend.exchange.base_exchange import (
-    Balance,
-    BaseExchange,
-    OrderRequest,
-    OrderSide,
-    Symbol,
-)
+from backend.exchange.base_exchange import Balance, BaseExchange, OrderRequest, OrderSide, Symbol
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +39,10 @@ logger = logging.getLogger(__name__)
 # Validation Result Types
 # =============================================================================
 
+
 class ValidationStatus(Enum):
     """Validation result status."""
+
     APPROVED = "approved"
     WARNING = "warning"
     REJECTED = "rejected"
@@ -55,6 +51,7 @@ class ValidationStatus(Enum):
 @dataclass
 class ValidationCheck:
     """Individual validation check result."""
+
     name: str
     passed: bool
     status: ValidationStatus
@@ -65,6 +62,7 @@ class ValidationCheck:
 @dataclass
 class ValidationResult:
     """Complete validation result."""
+
     order_id: str | None
     status: ValidationStatus
     checks: list[ValidationCheck]
@@ -98,10 +96,10 @@ class ValidationResult:
                     "passed": c.passed,
                     "status": c.status.value,
                     "message": c.message,
-                    "details": c.details
+                    "details": c.details,
                 }
                 for c in self.checks
-            ]
+            ],
         }
 
 
@@ -109,27 +107,29 @@ class ValidationResult:
 # Risk Configuration
 # =============================================================================
 
+
 @dataclass
 class RiskLimits:
     """Risk limits configuration."""
+
     # Position limits
-    max_position_pct: Decimal = Decimal("0.20")      # Max 20% in single position
+    max_position_pct: Decimal = Decimal("0.20")  # Max 20% in single position
     max_concentration_pct: Decimal = Decimal("0.30")  # Max 30% in single asset
 
     # Order limits
-    max_order_pct: Decimal = Decimal("0.10")         # Max 10% per order
-    min_order_size: Decimal = Decimal("10")          # Min $10 order
-    max_order_size: Decimal | None = None         # No max by default
+    max_order_pct: Decimal = Decimal("0.10")  # Max 10% per order
+    min_order_size: Decimal = Decimal("10")  # Min $10 order
+    max_order_size: Decimal | None = None  # No max by default
 
     # Daily limits
     max_daily_trades: int = 50
-    max_daily_volume_pct: Decimal = Decimal("2.0")   # Max 2x portfolio per day
-    max_daily_loss_pct: Decimal = Decimal("0.05")    # Max 5% daily loss
+    max_daily_volume_pct: Decimal = Decimal("2.0")  # Max 2x portfolio per day
+    max_daily_loss_pct: Decimal = Decimal("0.05")  # Max 5% daily loss
 
     # Price limits
-    max_slippage_pct: Decimal = Decimal("0.01")      # Max 1% slippage
-    max_spread_pct: Decimal = Decimal("0.02")        # Max 2% spread
-    price_deviation_pct: Decimal = Decimal("0.05")   # Max 5% from reference
+    max_slippage_pct: Decimal = Decimal("0.01")  # Max 1% slippage
+    max_spread_pct: Decimal = Decimal("0.02")  # Max 2% spread
+    price_deviation_pct: Decimal = Decimal("0.05")  # Max 5% from reference
 
     # Exchange health
     require_connected: bool = True
@@ -145,6 +145,7 @@ class RiskLimits:
 # =============================================================================
 # Order Risk Validator
 # =============================================================================
+
 
 class OrderRiskValidator:
     """
@@ -195,7 +196,7 @@ class OrderRiskValidator:
         portfolio_value: Decimal,
         current_positions: dict[str, Decimal],
         exchange: BaseExchange | None = None,
-        balance: Balance | None = None
+        balance: Balance | None = None,
     ) -> ValidationResult:
         """
         Validate an order request.
@@ -250,10 +251,7 @@ class OrderRiskValidator:
             overall_message = "Order approved"
 
         return ValidationResult(
-            order_id=order_id,
-            status=status,
-            checks=checks,
-            overall_message=overall_message
+            order_id=order_id, status=status, checks=checks, overall_message=overall_message
         )
 
     # -------------------------------------------------------------------------
@@ -261,9 +259,7 @@ class OrderRiskValidator:
     # -------------------------------------------------------------------------
 
     def _validate_order_size(
-        self,
-        request: OrderRequest,
-        portfolio_value: Decimal
+        self, request: OrderRequest, portfolio_value: Decimal
     ) -> ValidationCheck:
         """Validate order size against limits."""
 
@@ -279,7 +275,10 @@ class OrderRiskValidator:
                 passed=False,
                 status=ValidationStatus.REJECTED,
                 message=f"Order value ${order_value:.2f} below minimum ${self.limits.min_order_size}",
-                details={"order_value": float(order_value), "min_value": float(self.limits.min_order_size)}
+                details={
+                    "order_value": float(order_value),
+                    "min_value": float(self.limits.min_order_size),
+                },
             )
 
         # Check maximum size
@@ -289,7 +288,10 @@ class OrderRiskValidator:
                 passed=False,
                 status=ValidationStatus.REJECTED,
                 message=f"Order value ${order_value:.2f} above maximum ${self.limits.max_order_size}",
-                details={"order_value": float(order_value), "max_value": float(self.limits.max_order_size)}
+                details={
+                    "order_value": float(order_value),
+                    "max_value": float(self.limits.max_order_size),
+                },
             )
 
         # Check percentage of portfolio
@@ -301,7 +303,10 @@ class OrderRiskValidator:
                     passed=False,
                     status=ValidationStatus.REJECTED,
                     message=f"Order {order_pct:.1%} exceeds max {self.limits.max_order_pct:.1%} of portfolio",
-                    details={"order_pct": float(order_pct), "max_pct": float(self.limits.max_order_pct)}
+                    details={
+                        "order_pct": float(order_pct),
+                        "max_pct": float(self.limits.max_order_pct),
+                    },
                 )
 
         return ValidationCheck(
@@ -309,18 +314,16 @@ class OrderRiskValidator:
             passed=True,
             status=ValidationStatus.APPROVED,
             message="Order size within limits",
-            details={"order_value": float(order_value)}
+            details={"order_value": float(order_value)},
         )
 
-    def _validate_balance(
-        self,
-        request: OrderRequest,
-        balance: Balance
-    ) -> ValidationCheck:
+    def _validate_balance(self, request: OrderRequest, balance: Balance) -> ValidationCheck:
         """Validate available balance."""
 
         if request.side == OrderSide.BUY:
-            required = request.amount * (request.price or Decimal("0")) * Decimal("1.01")  # 1% buffer
+            required = (
+                request.amount * (request.price or Decimal("0")) * Decimal("1.01")
+            )  # 1% buffer
             available = balance.free
 
             if required > available:
@@ -329,7 +332,7 @@ class OrderRiskValidator:
                     passed=False,
                     status=ValidationStatus.REJECTED,
                     message=f"Insufficient balance: need ${required:.2f}, have ${available:.2f}",
-                    details={"required": float(required), "available": float(available)}
+                    details={"required": float(required), "available": float(available)},
                 )
         else:  # SELL
             required = request.amount
@@ -341,21 +344,18 @@ class OrderRiskValidator:
                     passed=False,
                     status=ValidationStatus.REJECTED,
                     message=f"Insufficient position: need {required}, have {available}",
-                    details={"required": float(required), "available": float(available)}
+                    details={"required": float(required), "available": float(available)},
                 )
 
         return ValidationCheck(
             name="balance",
             passed=True,
             status=ValidationStatus.APPROVED,
-            message="Sufficient balance available"
+            message="Sufficient balance available",
         )
 
     def _validate_position_limit(
-        self,
-        request: OrderRequest,
-        portfolio_value: Decimal,
-        current_positions: dict[str, Decimal]
+        self, request: OrderRequest, portfolio_value: Decimal, current_positions: dict[str, Decimal]
     ) -> ValidationCheck:
         """Validate position doesn't exceed limits."""
 
@@ -364,7 +364,7 @@ class OrderRiskValidator:
                 name="position_limit",
                 passed=True,
                 status=ValidationStatus.APPROVED,
-                message="No portfolio value for comparison"
+                message="No portfolio value for comparison",
             )
 
         # Calculate new position
@@ -387,21 +387,19 @@ class OrderRiskValidator:
                 details={
                     "current_position": float(current),
                     "new_position": float(new_position),
-                    "position_pct": float(position_pct)
-                }
+                    "position_pct": float(position_pct),
+                },
             )
 
         return ValidationCheck(
             name="position_limit",
             passed=True,
             status=ValidationStatus.APPROVED,
-            message=f"Position {position_pct:.1%} within limits"
+            message=f"Position {position_pct:.1%} within limits",
         )
 
     def _validate_daily_limits(
-        self,
-        request: OrderRequest,
-        portfolio_value: Decimal
+        self, request: OrderRequest, portfolio_value: Decimal
     ) -> ValidationCheck:
         """Validate daily trading limits."""
 
@@ -414,7 +412,10 @@ class OrderRiskValidator:
                 passed=False,
                 status=ValidationStatus.REJECTED,
                 message=f"Daily trade limit reached: {self._daily_trades}/{self.limits.max_daily_trades}",
-                details={"trades_today": self._daily_trades, "max_trades": self.limits.max_daily_trades}
+                details={
+                    "trades_today": self._daily_trades,
+                    "max_trades": self.limits.max_daily_trades,
+                },
             )
 
         # Check daily volume
@@ -431,8 +432,8 @@ class OrderRiskValidator:
                 details={
                     "current_volume": float(self._daily_volume),
                     "projected_volume": float(projected_volume),
-                    "max_volume": float(max_volume)
-                }
+                    "max_volume": float(max_volume),
+                },
             )
 
         # Warning at 80% of volume limit
@@ -445,20 +446,18 @@ class OrderRiskValidator:
                 passed=True,
                 status=ValidationStatus.WARNING,
                 message="; ".join(warnings),
-                details={"trades_today": self._daily_trades}
+                details={"trades_today": self._daily_trades},
             )
 
         return ValidationCheck(
             name="daily_limits",
             passed=True,
             status=ValidationStatus.APPROVED,
-            message="Daily limits not exceeded"
+            message="Daily limits not exceeded",
         )
 
     async def _validate_market_conditions(
-        self,
-        request: OrderRequest,
-        exchange: BaseExchange
+        self, request: OrderRequest, exchange: BaseExchange
     ) -> list[ValidationCheck]:
         """Validate current market conditions."""
         checks = []
@@ -467,69 +466,89 @@ class OrderRiskValidator:
             # Get ticker
             ticker = await exchange.get_ticker(request.symbol)
             if not ticker:
-                return [ValidationCheck(
-                    name="market_data",
-                    passed=False,
-                    status=ValidationStatus.WARNING,
-                    message="Could not fetch market data"
-                )]
+                return [
+                    ValidationCheck(
+                        name="market_data",
+                        passed=False,
+                        status=ValidationStatus.WARNING,
+                        message="Could not fetch market data",
+                    )
+                ]
 
             # Check spread
             spread_pct = (ticker.ask - ticker.bid) / ticker.last
             if spread_pct > self.limits.max_spread_pct:
-                checks.append(ValidationCheck(
-                    name="spread_limit",
-                    passed=False,
-                    status=ValidationStatus.REJECTED,
-                    message=f"Spread {spread_pct:.2%} exceeds max {self.limits.max_spread_pct:.2%}",
-                    details={"spread_pct": float(spread_pct), "max_spread": float(self.limits.max_spread_pct)}
-                ))
+                checks.append(
+                    ValidationCheck(
+                        name="spread_limit",
+                        passed=False,
+                        status=ValidationStatus.REJECTED,
+                        message=f"Spread {spread_pct:.2%} exceeds max {self.limits.max_spread_pct:.2%}",
+                        details={
+                            "spread_pct": float(spread_pct),
+                            "max_spread": float(self.limits.max_spread_pct),
+                        },
+                    )
+                )
             elif spread_pct > self.limits.max_spread_pct * Decimal("0.8"):
-                checks.append(ValidationCheck(
-                    name="spread_warning",
-                    passed=True,
-                    status=ValidationStatus.WARNING,
-                    message=f"Spread {spread_pct:.2%} is elevated",
-                    details={"spread_pct": float(spread_pct)}
-                ))
+                checks.append(
+                    ValidationCheck(
+                        name="spread_warning",
+                        passed=True,
+                        status=ValidationStatus.WARNING,
+                        message=f"Spread {spread_pct:.2%} is elevated",
+                        details={"spread_pct": float(spread_pct)},
+                    )
+                )
             else:
-                checks.append(ValidationCheck(
-                    name="spread",
-                    passed=True,
-                    status=ValidationStatus.APPROVED,
-                    message=f"Spread {spread_pct:.2%} normal"
-                ))
+                checks.append(
+                    ValidationCheck(
+                        name="spread",
+                        passed=True,
+                        status=ValidationStatus.APPROVED,
+                        message=f"Spread {spread_pct:.2%} normal",
+                    )
+                )
 
             # Price sanity check
             if request.price:
                 deviation = abs(request.price - ticker.last) / ticker.last
                 if deviation > self.limits.price_deviation_pct:
-                    checks.append(ValidationCheck(
-                        name="price_sanity",
-                        passed=False,
-                        status=ValidationStatus.REJECTED,
-                        message=f"Order price deviates {deviation:.1%} from market",
-                        details={"order_price": float(request.price), "market_price": float(ticker.last)}
-                    ))
+                    checks.append(
+                        ValidationCheck(
+                            name="price_sanity",
+                            passed=False,
+                            status=ValidationStatus.REJECTED,
+                            message=f"Order price deviates {deviation:.1%} from market",
+                            details={
+                                "order_price": float(request.price),
+                                "market_price": float(ticker.last),
+                            },
+                        )
+                    )
                 else:
-                    checks.append(ValidationCheck(
-                        name="price_sanity",
-                        passed=True,
-                        status=ValidationStatus.APPROVED,
-                        message="Price within normal range"
-                    ))
+                    checks.append(
+                        ValidationCheck(
+                            name="price_sanity",
+                            passed=True,
+                            status=ValidationStatus.APPROVED,
+                            message="Price within normal range",
+                        )
+                    )
 
             # Store reference price
             self._reference_prices[request.symbol] = ticker.last
 
         except Exception as e:
             logger.warning(f"[OrderRiskValidator] Market validation error: {e}")
-            checks.append(ValidationCheck(
-                name="market_data",
-                passed=True,
-                status=ValidationStatus.WARNING,
-                message=f"Could not validate market conditions: {e}"
-            ))
+            checks.append(
+                ValidationCheck(
+                    name="market_data",
+                    passed=True,
+                    status=ValidationStatus.WARNING,
+                    message=f"Could not validate market conditions: {e}",
+                )
+            )
 
         return checks
 
@@ -542,21 +561,21 @@ class OrderRiskValidator:
                     name="exchange_connected",
                     passed=False,
                     status=ValidationStatus.REJECTED,
-                    message="Exchange not connected"
+                    message="Exchange not connected",
                 )
             else:
                 return ValidationCheck(
                     name="exchange_connected",
                     passed=True,
                     status=ValidationStatus.WARNING,
-                    message="Exchange not connected (trading anyway)"
+                    message="Exchange not connected (trading anyway)",
                 )
 
         return ValidationCheck(
             name="exchange_health",
             passed=True,
             status=ValidationStatus.APPROVED,
-            message=f"Exchange {exchange.exchange_id} healthy"
+            message=f"Exchange {exchange.exchange_id} healthy",
         )
 
     # -------------------------------------------------------------------------
@@ -571,7 +590,9 @@ class OrderRiskValidator:
         if pnl and pnl < 0:
             self._daily_loss += abs(pnl)
 
-        logger.debug(f"[OrderRiskValidator] Recorded trade: value=${value:.2f}, pnl=${pnl or 0:.2f}")
+        logger.debug(
+            f"[OrderRiskValidator] Recorded trade: value=${value:.2f}, pnl=${pnl or 0:.2f}"
+        )
 
     def reset_daily_stats(self) -> None:
         """Reset daily statistics (call at day start)."""
@@ -589,8 +610,8 @@ class OrderRiskValidator:
             "limits": {
                 "max_trades": self.limits.max_daily_trades,
                 "max_volume_pct": float(self.limits.max_daily_volume_pct),
-                "max_loss_pct": float(self.limits.max_daily_loss_pct)
-            }
+                "max_loss_pct": float(self.limits.max_daily_loss_pct),
+            },
         }
 
     # -------------------------------------------------------------------------

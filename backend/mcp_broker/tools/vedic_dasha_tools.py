@@ -26,33 +26,70 @@ VIMSHOTTARI_PERIODS = {
 }
 
 NAKSHATRAS = [
-    "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra",
-    "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni",
-    "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
-    "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha",
-    "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
+    "Ashwini",
+    "Bharani",
+    "Krittika",
+    "Rohini",
+    "Mrigashira",
+    "Ardra",
+    "Punarvasu",
+    "Pushya",
+    "Ashlesha",
+    "Magha",
+    "Purva Phalguni",
+    "Uttara Phalguni",
+    "Hasta",
+    "Chitra",
+    "Swati",
+    "Vishakha",
+    "Anuradha",
+    "Jyeshtha",
+    "Mula",
+    "Purva Ashadha",
+    "Uttara Ashadha",
+    "Shravana",
+    "Dhanishta",
+    "Shatabhisha",
+    "Purva Bhadrapada",
+    "Uttara Bhadrapada",
+    "Revati",
 ]
 
 NAKSHATRA_LORDS = {
-    "Ashwini": "Ketu", "Bharani": "Venus", "Krittika": "Sun",
-    "Rohini": "Moon", "Mrigashira": "Mars", "Ardra": "Rahu",
-    "Punarvasu": "Jupiter", "Pushya": "Saturn", "Ashlesha": "Mercury",
-    "Magha": "Ketu", "Purva Phalguni": "Venus", "Uttara Phalguni": "Sun",
-    "Hasta": "Moon", "Chitra": "Mars", "Swati": "Rahu",
-    "Vishakha": "Jupiter", "Anuradha": "Saturn", "Jyeshtha": "Mercury",
-    "Mula": "Ketu", "Purva Ashadha": "Venus", "Uttara Ashadha": "Sun",
-    "Shravana": "Moon", "Dhanishta": "Mars", "Shatabhisha": "Rahu",
-    "Purva Bhadrapada": "Jupiter", "Uttara Bhadrapada": "Saturn", "Revati": "Mercury"
+    "Ashwini": "Ketu",
+    "Bharani": "Venus",
+    "Krittika": "Sun",
+    "Rohini": "Moon",
+    "Mrigashira": "Mars",
+    "Ardra": "Rahu",
+    "Punarvasu": "Jupiter",
+    "Pushya": "Saturn",
+    "Ashlesha": "Mercury",
+    "Magha": "Ketu",
+    "Purva Phalguni": "Venus",
+    "Uttara Phalguni": "Sun",
+    "Hasta": "Moon",
+    "Chitra": "Mars",
+    "Swati": "Rahu",
+    "Vishakha": "Jupiter",
+    "Anuradha": "Saturn",
+    "Jyeshtha": "Mercury",
+    "Mula": "Ketu",
+    "Purva Ashadha": "Venus",
+    "Uttara Ashadha": "Sun",
+    "Shravana": "Moon",
+    "Dhanishta": "Mars",
+    "Shatabhisha": "Rahu",
+    "Purva Bhadrapada": "Jupiter",
+    "Uttara Bhadrapada": "Saturn",
+    "Revati": "Mercury",
 }
 
 
 @circuit_breaker(failure_threshold=5, timeout_seconds=30)
 @vedastro_retry
 async def vedic_calculate_vimshottari_dasha(
-    birth_nakshatra: str,
-    birth_nakshatra_pad: int,
-    birth_date: str,
-    ctx=None
+    birth_nakshatra: str, birth_nakshatra_pad: int, birth_date: str, ctx=None
 ) -> dict[str, Any]:
     """
     Calculate Vimshottari Dasha for a birth chart.
@@ -77,14 +114,11 @@ async def vedic_calculate_vimshottari_dasha(
         if birth_nakshatra not in NAKSHATRAS:
             return {
                 "success": False,
-                "error": f"Invalid nakshatra: {birth_nakshatra}. Valid: {', '.join(NAKSHATRAS[:5])}..."
+                "error": f"Invalid nakshatra: {birth_nakshatra}. Valid: {', '.join(NAKSHATRAS[:5])}...",
             }
 
         if birth_nakshatra_pad < 1 or birth_nakshatra_pad > 4:
-            return {
-                "success": False,
-                "error": "Nakshatra pad must be 1-4"
-            }
+            return {"success": False, "error": "Nakshatra pad must be 1-4"}
 
         # Determine starting planet based on nakshatra lord
         start_planet = NAKSHATRA_LORDS.get(birth_nakshatra, "Moon")
@@ -116,13 +150,15 @@ async def vedic_calculate_vimshottari_dasha(
 
             end_date = current_date.replace(year=current_date.year + int(effective_years))
 
-            dasha_sequence.append({
-                "planet": planet,
-                "years": effective_years,
-                "start_date": current_date.strftime("%Y-%m-%d"),
-                "end_date": end_date.strftime("%Y-%m-%d"),
-                "interpretation": _get_dasha_interpretation(planet)
-            })
+            dasha_sequence.append(
+                {
+                    "planet": planet,
+                    "years": effective_years,
+                    "start_date": current_date.strftime("%Y-%m-%d"),
+                    "end_date": end_date.strftime("%Y-%m-%d"),
+                    "interpretation": _get_dasha_interpretation(planet),
+                }
+            )
 
             current_date = end_date
 
@@ -137,7 +173,9 @@ async def vedic_calculate_vimshottari_dasha(
                 break
 
         if ctx:
-            ctx.info(f"Dasha calculation complete. Current: {current_mahadasha['planet'] if current_mahadasha else 'Unknown'}")
+            ctx.info(
+                f"Dasha calculation complete. Current: {current_mahadasha['planet'] if current_mahadasha else 'Unknown'}"
+            )
 
         return {
             "success": True,
@@ -147,25 +185,18 @@ async def vedic_calculate_vimshottari_dasha(
                 "starting_planet": start_planet,
                 "current_mahadasha": current_mahadasha,
                 "dasha_sequence": dasha_sequence[:9],  # Return all 9
-                "total_cycle_years": 120
-            }
+                "total_cycle_years": 120,
+            },
         }
 
     except Exception as e:
         logger.error(f"Vimshottari Dasha calculation failed: {e}")
-        return {
-            "success": False,
-            "error": f"Calculation failed: {str(e)}"
-        }
+        return {"success": False, "error": f"Calculation failed: {str(e)}"}
 
 
 @circuit_breaker(failure_threshold=5, timeout_seconds=30)
 @vedastro_retry
-async def vedic_get_nakshatra_analysis(
-    nakshatra: str,
-    pada: int = 1,
-    ctx=None
-) -> dict[str, Any]:
+async def vedic_get_nakshatra_analysis(nakshatra: str, pada: int = 1, ctx=None) -> dict[str, Any]:
     """
     Get detailed analysis of a Nakshatra (lunar mansion).
 
@@ -184,7 +215,7 @@ async def vedic_get_nakshatra_analysis(
         if nakshatra not in NAKSHATRAS:
             return {
                 "success": False,
-                "error": f"Invalid nakshatra. Valid options: {', '.join(NAKSHATRAS)}"
+                "error": f"Invalid nakshatra. Valid options: {', '.join(NAKSHATRAS)}",
             }
 
         lord = NAKSHATRA_LORDS.get(nakshatra, "Unknown")
@@ -193,40 +224,122 @@ async def vedic_get_nakshatra_analysis(
         nakshatra_traits = {
             "Ashwini": {"nature": "Mobile", "quality": "Swift", "trading": "Good for quick trades"},
             "Bharani": {"nature": "Fixed", "quality": "Fierce", "trading": "Hold positions steady"},
-            "Krittika": {"nature": "Fixed", "quality": "Sharp", "trading": "Good for cutting losses"},
+            "Krittika": {
+                "nature": "Fixed",
+                "quality": "Sharp",
+                "trading": "Good for cutting losses",
+            },
             "Rohini": {"nature": "Fixed", "quality": "Soft", "trading": "Favorable for growth"},
-            "Mrigashira": {"nature": "Soft", "quality": "Searching", "trading": "Research before trading"},
+            "Mrigashira": {
+                "nature": "Soft",
+                "quality": "Searching",
+                "trading": "Research before trading",
+            },
             "Ardra": {"nature": "Soft", "quality": "Intense", "trading": "Volatile periods"},
-            "Punarvasu": {"nature": "Movable", "quality": "Renewal", "trading": "Good for recovery trades"},
-            "Pushya": {"nature": "Fixed", "quality": "Nourishing", "trading": "Excellent for accumulation"},
+            "Punarvasu": {
+                "nature": "Movable",
+                "quality": "Renewal",
+                "trading": "Good for recovery trades",
+            },
+            "Pushya": {
+                "nature": "Fixed",
+                "quality": "Nourishing",
+                "trading": "Excellent for accumulation",
+            },
             "Ashlesha": {"nature": "Soft", "quality": "Coiling", "trading": "Be cautious of traps"},
-            "Magha": {"nature": "Fixed", "quality": "Royal", "trading": "Good for established positions"},
-            "Purva Phalguni": {"nature": "Fixed", "quality": "Union", "trading": "Partnership favorable"},
-            "Uttara Phalguni": {"nature": "Fixed", "quality": "Prosperity", "trading": "Good for long-term"},
-            "Hasta": {"nature": "Movable", "quality": "Skill", "trading": "Technical analysis works well"},
-            "Chitra": {"nature": "Movable", "quality": "Design", "trading": "Pattern recognition favorable"},
-            "Swati": {"nature": "Movable", "quality": "Independent", "trading": "Contrarian strategies work"},
-            "Vishakha": {"nature": "Movable", "quality": "Split", "trading": "Beware of indecision"},
-            "Anuradha": {"nature": "Movable", "quality": "Devotion", "trading": "Stick to strategy"},
-            "Jyeshtha": {"nature": "Movable", "quality": "Senior", "trading": "Respect market elders/trends"},
+            "Magha": {
+                "nature": "Fixed",
+                "quality": "Royal",
+                "trading": "Good for established positions",
+            },
+            "Purva Phalguni": {
+                "nature": "Fixed",
+                "quality": "Union",
+                "trading": "Partnership favorable",
+            },
+            "Uttara Phalguni": {
+                "nature": "Fixed",
+                "quality": "Prosperity",
+                "trading": "Good for long-term",
+            },
+            "Hasta": {
+                "nature": "Movable",
+                "quality": "Skill",
+                "trading": "Technical analysis works well",
+            },
+            "Chitra": {
+                "nature": "Movable",
+                "quality": "Design",
+                "trading": "Pattern recognition favorable",
+            },
+            "Swati": {
+                "nature": "Movable",
+                "quality": "Independent",
+                "trading": "Contrarian strategies work",
+            },
+            "Vishakha": {
+                "nature": "Movable",
+                "quality": "Split",
+                "trading": "Beware of indecision",
+            },
+            "Anuradha": {
+                "nature": "Movable",
+                "quality": "Devotion",
+                "trading": "Stick to strategy",
+            },
+            "Jyeshtha": {
+                "nature": "Movable",
+                "quality": "Senior",
+                "trading": "Respect market elders/trends",
+            },
             "Mula": {"nature": "Fixed", "quality": "Root", "trading": "Find root causes of moves"},
-            "Purva Ashadha": {"nature": "Fixed", "quality": "Invincible", "trading": "Strong momentum periods"},
-            "Uttara Ashadha": {"nature": "Fixed", "quality": "Universal", "trading": "Broad market moves"},
-            "Shravana": {"nature": "Movable", "quality": "Listening", "trading": "Pay attention to news"},
-            "Dhanishta": {"nature": "Movable", "quality": "Wealth", "trading": "Good for wealth building"},
-            "Shatabhisha": {"nature": "Movable", "quality": "Hundred", "trading": "Diversification favored"},
-            "Purva Bhadrapada": {"nature": "Fixed", "quality": "Fiery", "trading": "Intense market moves"},
-            "Uttara Bhadrapada": {"nature": "Fixed", "quality": "Water", "trading": "Emotional control needed"},
-            "Revati": {"nature": "Soft", "quality": "Wealth", "trading": "Nurturing positions"}
+            "Purva Ashadha": {
+                "nature": "Fixed",
+                "quality": "Invincible",
+                "trading": "Strong momentum periods",
+            },
+            "Uttara Ashadha": {
+                "nature": "Fixed",
+                "quality": "Universal",
+                "trading": "Broad market moves",
+            },
+            "Shravana": {
+                "nature": "Movable",
+                "quality": "Listening",
+                "trading": "Pay attention to news",
+            },
+            "Dhanishta": {
+                "nature": "Movable",
+                "quality": "Wealth",
+                "trading": "Good for wealth building",
+            },
+            "Shatabhisha": {
+                "nature": "Movable",
+                "quality": "Hundred",
+                "trading": "Diversification favored",
+            },
+            "Purva Bhadrapada": {
+                "nature": "Fixed",
+                "quality": "Fiery",
+                "trading": "Intense market moves",
+            },
+            "Uttara Bhadrapada": {
+                "nature": "Fixed",
+                "quality": "Water",
+                "trading": "Emotional control needed",
+            },
+            "Revati": {"nature": "Soft", "quality": "Wealth", "trading": "Nurturing positions"},
         }
 
-        traits = nakshatra_traits.get(nakshatra, {"nature": "Unknown", "quality": "Unknown", "trading": "Unknown"})
+        traits = nakshatra_traits.get(
+            nakshatra, {"nature": "Unknown", "quality": "Unknown", "trading": "Unknown"}
+        )
 
         pada_traits = {
             1: "Dharma - Purpose/Righteousness. Focus on fundamental value.",
             2: "Artha - Wealth/Resources. Focus on financial gain.",
             3: "Kama - Desires/Pleasure. Focus on momentum/trends.",
-            4: "Moksha - Liberation. Focus on exit/take profits."
+            4: "Moksha - Liberation. Focus on exit/take profits.",
         }
 
         return {
@@ -240,24 +353,19 @@ async def vedic_get_nakshatra_analysis(
                 "trading_implication": traits["trading"],
                 "pada_meaning": pada_traits.get(pada, "Unknown pada"),
                 "symbolism": _get_nakshatra_symbolism(nakshatra),
-                "best_for": _get_nakshatra_best_for(nakshatra)
-            }
+                "best_for": _get_nakshatra_best_for(nakshatra),
+            },
         }
 
     except Exception as e:
         logger.error(f"Nakshatra analysis failed: {e}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 @circuit_breaker(failure_threshold=5, timeout_seconds=30)
 @vedastro_retry
 async def vedic_calculate_transits(
-    date: str,
-    symbols: list[str] | None = None,
-    ctx=None
+    date: str, symbols: list[str] | None = None, ctx=None
 ) -> dict[str, Any]:
     """
     Calculate planetary transits (Gochara) for a given date.
@@ -281,32 +389,47 @@ async def vedic_calculate_transits(
         # For now, return mock data structure
 
         planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
-        signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-                "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
+        signs = [
+            "Aries",
+            "Taurus",
+            "Gemini",
+            "Cancer",
+            "Leo",
+            "Virgo",
+            "Libra",
+            "Scorpio",
+            "Sagittarius",
+            "Capricorn",
+            "Aquarius",
+            "Pisces",
+        ]
 
         # Generate mock transit data
         # In production: Use actual ephemeris calculation
         transit_data = []
 
         import random
+
         random.seed(date)  # Deterministic for same date
 
         for planet in planets:
             sign_idx = random.randint(0, 11)
             degree = random.uniform(0, 30)
 
-            transit_data.append({
-                "planet": planet,
-                "sign": signs[sign_idx],
-                "degree": round(degree, 2),
-                "retrograde": random.random() < 0.1,  # 10% chance retrograde
-                "house": (sign_idx % 12) + 1,
-                "aspects": _calculate_mock_aspects(planet, sign_idx)
-            })
+            transit_data.append(
+                {
+                    "planet": planet,
+                    "sign": signs[sign_idx],
+                    "degree": round(degree, 2),
+                    "retrograde": random.random() < 0.1,  # 10% chance retrograde
+                    "house": (sign_idx % 12) + 1,
+                    "aspects": _calculate_mock_aspects(planet, sign_idx),
+                }
+            )
 
         # Calculate market prediction based on transits
-        jupiter = next((t for t in transit_data if t["planet"] == "Jupiter"), None)
-        saturn = next((t for t in transit_data if t["planet"] == "Saturn"), None)
+        next((t for t in transit_data if t["planet"] == "Jupiter"), None)
+        next((t for t in transit_data if t["planet"] == "Saturn"), None)
 
         market_sentiment = _analyze_market_sentiment(transit_data)
 
@@ -322,16 +445,13 @@ async def vedic_calculate_transits(
                 "key_aspects": _extract_key_aspects(transit_data),
                 "favorable_for": market_sentiment["favorable_for"],
                 "caution_for": market_sentiment["caution_for"],
-                "symbols_analyzed": symbols or ["BTC", "ETH", "SPY"]
-            }
+                "symbols_analyzed": symbols or ["BTC", "ETH", "SPY"],
+            },
         }
 
     except Exception as e:
         logger.error(f"Transit calculation failed: {e}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 def _get_dasha_interpretation(planet: str) -> str:
@@ -345,7 +465,7 @@ def _get_dasha_interpretation(planet: str) -> str:
         "Rahu": "Obsession, foreign influences. Beware of illusions.",
         "Jupiter": "Wisdom, expansion, luck. Excellent for growth.",
         "Saturn": "Restriction, discipline, lessons. Conservative approach.",
-        "Mercury": "Communication, trading, intellect. Good for trading."
+        "Mercury": "Communication, trading, intellect. Good for trading.",
     }
     return interpretations.get(planet, "Neutral period")
 
@@ -379,7 +499,7 @@ def _get_nakshatra_symbolism(nakshatra: str) -> str:
         "Shatabhisha": "100 physicians - Healing, secrets, circles",
         "Purva Bhadrapada": "Front of funeral cot - Fire, purification",
         "Uttara Bhadrapada": "Back of funeral cot - Water, wisdom, finality",
-        "Revati": "Drum/Fish - Wealth, nourishment, completion"
+        "Revati": "Drum/Fish - Wealth, nourishment, completion",
     }
     return symbolism.get(nakshatra, "Unknown")
 
@@ -413,7 +533,7 @@ def _get_nakshatra_best_for(nakshatra: str) -> list[str]:
         "Shatabhisha": ["Diversification", "Portfolio balance", "Healing"],
         "Purva Bhadrapada": ["Intense plays", "Fire strategies", "Purification"],
         "Uttara Bhadrapada": ["Water plays", "Emotional control", "Wisdom"],
-        "Revati": ["Nurturing", "Completion", "Final exits/entries"]
+        "Revati": ["Nurturing", "Completion", "Final exits/entries"],
     }
     return best_for.get(nakshatra, ["General trading"])
 
@@ -427,19 +547,13 @@ def _calculate_mock_aspects(planet: str, sign_idx: int) -> list[dict]:
         # These planets cast special aspects
         aspect_signs = [(sign_idx + 4) % 12, (sign_idx + 7) % 12, (sign_idx + 8) % 12]
         for aspect_sign in aspect_signs:
-            aspects.append({
-                "aspected_sign": aspect_sign,
-                "aspect_type": f"{planet}_special",
-                "orb": 5.0
-            })
+            aspects.append(
+                {"aspected_sign": aspect_sign, "aspect_type": f"{planet}_special", "orb": 5.0}
+            )
 
     # All planets aspect 7th house (opposition)
     opposition = (sign_idx + 6) % 12
-    aspects.append({
-        "aspected_sign": opposition,
-        "aspect_type": "opposition",
-        "orb": 8.0
-    })
+    aspects.append({"aspected_sign": opposition, "aspect_type": "opposition", "orb": 8.0})
 
     return aspects
 
@@ -478,8 +592,10 @@ def _analyze_market_sentiment(transit_data: list[dict]) -> dict[str, Any]:
         "overall": sentiment,
         "bullish_score": bullish_indicators,
         "bearish_score": bearish_indicators,
-        "favorable_for": ["growth stocks", "tech"] if sentiment == "bullish" else ["defensive", "utilities"],
-        "caution_for": ["speculative"] if sentiment == "bearish" else ["aggressive shorts"]
+        "favorable_for": (
+            ["growth stocks", "tech"] if sentiment == "bullish" else ["defensive", "utilities"]
+        ),
+        "caution_for": ["speculative"] if sentiment == "bearish" else ["aggressive shorts"],
     }
 
 
@@ -497,11 +613,13 @@ def _extract_key_aspects(transit_data: list[dict]) -> list[dict]:
 
     for sign, planets in positions.items():
         if len(planets) > 1:
-            key_aspects.append({
-                "type": "conjunction",
-                "planets": planets,
-                "sign": sign,
-                "significance": "high" if len(planets) > 2 else "medium"
-            })
+            key_aspects.append(
+                {
+                    "type": "conjunction",
+                    "planets": planets,
+                    "sign": sign,
+                    "significance": "high" if len(planets) > 2 else "medium",
+                }
+            )
 
     return key_aspects[:5]  # Return top 5

@@ -28,23 +28,19 @@ class VedAstroSignalAgent(AgentWithTools):
         tool_broker_url: str | None = None,
         min_confidence: float = 0.6,
         max_risk_level: str = "medium",
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             agent_name=agent_name,
             agent_role=AgentRole.STRATEGIST,
             tool_broker_url=tool_broker_url,
-            **kwargs
+            **kwargs,
         )
         self.min_confidence = min_confidence
         self.max_risk_level = max_risk_level
         logger.info(f"{agent_name} initialized with min_confidence={min_confidence}")
 
-    async def analyze(
-        self,
-        features: dict[str, Any],
-        context: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """
         Analyze features using VedAstro and return trading decision.
 
@@ -60,11 +56,7 @@ class VedAstroSignalAgent(AgentWithTools):
 
         if price <= 0:
             logger.warning(f"Invalid price for {symbol}: {price}")
-            return {
-                "action": "hold",
-                "confidence": 0.0,
-                "reason": "Invalid price data"
-            }
+            return {"action": "hold", "confidence": 0.0, "reason": "Invalid price data"}
 
         try:
             # Get VedAstro signal via MCP
@@ -73,11 +65,7 @@ class VedAstroSignalAgent(AgentWithTools):
             if not signal_result.get("success", False):
                 error = signal_result.get("error", "Unknown error")
                 logger.error(f"VedAstro signal failed: {error}")
-                return {
-                    "action": "hold",
-                    "confidence": 0.0,
-                    "reason": f"VedAstro error: {error}"
-                }
+                return {"action": "hold", "confidence": 0.0, "reason": f"VedAstro error: {error}"}
 
             signal_data = signal_result.get("result", {})
             signal = signal_data.get("signal", "hold")
@@ -93,7 +81,7 @@ class VedAstroSignalAgent(AgentWithTools):
                     "confidence": confidence,
                     "reason": f"Confidence {confidence:.2f} below threshold {self.min_confidence}",
                     "vedastro_signal": signal,
-                    "risk_level": risk_level
+                    "risk_level": risk_level,
                 }
 
             # Check risk level
@@ -108,7 +96,7 @@ class VedAstroSignalAgent(AgentWithTools):
                     "confidence": confidence,
                     "reason": f"Risk level {risk_level} too high (max: {self.max_risk_level})",
                     "vedastro_signal": signal,
-                    "risk_level": risk_level
+                    "risk_level": risk_level,
                 }
 
             # Build reasoning
@@ -130,23 +118,15 @@ class VedAstroSignalAgent(AgentWithTools):
                     "strength_score": signal_data.get("strength_score", 0),
                     "primary_factors": primary_factors,
                     "supporting_factors": signal_data.get("supporting_factors", []),
-                    "warning_factors": signal_data.get("warning_factors", [])
-                }
+                    "warning_factors": signal_data.get("warning_factors", []),
+                },
             }
 
         except Exception as e:
             logger.exception(f"Error in VedAstro analysis: {e}")
-            return {
-                "action": "hold",
-                "confidence": 0.0,
-                "reason": f"Analysis error: {str(e)}"
-            }
+            return {"action": "hold", "confidence": 0.0, "reason": f"Analysis error: {str(e)}"}
 
-    async def get_detailed_analysis(
-        self,
-        symbol: str,
-        price: float
-    ) -> dict[str, Any]:
+    async def get_detailed_analysis(self, symbol: str, price: float) -> dict[str, Any]:
         """
         Get detailed VedAstro analysis including dasha and transits.
 
@@ -157,13 +137,7 @@ class VedAstroSignalAgent(AgentWithTools):
         Returns:
             Comprehensive analysis with signal, dasha, and transits
         """
-        result = {
-            "symbol": symbol,
-            "price": price,
-            "signal": None,
-            "dasha": None,
-            "transits": None
-        }
+        result = {"symbol": symbol, "price": price, "signal": None, "dasha": None, "transits": None}
 
         try:
             # Get main signal
@@ -172,18 +146,12 @@ class VedAstroSignalAgent(AgentWithTools):
                 result["signal"] = signal_result.get("result")
 
             # Get dasha info
-            dasha_result = await self.call_tool(
-                "vedastro__get_dasha",
-                {"symbol": symbol}
-            )
+            dasha_result = await self.call_tool("vedastro__get_dasha", {"symbol": symbol})
             if dasha_result.get("success"):
                 result["dasha"] = dasha_result.get("result")
 
             # Get transit info
-            transit_result = await self.call_tool(
-                "vedastro__get_transits",
-                {"symbol": symbol}
-            )
+            transit_result = await self.call_tool("vedastro__get_transits", {"symbol": symbol})
             if transit_result.get("success"):
                 result["transits"] = transit_result.get("result")
 

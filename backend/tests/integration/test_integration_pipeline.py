@@ -1,5 +1,5 @@
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -9,15 +9,14 @@ from backend.core.execution.audit_logger import ExecutionAudit
 from backend.core.execution.rahu_kala_gate import RahuKalaGate
 from backend.core.execution.smart_router import SmartRouter
 from backend.core.karma.karma_register import KarmaRegister, TradeOutcome
-from backend.core.risk.guna_sizing import GunaSizer, GunaType
+from backend.core.risk.guna_sizing import GunaType
 from backend.core.risk.mifid_checks import (
     ClientClassification,
     ClientProfile,
-    MiFIDGuard,
     TradeRequest,
 )
-from backend.core.risk.risk_manager import RiskDecision, RiskManager
-from backend.core.strategy.pattern_detector import PatternDetector, PatternSignal
+from backend.core.risk.risk_manager import RiskManager
+from backend.core.strategy.pattern_detector import PatternDetector
 
 
 @pytest.mark.asyncio
@@ -130,14 +129,6 @@ class TestIntegrationPipeline:
 
         # 4b. Smart Routing
         # Mock exchange quotes
-        mock_quotes = [
-            {"exchange": "kraken", "price": 50000.0, "fee": 10.0},
-            {
-                "exchange": "binance",
-                "price": 49950.0,
-                "fee": 5.0,
-            },  # Lower price + lower fee = Better
-        ]
 
         # Note: SmartRouter uses get_best_route(asset, side, amount)
         # We patch _fetch_quotes or just the internal logic if needed,

@@ -7,10 +7,8 @@ Tests:
 3. AgentMessage TICK_DATA/MARKET_TICK type validity
 """
 
-import asyncio
 import time
-from typing import Any, Dict, List
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

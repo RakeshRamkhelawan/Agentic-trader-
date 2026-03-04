@@ -92,7 +92,7 @@ async def test_sentiment_agent_publishes_thought():
 
     agent = SentimentAgent(llm_provider=mock_provider, event_bus=mock_bus)
 
-    result = await agent.analyze(
+    await agent.analyze(
         features={"price": 45000}, context={"news": "Regulatory crackdown"}
     )
 

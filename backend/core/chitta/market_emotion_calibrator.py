@@ -21,17 +21,17 @@ class EmotionThresholds:
 
     # Volatiliteit drempels (percentielen)
     vol_capitulation: float  # 95th percentile (extreme)
-    vol_euphoria: float      # 90th percentile (high)
-    vol_uncertainty: float   # 75th percentile (elevated)
+    vol_euphoria: float  # 90th percentile (high)
+    vol_uncertainty: float  # 75th percentile (elevated)
 
     # Order imbalance drempels
-    imb_extreme_selling: float   # 10th percentile
-    imb_strong_selling: float    # 25th percentile
-    imb_strong_buying: float     # 75th percentile
-    imb_extreme_buying: float    # 90th percentile
+    imb_extreme_selling: float  # 10th percentile
+    imb_strong_selling: float  # 25th percentile
+    imb_strong_buying: float  # 75th percentile
+    imb_extreme_buying: float  # 90th percentile
 
     # Spread drempels
-    spread_high: float       # 90th percentile
+    spread_high: float  # 90th percentile
 
     # Data kwaliteit
     sample_size: int
@@ -69,10 +69,7 @@ class MarketEmotionCalibrator:
     def __init__(self):
         self.thresholds: EmotionThresholds | None = None
 
-    def calibrate_from_backtests(
-        self,
-        backtest_dir: str = "backtest_results"
-    ) -> EmotionThresholds:
+    def calibrate_from_backtests(self, backtest_dir: str = "backtest_results") -> EmotionThresholds:
         """
         Analyseer alle backtest CSV/JSON files en bereken statistische drempels.
         """
@@ -134,9 +131,9 @@ class MarketEmotionCalibrator:
             spread_high=0.001,  # 10 bps default
             sample_size=len(combined),
             data_date_range=(
-                str(combined.index.min()) if hasattr(combined.index, 'min') else "unknown",
-                str(combined.index.max()) if hasattr(combined.index, 'max') else "unknown"
-            )
+                str(combined.index.min()) if hasattr(combined.index, "min") else "unknown",
+                str(combined.index.max()) if hasattr(combined.index, "max") else "unknown",
+            ),
         )
 
         self.thresholds = thresholds
@@ -148,11 +145,7 @@ class MarketEmotionCalibrator:
         return thresholds
 
     def detect_emotion(
-        self,
-        volatility_1m: float,
-        imbalance: float,
-        spread_pct: float,
-        use_calibrated: bool = True
+        self, volatility_1m: float, imbalance: float, spread_pct: float, use_calibrated: bool = True
     ) -> tuple[str, float]:
         """
         Detecteer markt emotie met gekalibreerde drempels.
@@ -167,14 +160,19 @@ class MarketEmotionCalibrator:
 
         # Capitulation: extreme vol + extreme selling
         if volatility_1m > t.vol_capitulation and imbalance < t.imb_extreme_selling:
-            confidence = min(1.0, (volatility_1m / t.vol_capitulation) * 0.8 +
-                           (abs(imbalance) / abs(t.imb_extreme_selling)) * 0.2)
+            confidence = min(
+                1.0,
+                (volatility_1m / t.vol_capitulation) * 0.8
+                + (abs(imbalance) / abs(t.imb_extreme_selling)) * 0.2,
+            )
             return "Capitulation", confidence
 
         # Euphoria: high vol + extreme buying
         if volatility_1m > t.vol_euphoria and imbalance > t.imb_extreme_buying:
-            confidence = min(1.0, (volatility_1m / t.vol_euphoria) * 0.7 +
-                           (imbalance / t.imb_extreme_buying) * 0.3)
+            confidence = min(
+                1.0,
+                (volatility_1m / t.vol_euphoria) * 0.7 + (imbalance / t.imb_extreme_buying) * 0.3,
+            )
             return "Euphoria", confidence
 
         # Fear: elevated vol + strong selling
@@ -194,29 +192,31 @@ class MarketEmotionCalibrator:
     def _default_thresholds(self) -> EmotionThresholds:
         """Fallback als er geen backtest data is."""
         return EmotionThresholds(
-            vol_capitulation=0.05,   # 5%
-            vol_euphoria=0.03,       # 3%
-            vol_uncertainty=0.02,    # 2%
+            vol_capitulation=0.05,  # 5%
+            vol_euphoria=0.03,  # 3%
+            vol_uncertainty=0.02,  # 2%
             imb_extreme_selling=-0.3,
             imb_strong_selling=-0.15,
             imb_strong_buying=0.15,
             imb_extreme_buying=0.3,
             spread_high=0.001,
             sample_size=0,
-            data_date_range=("default", "default")
+            data_date_range=("default", "default"),
         )
 
     def save_thresholds(self, thresholds: EmotionThresholds, path: str):
         """Sla thresholds op voor hergebruik."""
         import json
-        with open(path, 'w') as f:
+
+        with open(path, "w") as f:
             json.dump(thresholds.to_dict(), f, indent=2)
 
     def load_thresholds(self, path: str) -> EmotionThresholds:
         """Laad eerder opgeslagen thresholds."""
         import json
+
         with open(path) as f:
-            data = json.load(f)
+            json.load(f)
         # Reconstruct thresholds from dict...
         return self._default_thresholds()  # Simplified
 

@@ -7,6 +7,7 @@ from enum import Enum
 
 class TournamentStatus(Enum):
     """Tournament status states."""
+
     PENDING = "pending"
     ACTIVE = "active"
     ENDED = "ended"
@@ -15,6 +16,7 @@ class TournamentStatus(Enum):
 
 class TournamentType(Enum):
     """Types of tournaments."""
+
     WEEKLY = "weekly"
     SPECIAL = "special"
     SEASONAL = "seasonal"
@@ -23,6 +25,7 @@ class TournamentType(Enum):
 @dataclass
 class PrizeDistribution:
     """Prize distribution for tournament winners."""
+
     position: int
     points: int
     badge: str | None = None
@@ -32,6 +35,7 @@ class PrizeDistribution:
 @dataclass
 class TournamentEntry:
     """A competitor's entry in a tournament."""
+
     competitor_id: str
     tournament_id: str
     starting_balance: float = 10000.0
@@ -56,6 +60,7 @@ class TournamentEntry:
 @dataclass
 class Tournament:
     """A trading tournament."""
+
     id: str
     name: str
     description: str
@@ -79,10 +84,7 @@ class Tournament:
     def is_active(self) -> bool:
         """Check if tournament is currently active."""
         now = datetime.utcnow()
-        return (
-            self.status == TournamentStatus.ACTIVE and
-            self.start_time <= now <= self.end_time
-        )
+        return self.status == TournamentStatus.ACTIVE and self.start_time <= now <= self.end_time
 
     def can_enter(self, competitor_tier: str) -> bool:
         """Check if competitor can enter tournament."""
@@ -104,11 +106,7 @@ class Tournament:
     def update_rankings(self) -> None:
         """Update rankings based on PnL."""
         # Sort by PnL percentage (descending)
-        sorted_entries = sorted(
-            self.entries,
-            key=lambda e: e.pnl_percentage,
-            reverse=True
-        )
+        sorted_entries = sorted(self.entries, key=lambda e: e.pnl_percentage, reverse=True)
 
         # Update ranks
         for rank, entry in enumerate(sorted_entries, 1):

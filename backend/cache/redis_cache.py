@@ -45,6 +45,7 @@ class MockRedis:
     def keys(self, pattern: str) -> list[str]:
         """Get keys matching pattern."""
         import fnmatch
+
         return [k for k in self._data.keys() if fnmatch.fnmatch(k, pattern)]
 
     def flushall(self) -> bool:
@@ -79,23 +80,23 @@ class RedisCache:
     """
 
     # Default TTLs (seconds)
-    TTL_LEADERBOARD = 60        # 1 minute
-    TTL_TOURNAMENT = 300        # 5 minutes
-    TTL_USER_PROFILE = 600      # 10 minutes
-    TTL_STRATEGY_LIST = 300     # 5 minutes
-    TTL_ANALYTICS = 300         # 5 minutes
-    TTL_CHAT = 60               # 1 minute
+    TTL_LEADERBOARD = 60  # 1 minute
+    TTL_TOURNAMENT = 300  # 5 minutes
+    TTL_USER_PROFILE = 600  # 10 minutes
+    TTL_STRATEGY_LIST = 300  # 5 minutes
+    TTL_ANALYTICS = 300  # 5 minutes
+    TTL_CHAT = 60  # 1 minute
 
     def __init__(self):
         self._redis = MockRedis()  # Replace with redis.Redis() in production
 
     def _serialize(self, value: Any) -> bytes:
         """Serialize value to bytes using JSON (safe, no code execution)."""
-        return json.dumps(value, default=str).encode('utf-8')
+        return json.dumps(value, default=str).encode("utf-8")
 
     def _deserialize(self, value: bytes) -> Any:
         """Deserialize bytes to value using JSON (safe, no code execution)."""
-        return json.loads(value.decode('utf-8'))
+        return json.loads(value.decode("utf-8"))
 
     def get(self, key: str) -> Any | None:
         """Get value from cache."""
@@ -265,6 +266,7 @@ def cached(
         key_prefix: Prefix for cache key
         invalidate_on: List of patterns to invalidate on success
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
@@ -311,6 +313,7 @@ def cached(
             return result
 
         return async_wrapper if func.__code__.co_flags & 0x80 else sync_wrapper
+
     return decorator
 
 

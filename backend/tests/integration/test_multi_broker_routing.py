@@ -6,7 +6,6 @@ import pytest
 from backend.schemas.agent_messages import AgentMessage
 from backend.services.cognitive_orchestrator import CognitiveOrchestrator
 from backend.services.execution_gateway import ExecutionGateway
-from backend.services.risk_guardian import RiskGuardian
 
 
 @pytest.mark.asyncio

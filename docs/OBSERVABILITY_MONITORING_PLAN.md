@@ -1,8 +1,8 @@
 # Observability & Monitoring Plan
 ## Samkhya Yoga Agentic Trader — Production Monitoring Specifications
 
-**Generated:** 2026-02-15  
-**Document Version:** 1.0  
+**Generated:** 2026-02-15
+**Document Version:** 1.0
 **Monitoring Philosophy:** Business metrics + System metrics + Philosophical coherence tracking
 
 ---
@@ -265,8 +265,8 @@ concentration_risk_ratio = Gauge(
 
 ### Dashboard 1: OODA Loop Performance
 
-**Purpose:** Monitor OODA cycle health and latency  
-**Refresh:** 10 seconds  
+**Purpose:** Monitor OODA cycle health and latency
+**Refresh:** 10 seconds
 **Panels:**
 
 1. **OODA Cycle Duration (Heatmap)**
@@ -291,8 +291,8 @@ concentration_risk_ratio = Gauge(
 
 ### Dashboard 2: Navagraha State Visualization
 
-**Purpose:** Real-time view of planetary positions and guna state  
-**Refresh:** 1 minute  
+**Purpose:** Real-time view of planetary positions and guna state
+**Refresh:** 1 minute
 **Panels:**
 
 1. **Planetary Positions (Polar Chart)**
@@ -319,8 +319,8 @@ concentration_risk_ratio = Gauge(
 
 ### Dashboard 3: Trading Performance
 
-**Purpose:** Monitor trade outcomes and strategy effectiveness  
-**Refresh:** 30 seconds  
+**Purpose:** Monitor trade outcomes and strategy effectiveness
+**Refresh:** 30 seconds
 **Panels:**
 
 1. **Cumulative PnL (Graph)**
@@ -344,8 +344,8 @@ concentration_risk_ratio = Gauge(
 
 ### Dashboard 4: Karma Learning & Adaptation
 
-**Purpose:** Track parameter adjustments and learning behavior  
-**Refresh:** 5 minutes  
+**Purpose:** Track parameter adjustments and learning behavior
+**Refresh:** 5 minutes
 **Panels:**
 
 1. **Parameter Evolution (Multi-line Graph)**
@@ -369,8 +369,8 @@ concentration_risk_ratio = Gauge(
 
 ### Dashboard 5: Circuit Breakers & Resilience
 
-**Purpose:** Monitor external API health and circuit breaker status  
-**Refresh:** 10 seconds  
+**Purpose:** Monitor external API health and circuit breaker status
+**Refresh:** 10 seconds
 **Panels:**
 
 1. **Circuit Breaker States (Status Map)**
@@ -389,8 +389,8 @@ concentration_risk_ratio = Gauge(
 
 ### Dashboard 6: Agent Ecosystem
 
-**Purpose:** Monitor elemental agent activity and health  
-**Refresh:** 30 seconds  
+**Purpose:** Monitor elemental agent activity and health
+**Refresh:** 30 seconds
 **Panels:**
 
 1. **Agent Prana Levels (Gauge Row)**
@@ -409,8 +409,8 @@ concentration_risk_ratio = Gauge(
 
 ### Dashboard 7: MiFID II Compliance
 
-**Purpose:** Regulatory compliance monitoring  
-**Refresh:** 1 minute  
+**Purpose:** Regulatory compliance monitoring
+**Refresh:** 1 minute
 **Panels:**
 
 1. **Pre-Trade Check Approval Rate (Gauge)**
@@ -436,8 +436,8 @@ concentration_risk_ratio = Gauge(
 
 ### Dashboard 8: System Health
 
-**Purpose:** Infrastructure and resource monitoring  
-**Refresh:** 30 seconds  
+**Purpose:** Infrastructure and resource monitoring
+**Refresh:** 30 seconds
 **Panels:**
 
 1. **CPU Usage (Graph)**
@@ -506,7 +506,7 @@ groups:
           description: "Audit coverage is {{ $value }}, must be 1.0"
         labels:
           severity: critical
-      
+
       - alert: CircuitBreakerCascade
         expr: sum(circuit_breaker_state == 2) >= 3
         for: 2m
@@ -515,7 +515,7 @@ groups:
           description: "{{ $value }} circuits are OPEN"
         labels:
           severity: critical
-      
+
       - alert: OODALoopStalled
         expr: rate(ooda_cycle_duration_seconds_count[5m]) == 0
         for: 5m
@@ -523,7 +523,7 @@ groups:
           summary: "OODA loop not executing"
         labels:
           severity: critical
-      
+
       - alert: EphemerisCalculationFailing
         expr: rate(navagraha_calculation_duration_seconds_count[5m]) == 0
         for: 3m
@@ -542,7 +542,7 @@ groups:
           summary: "OODA cycle latency exceeds 5 seconds"
         labels:
           severity: high
-      
+
       - alert: LowCacheHitRate
         expr: navagraha_cache_hit_rate < 0.6
         for: 10m
@@ -550,7 +550,7 @@ groups:
           summary: "Cache hit rate below 60%"
         labels:
           severity: high
-      
+
       - alert: PositionLimitApproaching
         expr: position_limit_utilization > 0.9
         for: 1m
@@ -569,7 +569,7 @@ groups:
           summary: "Win rate below 45% for {{ $labels.strategy }}"
         labels:
           severity: warning
-      
+
       - alert: AgentPranaLow
         expr: agent_prana_level < 20
         for: 15m

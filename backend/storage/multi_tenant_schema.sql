@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS tenants (
     max_accounts UInt16,
     max_positions UInt32,
     api_rate_limit UInt32,
-    
+
     PRIMARY KEY (tenant_id)
 ) ENGINE = ReplacingMergeTree()
 ORDER BY tenant_id;
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS tenant_accounts (
     balance_usd Float64,
     created_at DateTime,
     status Enum8('active' = 1, 'frozen' = 2, 'closed' = 3),
-    
+
     PRIMARY KEY (tenant_id, account_id)
 ) ENGINE = ReplacingMergeTree()
 ORDER BY (tenant_id, account_id)
@@ -58,22 +58,22 @@ CREATE TABLE IF NOT EXISTS execution_logs (
     account_id UUID,
     execution_id UUID,
     timestamp DateTime,
-    
+
     symbol String,
     side Enum8('BUY' = 1, 'SELL' = 2),
     quantity Float64,
     price Float64,
     commission Float64,
     status Enum8('filled' = 1, 'partial' = 2, 'cancelled' = 3, 'rejected' = 4),
-    
+
     -- Risk checks applied
     pre_check_position_size Float64,
     pre_check_daily_loss Float64,
     pre_check_exposure Float64,
-    
+
     INDEX idx_symbol (symbol) TYPE set(1024),
     INDEX idx_status (status) TYPE set(8)
-    
+
 ) ENGINE = MergeTree()
 ORDER BY (tenant_id, account_id, timestamp)
 PARTITION BY (tenant_id, toYYYYMMDD(timestamp));
@@ -87,25 +87,25 @@ CREATE TABLE IF NOT EXISTS audit_trail (
     tenant_id UUID,
     audit_id UUID,
     timestamp DateTime,
-    
+
     -- Who did what
     user_id String,
     action String,
     resource_type String,
     resource_id String,
-    
+
     -- What changed
     old_value String,
     new_value String,
-    
+
     -- Context
     ip_address String,
     user_agent String,
-    
+
     INDEX idx_tenant (tenant_id) TYPE set(1024),
     INDEX idx_user (user_id) TYPE set(1024),
     INDEX idx_action (action) TYPE set(64)
-    
+
 ) ENGINE = MergeTree()
 ORDER BY (tenant_id, timestamp)
 PARTITION BY (tenant_id, toYYYYMMDD(timestamp));
@@ -119,26 +119,26 @@ CREATE TABLE IF NOT EXISTS risk_metrics (
     tenant_id UUID,
     account_id UUID,
     timestamp DateTime,
-    
+
     -- Portfolio metrics
     portfolio_value Float64,
     total_positions UInt32,
     max_position_size Float64,
-    
+
     -- Risk metrics
     portfolio_var_95 Float64,      -- 95% VaR
     portfolio_var_99 Float64,      -- 99% VaR (regulatory)
     max_drawdown_pct Float32,
     concentration_ratio Float32,   -- Largest position / total
-    
+
     -- Compliance flags
     breach_max_position UInt8,     -- 1 if breached
     breach_daily_loss UInt8,       -- 1 if breached
     breach_exposure UInt8,         -- 1 if breached
-    
+
     INDEX idx_tenant (tenant_id) TYPE set(1024),
     INDEX idx_account (account_id) TYPE set(1024)
-    
+
 ) ENGINE = MergeTree()
 ORDER BY (tenant_id, account_id, timestamp)
 PARTITION BY (tenant_id, toYYYYMMDD(timestamp))
@@ -153,7 +153,7 @@ TTL timestamp + INTERVAL 365 DAY;  -- Keep 1 year of metrics
 -- SELECT * FROM execution_logs WHERE tenant_id = '{tenant_id}'
 
 CREATE VIEW IF NOT EXISTS v_execution_logs_by_tenant AS
-SELECT 
+SELECT
     tenant_id, account_id, execution_id, timestamp,
     symbol, side, quantity, price, commission, status
 FROM execution_logs

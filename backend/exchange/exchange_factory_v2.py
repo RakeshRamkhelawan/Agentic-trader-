@@ -71,7 +71,7 @@ class ExchangeFactoryV2:
         exchange_type: str,
         exchange_id: str | None = None,
         config: dict[str, Any] | None = None,
-        auto_connect: bool = True
+        auto_connect: bool = True,
     ) -> Any | None:
         """
         Create and initialize an exchange adapter.
@@ -150,7 +150,7 @@ class ExchangeFactoryV2:
 
         try:
             # Close based on adapter type
-            if hasattr(adapter, 'close'):
+            if hasattr(adapter, "close"):
                 await adapter.close()
 
             del self._exchanges[exchange_id]

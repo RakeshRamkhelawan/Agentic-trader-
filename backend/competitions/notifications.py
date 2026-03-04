@@ -9,6 +9,7 @@ from typing import Any
 
 class NotificationType(Enum):
     """Types of notifications."""
+
     TOURNAMENT_START = "tournament_start"
     TOURNAMENT_END = "tournament_end"
     RANK_CHANGE = "rank_change"
@@ -22,6 +23,7 @@ class NotificationType(Enum):
 
 class NotificationPriority(Enum):
     """Notification priority levels."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -31,6 +33,7 @@ class NotificationPriority(Enum):
 @dataclass
 class Notification:
     """A notification."""
+
     id: str
     user_id: str
     type: NotificationType
@@ -315,8 +318,7 @@ class NotificationManager:
         for user_id in self._notifications:
             original_count = len(self._notifications[user_id])
             self._notifications[user_id] = [
-                n for n in self._notifications[user_id]
-                if n.created_at > cutoff
+                n for n in self._notifications[user_id] if n.created_at > cutoff
             ]
             total_cleared += original_count - len(self._notifications[user_id])
 

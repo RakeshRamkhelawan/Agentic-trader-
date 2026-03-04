@@ -9,6 +9,7 @@ from typing import Any
 
 class ListingStatus(Enum):
     """Strategy listing statuses."""
+
     DRAFT = "draft"
     PENDING_REVIEW = "pending_review"
     PUBLISHED = "published"
@@ -19,6 +20,7 @@ class ListingStatus(Enum):
 
 class PricingType(Enum):
     """Strategy pricing models."""
+
     FREE = "free"
     ONE_TIME = "one_time"
     SUBSCRIPTION = "subscription"
@@ -28,6 +30,7 @@ class PricingType(Enum):
 @dataclass
 class StrategyListing:
     """A strategy listed on the marketplace."""
+
     id: str
     name: str
     description: str
@@ -93,6 +96,7 @@ class StrategyListing:
 @dataclass
 class Review:
     """A marketplace review."""
+
     id: str
     listing_id: str
     user_id: str
@@ -183,18 +187,15 @@ class MarketplaceManager:
         if query:
             query_lower = query.lower()
             results = [
-                l for l in results
-                if query_lower in l.name.lower()
-                or query_lower in l.description.lower()
+                l
+                for l in results
+                if query_lower in l.name.lower() or query_lower in l.description.lower()
             ]
 
         # Filter by tags
         if tags:
             tag_set = set(t.lower() for t in tags)
-            results = [
-                l for l in results
-                if tag_set & set(t.lower() for t in l.tags)
-            ]
+            results = [l for l in results if tag_set & set(t.lower() for t in l.tags)]
 
         # Filter by pricing
         if pricing_type:
@@ -249,6 +250,7 @@ class MarketplaceManager:
             return None
 
         import uuid
+
         review = Review(
             id=str(uuid.uuid4()),
             listing_id=listing_id,
@@ -280,8 +282,7 @@ class MarketplaceManager:
             "total_downloads": sum(l.downloads for l in listings),
             "total_revenue": sum(l.total_revenue for l in listings),
             "average_rating": (
-                sum(l.rating_avg for l in listings) / len(listings)
-                if listings else 0
+                sum(l.rating_avg for l in listings) / len(listings) if listings else 0
             ),
         }
 

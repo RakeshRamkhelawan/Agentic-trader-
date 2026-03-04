@@ -113,7 +113,7 @@ async def test_auth_middleware_success():
     call_next = AsyncMock(return_value=Response("OK"))
 
     # Run dispatch
-    response = await middleware.dispatch(request, call_next)
+    await middleware.dispatch(request, call_next)
 
     # Verify validator called
     mock_validator.validate_token.assert_called_with("valid_token")

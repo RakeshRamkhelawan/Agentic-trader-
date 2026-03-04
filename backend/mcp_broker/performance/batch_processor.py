@@ -381,7 +381,7 @@ async def process_symbols_batch(
     Returns combined results for entry decisions and position sizing.
     """
     processor = BatchProcessor(mcp_client)
-    calculator = VectorizedElementalCalculator()
+    VectorizedElementalCalculator()
 
     # Prepare symbol data
     symbol_data = []

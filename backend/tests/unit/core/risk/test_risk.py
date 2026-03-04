@@ -1,4 +1,3 @@
-import pytest
 
 from backend.core.risk.guna_sizing import GunaSizer, GunaType
 from backend.core.risk.mifid_checks import (

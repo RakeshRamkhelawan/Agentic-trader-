@@ -452,7 +452,7 @@ class AdvancedVedAstroFeatures:
         """Calculate Avasta for a single planet."""
 
         sign = planet_data.get("sign", "")
-        house = planet_data.get("house", 0)
+        planet_data.get("house", 0)
         is_retro = planet_data.get("retrograde", False)
 
         # Determine state

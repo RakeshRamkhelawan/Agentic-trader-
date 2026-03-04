@@ -7,8 +7,8 @@
 ## ADR Checklist
 
 ### ✅ ADR-003: WebSocket Reliability & Backpressure
-**Status**: Geïmplementeerd  
-**Impact**: Operationele stabiliteit  
+**Status**: Geïmplementeerd
+**Impact**: Operationele stabiliteit
 **Bestanden**:
 - `docs/adr/ADR-003-websocket-reliability.md`
 - `backend/api/websocket_manager_v2.py` (nieuw)
@@ -21,9 +21,9 @@
 ## TODO: Overige 9 ADR's
 
 ### ADR-001: SLO/SLI Model per Kritieke Flow
-**Priority**: Hoog  
-**Impact**: Meetbare betrouwbaarheid  
-**Scope**: API Gateway, Order Execution, Agent Decision Loop  
+**Priority**: Hoog
+**Impact**: Meetbare betrouwbaarheid
+**Scope**: API Gateway, Order Execution, Agent Decision Loop
 
 **Definieer voor 3 kritieke flows**:
 
@@ -43,9 +43,9 @@
 ---
 
 ### ADR-002: Observability: Metrics/Logs/Traces + Correlation IDs
-**Priority**: Hoog  
-**Impact**: Debugbaarheid en troubleshooting  
-**Scope**: Alle services  
+**Priority**: Hoog
+**Impact**: Debugbaarheid en troubleshooting
+**Scope**: Alle services
 
 **Vereisten**:
 - Trace ID door hele request chain (HTTP → WS → Event Bus → DB)
@@ -63,9 +63,9 @@
 ---
 
 ### ADR-004: Eventing Keuze: Redis Streams vs Kafka/Redpanda
-**Priority**: Medium  
-**Impact**: Architectuur consistentie  
-**Scope**: Event systeem  
+**Priority**: Medium
+**Impact**: Architectuur consistentie
+**Scope**: Event systeem
 
 **Beslissingen**:
 - Wanneer gebruik je Redis Streams vs Kafka?
@@ -82,9 +82,9 @@
 ---
 
 ### ADR-005: Multi-Tenant Isolatie End-to-End
-**Priority**: Hoog  
-**Impact**: Security & compliance  
-**Scope**: Auth, API, Storage  
+**Priority**: Hoog
+**Impact**: Security & compliance
+**Scope**: Auth, API, Storage
 
 **Vereisten**:
 - Tenant ID in JWT claims
@@ -103,9 +103,9 @@
 ---
 
 ### ADR-006: Security Boundaries + Threat Model (STRIDE)
-**Priority**: Hoog  
-**Impact**: Security posture  
-**Scope**: Hele systeem  
+**Priority**: Hoog
+**Impact**: Security posture
+**Scope**: Hele systeem
 
 **Vereisten**:
 - Trust boundaries diagram
@@ -126,9 +126,9 @@
 ---
 
 ### ADR-007: Governance: Trade Approval Policy
-**Priority**: Medium  
-**Impact**: Compliance & risk  
-**Scope**: Trading, Approvals  
+**Priority**: Medium
+**Impact**: Compliance & risk
+**Scope**: Trading, Approvals
 
 **Beslissingen**:
 - Wanneer auto-approval vs manual approval?
@@ -145,9 +145,9 @@
 ---
 
 ### ADR-008: Data Lifecycle: Retention, Replay, Privacy
-**Priority**: Medium  
-**Impact**: Compliance & kosten  
-**Scope**: Storage  
+**Priority**: Medium
+**Impact**: Compliance & kosten
+**Scope**: Storage
 
 **Vereisten**:
 - Retention policy per datastore:
@@ -167,9 +167,9 @@
 ---
 
 ### ADR-009: Release/Rollback Strategy per Environment
-**Priority**: Medium  
-**Impact**: Deployment betrouwbaarheid  
-**Scope**: DevOps  
+**Priority**: Medium
+**Impact**: Deployment betrouwbaarheid
+**Scope**: DevOps
 
 **Strategie**:
 - Blue/green of canary deployments
@@ -186,9 +186,9 @@
 ---
 
 ### ADR-010: Performance Budget & Load Testing Plan
-**Priority**: Medium  
-**Impact**: Schaalbaarheid  
-**Scope**: Performance  
+**Priority**: Medium
+**Impact**: Schaalbaarheid
+**Scope**: Performance
 
 **Vereisten**:
 - Performance budgets per component

@@ -60,9 +60,7 @@ from backend.mcp_broker.tools.external_tools import (
 from backend.mcp_broker.tools.external_tools import (
     external__market_correlation as ext_market_correlation,
 )
-from backend.mcp_broker.tools.external_tools import (
-    external__market_news as ext_market_news,
-)
+from backend.mcp_broker.tools.external_tools import external__market_news as ext_market_news
 from backend.mcp_broker.tools.external_tools import (
     external__sentiment_analysis as ext_sentiment_analysis,
 )
@@ -217,9 +215,11 @@ async def vedic__calculate_vimshottari_dasha(
     Returns:
         Complete 120-year dasha cycle with current period
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
+
         def error(self, msg):
             logger.error(msg)
 
@@ -244,6 +244,7 @@ async def vedic__get_nakshatra_analysis(
     Returns:
         Nakshatra characteristics and trading implications
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -267,6 +268,7 @@ async def vedic__calculate_transits(
     Returns:
         Transit analysis with market predictions
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -759,6 +761,7 @@ async def revolutx__get_ticker(symbol: str) -> dict[str, Any]:
     Returns:
         Ticker with last price, bid, ask, volume
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -779,6 +782,7 @@ async def revolutx__get_orderbook(symbol: str, depth: int = 10) -> dict[str, Any
     Returns:
         Orderbook with bids and asks
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -795,6 +799,7 @@ async def revolutx__get_symbols() -> dict[str, Any]:
     Returns:
         List of available trading pairs
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -827,6 +832,7 @@ async def revolutx__place_order(
     Returns:
         Order details with ID and status
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -843,6 +849,7 @@ async def revolutx__get_active_orders() -> dict[str, Any]:
     Returns:
         List of active orders with their status
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -859,6 +866,7 @@ async def revolutx__get_account_info() -> dict[str, Any]:
     Returns:
         Connection status and configuration info
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -883,6 +891,7 @@ async def multi_exchange__get_price(symbol: str) -> dict[str, Any]:
     Returns:
         Aggregated price with best bid/ask across exchanges
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -903,6 +912,7 @@ async def multi_exchange__get_best_price(symbol: str, side: str) -> dict[str, An
     Returns:
         Best price with exchange recommendation
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -922,6 +932,7 @@ async def multi_exchange__find_arbitrage() -> dict[str, Any]:
     Returns:
         List of arbitrage opportunities with profit estimates
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -941,6 +952,7 @@ async def multi_exchange__get_discrepancies(threshold_pct: float = 0.5) -> dict[
     Returns:
         Symbols with significant price differences
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -973,6 +985,7 @@ async def smart_order__route(
     Returns:
         Routing recommendation with execution details
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -989,6 +1002,7 @@ async def multi_exchange__get_stats() -> dict[str, Any]:
     Returns:
         Aggregator status, active exchanges, cache info
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1028,6 +1042,7 @@ async def live_trading__place_order(
     Returns:
         Order details with execution confirmation
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1047,6 +1062,7 @@ async def live_trading__get_order_status(order_id: str) -> dict[str, Any]:
     Returns:
         Current order status and fill details
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1066,6 +1082,7 @@ async def live_trading__cancel_order(order_id: str) -> dict[str, Any]:
     Returns:
         Cancellation confirmation
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1082,6 +1099,7 @@ async def live_trading__get_positions() -> dict[str, Any]:
     Returns:
         Cross-exchange position summary
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1111,6 +1129,7 @@ async def live_trading__validate_order(
     Returns:
         Validation result with risk assessment
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1127,6 +1146,7 @@ async def live_trading__get_stats() -> dict[str, Any]:
     Returns:
         Trading statistics and risk configuration
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1148,6 +1168,7 @@ async def monitoring__get_metrics() -> dict[str, Any]:
     Returns:
         Metrics summary with Prometheus/Grafana links
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1167,6 +1188,7 @@ async def monitoring__get_alerts(severity: str | None = None) -> dict[str, Any]:
     Returns:
         Active alerts with counts by severity
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1186,6 +1208,7 @@ async def monitoring__acknowledge_alert(alert_id: str) -> dict[str, Any]:
     Returns:
         Acknowledgment result
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1202,6 +1225,7 @@ async def monitoring__get_health() -> dict[str, Any]:
     Returns:
         Health status of all components
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1218,6 +1242,7 @@ async def monitoring__get_performance_summary() -> dict[str, Any]:
     Returns:
         Performance metrics and statistics
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1243,6 +1268,7 @@ async def monitoring__export_data(
     Returns:
         Export result
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1273,6 +1299,7 @@ async def competitions__register_competitor(
     Returns:
         Registration result with competitor ID and league assignment
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1302,6 +1329,7 @@ async def competitions__get_leaderboard(
     Returns:
         Ranked list of competitors
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1320,6 +1348,7 @@ async def competitions__get_league_info() -> dict[str, Any]:
     - Promotion requirements
     - Current member counts
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1345,6 +1374,7 @@ async def competitions__get_tournaments(
     Returns:
         List of tournaments
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1373,6 +1403,7 @@ async def competitions__enter_tournament(
     Returns:
         Entry confirmation with starting balance
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1411,6 +1442,7 @@ async def competitions__share_strategy(
     Returns:
         Strategy sharing confirmation
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1446,6 +1478,7 @@ async def competitions__search_strategies(
     Returns:
         Matching strategies
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1473,6 +1506,7 @@ async def competitions__get_badges(
     Returns:
         List of earned badges with timestamps
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)
@@ -1496,6 +1530,7 @@ async def competitions__get_available_badges() -> dict[str, Any]:
     Returns:
         Complete list of badges with requirements
     """
+
     class MinimalContext:
         def info(self, msg):
             logger.info(msg)

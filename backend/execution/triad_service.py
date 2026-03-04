@@ -26,11 +26,7 @@ from backend.agents.risk_manager_agent import RiskManagerAgent
 
 # Feature flags
 # OODA components
-from backend.core.schemas.ooda_types import (
-    ExecutionPlan,
-    RiskDecision,
-    TradeProposal,
-)
+from backend.core.schemas.ooda_types import ExecutionPlan, RiskDecision, TradeProposal
 from backend.core.security.audit_logger import AuditLogger
 
 # Events
@@ -100,7 +96,7 @@ class TriadService:
         self,
         event_bus: EventBus | None = None,
         exchange_adapter: Any | None = None,
-        use_enhanced_risk: bool = False
+        use_enhanced_risk: bool = False,
     ) -> bool:
         """
         Initialize service with dependencies.
@@ -117,16 +113,14 @@ class TriadService:
             self.event_bus = event_bus
 
             # Initialize portfolio manager agent
-            self.portfolio_manager = PortfolioManagerAgent(
-                event_bus=event_bus
-            )
+            self.portfolio_manager = PortfolioManagerAgent(event_bus=event_bus)
             await self.portfolio_manager.initialize_adapters()
 
             # Initialize risk manager with portfolio access
             self.risk_manager = RiskManagerAgent(
                 event_bus=event_bus,
                 portfolio_manager=self.portfolio_manager,
-                use_enhanced_validator=use_enhanced_risk
+                use_enhanced_validator=use_enhanced_risk,
             )
 
             # Initialize order executor
@@ -135,8 +129,7 @@ class TriadService:
 
             if exchange_adapter:
                 self.order_executor = OrderExecutor(
-                    exchange_adapter=exchange_adapter,
-                    gatekeeper=self.gatekeeper
+                    exchange_adapter=exchange_adapter, gatekeeper=self.gatekeeper
                 )
                 logger.info("[TriadService] OrderExecutor initialized")
 
@@ -179,7 +172,7 @@ class TriadService:
         decision: Any,  # BuddhiDecision
         symbol: str = "BTC/EUR",
         quantity: Decimal | None = None,
-        exchange_id: str | None = None
+        exchange_id: str | None = None,
     ) -> dict[str, Any]:
         """
         Execute trade with full OODA integration and security.
@@ -207,22 +200,20 @@ class TriadService:
         if not self.gatekeeper.authorize(
             agent_name=self.agent_name,
             agent_role=AgentRole.EXECUTOR,
-            required_permission=ToolPermission.TRADE_EXECUTION
+            required_permission=ToolPermission.TRADE_EXECUTION,
         ):
             self.stats["auth_failures"] += 1
             from backend.core.security.audit_logger import AuditEventType
+
             self.audit_logger.log_event(
                 event_type=AuditEventType.AUTHZ_DENIED,
                 actor=self.agent_name,
                 action="unauthorized_execution_attempt",
                 resource="triad_service",
                 output_status="DENIED",
-                details={"symbol": symbol, "decision": str(decision)}
+                details={"symbol": symbol, "decision": str(decision)},
             )
-            return {
-                "status": "rejected",
-                "reason": "Not authorized to place orders"
-            }
+            return {"status": "rejected", "reason": "Not authorized to place orders"}
 
         # Default quantity
         if quantity is None:
@@ -242,7 +233,7 @@ class TriadService:
             take_profit=default_entry * 1.1 if is_buy else default_entry * 0.9,  # 10% target
             rationale=decision.rationale,
             strategy_id="triad",
-            confidence=decision.confidence
+            confidence=decision.confidence,
         )
 
         # 3. Risk assessment
@@ -250,27 +241,26 @@ class TriadService:
             from backend.core.schemas.ooda_types import MarketRegime
 
             risk_assessment = await self.risk_manager.assess_risk(
-                proposal=proposal,
-                current_regime=MarketRegime.UNKNOWN,
-                current_position_size=0.0
+                proposal=proposal, current_regime=MarketRegime.UNKNOWN, current_position_size=0.0
             )
 
             if risk_assessment.decision == RiskDecision.REJECT:
                 self.stats["risk_rejections"] += 1
                 # Log rejection via event
                 from backend.core.security.audit_logger import AuditEventType
+
                 self.audit_logger.log_event(
                     event_type=AuditEventType.TRADE_BLOCKED,
                     actor=self.agent_name,
                     action="risk_rejection",
                     resource="risk_manager",
                     output_status="REJECTED",
-                    details={"reason": risk_assessment.rationale, "proposal": str(proposal)}
+                    details={"reason": risk_assessment.rationale, "proposal": str(proposal)},
                 )
                 return {
                     "status": "rejected",
                     "reason": risk_assessment.rationale,
-                    "risk_score": risk_assessment.risk_score
+                    "risk_score": risk_assessment.risk_score,
                 }
 
             if risk_assessment.decision == RiskDecision.REDUCE_SIZE:
@@ -286,7 +276,7 @@ class TriadService:
                         rationale=proposal.rationale + " (size reduced by risk manager)",
                         strategy_id=proposal.strategy_id,
                         confidence=proposal.confidence,
-                        leverage=proposal.leverage
+                        leverage=proposal.leverage,
                     )
                     quantity = Decimal(str(proposal.size))
 
@@ -298,17 +288,16 @@ class TriadService:
             quantity=proposal.size,
             order_type="MARKET" if proposal.entry_price is None else "LIMIT",
             price=proposal.entry_price,
-            expected_price=proposal.entry_price or float(quantity * Decimal("45000")),  # Approximate
+            expected_price=proposal.entry_price
+            or float(quantity * Decimal("45000")),  # Approximate
             trace_id=trace_id,
             caller_name=self.agent_name,
-            caller_role=self.agent_role
+            caller_role=self.agent_role,
         )
 
         # 5. Log attempt
         self.audit_logger.log_trade_attempt(
-            execution_plan=plan,
-            outcome="ATTEMPT",
-            details={"mode": self.trading_mode}
+            execution_plan=plan, outcome="ATTEMPT", details={"mode": self.trading_mode}
         )
 
         # 6. Execute via OrderExecutor
@@ -318,21 +307,26 @@ class TriadService:
 
                 # 7. Publish event
                 if self.event_bus:
-                    await self.event_bus.publish("execution", {
-                        "trace_id": plan.trace_id,
-                        "status": "filled" if outcome.success else "failed",
-                        "symbol": plan.symbol,
-                        "filled_qty": outcome.filled_qty,
-                        "avg_price": outcome.avg_price,
-                        "timestamp": datetime.utcnow().isoformat()
-                    })
+                    await self.event_bus.publish(
+                        "execution",
+                        {
+                            "trace_id": plan.trace_id,
+                            "status": "filled" if outcome.success else "failed",
+                            "symbol": plan.symbol,
+                            "filled_qty": outcome.filled_qty,
+                            "avg_price": outcome.avg_price,
+                            "timestamp": datetime.utcnow().isoformat(),
+                        },
+                    )
 
                 if outcome.success:
                     self.stats["trades_executed"] += 1
 
                     # Record for risk tracking
                     if self.risk_manager and self.risk_manager.risk_validator:
-                        order_value = Decimal(str(outcome.filled_qty)) * Decimal(str(outcome.avg_price or 0))
+                        order_value = Decimal(str(outcome.filled_qty)) * Decimal(
+                            str(outcome.avg_price or 0)
+                        )
                         self.risk_manager.risk_validator.record_trade(order_value)
                 else:
                     self.stats["trades_rejected"] += 1
@@ -344,20 +338,14 @@ class TriadService:
                     "filled_qty": outcome.filled_qty,
                     "avg_price": outcome.avg_price,
                     "fee": outcome.fee,
-                    "error": outcome.error
+                    "error": outcome.error,
                 }
 
             except Exception as e:
                 logger.error(f"[TriadService] Execution error: {e}")
-                return {
-                    "status": "error",
-                    "reason": str(e)
-                }
+                return {"status": "error", "reason": str(e)}
         else:
-            return {
-                "status": "error",
-                "reason": "OrderExecutor not initialized"
-            }
+            return {"status": "error", "reason": "OrderExecutor not initialized"}
 
     async def cancel_trade(self, order_id: str) -> bool:
         """
@@ -376,7 +364,7 @@ class TriadService:
         if not self.gatekeeper.authorize(
             agent_name=self.agent_name,
             agent_role=AgentRole.EXECUTOR,
-            required_permission=ToolPermission.TRADE_EXECUTION
+            required_permission=ToolPermission.TRADE_EXECUTION,
         ):
             return False
 
@@ -385,11 +373,14 @@ class TriadService:
             success = await self.order_executor.cancel_order(order_id)
 
             if success and self.event_bus:
-                await self.event_bus.publish("execution", {
-                    "event": "cancelled",
-                    "order_id": order_id,
-                    "timestamp": datetime.utcnow().isoformat()
-                })
+                await self.event_bus.publish(
+                    "execution",
+                    {
+                        "event": "cancelled",
+                        "order_id": order_id,
+                        "timestamp": datetime.utcnow().isoformat(),
+                    },
+                )
 
             return success
 

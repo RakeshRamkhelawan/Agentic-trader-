@@ -67,20 +67,20 @@ def check_docker_compose_file(filepath: Path) -> List[Tuple[str, str, int]]:
     errors = []
     content = filepath.read_text()
     lines = content.split('\n')
-    
+
     in_service = None
-    
+
     for line_num, line in enumerate(lines, 1):
         # Track which service we're in
         if re.match(r'^\s{2}[a-z-]+:', line) and not line.strip().startswith('ports'):
             in_service = line.strip().rstrip(':')
-        
+
         # Check for port mappings
         port_match = re.search(r'["\']?(\d+):(\d+)["\']?', line)
         if port_match:
             host_port = port_match.group(1)
             container_port = port_match.group(2)
-            
+
             # Check forbidden ports
             if host_port in FORBIDDEN_HOST_PORTS:
                 errors.append((
@@ -88,7 +88,7 @@ def check_docker_compose_file(filepath: Path) -> List[Tuple[str, str, int]]:
                     f"Line {line_num}: Forbidden host port {host_port} ({FORBIDDEN_HOST_PORTS[host_port]})",
                     line_num
                 ))
-    
+
     return errors
 
 
@@ -97,12 +97,12 @@ def check_env_file(filepath: Path) -> List[Tuple[str, str, int]]:
     errors = []
     content = filepath.read_text()
     lines = content.split('\n')
-    
+
     for line_num, line in enumerate(lines, 1):
         # Skip comments and empty lines
         if not line.strip() or line.strip().startswith('#'):
             continue
-        
+
         # Check for forbidden ports in values
         for forbidden_port, reason in FORBIDDEN_HOST_PORTS.items():
             # Match port in URLs like localhost:8123 or 127.0.0.1:8123
@@ -116,7 +116,7 @@ def check_env_file(filepath: Path) -> List[Tuple[str, str, int]]:
                     f"Line {line_num}: Forbidden port {forbidden_port} ({reason})",
                     line_num
                 ))
-        
+
         # Check for deprecated env var names
         if 'CHROMA_HOST=' in line and 'CHROMA_DB_HOST' not in line:
             if not line.startswith('#'):
@@ -125,7 +125,7 @@ def check_env_file(filepath: Path) -> List[Tuple[str, str, int]]:
                     f"Line {line_num}: Use CHROMA_DB_HOST instead of CHROMA_HOST",
                     line_num
                 ))
-    
+
     return errors
 
 
@@ -134,12 +134,12 @@ def check_python_file(filepath: Path) -> List[Tuple[str, str, int]]:
     errors = []
     content = filepath.read_text()
     lines = content.split('\n')
-    
+
     for line_num, line in enumerate(lines, 1):
         # Skip comments
         if line.strip().startswith('#'):
             continue
-        
+
         # Check for hardcoded localhost with forbidden ports
         for forbidden_port, reason in FORBIDDEN_HOST_PORTS.items():
             pattern = rf'["\']localhost:{forbidden_port}["\']'
@@ -152,36 +152,36 @@ def check_python_file(filepath: Path) -> List[Tuple[str, str, int]]:
                     f"Line {line_num}: Hardcoded forbidden port {forbidden_port} ({reason})",
                     line_num
                 ))
-    
+
     return errors
 
 
 def main():
     """Main validation function."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Validate port allocation')
     parser.add_argument('--fix', action='store_true', help='Attempt to fix issues')
     args = parser.parse_args()
-    
+
     print("🔍 Validating Port Allocation against PORT_ALLOCATION_SSOT.md...")
     print()
-    
+
     all_errors = []
-    
+
     # Check docker-compose files
     compose_files = list(Path('.').glob('docker-compose*.yml'))
     for filepath in compose_files:
         errors = check_docker_compose_file(filepath)
         all_errors.extend(errors)
-    
+
     # Check environment files
     env_files = [Path('.env'), Path('.env.example'), Path('.env.prod')]
     for filepath in env_files:
         if filepath.exists():
             errors = check_env_file(filepath)
             all_errors.extend(errors)
-    
+
     # Check key Python files
     py_files = [
         Path('backend/core/config/settings.py'),
@@ -192,7 +192,7 @@ def main():
         if filepath.exists():
             errors = check_python_file(filepath)
             all_errors.extend(errors)
-    
+
     # Report results
     if all_errors:
         print("❌ PORT ALLOCATION VIOLATIONS FOUND:")
@@ -201,7 +201,7 @@ def main():
             print(f"  📁 {filename}:{line_num}")
             print(f"     {message}")
             print()
-        
+
         print("⚠️  These violations must be fixed according to PORT_ALLOCATION_SSOT.md")
         print("📖 Read: https://github.com/your-repo/blob/main/PORT_ALLOCATION_SSOT.md")
         sys.exit(1)

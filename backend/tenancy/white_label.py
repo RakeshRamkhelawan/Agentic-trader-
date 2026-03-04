@@ -144,7 +144,7 @@ class WhiteLabelManager:
         import re
 
         # Basic domain validation
-        domain_pattern = r'^[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9.]*$'
+        domain_pattern = r"^[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9.]*$"
         if not re.match(domain_pattern, domain):
             return False, "Invalid domain format", []
 

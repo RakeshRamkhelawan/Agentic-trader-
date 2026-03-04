@@ -1,9 +1,9 @@
 # ADR-002: Observability - Metrics, Logs, Traces + Correlation IDs
 
-**Status**: Proposed  
-**Date**: 2026-02-20  
-**Author**: Architecture Team  
-**Scope**: Alle services (API, Execution, Agents, Storage)  
+**Status**: Proposed
+**Date**: 2026-02-20
+**Author**: Architecture Team
+**Scope**: Alle services (API, Execution, Agents, Storage)
 
 ---
 
@@ -137,7 +137,7 @@ class CorrelationContext:
     user_id: Optional[str] = None
     tenant_id: Optional[str] = None
     request_id: Optional[str] = None
-    
+
     @classmethod
     def create(cls, user_id: Optional[str] = None, tenant_id: Optional[str] = None) -> "CorrelationContext":
         """Create new correlation context."""
@@ -148,7 +148,7 @@ class CorrelationContext:
             tenant_id=tenant_id,
             request_id=str(uuid.uuid4())
         )
-    
+
     @classmethod
     def get_current(cls) -> "CorrelationContext":
         """Get current correlation context."""
@@ -159,7 +159,7 @@ class CorrelationContext:
             tenant_id=_tenant_id.get(),
             request_id=_request_id.get()
         )
-    
+
     def set_current(self):
         """Set as current context."""
         _trace_id.set(self.trace_id)
@@ -167,7 +167,7 @@ class CorrelationContext:
         _user_id.set(self.user_id)
         _tenant_id.set(self.tenant_id)
         _request_id.set(self.request_id)
-    
+
     def to_dict(self) -> Dict[str, Optional[str]]:
         """Convert to dictionary for logging/headers."""
         return {
@@ -181,14 +181,14 @@ class CorrelationContext:
 
 class CorrelationManager:
     """Manage correlation context lifecycle."""
-    
+
     @staticmethod
     def new_context(user_id: Optional[str] = None, tenant_id: Optional[str] = None) -> CorrelationContext:
         """Create and set new context."""
         ctx = CorrelationContext.create(user_id, tenant_id)
         ctx.set_current()
         return ctx
-    
+
     @staticmethod
     def from_headers(headers: Dict[str, str]) -> CorrelationContext:
         """Create context from HTTP headers."""
@@ -201,7 +201,7 @@ class CorrelationManager:
         )
         ctx.set_current()
         return ctx
-    
+
     @staticmethod
     def to_headers() -> Dict[str, str]:
         """Get current context as HTTP headers."""
@@ -213,7 +213,7 @@ class CorrelationManager:
             'X-Tenant-ID': ctx.tenant_id or '',
             'X-Request-ID': ctx.request_id or ''
         }
-    
+
     @staticmethod
     def new_span(span_name: str) -> "SpanContext":
         """Create new child span."""
@@ -231,12 +231,12 @@ class CorrelationManager:
 
 class SpanContext:
     """Context manager for spans."""
-    
+
     def __init__(self, ctx: CorrelationContext, name: str):
         self.ctx = ctx
         self.name = name
         self.start_time: Optional[float] = None
-    
+
     def __enter__(self):
         self.start_time = time.time()
         logger.info(f"Span started: {self.name}", extra={
@@ -244,11 +244,11 @@ class SpanContext:
             'span_kind': 'start'
         })
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         duration = time.time() - self.start_time if self.start_time else 0
         status = 'error' if exc_type else 'success'
-        
+
         logger.info(f"Span ended: {self.name}", extra={
             'span_name': self.name,
             'span_kind': 'end',
@@ -271,25 +271,25 @@ logger = logging.getLogger(__name__)
 
 class CorrelationMiddleware(BaseHTTPMiddleware):
     """Inject correlation IDs into request context."""
-    
+
     async def dispatch(self, request: Request, call_next):
         # Extract/create correlation context from headers
         ctx = CorrelationManager.from_headers(dict(request.headers))
-        
+
         # Add to request state
         request.state.correlation = ctx
-        
+
         # Process request
         start_time = time.time()
-        
+
         try:
             response = await call_next(request)
-            
+
             # Add correlation headers to response
             for key, value in CorrelationManager.to_headers().items():
                 if value:
                     response.headers[key] = value
-            
+
             # Log request
             duration = time.time() - start_time
             logger.info(
@@ -303,9 +303,9 @@ class CorrelationMiddleware(BaseHTTPMiddleware):
                     **ctx.to_dict()
                 }
             )
-            
+
             return response
-            
+
         except Exception as e:
             duration = time.time() - start_time
             logger.error(
@@ -324,32 +324,32 @@ class CorrelationMiddleware(BaseHTTPMiddleware):
 
 class MetricsMiddleware(BaseHTTPMiddleware):
     """Collect golden signals."""
-    
+
     def __init__(self, app):
         super().__init__(app)
         from backend.observability.metrics import request_count, request_duration
         self.request_count = request_count
         self.request_duration = request_duration
-    
+
     async def dispatch(self, request: Request, call_next):
         start_time = time.time()
-        
+
         response = await call_next(request)
-        
+
         duration = time.time() - start_time
-        
+
         # Record metrics
         self.request_count.labels(
             method=request.method,
             endpoint=request.url.path,
             status=response.status_code
         ).inc()
-        
+
         self.request_duration.labels(
             method=request.method,
             endpoint=request.url.path
         ).observe(duration)
-        
+
         return response
 ```
 
@@ -364,12 +364,12 @@ from typing import Any, Dict
 
 class CorrelationFilter(logging.Filter):
     """Add correlation context to log records."""
-    
+
     def filter(self, record: logging.LogRecord) -> bool:
         try:
             from backend.core.telemetry.correlation import CorrelationContext
             ctx = CorrelationContext.get_current()
-            
+
             record.trace_id = ctx.trace_id
             record.span_id = ctx.span_id
             record.user_id = ctx.user_id or 'anonymous'
@@ -381,30 +381,30 @@ class CorrelationFilter(logging.Filter):
             record.user_id = 'unknown'
             record.tenant_id = 'unknown'
             record.request_id = 'unknown'
-        
+
         return True
 
 
 class StructuredFormatter(jsonlogger.JsonFormatter):
     """JSON formatter with correlation context."""
-    
+
     def add_fields(self, log_record: Dict[str, Any], record: logging.LogRecord, message_dict: Dict[str, Any]):
         super().add_fields(log_record, record, message_dict)
-        
+
         # Add standard fields
         log_record['timestamp'] = record.created
         log_record['level'] = record.levelname
         log_record['logger'] = record.name
         log_record['service'] = 'agentic-trader'
         log_record['version'] = '1.0.0'
-        
+
         # Add correlation fields
         log_record['trace_id'] = getattr(record, 'trace_id', 'unknown')
         log_record['span_id'] = getattr(record, 'span_id', 'unknown')
         log_record['user_id'] = getattr(record, 'user_id', 'unknown')
         log_record['tenant_id'] = getattr(record, 'tenant_id', 'unknown')
         log_record['request_id'] = getattr(record, 'request_id', 'unknown')
-        
+
         # Rename fields for consistency
         if 'message' not in log_record:
             log_record['message'] = record.getMessage()
@@ -412,23 +412,23 @@ class StructuredFormatter(jsonlogger.JsonFormatter):
 
 def setup_structured_logging():
     """Configure structured logging for the application."""
-    
+
     # Root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
-    
+
     # Clear existing handlers
     root_logger.handlers.clear()
-    
+
     # Console handler with JSON formatter
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(StructuredFormatter())
-    
+
     # Add correlation filter
     console_handler.addFilter(CorrelationFilter())
-    
+
     root_logger.addHandler(console_handler)
-    
+
     # Reduce noise from libraries
     logging.getLogger('uvicorn.access').setLevel(logging.WARNING)
     logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
@@ -440,15 +440,15 @@ def setup_structured_logging():
 # In websocket_manager_v2.py
 async def handle_client_message(self, connection_id: str, message: Dict):
     """Handle message with correlation context."""
-    
+
     # Extract or create correlation from message
     trace_id = message.get('trace_id') or str(uuid.uuid4())
-    
+
     # Set context
     ctx = CorrelationContext.create()
     ctx.trace_id = trace_id
     ctx.set_current()
-    
+
     # Log with correlation
     logger.info(f"WS message received: {message.get('type')}", extra={
         'connection_id': connection_id,
@@ -456,7 +456,7 @@ async def handle_client_message(self, connection_id: str, message: Dict):
         'stream': message.get('stream'),
         **ctx.to_dict()
     })
-    
+
     # Process message
     # ...
 ```
@@ -467,22 +467,22 @@ async def handle_client_message(self, connection_id: str, message: Dict):
 # backend/events/event_bus.py
 class TracedEventBus:
     """Event bus with correlation propagation."""
-    
+
     async def publish(self, event: Event):
         """Publish event with correlation context."""
         from backend.core.telemetry.correlation import CorrelationContext
-        
+
         ctx = CorrelationContext.get_current()
-        
+
         # Add correlation to event
         event.metadata['trace_id'] = ctx.trace_id
         event.metadata['user_id'] = ctx.user_id
         event.metadata['tenant_id'] = ctx.tenant_id
-        
+
         # Publish with tracing
         with CorrelationManager.new_span(f"publish_{event.type}"):
             await self._publish(event)
-    
+
     async def consume(self, event: Event):
         """Consume event with restored correlation."""
         # Restore correlation from event
@@ -493,7 +493,7 @@ class TracedEventBus:
             tenant_id=event.metadata.get('tenant_id')
         )
         ctx.set_current()
-        
+
         # Process with tracing
         with CorrelationManager.new_span(f"consume_{event.type}"):
             await self._process(event)
@@ -522,21 +522,21 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 def setup_tracing(service_name: str):
     """Setup OpenTelemetry tracing."""
-    
+
     # Jaeger exporter
     jaeger_exporter = JaegerExporter(
         agent_host_name="jaeger-agent",
         agent_port=6831,
     )
-    
+
     # Tracer provider
     provider = TracerProvider()
     processor = BatchSpanProcessor(jaeger_exporter)
     provider.add_span_processor(processor)
-    
+
     # Set global provider
     trace.set_tracer_provider(provider)
-    
+
     return trace.get_tracer(service_name)
 ```
 

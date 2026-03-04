@@ -202,10 +202,10 @@ async def main():
 Examples:
   # Use existing CSV file
   python scripts/backtest_with_real_data.py --file data/historical/BTC-EUR_1h.csv
-  
+
   # Auto-download and backtest
   python scripts/backtest_with_real_data.py --symbol BTC-EUR --timeframe 1h --days 365
-  
+
   # Different strategy
   python scripts/backtest_with_real_data.py --file BTC-EUR.csv --strategy moving_average
         """,

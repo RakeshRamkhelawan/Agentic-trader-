@@ -16,7 +16,6 @@ def mock_middleware_validator():
     Restores original on teardown.
     """
     # Find AuthMiddleware
-    auth_middleware = None
     for middleware in app.user_middleware:
         if middleware.cls == AuthMiddleware:
             # In Starlette/FastAPI, middleware is wrapped.

@@ -4,7 +4,6 @@ Run: pytest backend/tests/test_data_scout_enrichment.py -v
 """
 
 from datetime import datetime
-from typing import Any, Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

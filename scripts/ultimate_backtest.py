@@ -787,10 +787,10 @@ async def main():
 Examples:
   # LLM-powered backtest with multiple symbols
   python scripts/ultimate_backtest.py --symbols BTC-EUR,ETH-EUR,SOL-EUR,XRP-EUR --use-llm
-  
+
   # Rule-based comparison
   python scripts/ultimate_backtest.py --symbols BTC-EUR,ETH-EUR --no-llm
-  
+
   # Full comparison (both LLM and Rule-based)
   python scripts/ultimate_backtest.py --symbols BTC-EUR,ETH-EUR,SOL-EUR --compare
         """,

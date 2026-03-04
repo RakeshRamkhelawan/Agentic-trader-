@@ -5,7 +5,6 @@ from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from backend.core.auth.jwt_validator import JWTValidator
 from backend.core.auth.middleware import AuthMiddleware
 from backend.core.auth.models import TokenPayload
 from backend.core.security.dependencies import (
@@ -157,5 +156,5 @@ async def test_integration_secret_manager_caching_flow():
     mock_vault.get_secret.assert_called_once_with("service", "key")
 
     manager.clear_cache()
-    value3 = manager.get_secret("service", "key")
+    manager.get_secret("service", "key")
     assert mock_vault.get_secret.call_count == 2

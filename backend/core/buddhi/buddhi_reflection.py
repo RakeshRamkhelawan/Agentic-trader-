@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DecisionOutcome:
     """Uitkomst van een trading beslissing."""
+
     decision_id: str
     timestamp: datetime
     symbol: str
@@ -54,6 +55,7 @@ class DecisionOutcome:
 @dataclass
 class CouncilPerformance:
     """Performance metrics voor een council."""
+
     council_type: str
     total_signals: int
     correct_signals: int
@@ -73,11 +75,7 @@ class BuddhiReflection:
     is verstreken, niet door 'toekomstige' prijzen te gebruiken bij besluitvorming.
     """
 
-    def __init__(
-        self,
-        evaluation_horizons: list[str] = None,
-        min_samples_for_update: int = 10
-    ):
+    def __init__(self, evaluation_horizons: list[str] = None, min_samples_for_update: int = 10):
         self.evaluation_horizons = evaluation_horizons or ["5m", "15m", "1h", "4h"]
         self.min_samples = min_samples_for_update
 
@@ -99,7 +97,7 @@ class BuddhiReflection:
         symbol: str,
         action: str,
         entry_price: float,
-        council_views: dict[str, float]  # council -> confidence
+        council_views: dict[str, float],  # council -> confidence
     ):
         """
         Registreer een nieuwe beslissing voor toekomstige evaluatie.
@@ -109,7 +107,7 @@ class BuddhiReflection:
             timestamp=timestamp,
             symbol=symbol,
             action=action,
-            entry_price=entry_price
+            entry_price=entry_price,
         )
 
         self.pending_decisions.append(outcome)
@@ -124,7 +122,7 @@ class BuddhiReflection:
                     accuracy=0.5,
                     avg_confidence=0.5,
                     sharpe_contribution=0.0,
-                    current_weight=1.0
+                    current_weight=1.0,
                 )
 
         logger.debug(f"Registered decision {decision_id} for future evaluation")
@@ -132,7 +130,7 @@ class BuddhiReflection:
     async def evaluate_pending_decisions(
         self,
         price_fetcher,  # Async callable: fetch_price_at(symbol, timestamp)
-        current_time: datetime | None = None
+        current_time: datetime | None = None,
     ):
         """
         Evalueer pending decisions waarvan de horizons zijn verstreken.
@@ -148,12 +146,7 @@ class BuddhiReflection:
             time_since = (current_time - outcome.timestamp).total_seconds()
 
             # Check welke horizons beschikbaar zijn
-            horizon_minutes = {
-                "5m": 5,
-                "15m": 15,
-                "1h": 60,
-                "4h": 240
-            }
+            horizon_minutes = {"5m": 5, "15m": 15, "1h": 60, "4h": 240}
 
             all_available = True
             returns = {}
@@ -174,7 +167,9 @@ class BuddhiReflection:
                             all_available = False
                             break
                     except Exception as e:
-                        logger.warning(f"Could not fetch price for {outcome.symbol} at {horizon_time}: {e}")
+                        logger.warning(
+                            f"Could not fetch price for {outcome.symbol} at {horizon_time}: {e}"
+                        )
                         all_available = False
                         break
                 else:
@@ -190,8 +185,16 @@ class BuddhiReflection:
                 outcome.returns_4h = returns.get("returns_4h")
 
                 # Bereken Sharpe proxy (mean return / std dev)
-                returns_list = [r for r in [outcome.returns_5m, outcome.returns_15m,
-                                            outcome.returns_1h, outcome.returns_4h] if r is not None]
+                returns_list = [
+                    r
+                    for r in [
+                        outcome.returns_5m,
+                        outcome.returns_15m,
+                        outcome.returns_1h,
+                        outcome.returns_4h,
+                    ]
+                    if r is not None
+                ]
                 if returns_list:
                     mean_ret = np.mean(returns_list)
                     std_ret = np.std(returns_list) + 1e-8  # Avoid div by zero
@@ -241,11 +244,7 @@ class BuddhiReflection:
 
         logger.info("Updated council weights based on performance")
 
-    def calculate_decision_quality(
-        self,
-        decision: DecisionOutcome,
-        horizon: str = "1h"
-    ) -> float:
+    def calculate_decision_quality(self, decision: DecisionOutcome, horizon: str = "1h") -> float:
         """
         Bereken kwaliteit van een beslissing gebruikmakend van Sharpe proxy.
 
@@ -274,10 +273,7 @@ class BuddhiReflection:
 
     def get_council_weights(self) -> dict[str, float]:
         """Huidige gewichten voor council input."""
-        return {
-            name: perf.current_weight
-            for name, perf in self.council_performances.items()
-        }
+        return {name: perf.current_weight for name, perf in self.council_performances.items()}
 
     def get_performance_summary(self) -> dict:
         """Samenvatting van recente performance."""
@@ -294,5 +290,5 @@ class BuddhiReflection:
             "accuracy_1h": profitable / len(recent) if recent else 0,
             "avg_sharpe": np.mean([o.sharpe_1h for o in recent if o.sharpe_1h]),
             "council_weights": self.get_council_weights(),
-            "pending_evaluations": len(self.pending_decisions)
+            "pending_evaluations": len(self.pending_decisions),
         }

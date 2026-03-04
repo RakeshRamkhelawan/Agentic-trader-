@@ -2,17 +2,14 @@
 Unit tests for Arbitrage Strategy (Sprint 3).
 """
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
-import numpy as np
 import pytest
 
 from backend.strategies.arbitrage import (
     ArbitrageOpportunity,
     PriceDisparityDetector,
     LatencyArbitrageDetector,
-    TriangularArbitrageDetector,
     ArbitrageExecutor,
     ArbitrageStrategy,
 )

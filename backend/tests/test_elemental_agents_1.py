@@ -1,5 +1,4 @@
 import pytest
-import pytest_asyncio
 
 from backend.agents.elemental_orchestrator import ElementalOrchestrator
 from backend.agents.elemental_research import ElementalResearch

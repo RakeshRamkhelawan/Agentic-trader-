@@ -378,7 +378,7 @@ class TestPerformanceE2E:
 
         start = time.perf_counter()
         for _ in range(1000):
-            features = engine.extract(kundli, transits, 50000, tattva_state)
+            engine.extract(kundli, transits, 50000, tattva_state)
         elapsed = time.perf_counter() - start
 
         avg_ms = (elapsed / 1000) * 1000

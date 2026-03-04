@@ -3,7 +3,7 @@ Unit tests for Optimized System Identity (Sprint 2 Tattva optimizations).
 """
 
 import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -195,7 +195,7 @@ class TestPerformanceTargets:
         latencies = []
         for _ in range(1000):
             start = time.perf_counter_ns()
-            mode = system_identity._select_traversal_mode(0.85)
+            system_identity._select_traversal_mode(0.85)
             end = time.perf_counter_ns()
             latencies.append((end - start) / 1000.0)
 
@@ -281,7 +281,7 @@ class TestMetricsAndStatistics:
         stats = system_identity.get_performance_statistics()
 
         assert stats["sparse_mode"]["count"] == 3
-        assert stats["sparse_mode"]["target_met"] == True  # All < 80
+        assert stats["sparse_mode"]["target_met"]  # All < 80
 
     def test_full_statistics(self, system_identity):
         """Test full mode statistics."""
@@ -296,7 +296,7 @@ class TestMetricsAndStatistics:
         stats = system_identity.get_performance_statistics()
 
         assert stats["full_mode"]["count"] == 3
-        assert stats["full_mode"]["target_met"] == False  # One > 200
+        assert not stats["full_mode"]["target_met"]  # One > 200
 
 
 class TestTattvaMetrics:

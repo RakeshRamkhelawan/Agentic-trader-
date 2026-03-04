@@ -18,6 +18,7 @@ class MeanReversionBot(BaseTradingBot):
     def __init__(self, config: BotConfig = None):
         if config is None:
             from .base_bot import BotDifficulty, BotPersonality
+
             config = BotConfig(
                 name="ReversionBot",
                 difficulty=BotDifficulty.MEDIUM,
@@ -33,7 +34,7 @@ class MeanReversionBot(BaseTradingBot):
         # Calculate Bollinger Bands
         sma = sum(price_data[-20:]) / 20
         variance = sum((p - sma) ** 2 for p in price_data[-20:]) / 20
-        std_dev = variance ** 0.5
+        std_dev = variance**0.5
 
         upper_band = sma + (2 * std_dev)
         lower_band = sma - (2 * std_dev)

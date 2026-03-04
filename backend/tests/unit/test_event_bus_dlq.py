@@ -2,20 +2,16 @@
 Unit tests for Event Bus with DLQ and Retry mechanism.
 """
 
-import asyncio
 import json
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-import redis.asyncio as redis
 
 from backend.events.event_bus import (
     EventBus,
     EventBusError,
     EventMetadata,
     RetryConfig,
-    RetryExhaustedError,
 )
 
 

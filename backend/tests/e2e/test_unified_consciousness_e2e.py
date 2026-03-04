@@ -7,9 +7,8 @@ Complete end-to-end test suite voor het gehele unified consciousness systeem:
 - Frontend-backend integratie
 """
 
-import asyncio
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -24,11 +23,9 @@ from backend.core.navagraha.models import GunaDistribution, NavagrahaState, Plan
 from backend.core.navagraha.service import NavagrahaService
 from backend.core.schemas.ooda_types import (
     CapitalAllocation,
-    ExecutionPlan,
     MarketRegime,
     Observation,
     Orientation,
-    PortfolioState,
     RiskAssessment,
     RiskDecision,
     TradeProposal,
@@ -275,7 +272,7 @@ class TestUnifiedConsciousnessE2E:
     async def test_e2e_risk_orchestrator_integration(self, unified_system):
         """Test E2E: RiskOrchestrator in de trading flow."""
         # Arrange
-        coordinator = unified_system["coordinator"]
+        unified_system["coordinator"]
         risk_orch = unified_system["risk_orchestrator"]
 
         # Create test signal

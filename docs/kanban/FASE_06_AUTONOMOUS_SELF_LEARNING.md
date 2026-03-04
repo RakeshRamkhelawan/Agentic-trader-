@@ -18,11 +18,11 @@ Karma Loop (Feedback):
   PunyaScore (merit)              GrahaGunaMapper weights
   PapaScore (demerit)             ElementalBase prana rates
                                   OODALoopCoordinator thresholds
-                                  
+
 Dasha Scheduler:
   Mahadasha Lord → Strategy Selection
   Antardasha Lord → Risk Appetite Adjustment
-  
+
 Viveka (Discriminating Wisdom):
   ReviewAgent → Analyze N past decisions → Learn patterns
   → Update ColdPathCoordinator weights

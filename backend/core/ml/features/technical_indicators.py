@@ -22,7 +22,9 @@ def calculate_rsi(prices: pd.Series, window: int = 14) -> pd.Series:
     return rsi
 
 
-def calculate_macd(prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> tuple[pd.Series, pd.Series, pd.Series]:
+def calculate_macd(
+    prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9
+) -> tuple[pd.Series, pd.Series, pd.Series]:
     """Calculate MACD."""
     ema_fast = prices.ewm(span=fast).mean()
     ema_slow = prices.ewm(span=slow).mean()
@@ -96,8 +98,22 @@ def add_all_features(df: pd.DataFrame) -> pd.DataFrame:
 def get_feature_columns() -> list:
     """Lijst van alle feature columns."""
     return [
-        "returns", "drawdown", "prana", "rsi_14", "rsi_7",
-        "macd", "macd_signal", "macd_hist", "bb_position", "bb_width",
-        "dist_sma10", "dist_sma30", "volatility_7d", "volatility_30d",
-        "trend_7d", "trend_30d", "momentum_5d", "momentum_10d"
+        "returns",
+        "drawdown",
+        "prana",
+        "rsi_14",
+        "rsi_7",
+        "macd",
+        "macd_signal",
+        "macd_hist",
+        "bb_position",
+        "bb_width",
+        "dist_sma10",
+        "dist_sma30",
+        "volatility_7d",
+        "volatility_30d",
+        "trend_7d",
+        "trend_30d",
+        "momentum_5d",
+        "momentum_10d",
     ]

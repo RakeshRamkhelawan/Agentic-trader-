@@ -1,15 +1,15 @@
 # Architectuur Score 8/10 → 9/10: Implementatie Samenvatting
 
-**Status**: In Progress  
-**Datum**: 2026-02-20  
-**Doel**: Productie-klare observability, betrouwbaarheid en meetbaarheid  
+**Status**: In Progress
+**Datum**: 2026-02-20
+**Doel**: Productie-klare observability, betrouwbaarheid en meetbaarheid
 
 ---
 
 ## ✅ Geïmplementeerde ADR's
 
 ### ADR-003: WebSocket Reliability & Backpressure ✅
-**Impact**: Operationele stabiliteit voor real-time features  
+**Impact**: Operationele stabiliteit voor real-time features
 **Bestanden**:
 - `docs/adr/ADR-003-websocket-reliability.md` - ADR document
 - `backend/api/websocket_manager_v2.py` - Verbeterde WS manager (18KB)
@@ -28,7 +28,7 @@
 ---
 
 ### ADR-001: SLO/SLI Model per Kritieke Flow ✅
-**Impact**: Meetbare betrouwbaarheid  
+**Impact**: Meetbare betrouwbaarheid
 **Bestanden**:
 - `docs/adr/ADR-001-slo-model.md` - ADR document
 - `backend/core/telemetry/slo_tracker.py` - SLO tracking (10KB)
@@ -50,7 +50,7 @@
 ---
 
 ### ADR-002: Observability - Metrics, Logs, Traces ✅
-**Impact**: Debugbaarheid en troubleshooting  
+**Impact**: Debugbaarheid en troubleshooting
 **Bestanden**:
 - `docs/adr/ADR-002-observability.md` - ADR document
 - `backend/core/telemetry/correlation.py` - Correlation context (11KB)
@@ -126,7 +126,7 @@ from backend.core.telemetry.correlation import CorrelationManager
 async def get_data(request: Request):
     ctx = request.state.correlation
     logger.info("Fetching data", extra={'user_id': ctx.user_id})
-    
+
 # Create new span
 with CorrelationManager.new_span("database_query") as span:
     span.set_tag("table", "orders")

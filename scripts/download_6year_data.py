@@ -372,10 +372,10 @@ async def main():
 Examples:
   # Download BTC-EUR 6-year history
   python scripts/download_6year_data.py --symbol BTC-EUR
-  
+
   # Download multiple symbols
   python scripts/download_6year_data.py --symbols BTC-EUR,ETH-EUR,SOL-EUR,XRP-EUR
-  
+
   # Daily timeframe (faster, smaller files)
   python scripts/download_6year_data.py --symbols BTC-EUR,ETH-EUR --timeframe 1d
         """,

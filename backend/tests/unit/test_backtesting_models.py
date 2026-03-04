@@ -4,7 +4,6 @@ Unit Tests for Advanced Backtesting Models.
 Tests for Slippage, Fill, and Position Sizing models.
 """
 
-from datetime import datetime
 
 import pytest
 

@@ -158,6 +158,7 @@ class ReflexExecutor:
         # Simuleer slippage: 0.02-0.05% van prijs
         # FIX: Use deterministic hash based on symbol name for reproducible backtests
         import hashlib
+
         symbol_hash = int(hashlib.md5(intent.symbol.encode()).hexdigest(), 16)
         slippage_pct = 0.02 + (symbol_hash % 30) / 1000  # 0.02-0.05%
 

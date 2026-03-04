@@ -176,7 +176,7 @@ import { useUnifiedConsciousness } from '@/lib/stores/unifiedConsciousnessStore'
 
 function Dashboard() {
     const { state, refresh } = useUnifiedConsciousness();
-    
+
     return (
         <UnifiedConsciousnessDashboard state={state} />
     );
@@ -194,7 +194,7 @@ import { TattvaMonitor } from '@/components/dashboard/TattvaMonitor';
 <NavagrahaWheel planets={navagrahaState.planets} />
 
 // Guna Distribution
-<GunaDistribution 
+<GunaDistribution
     guna={gunaVector}
     consciousness_level="Pure Awareness"
     balance_score={0.85}
@@ -246,10 +246,10 @@ MAX_POSITIONS=10
 class Settings:
     LATITUDE: float = 52.3676  # Amsterdam
     LONGITUDE: float = 4.9041
-    
+
     # Unified Consciousness
     ENABLE_UNIFIED_CONSCIOUSNESS: bool = True
-    
+
     # Risk
     MAX_DAILY_VAR_PCT: float = 0.05
     MAX_POSITIONS: int = 10

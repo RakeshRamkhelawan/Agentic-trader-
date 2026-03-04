@@ -2,15 +2,13 @@
 Unit tests for Online Learning module (Sprint 3).
 """
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from backend.core.learning.online_learner import OnlineLearner, LearningMetrics
+from backend.core.learning.online_learner import OnlineLearner
 from backend.core.learning.drift_detector import (
     ADWINDriftDetector,
-    DriftEvent,
     MultiMetricDriftDetector,
 )
 from backend.core.learning.strategy_adapter import StrategyWeightAdapter
@@ -24,14 +22,14 @@ class TestOnlineLearner:
         learner = OnlineLearner(learning_rate=0.01)
 
         assert learner.learning_rate == 0.01
-        assert learner._enabled == True
+        assert learner._enabled
         assert learner.metrics.total_samples == 0
 
     def test_initialization_without_river(self):
         """Test learner without River available."""
         with patch("backend.core.learning.online_learner.RIVER_AVAILABLE", False):
             learner = OnlineLearner()
-            assert learner._enabled == False
+            assert not learner._enabled
 
     @pytest.mark.asyncio
     async def test_learn_single_sample(self):
@@ -99,7 +97,7 @@ class TestADWINDriftDetector:
         # Feed consistent data
         for i in range(50):
             drift = detector.update(0.5)
-            assert drift == False  # Not enough samples
+            assert not drift  # Not enough samples
 
         assert detector.sample_count == 50
 
@@ -261,7 +259,7 @@ class TestPerformanceBenchmarks:
         start = time.perf_counter()
 
         for i in range(10000):
-            weights = adapter.get_weights()
+            adapter.get_weights()
 
         elapsed = time.perf_counter() - start
         avg_time = elapsed / 10000

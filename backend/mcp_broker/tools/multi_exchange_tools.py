@@ -28,9 +28,7 @@ async def multi_exchange_get_price(symbol: str, ctx=None) -> dict[str, Any]:
         ctx.info(f"Fetching multi-exchange price for {symbol}")
 
     try:
-        from backend.execution.multi_exchange_aggregator import (
-            get_multi_exchange_aggregator,
-        )
+        from backend.execution.multi_exchange_aggregator import get_multi_exchange_aggregator
 
         aggregator = await get_multi_exchange_aggregator()
         agg_price = await aggregator.get_aggregated_price(symbol)
@@ -89,9 +87,7 @@ async def multi_exchange_get_best_price(symbol: str, side: str, ctx=None) -> dic
         ctx.info(f"Finding best {side} price for {symbol}")
 
     try:
-        from backend.execution.multi_exchange_aggregator import (
-            get_multi_exchange_aggregator,
-        )
+        from backend.execution.multi_exchange_aggregator import get_multi_exchange_aggregator
 
         aggregator = await get_multi_exchange_aggregator()
         best = await aggregator.get_best_price(symbol, side)
@@ -131,9 +127,7 @@ async def multi_exchange_find_arbitrage(ctx=None) -> dict[str, Any]:
         ctx.info("Scanning for arbitrage opportunities")
 
     try:
-        from backend.execution.multi_exchange_aggregator import (
-            get_multi_exchange_aggregator,
-        )
+        from backend.execution.multi_exchange_aggregator import get_multi_exchange_aggregator
 
         aggregator = await get_multi_exchange_aggregator()
         opportunities = await aggregator.get_arbitrage_opportunities()
@@ -169,9 +163,7 @@ async def multi_exchange_get_discrepancies(threshold_pct: float = 0.5, ctx=None)
         ctx.info(f"Scanning for price discrepancies above {threshold_pct}%")
 
     try:
-        from backend.execution.multi_exchange_aggregator import (
-            get_multi_exchange_aggregator,
-        )
+        from backend.execution.multi_exchange_aggregator import get_multi_exchange_aggregator
 
         aggregator = await get_multi_exchange_aggregator()
         discrepancies = await aggregator.get_price_discrepancies(threshold_pct)
@@ -218,9 +210,7 @@ async def smart_order_route(
         ctx.info(f"Routing {side} order for {quantity} {symbol}")
 
     try:
-        from backend.execution.multi_exchange_aggregator import (
-            get_multi_exchange_aggregator,
-        )
+        from backend.execution.multi_exchange_aggregator import get_multi_exchange_aggregator
 
         aggregator = await get_multi_exchange_aggregator()
         agg_price = await aggregator.get_aggregated_price(symbol)
@@ -261,8 +251,7 @@ async def smart_order_route(
             "estimated_fee": round(estimated_fee, 2),
             "net_value": round(net_value, 2),
             "alternative_exchanges": [
-                ex for ex in agg_price.prices.keys()
-                if ex != best["exchange"]
+                ex for ex in agg_price.prices.keys() if ex != best["exchange"]
             ],
             "price_comparison": {
                 ex: {
@@ -296,9 +285,7 @@ async def multi_exchange_get_stats(ctx=None) -> dict[str, Any]:
         Aggregator status and statistics
     """
     try:
-        from backend.execution.multi_exchange_aggregator import (
-            get_multi_exchange_aggregator,
-        )
+        from backend.execution.multi_exchange_aggregator import get_multi_exchange_aggregator
 
         aggregator = await get_multi_exchange_aggregator()
         stats = aggregator.get_stats()

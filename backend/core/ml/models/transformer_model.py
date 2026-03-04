@@ -33,10 +33,10 @@ class PositionalEncoding(nn.Module):
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)  # [1, max_len, d_model]
 
-        self.register_buffer('pe', pe)
+        self.register_buffer("pe", pe)
 
     def forward(self, x):
-        x = x + self.pe[:, :x.size(1), :]
+        x = x + self.pe[:, : x.size(1), :]
         return self.dropout(x)
 
 
@@ -60,7 +60,7 @@ class ChittaTransformer(nn.Module):
         num_layers: int = 4,
         dim_feedforward: int = 512,
         dropout: float = 0.1,
-        output_size: int = 1
+        output_size: int = 1,
     ):
         super(ChittaTransformer, self).__init__()
 
@@ -78,24 +78,23 @@ class ChittaTransformer(nn.Module):
             nhead=nhead,
             dim_feedforward=dim_feedforward,
             dropout=dropout,
-            batch_first=True
+            batch_first=True,
         )
-        self.transformer_encoder = nn.TransformerEncoder(
-            encoder_layer,
-            num_layers=num_layers
-        )
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
 
         # Output layers
         self.fc = nn.Sequential(
             nn.Linear(d_model, dim_feedforward // 2),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(dim_feedforward // 2, output_size)
+            nn.Linear(dim_feedforward // 2, output_size),
         )
 
         self._init_weights()
 
-        logger.info(f"ChittaTransformer initialized: d_model={d_model}, layers={num_layers}, heads={nhead}")
+        logger.info(
+            f"ChittaTransformer initialized: d_model={d_model}, layers={num_layers}, heads={nhead}"
+        )
 
     def _init_weights(self):
         """Initialize weights."""
@@ -151,7 +150,7 @@ class TemporalFusionTransformer(nn.Module):
         num_heads: int = 4,
         num_layers: int = 2,
         dropout: float = 0.1,
-        output_size: int = 1
+        output_size: int = 1,
     ):
         super().__init__()
 
@@ -165,15 +164,12 @@ class TemporalFusionTransformer(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=dropout
+            dropout=dropout,
         )
 
         # Multi-head attention
         self.attention = nn.MultiheadAttention(
-            embed_dim=hidden_size,
-            num_heads=num_heads,
-            dropout=dropout,
-            batch_first=True
+            embed_dim=hidden_size, num_heads=num_heads, dropout=dropout, batch_first=True
         )
 
         # Output layers
@@ -181,7 +177,7 @@ class TemporalFusionTransformer(nn.Module):
             nn.Linear(hidden_size * 2, hidden_size),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(hidden_size, output_size)
+            nn.Linear(hidden_size, output_size),
         )
 
     def forward(self, x_temporal: torch.Tensor, x_static: torch.Tensor = None):
@@ -220,15 +216,12 @@ class VariableSelectionNetwork(nn.Module):
         self.hidden_size = hidden_size
 
         # Individual linear layers voor elke input
-        self.single_variable_grns = nn.ModuleList([
-            GatedResidualNetwork(input_size, hidden_size, dropout)
-            for _ in range(input_size)
-        ])
+        self.single_variable_grns = nn.ModuleList(
+            [GatedResidualNetwork(input_size, hidden_size, dropout) for _ in range(input_size)]
+        )
 
         # Variable selection weights
-        self.selection_weights = GatedResidualNetwork(
-            input_size * hidden_size, input_size, dropout
-        )
+        self.selection_weights = GatedResidualNetwork(input_size * hidden_size, input_size, dropout)
 
     def forward(self, x):
         """x: [batch, seq, input_size] of [batch, input_size]"""
@@ -238,7 +231,7 @@ class VariableSelectionNetwork(nn.Module):
         # Apply GRN aan elke variable apart
         var_outputs = []
         for i, grn in enumerate(self.single_variable_grns):
-            var_input = x[:, :, i:i+1]
+            var_input = x[:, :, i : i + 1]
             var_output = grn(var_input)
             var_outputs.append(var_output)
 

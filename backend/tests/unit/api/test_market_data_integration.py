@@ -23,7 +23,7 @@ def mock_pipeline():
     mock.providers[1].name = "kraken"
 
     # We patch initialize_market_data to return this mock
-    with patch("backend.api.main.initialize_market_data", return_value=mock) as init_mock:
+    with patch("backend.api.main.initialize_market_data", return_value=mock):
         yield mock
 
 
@@ -36,7 +36,7 @@ async def test_startup_shutdown_lifecycle():
         init_mock.return_value.start = AsyncMock()
         init_mock.return_value.stop = AsyncMock()
 
-        with TestClient(app) as client:
+        with TestClient(app):
             # Startup runs on enter
             assert init_mock.called
             pipeline = init_mock.return_value

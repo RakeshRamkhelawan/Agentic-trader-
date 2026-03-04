@@ -81,7 +81,6 @@ class TestJWTSecurity:
 
     def test_no_unverified_token_fallback(self):
         """Verify tokens are always verified, no unverified fallback."""
-        from backend.core.auth.jwt_validator import JWTValidator
 
         validator = JWTValidator(
             jwks_url="https://test.auth0.com/.well-known/jwks.json",
@@ -195,12 +194,6 @@ class TestXSSPrevention:
         """Verify responses don't contain executable HTML."""
         # This would be tested against actual API endpoints
         # For now, document the requirement
-        dangerous_patterns = [
-            "<script>",
-            "javascript:",
-            "onerror=",
-            "onload=",
-        ]
 
         # Placeholder - actual implementation would test API responses
         assert True
@@ -296,13 +289,6 @@ class TestAuditLogging:
         """Verify sensitive data is not logged."""
         # This would check log files/output
         # For now, document the requirement
-        sensitive_fields = [
-            "password",
-            "secret",
-            "token",
-            "api_key",
-            "private_key",
-        ]
 
         # Placeholder - actual implementation would parse logs
         assert True

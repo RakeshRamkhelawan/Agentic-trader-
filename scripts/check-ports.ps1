@@ -38,7 +38,7 @@ $available = @()
 foreach ($item in $dockerPorts) {
     $port = $item.Port
     $service = $item.Service
-    
+
     # Check if port is in use
     $connection = $null
     try {
@@ -46,13 +46,13 @@ foreach ($item in $dockerPorts) {
     } catch {
         # Port not found, means it's available
     }
-    
+
     if ($connection) {
         $process = Get-Process -Id $connection.OwningProcess -ErrorAction SilentlyContinue
         $processName = if ($process) { $process.ProcessName } else { "Unknown" }
-        
+
         Write-Host "❌ Port $port`t- $service `t[IN USE by $processName]" -ForegroundColor Red
-        
+
         $conflicts += [PSCustomObject]@{
             Service = $service
             Port = $port
@@ -62,7 +62,7 @@ foreach ($item in $dockerPorts) {
         }
     } else {
         Write-Host "✅ Port $port`t- $service `t[AVAILABLE]" -ForegroundColor Green
-        
+
         $available += $item
     }
 }
@@ -80,35 +80,35 @@ if ($conflicts.Count -eq 0) {
 } else {
     Write-Host "Found $($conflicts.Count) port conflicts!" -ForegroundColor Yellow
     Write-Host ""
-    
+
     Write-Host "Conflicting Ports:" -ForegroundColor Red
     $conflicts | Format-Table -AutoSize | Out-String | Write-Host -ForegroundColor Red
-    
+
     Write-Host ""
     Write-Host "Suggested Alternative Ports:" -ForegroundColor Cyan
     Write-Host ""
-    
+
     foreach ($conflict in $conflicts) {
         $originalPort = $conflict.Port
         $suggestedPort = $originalPort + 1000
-        
+
         # Check if suggested port is available
         $suggestedInUse = $false
         try {
             $suggestedConnection = Get-NetTCPConnection -LocalPort $suggestedPort -ErrorAction SilentlyContinue
             if ($suggestedConnection) { $suggestedInUse = $true }
         } catch {}
-        
+
         if ($suggestedInUse) {
             $suggestedPort = $originalPort + 2000
         }
-        
+
         Write-Host "  $($conflict.Service):" -ForegroundColor White
         Write-Host "    Original: $originalPort" -ForegroundColor Red
         Write-Host "    Suggested: $suggestedPort" -ForegroundColor Green
         Write-Host ""
     }
-    
+
     Write-Host ""
     Write-Host "To resolve conflicts, you can:" -ForegroundColor Yellow
     Write-Host ""
@@ -128,7 +128,7 @@ try {
     $dockerInfo = docker info 2>&1
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Docker is running" -ForegroundColor Green
-        
+
         # Check existing containers
         $containers = docker ps --format "{{.Names}}" 2>$null
         if ($containers) {

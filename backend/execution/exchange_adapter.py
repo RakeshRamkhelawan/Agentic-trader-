@@ -10,8 +10,9 @@ from cryptography.hazmat.primitives import serialization
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from backend.execution.broker_interface import ExecutionInterface, OrderResult
-from backend.schemas.market_data import OrderBook, OrderUpdate, TickerUpdate
+from backend.schemas.market_data import OrderBook
 from backend.schemas.market_data import OrderStatus as MarketOrderStatus
+from backend.schemas.market_data import OrderUpdate, TickerUpdate
 from backend.schemas.orders import OrderRequest, OrderStatus
 
 logger = logging.getLogger(__name__)

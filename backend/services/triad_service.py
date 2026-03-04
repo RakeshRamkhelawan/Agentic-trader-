@@ -133,6 +133,7 @@ class TriadService:
         # Determine which exchanges to initialize
         if exchange_ids is None:
             from backend.core.config.settings import settings
+
             exchange_ids = []
             if settings.BITVAVO_API_KEY:
                 exchange_ids.append("bitvavo")
@@ -143,8 +144,7 @@ class TriadService:
         for exchange_id in exchange_ids:
             try:
                 exchange = await self.exchange_factory.create_exchange(
-                    exchange_id,
-                    auto_connect=True
+                    exchange_id, auto_connect=True
                 )
 
                 if exchange:
@@ -177,8 +177,12 @@ class TriadService:
         """Get status of all exchanges."""
         return {
             exchange_id: {
-                "connected": exchange.connected if hasattr(exchange, 'connected') else False,
-                "capabilities": exchange.get_capabilities().name if hasattr(exchange, 'get_capabilities') else "Unknown"
+                "connected": exchange.connected if hasattr(exchange, "connected") else False,
+                "capabilities": (
+                    exchange.get_capabilities().name
+                    if hasattr(exchange, "get_capabilities")
+                    else "Unknown"
+                ),
             }
             for exchange_id, exchange in self._exchanges.items()
         }
@@ -187,8 +191,9 @@ class TriadService:
     # Core Pipeline
     # =========================================================================
 
-    async def process_market_data(self, market_data: dict,
-                                   session_id: str = None) -> BuddhiDecision | None:
+    async def process_market_data(
+        self, market_data: dict, session_id: str = None
+    ) -> BuddhiDecision | None:
         """
         Process market data through complete Triad pipeline.
 
@@ -217,12 +222,12 @@ class TriadService:
             karma_score = self.memory.calculate_karma_score(similar_episodes)
 
             if similar_episodes:
-                logger.info(f"[TriadService] Found {len(similar_episodes)} similar episodes, karma: {karma_score:.2f}")
+                logger.info(
+                    f"[TriadService] Found {len(similar_episodes)} similar episodes, karma: {karma_score:.2f}"
+                )
 
             # 3. Get ML prediction
-            ml_prediction = self.ml_trainer.predict_outcome(
-                market_data, council_views, 0.5, 0.5
-            )
+            ml_prediction = self.ml_trainer.predict_outcome(market_data, council_views, 0.5, 0.5)
             logger.debug(f"[TriadService] ML predicts success probability: {ml_prediction:.2f}")
 
             # 4. Buddhi makes decision
@@ -230,7 +235,7 @@ class TriadService:
                 council_views=council_views,
                 market_data=market_data,
                 session_id=session_id,
-                timestamp=datetime.utcnow().isoformat()
+                timestamp=datetime.utcnow().isoformat(),
             )
 
             # Adjust confidence based on ML prediction
@@ -245,17 +250,27 @@ class TriadService:
                 session_id=session_id,
                 timestamp=datetime.utcnow(),
                 market_context=market_data,
-                volatility=market_data.get('volatility_1m', 0.02),
-                trend='up' if market_data.get('trend', 0) > 0 else 'down' if market_data.get('trend', 0) < 0 else 'neutral',
-                volume_profile='high' if market_data.get('volume_ratio', 1.0) > 1.5 else 'normal',
-                guna_vector=council_views[0].get('guna_vector', {}) if council_views else {},
-                fear_greed_index=council_views[1].get('fear_greed_index', 50) if len(council_views) > 1 else 50,
-                execution_quality=council_views[2].get('execution_quality', 'unknown') if len(council_views) > 2 else 'unknown',
+                volatility=market_data.get("volatility_1m", 0.02),
+                trend=(
+                    "up"
+                    if market_data.get("trend", 0) > 0
+                    else "down" if market_data.get("trend", 0) < 0 else "neutral"
+                ),
+                volume_profile="high" if market_data.get("volume_ratio", 1.0) > 1.5 else "normal",
+                guna_vector=council_views[0].get("guna_vector", {}) if council_views else {},
+                fear_greed_index=(
+                    council_views[1].get("fear_greed_index", 50) if len(council_views) > 1 else 50
+                ),
+                execution_quality=(
+                    council_views[2].get("execution_quality", "unknown")
+                    if len(council_views) > 2
+                    else "unknown"
+                ),
                 action=decision.action,
                 confidence=decision.confidence,
                 coherence=decision.coherence,
                 rationale=decision.rationale,
-                karma_score=karma_score
+                karma_score=karma_score,
             )
 
             self.memory.store_episode(episode)
@@ -270,14 +285,18 @@ class TriadService:
                 self.stats["decisions_made"] += 1
 
             # 8. Store in history
-            self.decision_history.append({
-                "timestamp": decision.timestamp,
-                "action": decision.action,
-                "confidence": decision.confidence,
-                "coherence": decision.coherence
-            })
+            self.decision_history.append(
+                {
+                    "timestamp": decision.timestamp,
+                    "action": decision.action,
+                    "confidence": decision.confidence,
+                    "coherence": decision.coherence,
+                }
+            )
 
-            logger.info(f"[TriadService] Decision: {decision.action} (conf: {decision.confidence:.2f})")
+            logger.info(
+                f"[TriadService] Decision: {decision.action} (conf: {decision.confidence:.2f})"
+            )
 
             return decision
 
@@ -299,7 +318,7 @@ class TriadService:
                 perspective=guna_view["perspective"],
                 confidence=guna_view["confidence"],
                 reasoning="; ".join(guna_view["key_insights"]),
-                metadata=guna_view.get("guna_vector", {})
+                metadata=guna_view.get("guna_vector", {}),
             )
             logger.debug(f"[TriadService] Guna: {guna_view['perspective']}")
 
@@ -318,8 +337,8 @@ class TriadService:
                 reasoning=f"Fear/Greed: {mind_view.get('fear_greed_index', 50)}",
                 metadata={
                     "fear_greed": mind_view.get("fear_greed_index"),
-                    "components": mind_view.get("components", {})
-                }
+                    "components": mind_view.get("components", {}),
+                },
             )
             logger.debug(f"[TriadService] Mind: {mind_view['perspective']}")
 
@@ -336,7 +355,7 @@ class TriadService:
                 perspective=body_view["perspective"],
                 confidence=body_view["confidence"],
                 reasoning=f"Execution quality: {body_view['execution_quality']}",
-                metadata=body_view.get("metrics", {})
+                metadata=body_view.get("metrics", {}),
             )
             logger.debug(f"[TriadService] Body: {body_view['perspective']}")
 
@@ -354,7 +373,7 @@ class TriadService:
                 coherence=decision.coherence,
                 rationale=decision.rationale,
                 council_views=decision.council_views,
-                session_id=decision.session_id
+                session_id=decision.session_id,
             )
         except Exception as e:
             logger.error(f"[TriadService] Failed to publish decision: {e}")
@@ -368,7 +387,7 @@ class TriadService:
         decision: BuddhiDecision,
         symbol: str = "BTC/EUR",
         quantity: Decimal | None = None,
-        exchange_id: str | None = None
+        exchange_id: str | None = None,
     ) -> dict[str, Any]:
         """
         Execute trade based on Buddhi decision.
@@ -397,10 +416,7 @@ class TriadService:
             return {"status": "rejected", "reason": f"Unknown trading mode: {self.trading_mode}"}
 
     async def execute_paper_trade(
-        self,
-        decision: BuddhiDecision,
-        symbol: str = "BTC/EUR",
-        quantity: Decimal | None = None
+        self, decision: BuddhiDecision, symbol: str = "BTC/EUR", quantity: Decimal | None = None
     ) -> dict[str, Any]:
         """
         Execute paper trade based on Buddhi decision.
@@ -430,7 +446,7 @@ class TriadService:
                 "coherence": decision.coherence,
                 "session_id": decision.session_id,
                 "timestamp": datetime.utcnow().isoformat(),
-                "paper": True
+                "paper": True,
             }
 
             self.stats["trades_executed"] += 1
@@ -449,7 +465,7 @@ class TriadService:
         decision: BuddhiDecision,
         symbol: str = "BTC/EUR",
         quantity: Decimal | None = None,
-        exchange_id: str | None = None
+        exchange_id: str | None = None,
     ) -> dict[str, Any]:
         """
         Execute live trade on exchange.
@@ -496,7 +512,7 @@ class TriadService:
             side=side,
             order_type=OrderType.MARKET,  # Could use LIMIT for better price
             amount=quantity,
-            client_order_id=f"triad_{decision.session_id}"
+            client_order_id=f"triad_{decision.session_id}",
         )
 
         # Risk validation
@@ -514,16 +530,18 @@ class TriadService:
                 portfolio_value=portfolio.total_value_usd if portfolio else Decimal("10000"),
                 current_positions=positions,
                 exchange=self._exchanges.get(exchange_id) if exchange_id else None,
-                balance=balance
+                balance=balance,
             )
 
             if not validation.is_valid:
                 self.stats["risk_rejections"] += 1
-                logger.warning(f"[TriadService] Order rejected by risk validator: {validation.overall_message}")
+                logger.warning(
+                    f"[TriadService] Order rejected by risk validator: {validation.overall_message}"
+                )
                 return {
                     "status": "rejected",
                     "reason": validation.overall_message,
-                    "validation": validation.to_dict()
+                    "validation": validation.to_dict(),
                 }
 
             if validation.has_warnings:
@@ -535,10 +553,7 @@ class TriadService:
 
         # Execute order
         try:
-            order = await self.order_manager.place_order(
-                order_request,
-                exchange_id=exchange_id
-            )
+            order = await self.order_manager.place_order(order_request, exchange_id=exchange_id)
 
             if not order:
                 return {"status": "error", "reason": "Order placement failed"}
@@ -561,7 +576,7 @@ class TriadService:
                 "filled": float(order.filled),
                 "price": float(order.average_price) if order.average_price else None,
                 "session_id": decision.session_id,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
             }
 
             logger.info(f"[TriadService] Live trade executed: {result}")
@@ -603,10 +618,7 @@ class TriadService:
         triad_decision = self.process_market_data(market_data, f"{experiment_id}_triad")
         baseline_decision = self.ab_framework.get_baseline_decision(experiment_id, market_data)
 
-        return {
-            "triad": triad_decision,
-            "baseline": baseline_decision
-        }
+        return {"triad": triad_decision, "baseline": baseline_decision}
 
     def record_ab_outcome(self, experiment_id: str, variant: str, pnl: float):
         """Record outcome for A/B test variant."""
@@ -620,8 +632,9 @@ class TriadService:
     # Outcome Management
     # =========================================================================
 
-    def update_trade_outcome(self, session_id: str, pnl: float,
-                             exit_reason: str = "unknown") -> bool:
+    def update_trade_outcome(
+        self, session_id: str, pnl: float, exit_reason: str = "unknown"
+    ) -> bool:
         """Update trade outcome in episodic memory."""
         try:
             episode_id = self.active_episodes.get(session_id)
@@ -632,14 +645,13 @@ class TriadService:
             outcome = "success" if pnl > 0 else "failure" if pnl < 0 else "neutral"
 
             updated = self.memory.update_outcome(
-                episode_id=episode_id,
-                outcome=outcome,
-                pnl=pnl,
-                exit_reason=exit_reason
+                episode_id=episode_id, outcome=outcome, pnl=pnl, exit_reason=exit_reason
             )
 
             if updated:
-                logger.info(f"[TriadService] Updated trade outcome for {session_id}: {outcome}, PnL: {pnl:.2f}")
+                logger.info(
+                    f"[TriadService] Updated trade outcome for {session_id}: {outcome}, PnL: {pnl:.2f}"
+                )
                 del self.active_episodes[session_id]
 
             return updated
@@ -665,7 +677,7 @@ class TriadService:
         return {
             "total_episodes": len(self.memory.episodes),
             "episodes_with_outcomes": len([e for e in self.memory.episodes if e.outcome]),
-            "karma_score": self.memory.calculate_karma_score(self.memory.episodes)
+            "karma_score": self.memory.calculate_karma_score(self.memory.episodes),
         }
 
 

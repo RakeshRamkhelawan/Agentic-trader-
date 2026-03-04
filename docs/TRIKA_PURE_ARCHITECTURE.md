@@ -155,30 +155,30 @@
 ```
 CYCLUS:
 
-1. SHIVA (Getuige) 
+1. SHIVA (Getuige)
    ↓ Neemt waar zonder oordeel
 
 2. BODY COUNCIL (15 organen)
    ↓ Verzamelt ruwe data (prijzen, volume, nieuws)
-   
+
 3. GRAHA COUNCIL (9 planeten)
    ↓ Bepaalt kosmische context (tijd, cycli, krachten)
-   
+
 4. ELEMENTAL COUNCIL (5 elementen)
    ↓ Analyseert fysieke structuur (liquiditeit, volatiliteit)
-   
+
 5. GUNA COUNCIL (3 gunas)
    ↓ Bepaalt kwaliteit van bewustzijn (rust/actie/chaos)
-   
+
 6. MIND COUNCIL (4 delen)
    ↓ Buddhi discrimineert en beslist
-   
+
 7. BODY COUNCIL (executie)
    ↓ Voert trade uit
-   
+
 8. MARKT (Creatie)
    ↓ Verandert als resultaat
-   
+
 9. SHIVA (Getuige)
    ↓ Neemt nieuwe staat waar (terug naar 1)
 ```
@@ -208,7 +208,7 @@ class Shakti:
         self.graha_council = GrahaCouncil(llm=deepseek)    # 9 leden
         self.mind_council = MindCouncil(llm=deepseek)      # 4 leden
         self.body_council = BodyCouncil(llm=deepseek)      # 15 leden
-        
+
     def manifest(self, shiva_witness):
         """Creëert wereld op basis van witnessing"""
         # De 5 councils werken samen

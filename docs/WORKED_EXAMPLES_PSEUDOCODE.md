@@ -1,8 +1,8 @@
 # Worked Examples & Pseudocode
 ## Samkhya Yoga Agentic Trader — Concrete Implementations
 
-**Generated:** 2026-02-15  
-**Document Version:** 1.0  
+**Generated:** 2026-02-15
+**Document Version:** 1.0
 **Purpose:** Translate abstract philosophical concepts into executable code
 
 ---
@@ -32,11 +32,11 @@ class GunaRatios:
     sattva: float
     rajas: float
     tamas: float
-    
+
     def __post_init__(self):
         total = self.sattva + self.rajas + self.tamas
         assert abs(total - 1.0) < 0.01, f"Gunas must sum to 1.0, got {total}"
-    
+
     @property
     def dominant_guna(self) -> GunaType:
         if self.sattva >= self.rajas and self.sattva >= self.tamas:
@@ -73,7 +73,7 @@ class GunaModulator:
             "description": "Inert, minimal activity, passive"
         }
     }
-    
+
     def modulate_trading_signal(
         self,
         signal: 'TradingSignal',
@@ -81,19 +81,19 @@ class GunaModulator:
     ) -> 'TradingSignal':
         dominant = guna_ratios.dominant_guna
         profile = self.MODULATION_PROFILES[dominant]
-        
+
         modulated_signal = signal.copy()
         modulated_signal.confidence *= profile["confidence_multiplier"]
         modulated_signal.position_size *= profile["position_size_multiplier"]
         modulated_signal.holding_period_hours *= profile["holding_period_multiplier"]
-        
+
         modulated_signal.confidence = min(1.0, max(0.0, modulated_signal.confidence))
-        
+
         modulated_signal.metadata["guna_profile"] = profile["description"]
         modulated_signal.metadata["dominant_guna"] = dominant.value
-        
+
         return modulated_signal
-    
+
     def calculate_prana_decay_rate(self, guna_ratios: GunaRatios) -> float:
         return (
             guna_ratios.sattva * 0.01 +  # 1% per cycle (slow)
@@ -107,35 +107,35 @@ class BaseElementalAgent:
         self.navagraha_state = navagraha_state
         self.prana = 100.0
         self.guna_modulator = GunaModulator()
-    
+
     def observe(self, market_data: 'MarketData') -> 'Observation':
         self._update_prana()
-        
+
         if self.prana < 20.0:
             return Observation(active=False, reason="low_prana")
-        
+
         raw_signal = self._analyze_market(market_data)
-        
+
         modulated_signal = self.guna_modulator.modulate_trading_signal(
             raw_signal,
             self.navagraha_state.guna_ratios
         )
-        
+
         return Observation(
             signal=modulated_signal,
             prana_level=self.prana,
             guna_influence=self.navagraha_state.guna_ratios.dominant_guna
         )
-    
+
     def _update_prana(self):
         decay_rate = self.guna_modulator.calculate_prana_decay_rate(
             self.navagraha_state.guna_ratios
         )
         self.prana = max(0.0, self.prana - decay_rate)
-        
+
         if self.prana < 50.0:
             logger.warning(f"{self.element} agent prana low: {self.prana:.2f}")
-    
+
     def _analyze_market(self, market_data: 'MarketData') -> 'TradingSignal':
         raise NotImplementedError("Subclass must implement")
 
@@ -147,7 +147,7 @@ class TradingSignal:
     position_size: float  # Base size before modulation
     holding_period_hours: float
     metadata: Dict = None
-    
+
     def copy(self):
         return TradingSignal(
             symbol=self.symbol,
@@ -231,111 +231,111 @@ class KarmaLearner:
             "holding_period_hours": (1.0, 168.0)  # 1 hour to 1 week
         }
     }
-    
+
     def __init__(self):
         self.outcome_history: List[TradeOutcome] = []
         self.parameter_history: List[Dict[str, float]] = []
         self.adjustment_log: List[Dict] = []
-    
+
     def record_outcome(self, outcome: TradeOutcome):
         self.outcome_history.append(outcome)
-        
+
         cutoff_date = datetime.utcnow() - timedelta(
             days=self.SAFETY_BOUNDS["lookback_window_days"]
         )
         self.outcome_history = [
-            o for o in self.outcome_history 
+            o for o in self.outcome_history
             if o.executed_at >= cutoff_date
         ]
-    
+
     def should_adjust_parameters(self) -> bool:
         if len(self.outcome_history) < self.SAFETY_BOUNDS["min_sample_size"]:
             logger.info(
                 f"Insufficient samples: {len(self.outcome_history)}/{self.SAFETY_BOUNDS['min_sample_size']}"
             )
             return False
-        
+
         recent_sharpe = self._calculate_sharpe_ratio(self.outcome_history[-30:])
         if recent_sharpe > self.SAFETY_BOUNDS["max_sharpe_ratio"]:
             logger.warning(
                 f"Sharpe ratio suspiciously high: {recent_sharpe:.2f}, possible overfitting"
             )
             return False
-        
+
         return True
-    
+
     def adjust_parameters(
         self,
         current_params: Dict[str, float]
     ) -> Dict[str, float]:
         if not self.should_adjust_parameters():
             return current_params
-        
+
         recent_outcomes = self.outcome_history[-30:]
-        
+
         win_rate = sum(1 for o in recent_outcomes if o.pnl > 0) / len(recent_outcomes)
         avg_pnl_percent = np.mean([o.pnl_percent for o in recent_outcomes])
         sharpe_ratio = self._calculate_sharpe_ratio(recent_outcomes)
-        
+
         if not self._is_statistically_significant(recent_outcomes):
             logger.info("Results not statistically significant, no adjustment")
             return current_params
-        
+
         adjustment_direction = self._determine_adjustment_direction(
             win_rate, avg_pnl_percent, sharpe_ratio
         )
-        
+
         new_params = current_params.copy()
-        
+
         for param_name, current_value in current_params.items():
             if param_name not in self.SAFETY_BOUNDS["parameter_bounds"]:
                 continue
-            
+
             adjustment_factor = self._calculate_adjustment_factor(
                 param_name, adjustment_direction, win_rate
             )
-            
+
             proposed_value = current_value * (1 + adjustment_factor)
-            
+
             min_bound, max_bound = self.SAFETY_BOUNDS["parameter_bounds"][param_name]
-            
+
             max_shift = current_value * self.SAFETY_BOUNDS["max_parameter_shift_percent"]
             proposed_value = min(proposed_value, current_value + max_shift)
             proposed_value = max(proposed_value, current_value - max_shift)
-            
+
             new_params[param_name] = np.clip(proposed_value, min_bound, max_bound)
-        
+
         self._log_adjustment(current_params, new_params, win_rate, avg_pnl_percent, sharpe_ratio)
-        
+
         return new_params
-    
+
     def _calculate_sharpe_ratio(self, outcomes: List[TradeOutcome]) -> float:
         if not outcomes:
             return 0.0
-        
+
         returns = [o.pnl_percent for o in outcomes]
         if len(returns) < 2:
             return 0.0
-        
+
         mean_return = np.mean(returns)
         std_return = np.std(returns, ddof=1)
-        
+
         if std_return == 0:
             return 0.0
-        
+
         return mean_return / std_return * np.sqrt(252)  # Annualized
-    
+
     def _is_statistically_significant(self, outcomes: List[TradeOutcome]) -> bool:
         returns = [o.pnl_percent for o in outcomes]
-        
+
         t_stat, p_value = stats.ttest_1samp(returns, 0)
-        
+
         is_significant = p_value < self.SAFETY_BOUNDS["significance_threshold"]
-        
+
         logger.info(f"Statistical test: t={t_stat:.2f}, p={p_value:.4f}, significant={is_significant}")
-        
+
         return is_significant
-    
+
     def _determine_adjustment_direction(
         self,
         win_rate: float,
@@ -348,7 +348,7 @@ class KarmaLearner:
             return "decrease_aggression"
         else:
             return "neutral"
-    
+
     def _calculate_adjustment_factor(
         self,
         param_name: str,
@@ -357,9 +357,9 @@ class KarmaLearner:
     ) -> float:
         if direction == "neutral":
             return 0.0
-        
+
         base_adjustment = 0.10  # 10% base adjustment
-        
+
         if direction == "increase_aggression":
             if param_name == "risk_tolerance":
                 return base_adjustment
@@ -374,9 +374,9 @@ class KarmaLearner:
                 return -base_adjustment
             elif param_name == "confidence_threshold":
                 return base_adjustment  # Higher threshold = fewer trades
-        
+
         return 0.0
-    
+
     def _log_adjustment(
         self,
         old_params: Dict[str, float],
@@ -401,7 +401,7 @@ class KarmaLearner:
                 if param in new_params
             }
         }
-        
+
         self.adjustment_log.append(log_entry)
         logger.info(f"Karma adjustment: {log_entry}")
 ```
@@ -421,9 +421,9 @@ if learner.should_adjust_parameters():
         "confidence_threshold": 0.7,
         "holding_period_hours": 24.0
     }
-    
+
     new_params = learner.adjust_parameters(current_params)
-    
+
     print("Parameter Adjustments:")
     for param, old_val in current_params.items():
         new_val = new_params[param]
@@ -495,11 +495,11 @@ class MiFIDPreTradeChecker:
         self.limits = limits
         self.db = database
         self.audit = audit_logger
-    
+
     def check(self, order: Order) -> PreTradeCheckResult:
         audit_trail_id = self._generate_audit_id()
         warnings = []
-        
+
         client = self.db.get_client(order.client_id)
         if not client:
             return self._reject(
@@ -507,50 +507,50 @@ class MiFIDPreTradeChecker:
                 f"Client {order.client_id} not found",
                 audit_trail_id
             )
-        
+
         if self._is_instrument_restricted(order.symbol):
             return self._reject(
                 RejectionReason.RESTRICTED_INSTRUMENT,
                 f"Instrument {order.symbol} is restricted for trading",
                 audit_trail_id
             )
-        
+
         current_position = self.db.get_position(order.portfolio_id, order.symbol)
         projected_position = self._calculate_projected_position(order, current_position)
-        
+
         if abs(projected_position.value_usd) > self.limits.max_position_size_per_instrument:
             return self._reject(
                 RejectionReason.POSITION_LIMIT_EXCEEDED,
                 f"Position limit: {projected_position.value_usd:.2f} > {self.limits.max_position_size_per_instrument}",
                 audit_trail_id
             )
-        
+
         portfolio = self.db.get_portfolio(order.portfolio_id)
         projected_concentration = self._calculate_concentration(portfolio, order)
-        
+
         if projected_concentration > self.limits.max_portfolio_concentration:
             return self._reject(
                 RejectionReason.CONCENTRATION_RISK,
                 f"Concentration risk: {projected_concentration:.1%} > {self.limits.max_portfolio_concentration:.1%}",
                 audit_trail_id
             )
-        
+
         daily_turnover = self.db.get_daily_turnover(order.portfolio_id, datetime.utcnow().date())
         order_value = self._estimate_order_value(order)
-        
+
         if daily_turnover + order_value > self.limits.max_daily_turnover:
             return self._reject(
                 RejectionReason.INSUFFICIENT_FUNDS,
                 f"Daily turnover limit exceeded: {daily_turnover + order_value:.2f} > {self.limits.max_daily_turnover}",
                 audit_trail_id
             )
-        
+
         if client.classification == ClientClassification.RETAIL:
             warnings.append("Retail client: additional protections apply")
-        
+
         if projected_concentration > 0.20:
             warnings.append(f"High concentration in {order.symbol}: {projected_concentration:.1%}")
-        
+
         self.audit.log_pretrade_check(
             audit_trail_id=audit_trail_id,
             order=order,
@@ -558,7 +558,7 @@ class MiFIDPreTradeChecker:
             result="APPROVED",
             warnings=warnings
         )
-        
+
         return PreTradeCheckResult(
             approved=True,
             rejection_reason=None,
@@ -567,7 +567,7 @@ class MiFIDPreTradeChecker:
             audit_trail_id=audit_trail_id,
             checked_at=datetime.utcnow()
         )
-    
+
     def _reject(
         self,
         reason: RejectionReason,
@@ -580,7 +580,7 @@ class MiFIDPreTradeChecker:
             reason=reason.value,
             details=details
         )
-        
+
         return PreTradeCheckResult(
             approved=False,
             rejection_reason=reason,
@@ -589,45 +589,45 @@ class MiFIDPreTradeChecker:
             audit_trail_id=audit_trail_id,
             checked_at=datetime.utcnow()
         )
-    
+
     def _is_instrument_restricted(self, symbol: str) -> bool:
         if not self.limits.restricted_instruments:
             return False
         return symbol in self.limits.restricted_instruments
-    
+
     def _calculate_projected_position(self, order: Order, current_position: Optional['Position']) -> 'ProjectedPosition':
         current_qty = current_position.quantity if current_position else 0.0
-        
+
         if order.side == "buy":
             projected_qty = current_qty + order.quantity
         else:  # sell
             projected_qty = current_qty - order.quantity
-        
+
         current_price = order.price or self._get_market_price(order.symbol)
         value_usd = projected_qty * current_price
-        
+
         return ProjectedPosition(quantity=projected_qty, value_usd=value_usd)
-    
+
     def _calculate_concentration(self, portfolio: 'Portfolio', order: Order) -> float:
         order_value = self._estimate_order_value(order)
         total_portfolio_value = portfolio.total_value_usd
-        
+
         if total_portfolio_value == 0:
             return 0.0
-        
+
         current_instrument_value = portfolio.positions.get(order.symbol, 0.0)
         projected_instrument_value = current_instrument_value + order_value
-        
+
         return projected_instrument_value / total_portfolio_value
-    
+
     def _estimate_order_value(self, order: Order) -> float:
         price = order.price or self._get_market_price(order.symbol)
         return order.quantity * price
-    
+
     def _get_market_price(self, symbol: str) -> float:
         ticker = self.db.get_latest_ticker(symbol)
         return ticker.last if ticker else 0.0
-    
+
     def _generate_audit_id(self) -> str:
         return f"mifid2-check-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}"
 

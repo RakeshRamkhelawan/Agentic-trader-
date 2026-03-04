@@ -11,18 +11,15 @@ This test:
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
-import pandas as pd
 import pytest
 
 from backend.backtesting.exchange import SimulatedExchange
-from backend.backtesting.fill_models import FullFillModel, RealisticFillModel
+from backend.backtesting.fill_models import RealisticFillModel
 from backend.backtesting.metrics import MetricsCalculator
-from backend.backtesting.models import BacktestConfig, BacktestResult, OrderSide, Trade
+from backend.backtesting.models import OrderSide, Trade
 from backend.backtesting.position_sizing import (
     FixedQuantitySizer,
-    KellyCriterionSizer,
     PercentOfEquitySizer,
-    RiskBasedSizer,
 )
 from backend.backtesting.slippage_models import FixedSlippageModel, VolumeSlippageModel
 from backend.backtesting.strategies.simple_ma import MovingAverageStrategy

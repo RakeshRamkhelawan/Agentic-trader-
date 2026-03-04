@@ -1,5 +1,4 @@
 import pytest
-import pytest_asyncio
 
 from backend.agents.elemental_research import ElementalResearch  # Reuse Air for routing test
 from backend.agents.elemental_router import ElementalRouter

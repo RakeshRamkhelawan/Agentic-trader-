@@ -1,4 +1,3 @@
-import pytest
 
 from backend.core.security.prompt_guard import PromptGuard
 

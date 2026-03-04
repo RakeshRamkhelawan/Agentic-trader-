@@ -928,9 +928,9 @@ class TradingService:
             # Use a window function approach or Postgres DISTINCT ON
 
             # Use parameterized query for symbols list
-            placeholders = ', '.join([f':sym_{i}' for i in range(len(symbols))])
-            params = {f'sym_{i}': sym for i, sym in enumerate(symbols)}
-            params['target_time'] = target_time
+            placeholders = ", ".join([f":sym_{i}" for i in range(len(symbols))])
+            params = {f"sym_{i}": sym for i, sym in enumerate(symbols)}
+            params["target_time"] = target_time
 
             sql = text(  # nosec B608
                 f"""

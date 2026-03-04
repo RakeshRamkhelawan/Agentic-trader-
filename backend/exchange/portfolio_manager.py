@@ -31,11 +31,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 
-from backend.exchange.base_exchange import (
-    BaseExchange,
-    Position,
-    Symbol,
-)
+from backend.exchange.base_exchange import BaseExchange, Position, Symbol
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +40,11 @@ logger = logging.getLogger(__name__)
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class AssetAllocation:
     """Asset allocation across exchanges."""
+
     asset: str
     total: Decimal
     free: Decimal
@@ -60,6 +58,7 @@ class AssetAllocation:
 @dataclass
 class PortfolioSnapshot:
     """Complete portfolio snapshot."""
+
     timestamp: datetime
     total_value_usd: Decimal
     assets: dict[str, AssetAllocation]
@@ -75,6 +74,7 @@ class PortfolioSnapshot:
 @dataclass
 class PerformanceMetrics:
     """Portfolio performance metrics."""
+
     total_pnl: Decimal
     realized_pnl: Decimal
     unrealized_pnl: Decimal
@@ -92,6 +92,7 @@ class PerformanceMetrics:
 @dataclass
 class RebalanceSuggestion:
     """Portfolio rebalance suggestion."""
+
     asset: str
     current_allocation: Decimal
     target_allocation: Decimal
@@ -103,6 +104,7 @@ class RebalanceSuggestion:
 # =============================================================================
 # Portfolio Manager
 # =============================================================================
+
 
 class PortfolioManager:
     """
@@ -199,7 +201,7 @@ class PortfolioManager:
                             total=Decimal("0"),
                             free=Decimal("0"),
                             used=Decimal("0"),
-                            by_exchange={}
+                            by_exchange={},
                         )
 
                     all_balances[asset].total += balance.total
@@ -244,13 +246,13 @@ class PortfolioManager:
             exchanges=list(self._exchanges.keys()),
             cash_ratio=self._calculate_cash_ratio(all_balances, total_value_usd),
             max_position_pct=self._calculate_max_position(all_balances),
-            concentration_risk=self._calculate_concentration(all_balances)
+            concentration_risk=self._calculate_concentration(all_balances),
         )
 
         # Store snapshot
         self._snapshots.append(snapshot)
         if len(self._snapshots) > self._max_snapshots:
-            self._snapshots = self._snapshots[-self._max_snapshots:]
+            self._snapshots = self._snapshots[-self._max_snapshots :]
 
         return snapshot
 
@@ -339,7 +341,7 @@ class PortfolioManager:
                 total_pnl=Decimal("0"),
                 realized_pnl=Decimal("0"),
                 unrealized_pnl=Decimal("0"),
-                roi_pct=Decimal("0")
+                roi_pct=Decimal("0"),
             )
 
         # Get snapshots from period
@@ -358,14 +360,15 @@ class PortfolioManager:
         # Calculate returns
         values = [s.total_value_usd for s in period_snapshots]
         returns = [
-            (values[i] - values[i-1]) / values[i-1]
+            (values[i] - values[i - 1]) / values[i - 1]
             for i in range(1, len(values))
-            if values[i-1] > 0
+            if values[i - 1] > 0
         ]
 
         # Sharpe ratio (simplified, assuming risk-free rate = 0)
         if returns:
             import statistics
+
             avg_return = sum(returns) / len(returns)
             try:
                 std_return = statistics.stdev(returns)
@@ -384,7 +387,7 @@ class PortfolioManager:
             unrealized_pnl=total_pnl,
             roi_pct=roi_pct,
             sharpe_ratio=Decimal(str(sharpe)) if sharpe else None,
-            max_drawdown=Decimal(str(max_dd)) if max_dd else None
+            max_drawdown=Decimal(str(max_dd)) if max_dd else None,
         )
 
     # -------------------------------------------------------------------------
@@ -420,7 +423,7 @@ class PortfolioManager:
         for asset, target_pct in self._target_allocations.items():
             current = portfolio.assets.get(asset)
             current_pct = current.allocation_pct if current else Decimal("0")
-            current_value = current.value_usd if current else Decimal("0")
+            current.value_usd if current else Decimal("0")
 
             # Calculate difference
             diff_pct = target_pct - current_pct
@@ -432,19 +435,25 @@ class PortfolioManager:
                 amount = Decimal("0")
             elif diff_pct > 0:
                 action = "buy"
-                amount = diff_value / (current.price_usd if current and current.price_usd else Decimal("1"))
+                amount = diff_value / (
+                    current.price_usd if current and current.price_usd else Decimal("1")
+                )
             else:
                 action = "sell"
-                amount = abs(diff_value) / (current.price_usd if current and current.price_usd else Decimal("1"))
+                amount = abs(diff_value) / (
+                    current.price_usd if current and current.price_usd else Decimal("1")
+                )
 
-            suggestions.append(RebalanceSuggestion(
-                asset=asset,
-                current_allocation=current_pct,
-                target_allocation=target_pct,
-                suggested_action=action,
-                suggested_amount=amount,
-                reason=f"Allocation diff: {diff_pct:.1%}"
-            ))
+            suggestions.append(
+                RebalanceSuggestion(
+                    asset=asset,
+                    current_allocation=current_pct,
+                    target_allocation=target_pct,
+                    suggested_action=action,
+                    suggested_amount=amount,
+                    reason=f"Allocation diff: {diff_pct:.1%}",
+                )
+            )
 
         return suggestions
 
@@ -453,9 +462,7 @@ class PortfolioManager:
     # -------------------------------------------------------------------------
 
     def _calculate_cash_ratio(
-        self,
-        assets: dict[str, AssetAllocation],
-        total_value: Decimal
+        self, assets: dict[str, AssetAllocation], total_value: Decimal
     ) -> Decimal | None:
         """Calculate cash/stablecoin ratio."""
         if total_value == 0:
@@ -463,41 +470,27 @@ class PortfolioManager:
 
         cash_assets = {"USD", "USDT", "USDC", "EUR", "BUSD"}
         cash_value = sum(
-            alloc.value_usd or 0
-            for asset, alloc in assets.items()
-            if asset in cash_assets
+            alloc.value_usd or 0 for asset, alloc in assets.items() if asset in cash_assets
         )
 
         return cash_value / total_value
 
-    def _calculate_max_position(
-        self,
-        assets: dict[str, AssetAllocation]
-    ) -> Decimal | None:
+    def _calculate_max_position(self, assets: dict[str, AssetAllocation]) -> Decimal | None:
         """Calculate maximum single position percentage."""
         if not assets:
             return None
 
-        max_pct = max(
-            (alloc.allocation_pct or 0)
-            for alloc in assets.values()
-        )
+        max_pct = max((alloc.allocation_pct or 0) for alloc in assets.values())
 
         return max_pct
 
-    def _calculate_concentration(
-        self,
-        assets: dict[str, AssetAllocation]
-    ) -> Decimal | None:
+    def _calculate_concentration(self, assets: dict[str, AssetAllocation]) -> Decimal | None:
         """Calculate portfolio concentration (Herfindahl index)."""
         if not assets:
             return None
 
         # Herfindahl-Hirschman Index
-        hhi = sum(
-            (alloc.allocation_pct or 0) ** 2
-            for alloc in assets.values()
-        )
+        hhi = sum((alloc.allocation_pct or 0) ** 2 for alloc in assets.values())
 
         return hhi
 
@@ -559,14 +552,12 @@ class PortfolioManager:
             f"\nTotal Value: ${latest.total_value_usd:,.2f}",
             f"Exchanges: {', '.join(latest.exchanges)}",
             "\nAsset Allocation:",
-            "-" * 60
+            "-" * 60,
         ]
 
         # Sort by allocation
         sorted_assets = sorted(
-            latest.assets.items(),
-            key=lambda x: x[1].allocation_pct or 0,
-            reverse=True
+            latest.assets.items(), key=lambda x: x[1].allocation_pct or 0, reverse=True
         )
 
         for asset, alloc in sorted_assets:
@@ -576,17 +567,25 @@ class PortfolioManager:
             bar = "█" * bar_length + "░" * (50 - bar_length)
             lines.append(f"{asset:6} │{bar}│ {pct:>6.1%} (${value:>10,.2f})")
 
-        lines.extend([
-            "-" * 60,
-            f"Cash Ratio: {latest.cash_ratio:.1%}" if latest.cash_ratio else "Cash Ratio: N/A",
-            f"Max Position: {latest.max_position_pct:.1%}" if latest.max_position_pct else "Max Position: N/A",
-            "=" * 60
-        ])
+        lines.extend(
+            [
+                "-" * 60,
+                f"Cash Ratio: {latest.cash_ratio:.1%}" if latest.cash_ratio else "Cash Ratio: N/A",
+                (
+                    f"Max Position: {latest.max_position_pct:.1%}"
+                    if latest.max_position_pct
+                    else "Max Position: N/A"
+                ),
+                "=" * 60,
+            ]
+        )
 
         return "\n".join(lines)
 
     def __repr__(self) -> str:
-        return f"PortfolioManager(exchanges={len(self._exchanges)}, snapshots={len(self._snapshots)})"
+        return (
+            f"PortfolioManager(exchanges={len(self._exchanges)}, snapshots={len(self._snapshots)})"
+        )
 
 
 # Import needed for calculations

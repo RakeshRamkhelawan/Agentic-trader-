@@ -18,6 +18,7 @@ class TrendFollowerBot(BaseTradingBot):
     def __init__(self, config: BotConfig = None):
         if config is None:
             from .base_bot import BotDifficulty, BotPersonality
+
             config = BotConfig(
                 name="TrendBot",
                 difficulty=BotDifficulty.MEDIUM,
@@ -31,11 +32,11 @@ class TrendFollowerBot(BaseTradingBot):
             return {"signal": "hold", "confidence": 0}
 
         # Calculate moving averages
-        ma_short = sum(price_data[-5:]) / 5   # 5-period MA
+        ma_short = sum(price_data[-5:]) / 5  # 5-period MA
         ma_long = sum(price_data[-20:]) / 20  # 20-period MA
 
         current_price = price_data[-1]
-        prev_price = price_data[-2] if len(price_data) > 1 else current_price
+        price_data[-2] if len(price_data) > 1 else current_price
 
         # Determine trend
         trend_up = ma_short > ma_long

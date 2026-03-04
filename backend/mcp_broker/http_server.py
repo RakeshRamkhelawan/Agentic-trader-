@@ -28,8 +28,10 @@ from backend.mcp_broker.server import mcp
 # Pydantic Models
 # ============================================================================
 
+
 class ToolCallRequest(BaseModel):
     """Request model for tool calls."""
+
     tool_name: str = Field(..., description="Name of the tool to call")
     params: dict[str, Any] = Field(default_factory=dict, description="Tool parameters")
     timeout: float = Field(default=30.0, description="Timeout in seconds")
@@ -37,6 +39,7 @@ class ToolCallRequest(BaseModel):
 
 class ToolCallResponse(BaseModel):
     """Response model for tool calls."""
+
     success: bool
     result: dict[str, Any] | None = None
     error: str | None = None
@@ -45,6 +48,7 @@ class ToolCallResponse(BaseModel):
 
 class ToolInfo(BaseModel):
     """Tool information."""
+
     name: str
     description: str
     parameters: dict[str, Any]
@@ -52,6 +56,7 @@ class ToolInfo(BaseModel):
 
 class HealthResponse(BaseModel):
     """Health check response."""
+
     status: str
     server_name: str
     version: str
@@ -61,6 +66,7 @@ class HealthResponse(BaseModel):
 # ============================================================================
 # FastAPI App
 # ============================================================================
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -82,6 +88,7 @@ app = FastAPI(
 # Endpoints
 # ============================================================================
 
+
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint."""
@@ -99,10 +106,12 @@ async def list_tools():
     """List all available tools."""
     tools = []
     for name, tool in mcp._tool_manager._tools.items():
-        tools.append({
-            "name": name,
-            "description": getattr(tool, "description", "No description"),
-        })
+        tools.append(
+            {
+                "name": name,
+                "description": getattr(tool, "description", "No description"),
+            }
+        )
     return {"tools": tools, "count": len(tools)}
 
 
@@ -123,7 +132,7 @@ async def call_tool(request: ToolCallRequest):
         if not tool:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Tool '{request.tool_name}' not found"
+                detail=f"Tool '{request.tool_name}' not found",
             )
 
         # Call the tool
@@ -171,12 +180,12 @@ async def get_tool_info(tool_name: str):
     tool = mcp._tool_manager._tools.get(tool_name)
     if not tool:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Tool '{tool_name}' not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Tool '{tool_name}' not found"
         )
 
     # Extract parameter info from the function signature
     import inspect
+
     sig = inspect.signature(tool)
     params = {}
     for param_name, param in sig.parameters.items():
@@ -184,7 +193,9 @@ async def get_tool_info(tool_name: str):
             continue
         params[param_name] = {
             "default": str(param.default) if param.default is not inspect.Parameter.empty else None,
-            "annotation": str(param.annotation) if param.annotation is not inspect.Parameter.empty else "Any",
+            "annotation": (
+                str(param.annotation) if param.annotation is not inspect.Parameter.empty else "Any"
+            ),
         }
 
     return {
@@ -198,12 +209,13 @@ async def get_tool_info(tool_name: str):
 # Convenience Endpoints for Common Operations
 # ============================================================================
 
+
 @app.post("/vedastro/signal")
 async def vedastro_signal(symbol: str, current_price: float):
     """Get VedAstro signal for a symbol."""
     request = ToolCallRequest(
         tool_name="vedastro__generate_signal",
-        params={"symbol": symbol, "current_price": current_price}
+        params={"symbol": symbol, "current_price": current_price},
     )
     return await call_tool(request)
 
@@ -223,7 +235,7 @@ async def elemental_consensus(
             "earth_vote": earth_vote,
             "water_vote": water_vote,
             "air_vote": air_vote,
-        }
+        },
     )
     return await call_tool(request)
 
@@ -245,7 +257,7 @@ async def position_size(
             "vedastro_score": vedastro_score,
             "dominant_planet": dominant_planet,
             "price_history": price_history,
-        }
+        },
     )
     return await call_tool(request)
 

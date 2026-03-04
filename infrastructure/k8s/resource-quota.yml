@@ -10,7 +10,7 @@ spec:
     requests.memory: 20Gi
     limits.cpu: "20"
     limits.memory: 40Gi
-    
+
     # Object counts
     pods: "20"
     services: "10"
@@ -39,7 +39,7 @@ spec:
         cpu: "50m"
         memory: "128Mi"
       type: Container
-    
+
     # Limits for pods
     - max:
         cpu: "8"

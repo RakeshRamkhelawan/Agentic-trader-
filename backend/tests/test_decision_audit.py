@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.core.database import Base
-from backend.governance.decision_audit import AuditLogger, DecisionAuditLog
+from backend.governance.decision_audit import AuditLogger
 
 
 @pytest.fixture

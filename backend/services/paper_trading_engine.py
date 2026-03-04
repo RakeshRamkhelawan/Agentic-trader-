@@ -39,6 +39,7 @@ from backend.services.paper_trading_ws_broadcast import (
 @dataclass
 class TradingAgent:
     """Trading agent with strategy."""
+
     name: str
     strategy: str
     risk_level: float = 0.1
@@ -51,27 +52,52 @@ class TradingAgent:
         if len(price_history) < 3:
             return None
 
-        if self.strategy == 'momentum':
+        if self.strategy == "momentum":
             if price > price_history[-2] > price_history[-3]:
-                return {'side': OrderSide.BUY, 'qty': 0.001, 'confidence': 0.7, 'reason': 'uptrend'}
+                return {"side": OrderSide.BUY, "qty": 0.001, "confidence": 0.7, "reason": "uptrend"}
             elif price < price_history[-2] < price_history[-3]:
-                return {'side': OrderSide.SELL, 'qty': 0.001, 'confidence': 0.7, 'reason': 'downtrend'}
+                return {
+                    "side": OrderSide.SELL,
+                    "qty": 0.001,
+                    "confidence": 0.7,
+                    "reason": "downtrend",
+                }
 
-        elif self.strategy == 'mean_reversion':
+        elif self.strategy == "mean_reversion":
             avg = sum(price_history[-10:]) / len(price_history[-10:])
             if price < avg * 0.995:
-                return {'side': OrderSide.BUY, 'qty': 0.001, 'confidence': 0.65, 'reason': 'below_avg'}
+                return {
+                    "side": OrderSide.BUY,
+                    "qty": 0.001,
+                    "confidence": 0.65,
+                    "reason": "below_avg",
+                }
             elif price > avg * 1.005:
-                return {'side': OrderSide.SELL, 'qty': 0.001, 'confidence': 0.65, 'reason': 'above_avg'}
+                return {
+                    "side": OrderSide.SELL,
+                    "qty": 0.001,
+                    "confidence": 0.65,
+                    "reason": "above_avg",
+                }
 
-        elif self.strategy == 'breakout':
+        elif self.strategy == "breakout":
             if len(price_history) >= 20:
                 high_20 = max(price_history[-20:])
                 low_20 = min(price_history[-20:])
                 if price > high_20 * 0.998:
-                    return {'side': OrderSide.BUY, 'qty': 0.001, 'confidence': 0.75, 'reason': 'breakout_high'}
+                    return {
+                        "side": OrderSide.BUY,
+                        "qty": 0.001,
+                        "confidence": 0.75,
+                        "reason": "breakout_high",
+                    }
                 elif price < low_20 * 1.002:
-                    return {'side': OrderSide.SELL, 'qty': 0.001, 'confidence': 0.75, 'reason': 'breakdown_low'}
+                    return {
+                        "side": OrderSide.SELL,
+                        "qty": 0.001,
+                        "confidence": 0.75,
+                        "reason": "breakdown_low",
+                    }
 
         return None
 
@@ -109,16 +135,16 @@ class LivePaperTradingProduction:
 
         # Stats
         self.stats = {
-            'total_trades': 0,
-            'buy_trades': 0,
-            'sell_trades': 0,
-            'symbols_traded': set(),
-            'agents_trades': {agent.name: 0 for agent in self.agents},
+            "total_trades": 0,
+            "buy_trades": 0,
+            "sell_trades": 0,
+            "symbols_traded": set(),
+            "agents_trades": {agent.name: 0 for agent in self.agents},
         }
 
-        print("="*80)
+        print("=" * 80)
         print("     LIVE PAPER TRADING - PRODUCTION MODE")
-        print("="*80)
+        print("=" * 80)
         print()
         print(f"Initial Capital: EUR {initial_capital:,.2f}")
         print("Trading Mode: PAPER (no real money)")
@@ -139,37 +165,41 @@ class LivePaperTradingProduction:
         # Bitvavo
         try:
             from backend.execution.bitvavo_adapter import BitvavoAdapter
+
             self.bitvavo = BitvavoAdapter()
             success = await self.bitvavo.initialize()
             if success:
                 eur_pairs = self.bitvavo.get_eur_pairs()
                 # Select diverse pairs (majors + some alts)
-                majors = [p for p in eur_pairs if any(x in p for x in ['BTC', 'ETH', 'SOL', 'XRP', 'ADA'])]
+                majors = [
+                    p for p in eur_pairs if any(x in p for x in ["BTC", "ETH", "SOL", "XRP", "ADA"])
+                ]
                 alts = [p for p in eur_pairs if p not in majors]
                 selected = majors[:10] + random.sample(alts, min(20, len(alts)))
-                self.symbols['bitvavo'] = selected
+                self.symbols["bitvavo"] = selected
                 print(f"[OK] Bitvavo: {len(selected)} pairs")
             else:
-                self.symbols['bitvavo'] = []
+                self.symbols["bitvavo"] = []
         except Exception as e:
             print(f"[WARN] Bitvavo: {e}")
-            self.symbols['bitvavo'] = []
+            self.symbols["bitvavo"] = []
 
         # Revolut X (optional)
         try:
             from backend.integrations.revolut_x_client import RevolutXClient
+
             self.revolut = RevolutXClient()
             connected = await self.revolut.connect()
             if connected:
                 symbols = await self.revolut.get_symbols()
-                major_pairs = [s for s in symbols if any(x in s for x in ['BTC', 'ETH', 'SOL'])]
-                self.symbols['revolut'] = major_pairs[:10]
+                major_pairs = [s for s in symbols if any(x in s for x in ["BTC", "ETH", "SOL"])]
+                self.symbols["revolut"] = major_pairs[:10]
                 print(f"[OK] Revolut X: {len(major_pairs[:10])} pairs")
             else:
-                self.symbols['revolut'] = []
+                self.symbols["revolut"] = []
         except Exception as e:
             print(f"[WARN] Revolut X: {e}")
-            self.symbols['revolut'] = []
+            self.symbols["revolut"] = []
 
         total = sum(len(s) for s in self.symbols.values())
         print(f"[INFO] Total symbols: {total}")
@@ -184,12 +214,12 @@ class LivePaperTradingProduction:
     async def fetch_prices(self):
         """Fetch all prices."""
         # Bitvavo
-        if self.bitvavo and self.symbols['bitvavo']:
-            for symbol in self.symbols['bitvavo']:
+        if self.bitvavo and self.symbols["bitvavo"]:
+            for symbol in self.symbols["bitvavo"]:
                 try:
                     ticker = await self.bitvavo.fetch_ticker(symbol)
-                    if ticker and ticker.get('last'):
-                        price = float(ticker['last'])
+                    if ticker and ticker.get("last"):
+                        price = float(ticker["last"])
                         key = f"bitvavo:{symbol}"
                         self.current_prices[key] = price
                         self.portfolio.update_price(symbol, price)
@@ -207,12 +237,12 @@ class LivePaperTradingProduction:
                 await asyncio.sleep(0.1)  # Rate limit
 
         # Revolut
-        if self.revolut and self.symbols['revolut']:
-            for symbol in self.symbols['revolut']:
+        if self.revolut and self.symbols["revolut"]:
+            for symbol in self.symbols["revolut"]:
                 try:
                     ticker = await self.revolut.get_ticker(symbol)
-                    if ticker and ticker.get('last'):
-                        price = float(ticker['last'])
+                    if ticker and ticker.get("last"):
+                        price = float(ticker["last"])
                         key = f"revolut:{symbol}"
                         self.current_prices[key] = price
                         self.portfolio.update_price(symbol, price)
@@ -256,21 +286,23 @@ class LivePaperTradingProduction:
             agent = random.choice(self.agents)
             decision = agent.decide_trade(symbol, price, history)
 
-            if decision and decision['confidence'] >= agent.min_confidence:
+            if decision and decision["confidence"] >= agent.min_confidence:
                 # Broadcast agent decision
                 await self._execute_trade(exchange, symbol, agent, decision, price)
 
-    async def _execute_trade(self, exchange: str, symbol: str, agent: TradingAgent, decision: dict, price: float):
+    async def _execute_trade(
+        self, exchange: str, symbol: str, agent: TradingAgent, decision: dict, price: float
+    ):
         """Execute trade."""
-        side = decision['side']
-        qty = decision['qty']
+        side = decision["side"]
+        qty = decision["qty"]
 
         # Check balance
         balance = await self.portfolio.get_balance()
 
         if side == OrderSide.BUY:
             cost = qty * price
-            if balance.get('EUR', 0) < cost:
+            if balance.get("EUR", 0) < cost:
                 return
         else:
             if balance.get(symbol, 0) < qty:
@@ -282,52 +314,54 @@ class LivePaperTradingProduction:
             side=side,
             qty=qty,
             order_type=OrderType.MARKET,
-            client_order_id=uuid.uuid4()
+            client_order_id=uuid.uuid4(),
         )
 
         result = await self.portfolio.submit_order(order)
 
-        if result.status.value == 'FILLED':
+        if result.status.value == "FILLED":
             trade = {
-                'timestamp': datetime.now(UTC).isoformat(),
-                'exchange': exchange,
-                'symbol': symbol,
-                'agent': agent.name,
-                'strategy': agent.strategy,
-                'side': side.value,
-                'qty': qty,
-                'price': price,
-                'value': qty * price,
-                'order_id': str(result.order_id),
+                "timestamp": datetime.now(UTC).isoformat(),
+                "exchange": exchange,
+                "symbol": symbol,
+                "agent": agent.name,
+                "strategy": agent.strategy,
+                "side": side.value,
+                "qty": qty,
+                "price": price,
+                "value": qty * price,
+                "order_id": str(result.order_id),
             }
             self.trades.append(trade)
 
             # Update stats
-            self.stats['total_trades'] += 1
-            self.stats['symbols_traded'].add(symbol)
-            self.stats['agents_trades'][agent.name] += 1
+            self.stats["total_trades"] += 1
+            self.stats["symbols_traded"].add(symbol)
+            self.stats["agents_trades"][agent.name] += 1
             agent.trade_count += 1
 
             if side == OrderSide.BUY:
-                self.stats['buy_trades'] += 1
+                self.stats["buy_trades"] += 1
             else:
-                self.stats['sell_trades'] += 1
+                self.stats["sell_trades"] += 1
 
             # Broadcast trade
             await broadcast_trade(trade)
 
             # Console output
             ts = datetime.now(UTC).strftime("%H:%M:%S")
-            print(f"[{ts}] [{agent.name:18}] {side.value:4} {qty:.4f} {symbol:12} @ EUR {price:,.2f}")
+            print(
+                f"[{ts}] [{agent.name:18}] {side.value:4} {qty:.4f} {symbol:12} @ EUR {price:,.2f}"
+            )
 
     async def broadcast_portfolio(self):
         """Broadcast portfolio update."""
         balance = await self.portfolio.get_balance()
 
         # Calculate total value
-        total_value = balance.get('EUR', 0)
+        total_value = balance.get("EUR", 0)
         for symbol, qty in balance.items():
-            if symbol != 'EUR' and qty > 0:
+            if symbol != "EUR" and qty > 0:
                 key = f"bitvavo:{symbol}"
                 price = self.current_prices.get(key, 0)
                 if price == 0:
@@ -339,11 +373,11 @@ class LivePaperTradingProduction:
         pnl_pct = (pnl / self.initial_capital) * 100 if self.initial_capital > 0 else 0
 
         await broadcast_portfolio(
-            cash=balance.get('EUR', 0),
+            cash=balance.get("EUR", 0),
             total_value=total_value,
             pnl=pnl,
             pnl_pct=pnl_pct,
-            positions={k: v for k, v in balance.items() if k != 'EUR' and v > 0}
+            positions={k: v for k, v in balance.items() if k != "EUR" and v > 0},
         )
 
         return total_value, pnl, pnl_pct
@@ -361,17 +395,19 @@ class LivePaperTradingProduction:
 
             # Broadcast stats
             await broadcast_stats(
-                total_trades=self.stats['total_trades'],
-                symbols_traded=len(self.stats['symbols_traded']),
+                total_trades=self.stats["total_trades"],
+                symbols_traded=len(self.stats["symbols_traded"]),
                 buy_sell_ratio=f"{self.stats['buy_trades']}/{self.stats['sell_trades']}",
-                agent_performance=self.stats['agents_trades']
+                agent_performance=self.stats["agents_trades"],
             )
 
             # Console output
             print()
-            print("-"*80)
-            print(f"STATS | {elapsed} | Trades: {self.stats['total_trades']} | P&L: EUR {pnl:+,.2f} ({pnl_pct:+.2f}%)")
-            print("-"*80)
+            print("-" * 80)
+            print(
+                f"STATS | {elapsed} | Trades: {self.stats['total_trades']} | P&L: EUR {pnl:+,.2f} ({pnl_pct:+.2f}%)"
+            )
+            print("-" * 80)
 
     async def run(self, duration_hours: int = 8):
         """Run trading session."""
@@ -412,12 +448,17 @@ class LivePaperTradingProduction:
 
         # Final broadcast
         await self.broadcast_portfolio()
-        await broadcast_stats(self.stats['total_trades'], len(self.stats['symbols_traded']), f"{self.stats['buy_trades']}/{self.stats['sell_trades']}", self.stats['agents_trades'])
+        await broadcast_stats(
+            self.stats["total_trades"],
+            len(self.stats["symbols_traded"]),
+            f"{self.stats['buy_trades']}/{self.stats['sell_trades']}",
+            self.stats["agents_trades"],
+        )
 
         print()
-        print("="*80)
+        print("=" * 80)
         print("     SESSION COMPLETE")
-        print("="*80)
+        print("=" * 80)
 
     async def close(self):
         """Cleanup."""
@@ -429,17 +470,17 @@ class LivePaperTradingProduction:
     def save(self):
         """Save session."""
         data = {
-            'session': {
-                'start': self.start_time.isoformat() if self.start_time else None,
-                'capital': self.initial_capital,
-                'exchanges': list(self.symbols.keys()),
+            "session": {
+                "start": self.start_time.isoformat() if self.start_time else None,
+                "capital": self.initial_capital,
+                "exchanges": list(self.symbols.keys()),
             },
-            'stats': self.stats,
-            'trades': self.trades,
+            "stats": self.stats,
+            "trades": self.trades,
         }
 
         filename = f"live_paper_session_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.json"
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             json.dump(data, f, indent=2, default=str)
 
         print(f"[SAVE] {filename}")
@@ -471,8 +512,15 @@ async def main():
         # Import to DB
         print("[IMPORT] To database...")
         import subprocess  # nosec B404
-        subprocess.run(["python", "scripts/import_ultimate_trades.py", filename],   # nosec B603 B607 - Internal script with controlled input
-                      capture_output=True)
+
+        subprocess.run(
+            [
+                "python",
+                "scripts/import_ultimate_trades.py",
+                filename,
+            ],  # nosec B603 B607 - Internal script with controlled input
+            capture_output=True,
+        )
 
         # Summary
         print()
@@ -480,7 +528,7 @@ async def main():
         print(f"Total Trades: {trader.stats['total_trades']}")
         print(f"Symbols: {len(trader.stats['symbols_traded'])}")
         print("Agent Performance:")
-        for name, count in trader.stats['agents_trades'].items():
+        for name, count in trader.stats["agents_trades"].items():
             print(f"  {name}: {count}")
 
 

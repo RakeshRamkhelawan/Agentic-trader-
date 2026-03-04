@@ -24,7 +24,7 @@ if (-not $isAdmin) {
 # Function to check NVIDIA GPU
 function Test-NvidiaGPU {
     Write-Host "Checking NVIDIA GPU..." -ForegroundColor Yellow
-    
+
     try {
         $nvidiaSmi = & nvidia-smi 2>&1
         if ($LASTEXITCODE -eq 0) {
@@ -44,7 +44,7 @@ function Test-NvidiaGPU {
 # Function to check Docker NVIDIA runtime
 function Test-DockerNvidia {
     Write-Host "`nChecking Docker NVIDIA runtime..." -ForegroundColor Yellow
-    
+
     try {
         $dockerInfo = docker info 2>&1
         if ($dockerInfo -match "nvidia") {
@@ -64,15 +64,15 @@ function Test-DockerNvidia {
 # Function to test GPU in container
 function Test-GPUContainer {
     Write-Host "`nTesting GPU access in container..." -ForegroundColor Yellow
-    
+
     try {
         # Try pulling first to ensure image exists
         Write-Host "   Pulling nvidia/cuda image (this may take a minute)..." -ForegroundColor Gray
         docker pull nvidia/cuda:12.9.1-runtime-ubuntu22.04 2>&1 | Out-Null
-        
+
         $output = docker run --rm --gpus all nvidia/cuda:12.9.1-runtime-ubuntu22.04 nvidia-smi 2>&1
         Write-Host "$output" -ForegroundColor Gray
-        
+
         if ($LASTEXITCODE -eq 0) {
             Write-Host "OK GPU accessible in containers" -ForegroundColor Green
             return $true
@@ -119,14 +119,14 @@ function Install-NvidiaContainerToolkit {
 # Function to pull models
 function Pull-OllamaModels {
     Write-Host "`nPulling Ollama models..." -ForegroundColor Yellow
-    
+
     $models = @(
         "deepseek-r1:7b",
         "deepseek-r1:14b",
         "phi3:medium",
         "codellama:7b"
     )
-    
+
     foreach ($model in $models) {
         Write-Host "`nPulling $model..." -ForegroundColor Cyan
         try {
@@ -138,33 +138,33 @@ function Pull-OllamaModels {
             Write-Warning "FAIL Failed to pull $model`: $_"
         }
     }
-    
+
     Write-Host "`nOK Model pull completed" -ForegroundColor Green
 }
 
 # Function to test Ollama GPU
 function Test-OllamaGPU {
     Write-Host "`nTesting Ollama GPU inference..." -ForegroundColor Yellow
-    
+
     $testPrompt = "Analyze sentiment: Bitcoin price surges. Respond: bullish or bearish?"
-    
+
     $body = @{
         model = "deepseek-r1:7b"
         prompt = $testPrompt
         stream = $false
     } | ConvertTo-Json
-    
+
     try {
         $start = Get-Date
         $response = Invoke-RestMethod -Uri "http://localhost:11435/api/generate" -Method POST -Body $body -ContentType "application/json" -TimeoutSec 120
         $end = Get-Date
         $duration = ($end - $start).TotalMilliseconds
-        
+
         Write-Host "OK GPU inference working!" -ForegroundColor Green
         Write-Host "   Response time: $([math]::Round($duration,0))ms" -ForegroundColor Gray
         $responseText = $response.response.Substring(0, [Math]::Min(100, $response.response.Length))
         Write-Host "   Response: $responseText..." -ForegroundColor Gray
-        
+
         return $true
     } catch {
         Write-Warning "FAIL Ollama GPU test failed: $_"
@@ -176,7 +176,7 @@ function Test-OllamaGPU {
 if ($CheckOnly) {
     $gpu = Test-NvidiaGPU
     $docker = Test-DockerNvidia
-    
+
     if ($gpu -and $docker) {
         Write-Host "`nOK System ready for GPU Ollama" -ForegroundColor Green
     } else {

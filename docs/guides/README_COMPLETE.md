@@ -1019,10 +1019,10 @@ from typing import Optional, Dict, List
 
 class MyClass:
     """Docstring: One-line summary."""
-    
+
     def __init__(self, name: str):
         self.name = name
-    
+
     async def async_method(self, param: str) -> Dict[str, Any]:
         """Multi-line docstring with full details."""
         return {"result": "value"}
@@ -1186,10 +1186,10 @@ SET log_queries = 1;
 
 # View slow queries
 docker exec clickhouse clickhouse-client --query "
-SELECT query_duration_ms, query 
-FROM system.query_log 
-WHERE query_duration_ms > 100 
-ORDER BY query_duration_ms DESC 
+SELECT query_duration_ms, query
+FROM system.query_log
+WHERE query_duration_ms > 100
+ORDER BY query_duration_ms DESC
 LIMIT 10;
 "
 ```
@@ -1354,8 +1354,8 @@ This platform was built with:
 
 ---
 
-**Last Updated**: February 5, 2026  
-**Platform Version**: 1.0.0  
-**Status**: 🟢 **PRODUCTION READY**  
+**Last Updated**: February 5, 2026
+**Platform Version**: 1.0.0
+**Status**: 🟢 **PRODUCTION READY**
 
 For the most up-to-date information, see [KANBAN_TASKS.md](KANBAN_TASKS.md)

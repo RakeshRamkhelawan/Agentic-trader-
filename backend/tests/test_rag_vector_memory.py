@@ -8,9 +8,8 @@ from unittest.mock import AsyncMock, patch
 
 import numpy as np
 import pytest
-from sqlalchemy.ext.asyncio import create_async_engine
 
-from backend.rag.vector_memory import TradingKnowledge, VectorMemory, VectorStoreError
+from backend.rag.vector_memory import VectorMemory, VectorStoreError
 
 
 @pytest.fixture

@@ -5,11 +5,10 @@ Validates the core consciousness data flow across all three layers
 without requiring real Redis or external services.
 """
 
-import asyncio
 import json
 import time
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -66,7 +65,7 @@ def shm_bridge():
 @pytest.mark.asyncio
 async def test_soul_publishes_context_to_redis(soul_service, mock_redis):
     """Soul.process_cycle should publish context to Redis."""
-    result = await soul_service.process_cycle()
+    await soul_service.process_cycle()
 
     # Verify Redis set was called with soul:context
     mock_redis.set.assert_called_once()

@@ -316,7 +316,6 @@ class PaperTradingTest:
             if assessment.modified_size:
                 logger.warning("   [WARNING] Size Reduced: %s", assessment.modified_size)
 
-            approved = assessment.decision == RiskDecision.APPROVE
 
             return assessment
 
@@ -445,7 +444,7 @@ class PaperTradingTest:
                 print("\n" + "=" * 70)
                 print("OODA CYCLE COMPLETED SUCCESSFULLY")
                 print("=" * 70)
-                print(f"\n[SUCCESS] Summary:")
+                print("\n[SUCCESS] Summary:")
                 print(f"   Market: {observation.symbol} @ ${observation.price:,.2f}")
                 print(f"   Decision: {proposal.side.upper()}")
                 print(f"   Size: {proposal.size} {observation.symbol.split('/')[0]}")

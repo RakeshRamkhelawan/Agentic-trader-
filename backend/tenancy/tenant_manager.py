@@ -9,23 +9,26 @@ from typing import Any
 
 class TenantStatus(Enum):
     """Tenant account statuses."""
-    PENDING = "pending"      # Awaiting activation
-    ACTIVE = "active"        # Fully operational
+
+    PENDING = "pending"  # Awaiting activation
+    ACTIVE = "active"  # Fully operational
     SUSPENDED = "suspended"  # Temporarily disabled
     CANCELLED = "cancelled"  # Terminated
 
 
 class TenantTier(Enum):
     """Tenant subscription tiers."""
-    STARTUP = "startup"      # Small teams
+
+    STARTUP = "startup"  # Small teams
     PROFESSIONAL = "professional"  # Growing teams
     ENTERPRISE = "enterprise"  # Large organizations
-    CUSTOM = "custom"        # Custom pricing
+    CUSTOM = "custom"  # Custom pricing
 
 
 @dataclass
 class TenantLimits:
     """Resource limits for a tenant."""
+
     max_users: int = 10
     max_competitors: int = 50
     max_tournaments: int = 10
@@ -38,6 +41,7 @@ class TenantLimits:
 @dataclass
 class TenantConfig:
     """Tenant configuration."""
+
     features: dict[str, bool] = field(default_factory=dict)
     integrations: dict[str, Any] = field(default_factory=dict)
     security_settings: dict[str, Any] = field(default_factory=dict)
@@ -47,6 +51,7 @@ class TenantConfig:
 @dataclass
 class Tenant:
     """A tenant/organization in the system."""
+
     id: str
     name: str
     slug: str  # URL-friendly identifier
@@ -201,8 +206,8 @@ class TenantManager:
         import re
 
         # Convert to lowercase, replace spaces with hyphens
-        slug = re.sub(r'[^\w\s-]', '', name.lower())
-        slug = re.sub(r'[-\s]+', '-', slug)
+        slug = re.sub(r"[^\w\s-]", "", name.lower())
+        slug = re.sub(r"[-\s]+", "-", slug)
 
         # Ensure unique
         base_slug = slug
@@ -218,7 +223,7 @@ class TenantManager:
         import re
 
         # Validate format
-        if not re.match(r'^[\w-]+$', slug):
+        if not re.match(r"^[\w-]+$", slug):
             raise ValueError("Slug can only contain letters, numbers, hyphens")
 
         # Ensure unique
@@ -317,9 +322,21 @@ class TenantManager:
                 "max_tournaments": tenant.limits.max_tournaments,
             },
             "utilization": {
-                "users": usage.get("users", 0) / tenant.limits.max_users if tenant.limits.max_users > 0 else 0,
-                "competitors": usage.get("competitors", 0) / tenant.limits.max_competitors if tenant.limits.max_competitors > 0 else 0,
-                "tournaments": usage.get("tournaments", 0) / tenant.limits.max_tournaments if tenant.limits.max_tournaments > 0 else 0,
+                "users": (
+                    usage.get("users", 0) / tenant.limits.max_users
+                    if tenant.limits.max_users > 0
+                    else 0
+                ),
+                "competitors": (
+                    usage.get("competitors", 0) / tenant.limits.max_competitors
+                    if tenant.limits.max_competitors > 0
+                    else 0
+                ),
+                "tournaments": (
+                    usage.get("tournaments", 0) / tenant.limits.max_tournaments
+                    if tenant.limits.max_tournaments > 0
+                    else 0
+                ),
             },
         }
 

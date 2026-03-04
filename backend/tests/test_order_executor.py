@@ -2,13 +2,11 @@
 Tests voor OrderExecutor - Order Execution Engine
 """
 
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock
 
 import pytest
 
 from backend.core.schemas.ooda_types import ExecutionPlan, Order
-from backend.execution.order_executor import ExchangeAdapter, ExecutionError, OrderExecutor
+from backend.execution.order_executor import ExchangeAdapter, OrderExecutor
 
 
 @pytest.fixture
@@ -120,7 +118,7 @@ class TestSlippageCalculation:
             trace_id="test-slippage-trace",
         )
 
-        outcome = await order_executor.execute_trade(low_price_plan)
+        await order_executor.execute_trade(low_price_plan)
 
         # Should log warning (slippage > 50 bps)
         assert "slippage" in caplog.text.lower()

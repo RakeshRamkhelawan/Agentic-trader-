@@ -21,8 +21,9 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CouncilDeliberation:
     """Event: Council heeft een perspectief gedeeld."""
+
     council_type: str  # "guna", "elemental", "mind", "body", "graha"
-    perspective: str   # "bullish", "bearish", "neutral"
+    perspective: str  # "bullish", "bearish", "neutral"
     confidence: float  # 0.0 - 1.0
     reasoning: str
     metadata: dict[str, Any]
@@ -39,9 +40,10 @@ class CouncilDeliberation:
 @dataclass
 class BuddhiDecision:
     """Event: Buddhi heeft een finale beslissing genomen."""
-    action: str        # "buy", "sell", "hold"
+
+    action: str  # "buy", "sell", "hold"
     confidence: float  # 0.0 - 1.0
-    coherence: float   # Agreement tussen councils
+    coherence: float  # Agreement tussen councils
     rationale: str
     council_views: list  # Lijst van CouncilDeliberation summaries
     session_id: str
@@ -54,6 +56,7 @@ class BuddhiDecision:
 @dataclass
 class ExecutionUpdate:
     """Event: Paper trading execution update."""
+
     symbol: str
     action: str
     quantity: float
@@ -93,8 +96,7 @@ class TriadEventBus:
     STREAM_EXECUTIONS = "triad.executions"
     STREAM_MARKET = "triad.market"
 
-    def __init__(self, redis_url: str = None,
-                 max_stream_length: int = 1000):
+    def __init__(self, redis_url: str = None, max_stream_length: int = 1000):
         if redis_url is None:
             redis_url = REDIS_URL  # Use configured URL
         self.redis_url = redis_url
@@ -120,11 +122,14 @@ class TriadEventBus:
             self.redis = None
             logger.info("Disconnected from Redis")
 
-    async def publish_deliberation(self, council_type: str,
-                                   perspective: str,
-                                   confidence: float,
-                                   reasoning: str,
-                                   metadata: dict | None = None) -> str:
+    async def publish_deliberation(
+        self,
+        council_type: str,
+        perspective: str,
+        confidence: float,
+        reasoning: str,
+        metadata: dict | None = None,
+    ) -> str:
         """
         Publiceer council deliberatie naar Redis Stream.
 
@@ -139,21 +144,27 @@ class TriadEventBus:
             confidence=confidence,
             reasoning=reasoning,
             metadata=metadata or {},
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
         )
 
         message_id = await self.redis.xadd(
             self.STREAM_DELIBERATIONS,
             {"data": json.dumps(event.to_dict())},
-            maxlen=self.max_stream_length
+            maxlen=self.max_stream_length,
         )
 
         logger.debug(f"Published deliberation: {council_type} -> {perspective}")
         return message_id
 
-    async def publish_decision(self, action: str, confidence: float,
-                               coherence: float, rationale: str,
-                               council_views: list, session_id: str) -> str:
+    async def publish_decision(
+        self,
+        action: str,
+        confidence: float,
+        coherence: float,
+        rationale: str,
+        council_views: list,
+        session_id: str,
+    ) -> str:
         """Publiceer Buddhi beslissing."""
         await self.connect()
 
@@ -164,22 +175,27 @@ class TriadEventBus:
             rationale=rationale,
             council_views=council_views,
             session_id=session_id,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
         )
 
         message_id = await self.redis.xadd(
             self.STREAM_DECISIONS,
             {"data": json.dumps(event.to_dict())},
-            maxlen=self.max_stream_length // 2  # Keep fewer decisions
+            maxlen=self.max_stream_length // 2,  # Keep fewer decisions
         )
 
         logger.info(f"Published decision: {action} (confidence: {confidence:.2f})")
         return message_id
 
-    async def publish_execution(self, symbol: str, action: str,
-                                quantity: float, price: float,
-                                pnl: float | None = None,
-                                status: str = "filled") -> str:
+    async def publish_execution(
+        self,
+        symbol: str,
+        action: str,
+        quantity: float,
+        price: float,
+        pnl: float | None = None,
+        status: str = "filled",
+    ) -> str:
         """Publiceer execution update."""
         await self.connect()
 
@@ -190,20 +206,21 @@ class TriadEventBus:
             price=price,
             pnl=pnl,
             status=status,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
         )
 
         message_id = await self.redis.xadd(
             self.STREAM_EXECUTIONS,
             {"data": json.dumps(event.__dict__)},
-            maxlen=self.max_stream_length
+            maxlen=self.max_stream_length,
         )
 
         logger.debug(f"Published execution: {symbol} {action} @ {price}")
         return message_id
 
-    async def subscribe(self, stream: str, last_id: str = "$",
-                        block_ms: int = 5000) -> AsyncIterator[dict]:
+    async def subscribe(
+        self, stream: str, last_id: str = "$", block_ms: int = 5000
+    ) -> AsyncIterator[dict]:
         """
         Subscribe to events from een stream.
 
@@ -222,10 +239,7 @@ class TriadEventBus:
         while True:
             try:
                 # Read new messages
-                messages = await self.redis.xread(
-                    {stream: current_id},
-                    block=block_ms
-                )
+                messages = await self.redis.xread({stream: current_id}, block=block_ms)
 
                 for stream_name, events in messages:
                     for message_id, data in events:
@@ -251,7 +265,7 @@ class TriadEventBus:
             "length": info.get("length", 0),
             "radix-tree-keys": info.get("radix-tree-keys", 0),
             "groups": info.get("groups", 0),
-            "last-generated-id": info.get("last-generated-id", "")
+            "last-generated-id": info.get("last-generated-id", ""),
         }
 
     async def trim_stream(self, stream: str, max_length: int = None):
@@ -280,16 +294,12 @@ class TriadEventBusSync:
     def publish_deliberation(self, **kwargs) -> str:
         """Sync wrapper voor publish_deliberation."""
         loop = self._get_loop()
-        return loop.run_until_complete(
-            self.async_bus.publish_deliberation(**kwargs)
-        )
+        return loop.run_until_complete(self.async_bus.publish_deliberation(**kwargs))
 
     def publish_decision(self, **kwargs) -> str:
         """Sync wrapper voor publish_decision."""
         loop = self._get_loop()
-        return loop.run_until_complete(
-            self.async_bus.publish_decision(**kwargs)
-        )
+        return loop.run_until_complete(self.async_bus.publish_decision(**kwargs))
 
 
 # Singleton instances
@@ -347,7 +357,7 @@ if __name__ == "__main__":
                 perspective="bullish",
                 confidence=0.82,
                 reasoning="Rajas dominant, strong momentum",
-                metadata={"trend": "up", "volatility": 0.025}
+                metadata={"trend": "up", "volatility": 0.025},
             )
             print(f"  Published deliberation: {msg_id}")
 
@@ -358,9 +368,9 @@ if __name__ == "__main__":
                 rationale="Councils agree on bullish outlook",
                 council_views=[
                     {"council": "guna", "perspective": "bullish", "confidence": 0.82},
-                    {"council": "mind", "perspective": "neutral", "confidence": 0.55}
+                    {"council": "mind", "perspective": "neutral", "confidence": 0.55},
                 ],
-                session_id="test_session_001"
+                session_id="test_session_001",
             )
             print(f"  Published decision: {msg_id}")
 

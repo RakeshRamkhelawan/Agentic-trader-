@@ -1,7 +1,7 @@
 # 📊 Prediction Market Analysis Integration Audit
-**Date**: 13 februari 2026  
-**Repository**: https://github.com/Jon-Becker/prediction-market-analysis  
-**Auditor**: AI Assistant  
+**Date**: 13 februari 2026
+**Repository**: https://github.com/Jon-Becker/prediction-market-analysis
+**Auditor**: AI Assistant
 **Target Platform**: Agentic Trader Platform
 
 ---
@@ -112,19 +112,19 @@ class Analysis(ABC):
 
 **Kalshi Markets**:
 ```sql
-ticker, event_ticker, status, yes_price, no_price, 
+ticker, event_ticker, status, yes_price, no_price,
 volume, open_interest, result, created_time, close_time
 ```
 
 **Kalshi Trades**:
 ```sql
-trade_id, ticker, count, yes_price, no_price, 
+trade_id, ticker, count, yes_price, no_price,
 taker_side, created_time
 ```
 
 **Polymarket** (blockchain-sourced):
 ```sql
-block_number, order_hash, maker, taker, 
+block_number, order_hash, maker, taker,
 maker_asset_id, taker_asset_id, maker_amount, taker_amount
 ```
 
@@ -299,7 +299,7 @@ async def get_market_signals(
 ):
     """
     Get recent market signals from prediction markets.
-    
+
     Signals kunnen gebruikt worden door OODA agents voor:
     - Market sentiment (leading indicator)
     - Informed trader activity (maker/taker analysis)
@@ -317,10 +317,10 @@ async def run_analysis(request: AnalysisRequest, background_tasks: BackgroundTas
     """
     # TODO: Queue analysis job
     analysis_id = f"analysis_{datetime.now().timestamp()}"
-    
+
     # Background task
     background_tasks.add_task(execute_analysis, analysis_id, request)
-    
+
     return {
         "analysis_id": analysis_id,
         "status": "queued",
@@ -437,20 +437,20 @@ class DataScout(OODAAgent):
     async def observe(self):
         # Traditional market data
         market_data = await self.fetch_market_data()
-        
+
         # NEW: Prediction market signals
         prediction_signals = await self.prediction_client.get_signals(
             market="kalshi",
             category="crypto"
         )
-        
+
         # Combine signals
         combined_intelligence = {
             "market_data": market_data,
             "prediction_sentiment": prediction_signals,
             "correlation_score": self.calculate_correlation()
         }
-        
+
         return combined_intelligence
 ```
 
@@ -466,7 +466,7 @@ class RiskManager:
             market="polymarket",
             category="crypto"
         )
-        
+
         # If makers are heavily buying (smart money), adjust risk
         if maker_taker_analysis.maker_advantage > 0.02:  # 2% excess
             return RiskLevel.CAUTIOUS
@@ -479,14 +479,14 @@ class RiskManager:
 async def monitor_prediction_volumes():
     while True:
         summary = await prediction_api.get_markets_summary("kalshi")
-        
+
         # Volume spike = increased attention = potential volatility
         if summary.volume_24h_change > 2.0:  # 200% increase
             await send_alert(
                 "Prediction market volume spike detected",
                 category=summary.top_category
             )
-        
+
         await asyncio.sleep(300)  # Check every 5 min
 ```
 

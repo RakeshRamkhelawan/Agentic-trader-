@@ -7,6 +7,7 @@ from typing import Any
 
 class SSOProviderType(Enum):
     """SSO provider types."""
+
     SAML = "saml"
     OIDC = "oidc"
 
@@ -14,6 +15,7 @@ class SSOProviderType(Enum):
 @dataclass
 class SAMLProvider:
     """SAML 2.0 Identity Provider configuration."""
+
     id: str
     name: str
     entity_id: str
@@ -50,6 +52,7 @@ class SAMLProvider:
 @dataclass
 class OIDCProvider:
     """OpenID Connect Provider configuration."""
+
     id: str
     name: str
 
@@ -121,8 +124,7 @@ class SSOManager:
 
             if tenant_id in self._tenant_providers:
                 self._tenant_providers[tenant_id] = [
-                    pid for pid in self._tenant_providers[tenant_id]
-                    if pid != provider_id
+                    pid for pid in self._tenant_providers[tenant_id] if pid != provider_id
                 ]
 
             return True

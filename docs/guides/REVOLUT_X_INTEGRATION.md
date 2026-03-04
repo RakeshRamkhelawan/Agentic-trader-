@@ -44,17 +44,17 @@ class YourCoordinatorInitCode:
     async def initialize_agents(self):
         # 1. Create RevolutXAdapter
         revolut_adapter = RevolutXAdapter()
-        
+
         # 2. Connect to Revolut X API
         await revolut_adapter.connect()
-        
+
         # 3. Create OrderExecutor with real adapter
         order_executor = OrderExecutor(
             exchange_adapter=revolut_adapter,  # ← Real adapter instead of mock
             max_slippage_bps=50,  # 0.5% max slippage
             order_timeout=30      # 30 seconds timeout
         )
-        
+
         # 4. Pass to OODALoopCoordinator
         coordinator = OODALoopCoordinator(
             data_scout=data_scout,
@@ -65,7 +65,7 @@ class YourCoordinatorInitCode:
             order_executor=order_executor,  # ← Executor with Revolut X
             trading_mode=TradingMode.AUTO   # or TradingMode.NOTIFY_ONLY
         )
-        
+
         return coordinator
 ```
 
@@ -85,18 +85,18 @@ async def main():
     # Initialize RevolutXAdapter
     revolut_adapter = RevolutXAdapter()
     await revolut_adapter.connect()
-    
+
     # Create OrderExecutor with Revolut X
     order_executor = OrderExecutor(
         exchange_adapter=revolut_adapter
     )
-    
+
     # Initialize agents (example - adjust to your setup)
     data_scout = DataScoutAgent(...)
     analyst = AnalystAgent(...)
     trader = TraderAgent(...)
     risk_manager = RiskManagerAgent(...)
-    
+
     # Create coordinator with real executor
     coordinator = OODALoopCoordinator(
         data_scout=data_scout,
@@ -106,16 +106,16 @@ async def main():
         order_executor=order_executor,
         trading_mode=TradingMode.AUTO  # or NOTIFY_ONLY for manual approval
     )
-    
+
     # Run OODA loop
     result = await coordinator.run_cycle(
         symbol="BTC/USDT",
         current_price=104000.0,
         strategy_id="momentum_v1"
     )
-    
+
     print(f"Cycle result: {result}")
-    
+
     # Cleanup
     await revolut_adapter.disconnect()
 

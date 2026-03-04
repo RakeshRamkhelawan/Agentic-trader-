@@ -2,8 +2,7 @@
 Tests for OrchestratorAgent.
 """
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -13,7 +12,6 @@ from backend.core.schemas.ooda_types import (
     Orientation,
     ResearchHypothesis,
     RiskAssessment,
-    RiskDecision,
     TradeProposal,
 )
 from backend.governance.agent_gatekeeper import AgentRole

@@ -4,8 +4,7 @@ Unit tests for BaseAgent memory safety (deque with maxlen).
 
 import sys
 from collections import deque
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
+from datetime import datetime
 
 import pytest
 
@@ -98,7 +97,7 @@ class TestBaseAgentAct:
 
     def test_act_adds_to_history(self, base_agent):
         """Test that act() adds entry to history."""
-        result = base_agent.act("buy", "Strong momentum")
+        base_agent.act("buy", "Strong momentum")
 
         assert len(base_agent.reasoning_history) == 1
         entry = base_agent.reasoning_history[0]
@@ -359,7 +358,6 @@ class TestBaseAgentMemorySafetyIntegration:
 
     def test_memory_usage_stability(self, agent_with_small_buffer):
         """Test that memory usage doesn't grow unbounded."""
-        import sys
 
         # Get initial size
         initial_size = sys.getsizeof(agent_with_small_buffer.reasoning_history)

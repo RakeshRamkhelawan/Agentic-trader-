@@ -1,5 +1,4 @@
 import pytest
-import pytest_asyncio
 
 from backend.agents.elemental_macro import ElementalMacro
 from backend.agents.elemental_risk_guardian import ElementalRiskGuardian

@@ -5,7 +5,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from backend.core.auth import context
-from backend.core.auth.jwt_validator import InvalidSignatureError, JWTValidator, TokenExpiredError
+from backend.core.auth.jwt_validator import JWTValidator
 from backend.core.auth.middleware import AuthMiddleware
 from backend.core.auth.models import TokenPayload
 from backend.core.security.schemas import IdentityPayload, OIDCUserInfo, SecretMetadata, TokenClaims
@@ -100,7 +100,7 @@ async def test_auth_middleware_success():
 
     call_next = AsyncMock(return_value=Response("OK"))
 
-    response = await middleware.dispatch(request, call_next)
+    await middleware.dispatch(request, call_next)
 
     mock_validator.validate_token.assert_called_with("valid_token")
     call_next.assert_awaited_once_with(request)
@@ -207,7 +207,7 @@ def test_secret_manager_caching():
     mock_vault.get_secret.assert_called_once()
 
     manager.clear_cache()
-    value3 = manager.get_secret("test", "key")
+    manager.get_secret("test", "key")
     assert mock_vault.get_secret.call_count == 2
 
 

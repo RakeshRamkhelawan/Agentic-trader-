@@ -6,7 +6,7 @@ from .circuit_breaker import (
     circuit_breaker,
     get_circuit_state,
 )
-from .retry import retry, vedastro_retry, elemental_retry
+from .retry import elemental_retry, retry, vedastro_retry
 
 __all__ = [
     "CircuitBreaker",

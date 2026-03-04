@@ -115,7 +115,7 @@ class TestHotPathLatency:
             times = []
             for _ in range(1000):
                 start = time.perf_counter()
-                decision = engine.get_execution_decision()
+                engine.get_execution_decision()
                 elapsed = time.perf_counter() - start
                 times.append(elapsed)
 
@@ -143,7 +143,7 @@ class TestHotPathLatency:
             times = []
             for _ in range(1000):
                 start = time.perf_counter()
-                decision = engine.get_execution_decision()
+                engine.get_execution_decision()
                 elapsed = time.perf_counter() - start
                 times.append(elapsed)
 
@@ -170,7 +170,7 @@ class TestHotPathLatency:
             times = []
             for _ in range(1000):
                 start = time.perf_counter()
-                decision = engine.get_execution_decision()
+                engine.get_execution_decision()
                 elapsed = time.perf_counter() - start
                 times.append(elapsed)
 
@@ -249,7 +249,7 @@ class TestHotPathDeterminism:
             # Should complete very quickly (no I/O)
             start = time.perf_counter()
             for _ in range(100):
-                decision = engine.get_execution_decision()
+                engine.get_execution_decision()
             elapsed = time.perf_counter() - start
 
             # 100 decisions should take <50ms (0.5ms each)
@@ -326,7 +326,7 @@ class TestHotPathMemory:
             tracemalloc.start()
 
             for _ in range(1000):
-                decision = engine.get_execution_decision()
+                engine.get_execution_decision()
 
             current, peak = tracemalloc.get_traced_memory()
             tracemalloc.stop()
@@ -545,7 +545,7 @@ class TestHotPathPerformance:
             start = time.perf_counter()
             count = 10000
             for _ in range(count):
-                decision = engine.get_execution_decision()
+                engine.get_execution_decision()
             elapsed = time.perf_counter() - start
 
             throughput = count / elapsed

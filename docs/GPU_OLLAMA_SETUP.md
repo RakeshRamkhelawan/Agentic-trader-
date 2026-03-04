@@ -23,30 +23,30 @@ This guide explains how to optimally configure Ollama with GPU acceleration for 
 ## Agent Routing Categories
 
 ### Hot Path Agents (Real-time)
-**Latency Requirement:** < 100ms  
-**Provider:** Cloud APIs (OpenAI, DeepSeek)  
+**Latency Requirement:** < 100ms
+**Provider:** Cloud APIs (OpenAI, DeepSeek)
 **Agents:**
 - Risk Guardian (order validation)
 - Execution Agent (trade execution)
 
 ### Fast Path Agents
-**Latency Requirement:** < 500ms  
-**Provider:** Mixed (Cloud preferred, Ollama fallback)  
+**Latency Requirement:** < 500ms
+**Provider:** Mixed (Cloud preferred, Ollama fallback)
 **Agents:**
 - News Agent (live news feed)
 - Macro Agent (market updates)
 
 ### Standard Path Agents (GPU Optimized)
-**Latency Requirement:** 1-5s  
-**Provider:** Ollama GPU (local, free)  
+**Latency Requirement:** 1-5s
+**Provider:** Ollama GPU (local, free)
 **Agents:**
 - **Sentiment Agent** - Analyzes news sentiment using `deepseek-r1:7b`
 - **Research Agent** - Deep analysis using `deepseek-r1:14b`
 - **Valuation Agent** - Fundamental analysis using `deepseek-r1:14b`
 
 ### Batch Path Agents (GPU Batch Processing)
-**Latency Requirement:** > 5s  
-**Provider:** Ollama GPU with batching  
+**Latency Requirement:** > 5s
+**Provider:** Ollama GPU with batching
 **Agents:**
 - Asset Discovery (bulk analysis)
 - Backtest Agent (historical analysis)

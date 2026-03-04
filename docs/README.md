@@ -1,208 +1,52 @@
-# Documentation Index
+# Documentation
 
-Welcome to the Agentic Trader Platform documentation. This index provides a comprehensive overview of all available documentation.
+Welcome to the Agentic Trader Platform documentation. This directory contains comprehensive guides, architecture documentation, and operational resources.
 
-## Quick Links
+## 📚 Documentation Structure
 
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [Getting Started](#getting-started) | Quick start guide | New users |
-| [API Reference](#api-reference) | Complete API docs | Developers |
-| [Security](#security) | Security procedures | Security team |
-| [Operations](#operations) | Deployment & monitoring | DevOps |
-| [Development](#development) | Development guides | Engineers |
+### [📖 Guides](guides/)
+End-user and developer guides for getting started and using the platform.
 
----
+- **[Quick Start](guides/QUICK_START.md)** - Get up and running in minutes
+- **[Vedic Integration Guide](guides/VEDASTRO_INTEGRATION_GUIDE.md)** - Understanding the Vedic intelligence system
 
-## Getting Started
+### [🏗️ Architecture](architecture/)
+Technical architecture documentation and design decisions.
 
-### For New Users
+- **[Backend Analysis](architecture/BACKEND_ANALYSIS.md)** - Backend structure and consolidation
+- **[Federated Triad Architecture](architecture/FEDERATED_TRIAD_ARCHITECTURE.md)** - Core cognitive architecture
+- **[Structure Overview](architecture/STRUCTURE.md)** - Repository organization
 
-1. **[Main README](../README.md)** - Project overview and quick start
-2. **[Installation Guide](../README.md#installation)** - Setup instructions
-3. **[Quick Start Tutorial](#)** - Step-by-step tutorial (coming soon)
+### [🔒 Security](security/)
+Security policies, analysis, and operational security guides.
 
-### For Developers
+- **[Security Analysis](security/SECURITY_ANALYSIS.md)** - Detailed security assessment
 
-1. **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute
-2. **[Development Setup](../README.md#development-setup)** - Local development
-3. **[Testing Guide](TESTING.md)** - Testing procedures
+### [⚙️ Operations](operations/)
+Operational guides for deployment, configuration, and maintenance.
 
----
+- **[Docker Guide](operations/DOCKER.md)** - Container deployment
+- **[Port Allocation](operations/PORT_ALLOCATION.md)** - Service port documentation
+- **[Port Allocation README](operations/PORT_ALLOCATION_README.md)** - Port allocation guidelines
+- **[Port Allocation SSOT](operations/PORT_ALLOCATION_SSOT.md)** - Single source of truth for ports
 
-## API Reference
+## 🔗 Quick Links
 
-### REST API
+- [Main README](../README.md)
+- [Contributing Guidelines](../CONTRIBUTING.md)
+- [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [License](../LICENSE)
 
-- **[OpenAPI Spec](../README.md#api-documentation)** - Interactive API documentation
-- **[Authentication](../README.md#api-documentation)** - JWT authentication
-- **[Error Codes](#)** - Complete error reference (coming soon)
+## 📝 Contributing to Documentation
 
-### WebSocket API
+When adding new documentation:
 
-- **[Market Data](API.md#websocket)** - Real-time market data
-- **[Order Updates](API.md#websocket)** - Order status updates
-- **[Portfolio Updates](API.md#websocket)** - Portfolio changes
-
-### SDKs
-
-- **[Python SDK](#)** - Python client library (coming soon)
-- **[JavaScript SDK](#)** - JavaScript/TypeScript client (coming soon)
+1. Place files in the appropriate subdirectory
+2. Use clear, descriptive filenames
+3. Follow the existing markdown formatting
+4. Update this README with new entries
+5. Ensure all internal links are relative paths
 
 ---
 
-## Security
-
-### For Security Teams
-
-1. **[Security Runbook](SECURITY_RUNBOOK.md)** - Comprehensive security procedures
-2. **[Incident Response](INCIDENT_RESPONSE.md)** - Incident handling playbooks
-3. **[Compliance Documentation](#)** - Regulatory compliance (coming soon)
-
-### For Developers
-
-1. **[Security Best Practices](#)** - Secure coding guidelines (coming soon)
-2. **[Vulnerability Disclosure](../SECURITY.md)** - Reporting vulnerabilities
-3. **[Security Checklist](#)** - Pre-deployment security checks (coming soon)
-
----
-
-## Operations
-
-### Deployment
-
-1. **[Deployment Guide](../DEPLOYMENT_GUIDE.md)** - Production deployment
-2. **[Docker Guide](../DOCKER.md)** - Container deployment
-3. **[Kubernetes Guide](../infrastructure/k8s/README.md)** - K8s deployment
-4. **[Migration Guide](../MIGRATION.md)** - Database migrations
-
-### Monitoring
-
-1. **[Monitoring Setup](MONITORING.md)** - Prometheus/Grafana setup
-2. **[Alerting](#)** - Alert configuration (coming soon)
-3. **[Troubleshooting](../README.md#troubleshooting)** - Common issues
-
-### Maintenance
-
-1. **[Backup & Recovery](#)** - Data backup procedures (coming soon)
-2. **[Scaling Guide](#)** - Horizontal scaling (coming soon)
-3. **[Disaster Recovery](#)** - DR procedures (coming soon)
-
----
-
-## Development
-
-### Architecture
-
-1. **[Architecture Overview](ARCHITECTURE.md)** - System design
-2. **[Architecture Decision Records](ARCHITECTURE.md#adrs)** - Design decisions
-3. **[Data Flow Diagrams](#)** - Component interactions (coming soon)
-
-### Coding Standards
-
-1. **[Style Guide](../README.md#code-style)** - Code formatting
-2. **[Testing Standards](TESTING.md)** - Testing requirements
-3. **[Documentation Standards](#)** - Documentation guidelines (coming soon)
-
-### Component Guides
-
-- **[AI Agents](AGENTS.md)** - Multi-agent system
-- **[Risk Management](RISK.md)** - Risk calculations
-- **[Execution Engine](EXECUTION.md)** - Order execution
-- **[Event Bus](EVENT_BUS.md)** - Event streaming
-
----
-
-## Reference
-
-### Configuration
-
-- **[Environment Variables](../.env.example)** - Configuration reference
-- **[Feature Flags](#)** - Feature toggles (coming soon)
-- **[Rate Limits](#)** - API rate limits (coming soon)
-
-### Database
-
-- **[Schema Documentation](DATABASE.md)** - Database schema
-- **[Migration Guide](../MIGRATION.md)** - Running migrations
-- **[Query Optimization](#)** - Performance tuning (coming soon)
-
-### Release Notes
-
-- **[Changelog](../CHANGELOG.md)** - Version history
-- **[Roadmap](../ROADMAP.md)** - Future plans
-- **[Known Issues](#)** - Current limitations (coming soon)
-
----
-
-## Support
-
-### Getting Help
-
-- **Documentation**: https://docs.agentictrader.com
-- **GitHub Issues**: https://github.com/agentic-trader/issues
-- **Email**: support@agentictrader.com
-- **Slack**: [Join our community](#)
-
-### Enterprise Support
-
-- **Premium Support**: enterprise@agentictrader.com
-- **Training**: training@agentictrader.com
-- **Consulting**: consulting@agentictrader.com
-
----
-
-## Document Status
-
-| Document | Status | Last Updated |
-|----------|--------|--------------|
-| README.md | ✅ Complete | 2026-03-01 |
-| SECURITY_RUNBOOK.md | ✅ Complete | 2026-03-01 |
-| INCIDENT_RESPONSE.md | ✅ Complete | 2026-03-01 |
-| TESTING.md | ✅ Complete | 2026-03-01 |
-| CHANGELOG.md | ✅ Complete | 2026-03-01 |
-| DEPLOYMENT_GUIDE.md | 🔄 Review Needed | 2026-02-15 |
-| API.md | 🔄 In Progress | 2026-02-20 |
-| ARCHITECTURE.md | 🔄 In Progress | 2026-02-25 |
-
-**Legend:**
-- ✅ Complete - Ready for use
-- 🔄 In Progress - Being updated
-- 📝 Planned - Not started yet
-
----
-
-## Contributing to Documentation
-
-### How to Contribute
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-### Documentation Standards
-
-- Use Markdown format
-- Follow the existing style
-- Include code examples
-- Update this index
-
-### Review Process
-
-All documentation changes require:
-1. Technical review
-2. Editorial review
-3. Approval from documentation team
-
----
-
-## License
-
-All documentation is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-
----
-
-**Last Updated:** 2026-03-01  
-**Maintained by:** Documentation Team  
-**Questions?** docs@agentictrader.com
+*Last updated: 2026-03-02*

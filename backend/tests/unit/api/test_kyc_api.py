@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 
-from backend.api.kyc_api import ENABLE_KYC, KYCStatus, router
+from backend.api.kyc_api import KYCStatus, router
 
 
 # Create test app
@@ -36,8 +36,8 @@ class TestKYCStatusDisabled:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == KYCStatus.VERIFIED
-        assert data["required"] == False
-        assert data["enabled"] == False
+        assert not data["required"]
+        assert not data["enabled"]
 
     def test_submit_disabled(self, client):
         """Happy path: Submit accepted but ignored when disabled"""
@@ -63,7 +63,7 @@ class TestKYCStatusDisabled:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["success"] == True
+        assert data["success"]
         assert data["status"] == KYCStatus.VERIFIED
         assert "disabled" in data["message"].lower()
 
@@ -73,7 +73,7 @@ class TestKYCStatusDisabled:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["success"] == True
+        assert data["success"]
         assert "disabled" in data["message"].lower()
 
     def test_is_required_disabled(self, client):
@@ -82,8 +82,8 @@ class TestKYCStatusDisabled:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["required"] == False
-        assert data["enabled"] == False
+        assert not data["required"]
+        assert not data["enabled"]
         assert data["status"] == KYCStatus.VERIFIED
 
 
@@ -217,8 +217,8 @@ class TestKYCAsync:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["enabled"] == False
-        assert data["required"] == False
+        assert not data["enabled"]
+        assert not data["required"]
 
 
 class TestKYCEdgeCases:

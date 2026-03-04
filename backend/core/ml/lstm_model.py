@@ -26,7 +26,7 @@ class ChittaLSTM(nn.Module):
         hidden_size: int = 128,
         num_layers: int = 2,
         output_size: int = 1,  # Future return
-        dropout: float = 0.2
+        dropout: float = 0.2,
     ):
         super(ChittaLSTM, self).__init__()
 
@@ -39,15 +39,12 @@ class ChittaLSTM(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=dropout if num_layers > 1 else 0
+            dropout=dropout if num_layers > 1 else 0,
         )
 
         # Fully connected output layer
         self.fc = nn.Sequential(
-            nn.Linear(hidden_size, 64),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(64, output_size)
+            nn.Linear(hidden_size, 64), nn.ReLU(), nn.Dropout(dropout), nn.Linear(64, output_size)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -85,7 +82,7 @@ class ChittaTransformer(nn.Module):
         nhead: int = 8,
         num_layers: int = 4,
         output_size: int = 1,
-        dropout: float = 0.1
+        dropout: float = 0.1,
     ):
         super(ChittaTransformer, self).__init__()
 
@@ -103,19 +100,13 @@ class ChittaTransformer(nn.Module):
             nhead=nhead,
             dim_feedforward=d_model * 4,
             dropout=dropout,
-            batch_first=True
+            batch_first=True,
         )
-        self.transformer_encoder = nn.TransformerEncoder(
-            encoder_layers,
-            num_layers=num_layers
-        )
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers=num_layers)
 
         # Output layer
         self.fc = nn.Sequential(
-            nn.Linear(d_model, 64),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(64, output_size)
+            nn.Linear(d_model, 64), nn.ReLU(), nn.Dropout(dropout), nn.Linear(64, output_size)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -153,16 +144,18 @@ class PositionalEncoding(nn.Module):
         # Pre-compute positional encodings
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-torch.log(torch.tensor(10000.0)) / d_model))
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2).float() * (-torch.log(torch.tensor(10000.0)) / d_model)
+        )
 
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)  # [1, max_len, d_model]
 
-        self.register_buffer('pe', pe)
+        self.register_buffer("pe", pe)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = x + self.pe[:, :x.size(1), :]
+        x = x + self.pe[:, : x.size(1), :]
         return self.dropout(x)
 
 
@@ -173,7 +166,7 @@ class ModelTrainer:
         self,
         model: nn.Module,
         learning_rate: float = 0.001,
-        device: str = "cuda" if torch.cuda.is_available() else "cpu"
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
         self.model = model.to(device)
         self.device = device
@@ -233,17 +226,20 @@ class ModelTrainer:
 
     def save_model(self, path: str):
         """Sla model op."""
-        torch.save({
-            'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-        }, path)
+        torch.save(
+            {
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+            },
+            path,
+        )
         logger.info(f"Model saved to {path}")
 
     def load_model(self, path: str):
         """Laad model."""
         checkpoint = torch.load(path, map_location=self.device)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         logger.info(f"Model loaded from {path}")
 
 
@@ -251,7 +247,7 @@ def train_on_backtest_data(
     backtest_dir: str = "backtest_results",
     model_type: str = "lstm",  # "lstm" of "transformer"
     epochs: int = 50,
-    batch_size: int = 32
+    batch_size: int = 32,
 ) -> nn.Module:
     """
     Hoofdfunctie: Train een model op backtest data.
@@ -265,9 +261,7 @@ def train_on_backtest_data(
     # Bouw dataset
     builder = BacktestDatasetBuilder()
     dataset = builder.build_lstm_dataset(
-        backtest_dir=backtest_dir,
-        sequence_length=50,
-        prediction_horizon=10
+        backtest_dir=backtest_dir, sequence_length=50, prediction_horizon=10
     )
 
     if len(dataset) == 0:
@@ -294,15 +288,17 @@ def train_on_backtest_data(
     # Train
     trainer = ModelTrainer(model)
 
-    best_val_loss = float('inf')
+    best_val_loss = float("inf")
     for epoch in range(epochs):
         train_loss = trainer.train_epoch(train_loader)
         val_loss, val_acc = trainer.validate(val_loader)
 
-        logger.info(f"Epoch {epoch+1}/{epochs}: "
-                   f"Train Loss={train_loss:.4f}, "
-                   f"Val Loss={val_loss:.4f}, "
-                   f"Val Direction Acc={val_acc:.2%}")
+        logger.info(
+            f"Epoch {epoch+1}/{epochs}: "
+            f"Train Loss={train_loss:.4f}, "
+            f"Val Loss={val_loss:.4f}, "
+            f"Val Direction Acc={val_acc:.2%}"
+        )
 
         # Save best model
         if val_loss < best_val_loss:

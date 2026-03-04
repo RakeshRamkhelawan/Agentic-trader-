@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, Mock, PropertyMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -9,12 +9,7 @@ from backend.agents.trader_agent import TraderAgent
 from backend.core.adapters.system_bridge import CognitiveBridge
 from backend.core.schemas.ooda_types import (
     ExecutionOutcome,
-    MarketRegime,
-    Observation,
-    Orientation,
-    RiskAssessment,
     RiskDecision,
-    TradeProposal,
 )
 from backend.execution.order_executor import OrderExecutor
 from backend.orchestration.ooda_coordinator import OODALoopCoordinator, TradingMode

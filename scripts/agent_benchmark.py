@@ -2,7 +2,7 @@
 """
 Agent Benchmark - Vergelijk LLM vs Rule-Based Backtests
 
-Deze benchmark draait beide backtests (met en zonder DeepSeek LLM) 
+Deze benchmark draait beide backtests (met en zonder DeepSeek LLM)
 en genereert een vergelijkingsrapport.
 
 Usage:
@@ -259,10 +259,10 @@ def main():
 Examples:
   # Standard benchmark (1 run each)
   python scripts/agent_benchmark.py --symbol BTC-EUR --days 30
-  
+
   # Multiple runs for statistical significance
   python scripts/agent_benchmark.py --symbol ETH-EUR --days 60 --runs 5
-  
+
   # Long-term benchmark
   python scripts/agent_benchmark.py --symbol BTC-EUR --days 365 --capital 50000
         """,

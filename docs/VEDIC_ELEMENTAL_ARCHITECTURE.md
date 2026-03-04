@@ -213,29 +213,29 @@ async def process_market_cycle(self, ...):
     # ========== ASCEND: Layers 1-5 ==========
     for layer_num in range(1, 6):
         coherence = self._traverse_tattva_layer(layer_num, "ascend")
-    
+
     # ========== FILTER: Layers 6-12 ==========
     for layer_num in range(6, 13):
         coherence = self._traverse_tattva_layer(layer_num, "filter")
-    
+
     # ========== INTERFACE: Layers 13-15 ==========
     for layer_num in range(13, 16):
         coherence = self._traverse_tattva_layer(layer_num, "interface")
-    
+
     # ========== SENSE: Layers 16-25 ==========
     perception = await self.sensory_processor.process(...)
-    
+
     # ========== DECIDE: Layer 14 (Buddhi) ==========
     action, confidence = self.decision_maker.decide(perception)
-    
+
     # ========== ACT: Layers 26-31 ==========
     for layer_num in range(26, 32):
         coherence = self._traverse_tattva_layer(layer_num, "act")
-    
+
     # ========== MATERIALIZE: Layers 32-36 ==========
     for layer_num in range(32, 37):
         coherence = self._traverse_tattva_layer(layer_num, "materialize")
-    
+
     # ========== DESCEND: Layers 36-1 ==========
     for layer_num in range(36, 0, -1):
         coherence = self._traverse_tattva_layer(layer_num, "descend")
@@ -268,7 +268,7 @@ class NavagrahaState(BaseModel):
         if self.guna_distribution.tamas > 0.6:
             return False  # Too much inertia/darkness
         return True
-    
+
     @property
     def consciousness_level(self) -> str:
         sattva = self.guna_distribution.sattva

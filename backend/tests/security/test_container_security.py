@@ -10,7 +10,6 @@ Run with: pytest backend/tests/security/test_container_security.py -v
 """
 
 import os
-import re
 
 import pytest
 

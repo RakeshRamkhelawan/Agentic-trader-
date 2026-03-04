@@ -8,6 +8,7 @@ from typing import Any
 
 class BadgeType(Enum):
     """Types of badges that can be earned."""
+
     # Performance badges
     PROFITABLE_TRADER = "profitable_trader"
     SHARPE_MASTER = "sharpe_master"
@@ -37,6 +38,7 @@ class BadgeType(Enum):
 
 class BadgeRarity(Enum):
     """Badge rarity levels."""
+
     COMMON = "common"
     UNCOMMON = "uncommon"
     RARE = "rare"
@@ -47,6 +49,7 @@ class BadgeRarity(Enum):
 @dataclass
 class Badge:
     """A badge that can be earned."""
+
     type: BadgeType
     name: str
     description: str
@@ -69,6 +72,7 @@ class Badge:
 @dataclass
 class EarnedBadge:
     """A badge earned by a competitor."""
+
     badge_type: BadgeType
     competitor_id: str
     earned_at: datetime = field(default_factory=datetime.utcnow)
@@ -78,6 +82,7 @@ class EarnedBadge:
 @dataclass
 class Achievement:
     """An achievement with progress tracking."""
+
     id: str
     name: str
     description: str
@@ -406,8 +411,7 @@ class RewardsSystem:
                 "competitor_id": cid,
                 "badge_count": len(badges),
                 "legendary_badges": sum(
-                    1 for e in badges
-                    if self._badges[e.badge_type].rarity == BadgeRarity.LEGENDARY
+                    1 for e in badges if self._badges[e.badge_type].rarity == BadgeRarity.LEGENDARY
                 ),
             }
             for cid, badges in self._earned_badges.items()
