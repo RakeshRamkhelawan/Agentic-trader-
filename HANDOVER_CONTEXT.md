@@ -1,4 +1,14 @@
 
+## Sprint 4: Sentiment Integration and Thompson Sampling (2026-03-04)
+**Goal:** Sentiment als 4e consensus vote en Bayesiaanse strategie selectie.
+**Status:** Completed
+**Reflections:**
+- SentimentScorer gebouwd (alignment-aware: buy vs sell richting keert de score om).
+- ThompsonSamplingSelector met Beta distributies als vervanging voor de EMA StrategyWeightAdapter.
+- TraderAgent stuurt nu 4 votes (technical, mtf, risk, sentiment) naar de consensus engine.
+- Volledige roadmap (4 sprints) afgerond. Platform heeft nu multi-indicator strategieen, MTF analyse, ensemble voting, ML regime detection, Kelly sizing, sentiment integration en Thompson Sampling.
+
+
 ## Sprint 3: ML Regime Detection and Kelly Position Sizing (2026-03-04)
 **Goal:** Vervang simpele rule-based regime detectie door ML-classificatie en voeg Kelly Criterion position sizing toe.
 **Status:** Completed
