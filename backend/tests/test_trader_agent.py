@@ -52,7 +52,7 @@ class TestTraderAgent:
 
         ranging_orientation = Orientation(
             symbol="BTC/USDT",
-            regime=MarketRegime.RANGING,
+            regime=MarketRegime.SIDEWAYS,
             indicators={},
             core_sentiment=0.5,
             confidence=0.6,
@@ -70,7 +70,7 @@ class TestTraderAgent:
         # Override confidence
         low_conf_orientation = Orientation(
             symbol="BTC/USDT",
-            regime=MarketRegime.TRENDING_UP,
+            regime=MarketRegime.BULL,
             indicators={},
             core_sentiment=0.4,
             confidence=0.5,  # Te laag
@@ -90,7 +90,7 @@ class TestTraderAgent:
         # High confidence
         high_conf = Orientation(
             symbol="BTC/USDT",
-            regime=MarketRegime.TRENDING_UP,
+            regime=MarketRegime.BULL,
             indicators={},
             core_sentiment=0.9,
             confidence=0.9,
@@ -100,7 +100,7 @@ class TestTraderAgent:
         # Low confidence (but above threshold)
         low_conf = Orientation(
             symbol="BTC/USDT",
-            regime=MarketRegime.TRENDING_UP,
+            regime=MarketRegime.BULL,
             indicators={},
             core_sentiment=0.6,
             confidence=0.6,

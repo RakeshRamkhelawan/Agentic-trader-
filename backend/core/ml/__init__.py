@@ -8,22 +8,25 @@ Features:
 - Model training and inference
 """
 
-from .features import FeatureEngineer
-from .models import ModelManager
-from .predictor import (
-    ConfidenceLevel,
-    PredictionResult,
-    SignalDirection,
-    TradePredictor,
-    trade_predictor,
-)
+from .regime_detector import IntelligentRegimeDetector
+
+# from .features import FeatureEngineer
+# from .models import ModelManager
+# from .predictor import (
+#     ConfidenceLevel,
+#     PredictionResult,
+#     SignalDirection,
+#     TradePredictor,
+#     trade_predictor,
+# )
 
 __all__ = [
-    "TradePredictor",
-    "PredictionResult",
-    "SignalDirection",
-    "ConfidenceLevel",
-    "trade_predictor",
-    "FeatureEngineer",
-    "ModelManager",
+    "IntelligentRegimeDetector"
+#     "TradePredictor",
+#     "PredictionResult",
+#     "SignalDirection",
+#     "ConfidenceLevel",
+#     "trade_predictor",
+#     "FeatureEngineer",
+#     "ModelManager",
 ]

@@ -1,7 +1,7 @@
 """Agents package."""
 
 from backend.agents.agent_with_tools import AgentWithTools
-from backend.agents.asset_discovery_agent import AssetDiscoveryAgent
+# from backend.agents.asset_discovery_agent import AssetDiscoveryAgent
 from backend.agents.base_agent import BaseAgent
 from backend.agents.data_scout_agent import DataScoutAgent
 from backend.agents.elemental_consensus_agent import ElementalConsensusAgent
@@ -12,7 +12,7 @@ __all__ = [
     "AgentWithTools",
     "BaseAgent",
     "DataScoutAgent",
-    "AssetDiscoveryAgent",
+    # "AssetDiscoveryAgent",
     "VedAstroSignalAgent",
     "ElementalConsensusAgent",
     "RiskCheckAgent",
