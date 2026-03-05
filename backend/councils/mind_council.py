@@ -30,11 +30,12 @@ class MindCouncil:
     def __init__(self):
         # Weights for fear/greed calculation
         self.weights = {
-            "momentum": 0.25,
-            "volatility": 0.25,
-            "volume": 0.20,
+            "momentum": 0.20,
+            "volatility": 0.20,
+            "volume": 0.15,
             "spread": 0.15,
-            "imbalance": 0.15,
+            "imbalance": 0.10,
+            "nlp_sentiment": 0.20,
         }
 
     def analyze(self, market_data: dict) -> dict:
@@ -53,6 +54,7 @@ class MindCouncil:
         volume_score = self._calc_volume_component(market_data)
         spread_score = self._calc_spread_component(market_data)
         imbalance_score = self._calc_imbalance_component(market_data)
+        nlp_score = self._calc_nlp_component(market_data)
 
         # Weighted average (0-100)
         fear_greed = (
@@ -61,6 +63,7 @@ class MindCouncil:
             + volume_score * self.weights["volume"]
             + spread_score * self.weights["spread"]
             + imbalance_score * self.weights["imbalance"]
+            + nlp_score * self.weights["nlp_sentiment"]
         )
 
         # Clamp to 0-100
@@ -75,7 +78,13 @@ class MindCouncil:
             "perspective": perspective,
             "confidence": round(confidence, 3),
             "key_insights": self._generate_insights(
-                fear_greed, momentum_score, volatility_score, volume_score, imbalance_score, insight
+                fear_greed,
+                momentum_score,
+                volatility_score,
+                volume_score,
+                imbalance_score,
+                nlp_score,
+                insight,
             ),
             "components": {
                 "momentum": round(momentum_score, 1),
@@ -83,6 +92,7 @@ class MindCouncil:
                 "volume": round(volume_score, 1),
                 "spread": round(spread_score, 1),
                 "imbalance": round(imbalance_score, 1),
+                "nlp_sentiment": round(nlp_score, 1),
             },
         }
 
@@ -97,13 +107,15 @@ class MindCouncil:
         # Use max absolute momentum
         max_momentum = max(abs(momentum_1d), abs(momentum_3d) / 3)
 
-        # Score: 0% move = 50 (neutral), 10% move = 100 (extreme)
-        if max_momentum > 0.10:  # > 10% move
+        # Enhanced for daily data: lower thresholds
+        if max_momentum > 0.06:  # > 6% move (was 10%)
             return 100.0 if momentum_1d > 0 else 0.0
-        elif max_momentum > 0.05:  # > 5% move
-            return 80.0 if momentum_1d > 0 else 20.0
-        elif max_momentum > 0.02:  # > 2% move
-            return 65.0 if momentum_1d > 0 else 35.0
+        elif max_momentum > 0.03:  # > 3% move (was 5%)
+            return 85.0 if momentum_1d > 0 else 15.0
+        elif max_momentum > 0.015:  # > 1.5% move (was 2%)
+            return 70.0 if momentum_1d > 0 else 30.0
+        elif max_momentum > 0.005:  # > 0.5% move
+            return 60.0 if momentum_1d > 0 else 40.0
         else:
             return 50.0
 
@@ -172,32 +184,60 @@ class MindCouncil:
         # +1 (all buying) = 100 (extreme greed)
         return (imbalance + 1) * 50
 
+    def _calc_nlp_component(self, data: dict) -> float:
+        """
+        Incorporate external NLP sentiment (News/Social).
+        Expected range -1.0 (extreme negative/fear) to +1.0 (extreme positive/greed).
+        Returns 0-100. Defaults to 50 if missing.
+        """
+        nlp_sentiment = data.get("nlp_sentiment", 0.0)
+        # Map -1..1 to 0..100
+        return (nlp_sentiment + 1.0) * 50.0
+
     def _get_perspective(self, fear_greed: float, data: dict) -> tuple[str, float, str]:
         """
-        Contrarian strategy: extreme readings = reversal signals.
+        Hybrid strategy: contrarian at extremes, momentum-following in moderate zones.
+        Enhanced for daily data with lower thresholds.
         """
         momentum = data.get("momentum_1d", 0)
+        sentiment_score = data.get("sentiment_score", 0.5)  # From Sprint 1-4
 
-        if fear_greed < 15:  # Extreme fear
-            if momentum < -0.05:  # Capitulation
+        # === CONTRARIAN at extremes ===
+        if fear_greed < 20:  # Extreme fear (was 15)
+            if momentum < -0.02:  # Capitulation (was -0.05)
                 return "bullish", 0.75, "Extreme fear with capitulation - potential bottom"
             else:
-                return "neutral", 0.6, "Extreme fear - wait for exhaustion"
+                return "bullish", 0.60, "Extreme fear - contrarian buying opportunity"
 
-        elif fear_greed < 30:  # Fear
-            return "neutral", 0.55, "Fear present - cautious"
+        elif fear_greed < 30:  # Fear zone (was no signal)
+            if momentum < -0.01:
+                return "bullish", 0.55, "Fear present with decline - watching for bottom"
+            else:
+                return "neutral", 0.50, "Fear present - cautious"
 
-        elif fear_greed > 85:  # Extreme greed
-            if momentum > 0.05:  # Euphoria
+        elif fear_greed > 80:  # Extreme greed (was 85)
+            if momentum > 0.02:  # Euphoria (was 0.05)
                 return "bearish", 0.70, "Extreme greed with euphoria - risk of reversal"
             else:
-                return "neutral", 0.6, "Extreme greed - distribution possible"
+                return "bearish", 0.55, "Extreme greed - take profits"
 
-        elif fear_greed > 70:  # Greed
-            return "neutral", 0.55, "Greed present - take profits"
+        elif fear_greed > 70:  # Greed zone (was no signal)
+            if momentum > 0.01:
+                return "bearish", 0.50, "Greed present - distribution risk"
+            else:
+                return "neutral", 0.50, "Greed present - monitor"
 
-        else:  # Neutral zone
-            return "neutral", 0.5, "Balanced sentiment - wait for setup"
+        # === MOMENTUM-FOLLOWING in moderate zone ===
+        elif fear_greed > 55 and momentum > 0.01:
+            conf = min(0.60, 0.45 + abs(momentum) * 5)
+            return "bullish", conf, "Moderate greed with positive momentum"
+
+        elif fear_greed < 45 and momentum < -0.01:
+            conf = min(0.60, 0.45 + abs(momentum) * 5)
+            return "bearish", conf, "Moderate fear with negative momentum"
+
+        else:  # True neutral zone (45-55)
+            return "neutral", 0.45, "Balanced sentiment - no clear signal"
 
     def _generate_insights(
         self,
@@ -206,6 +246,7 @@ class MindCouncil:
         volatility_c: float,
         volume_c: float,
         imbalance_c: float,
+        nlp_c: float,
         primary_insight: str,
     ) -> list[str]:
         """Generate detailed insights."""
@@ -221,6 +262,11 @@ class MindCouncil:
         if abs(imbalance_c - 50) > 20:
             side = "buying" if imbalance_c > 50 else "selling"
             insights.append(f"Strong {side} pressure detected")
+
+        if nlp_c < 30:
+            insights.append("NLP sentiment is highly negative (Fear)")
+        elif nlp_c > 70:
+            insights.append("NLP sentiment is highly positive (Greed)")
 
         # Interpretation
         if fear_greed < 20:

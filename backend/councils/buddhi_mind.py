@@ -38,7 +38,9 @@ class BuddhiDecision:
 
     def is_executable(self) -> bool:
         """Check if decision meets execution thresholds."""
-        return self.confidence >= 0.6 and self.coherence >= 0.5 and self.action != Action.HOLD.value
+        return (
+            self.confidence >= 0.50 and self.coherence >= 0.40 and self.action != Action.HOLD.value
+        )
 
 
 class BuddhiMind:
@@ -54,9 +56,9 @@ class BuddhiMind:
     """
 
     def __init__(self):
-        # Minimum thresholds for action
-        self.min_confidence = 0.60
-        self.min_coherence = 0.50
+        # Minimum thresholds for action (recalibrated for daily data)
+        self.min_confidence = 0.50  # Was 0.60 - daily data produces lower confidence
+        self.min_coherence = 0.40  # Was 0.50 - allows 2-out-of-3 agreement
         self.max_position_size = 0.10  # 10% of portfolio max
 
         # Council weights (can be adjusted based on performance)
@@ -88,8 +90,8 @@ class BuddhiMind:
         # Calculate coherence
         coherence = self._calculate_coherence(council_views)
 
-        # Weighted perspective calculation
-        weighted_perspective, confidence = self._weigh_perspectives(council_views)
+        # Weighted perspective calculation with Dynamic Edge Control
+        weighted_perspective, confidence = self._weigh_perspectives(council_views, market_data)
 
         # Check for contradictions
         contradictions = self._find_contradictions(council_views)
@@ -97,8 +99,16 @@ class BuddhiMind:
         # Risk assessment
         risk = self._assess_risk(council_views, market_data, coherence)
 
+        # === Viveka (Discernment) Filter (v7) ===
+        is_maya, viveka_insight = self._apply_viveka(council_views, market_data)
+
         # Make final decision
-        if contradictions and coherence < 0.4:
+        if is_maya:
+            action = Action.HOLD.value
+            rationale = f"Viveka: Decision withheld. Signal identified as Maya (Noise/Illusion). {viveka_insight}"
+            confidence *= 0.5
+
+        elif contradictions and coherence < 0.4:
             # High disagreement - hold
             action = Action.HOLD.value
             rationale = f"High council disagreement: {contradictions[0]}"
@@ -177,14 +187,37 @@ class BuddhiMind:
 
         return max(0.0, min(1.0, coherence))
 
-    def _weigh_perspectives(self, views: list[dict]) -> tuple:
+    def _weigh_perspectives(self, views: list[dict], market_data: dict) -> tuple:
         """
-        Calculate weighted perspective from council views.
+        Calculate weighted perspective from council views, applying Dynamic Edge Control.
 
         Returns: (perspective, confidence)
         """
         if not views:
             return "neutral", 0.0
+
+        # Base weights
+        current_weights = self.council_weights.copy()
+
+        # === Dynamische Edge Control (v4 les) ===
+        regime = market_data.get("regime", "neutral")
+        fear_index = 50
+        for view in views:
+            if view.get("council_type") == "mind" or view.get("council") == "mind":
+                fear_index = view.get("fear_greed_index", 50)
+
+        # 1. Flash crash (Fear < 20): Mind dominant, Guna (trend) afzwakken
+        if fear_index < 20:
+            current_weights["mind"] += 0.30
+            current_weights["guna"] = max(0.05, current_weights["guna"] - 0.20)
+            logger.info(
+                "Dynamic Edge: Fear < 20. MindCouncil focus increased, Guna/Trend decreased."
+            )
+        # 2. Uptrend (ML Regime): Guna (trend) dominant
+        elif regime == "trending_up":
+            current_weights["guna"] += 0.20
+            current_weights["mind"] = max(0.05, current_weights["mind"] - 0.10)
+            logger.info("Dynamic Edge: Uptrend. GunaCouncil focus increased.")
 
         # Calculate weighted scores
         bullish_weight = 0.0
@@ -193,7 +226,7 @@ class BuddhiMind:
 
         for view in views:
             council_type = view.get("council_type", view.get("council"))
-            weight = self.council_weights.get(council_type, 0.2)
+            weight = current_weights.get(council_type, 0.2)
             confidence = view.get("confidence", 0.5)
 
             weighted = weight * confidence
@@ -213,11 +246,11 @@ class BuddhiMind:
         bearish_score = bearish_weight / total_weight
         neutral_score = 1.0 - bullish_score - bearish_score
 
-        # Threshold for action
-        if bullish_score > bearish_score and bullish_score > 0.5:
-            return "bullish", bullish_score
-        elif bearish_score > bullish_score and bearish_score > 0.5:
-            return "bearish", bearish_score
+        # Threshold for action (lowered for daily data)
+        if bullish_score > bearish_score and bullish_score > 0.35:  # Was 0.5
+            return "bullish", min(0.85, bullish_score * 1.2)
+        elif bearish_score > bullish_score and bearish_score > 0.35:  # Was 0.5
+            return "bearish", min(0.85, bearish_score * 1.2)
         else:
             return "neutral", max(neutral_score, 0.5)
 
@@ -269,10 +302,10 @@ class BuddhiMind:
                 risk_score += 0.2
                 concerns.append("Extreme sentiment")
 
-        # Determine risk level
-        if risk_score >= 0.6:
+        # Determine risk level (less restrictive for daily data)
+        if risk_score >= 0.7:  # Was 0.6
             level = "high"
-        elif risk_score >= 0.3:
+        elif risk_score >= 0.35:  # Was 0.3
             level = "medium"
         else:
             level = "low"
@@ -283,6 +316,41 @@ class BuddhiMind:
             "concerns": concerns,
             "primary_concern": concerns[0] if concerns else "None",
         }
+
+    def _apply_viveka(self, views: list[dict], market_data: dict) -> tuple[bool, str]:
+        """
+        Viveka (Discriminatieve Intelligentie): Onderscheid tussen 'Vast' (Trend) en 'Vluchtig' (Ruis).
+        """
+        guna_view = next((v for v in views if v.get("council_type") == "guna"), None)
+        if not guna_view:
+            return False, ""
+
+        interactions = guna_view.get("interactions", {})
+        t_rajas = interactions.get("tamasic_rajas", 0)
+        s_rajas = interactions.get("sattvic_rajas", 0)
+        purity = interactions.get("purity_index", 0)
+
+        # Criterion 1: If Tamasic Rajas (Noise) is too high, it's Maya
+        if t_rajas > 0.5 and purity < 0:
+            return True, "High Tamasic Rajas indicates chaotic noise."
+
+        # Criterion 2: If momentum is high but Sattva is very low
+        if (
+            abs(market_data.get("momentum_1d", 0)) > 0.03
+            and guna_view["guna_vector"]["sattva"] < 0.15
+        ):
+            return (
+                True,
+                "High momentum without Sattvic baseline is likely an exhaustion spike (Maya).",
+            )
+
+        # Criterion 3: Conflict between Purusha (Long term) and Prakriti (Short term)
+        # (Assuming trend is long-term and guna is current)
+        trend = market_data.get("trend", 0)
+        if trend > 0 and guna_view["perspective"] == "bearish" and purity < -0.2:
+            return True, "Strong conflict between trend and local noise."
+
+        return False, "Signal is clear (Viveka validated)."
 
     def _build_rationale(self, views: list[dict], perspective: str, coherence: float) -> str:
         """Build human-readable rationale for the decision."""

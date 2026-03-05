@@ -23,8 +23,8 @@ services:
   # ============================================================================
   api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: agentic_trader_api
     ports:
       - "8000:8000"
@@ -68,7 +68,7 @@ services:
   # ============================================================================
   frontend:
     build:
-      context: ./frontend
+      context: ../frontend
       dockerfile: Dockerfile
     container_name: agentic_trader_frontend
     ports:

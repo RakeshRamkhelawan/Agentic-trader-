@@ -1,23 +1,31 @@
 """
-Base Agent Module - Abstract Base Class for All Trading Agents.
+Base Agent Module - Abstract Base Class for All Trading Agents (v11 Conscious).
 
 Implements ReAct (Reasoning + Acting) pattern with chain-of-thought explanations.
 Refactored with dependency injection for LLM and Event Bus.
 Memory-safe implementation using deque with maxlen to prevent OOM.
+
+v11: Added Chitta Memory - ALL agents now have persistent learning.
 """
 
+import json
 import logging
 import sys
 import time
+import uuid
 from abc import ABC, abstractmethod
 from collections import deque
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from backend.events.event_bus import EventBus
     from backend.llm.provider_interface import LLMProvider
 
+# v11: Conscious imports - ALL agents get Chitta
+from backend.core.conscious.chitta_memory import ChittaMemory, TradeExperience
+from backend.core.llm.llm_provider import create_llm_provider
 from backend.core.security.prompt_guard import PromptGuard
 from backend.governance.agent_gatekeeper import AgentRole
 
@@ -53,6 +61,7 @@ class BaseAgent(ABC):
         llm_provider: Optional["LLMProvider"] = None,
         event_bus: Optional["EventBus"] = None,
         agent_role: AgentRole = AgentRole.UNTRUSTED,
+        clickhouse_client: Optional[Any] = None,
         max_reasoning_history: int = DEFAULT_MAX_HISTORY,
         max_event_buffer: int = DEFAULT_MAX_EVENTS,
     ):
@@ -71,8 +80,10 @@ class BaseAgent(ABC):
         self.llm_provider = llm_provider
         self.event_bus = event_bus
         self.agent_role = agent_role
+        self.clickhouse_client = clickhouse_client
 
-        # State management
+        # Session tracking
+        self.session_id = uuid.uuid4()
         self.state: dict[str, Any] = {}
 
         # MEMORY-SAFE: Use deque with maxlen to prevent unbounded growth
@@ -95,6 +106,31 @@ class BaseAgent(ABC):
 
         # Memory tracking
         self._peak_reasoning_size = 0
+
+        # v11: CHITTA MEMORY - ALL agents get persistent memory
+        self._init_chitta_memory()
+
+    def _init_chitta_memory(self):
+        """Initialize Chitta Memory for this agent."""
+        try:
+            memory_path = f"backend/data/conscious_memory/{self.agent_name.lower()}_chitta"
+            self.chitta = ChittaMemory(storage_path=memory_path)
+
+            # Initialize LLM if not provided
+            if not self.llm_provider:
+                self.llm_provider = create_llm_provider(backend="ollama", model="llama3.2")
+
+            llm_backend = "mock"
+            if hasattr(self.llm_provider, "config"):
+                llm_backend = getattr(self.llm_provider.config, "backend", "mock")
+            self.logger.info(
+                f"{self.agent_name} consciousness activated | "
+                f"Chitta: {len(self.chitta.trades)} trades | "
+                f"LLM: {llm_backend}"
+            )
+        except Exception as e:
+            self.logger.warning(f"Chitta initialization failed for {self.agent_name}: {e}")
+            self.chitta = None
 
     @abstractmethod
     async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
@@ -144,6 +180,46 @@ class BaseAgent(ABC):
         except Exception as e:
             self.logger.error(f"Failed to publish thought: {e}")
             return None
+
+    async def persist_decision(
+        self,
+        action: str,
+        symbol: str,
+        confidence: float,
+        perspective: str,
+        rationale: str,
+        data: Dict[str, Any] | None = None,
+        metadata: Dict[str, Any] | None = None,
+    ) -> bool:
+        """
+        Persist agent decision/analysis to ClickHouse database.
+        """
+        if not self.clickhouse_client:
+            self.logger.debug(
+                f"ClickHouse client not available for {self.agent_name}, skipping persistence"
+            )
+            return False
+
+        try:
+            record = {
+                "agent_id": self.agent_name,
+                "session_id": str(self.session_id),
+                "timestamp": datetime.now(UTC),
+                "symbol": symbol or "N/A",
+                "action": action,
+                "confidence": float(confidence),
+                "perspective": perspective,
+                "rationale": rationale,
+                "data": json.dumps(data) if data else "{}",
+                "metadata": json.dumps(metadata) if metadata else "{}",
+            }
+
+            await self.clickhouse_client.insert("agent_decisions", [record])
+            self.logger.debug(f"Decision persisted for {self.agent_name}: {action} on {symbol}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to persist decision for {self.agent_name}: {e}")
+            return False
 
     def heartbeat(self) -> None:
         """Update the agent's heartbeat timestamp."""
@@ -234,6 +310,21 @@ class BaseAgent(ABC):
         self.reasoning_history.append(action_record)
 
         self.logger.info(f"[ACT] {action}: {rationale}")
+
+        # Async persistence (fire and forget pattern with safety)
+        import asyncio
+
+        asyncio.create_task(
+            self.persist_decision(
+                action="act",
+                symbol=self.state.get("current_symbol", "N/A"),
+                confidence=self.state.get("confidence", 0.5),
+                perspective=action,
+                rationale=rationale,
+                data={"action_details": action},
+            )
+        )
+
         return action_record
 
     def get_reasoning_chain(self, limit: int | None = None) -> list[str]:
@@ -320,6 +411,73 @@ class BaseAgent(ABC):
             self._event_buffer.clear()
         return events
 
+    # ========== v11: CHITTA MEMORY METHODS (ALL agents) ==========
+
+    def retrieve_similar_experiences(self, market_state: Any, top_k: int = 5) -> list:
+        """
+        Retrieve similar historical setups from Chitta Memory.
+        RAG: Retrieval-Augmented Generation for trading.
+        """
+        if not self.chitta or len(self.chitta.trades) < 5:
+            return []
+        return self.chitta.retrieve_similar_setups(market_state, top_k=top_k)
+
+    def reflect_recent_performance(self, n_trades: int = 10) -> dict[str, Any]:
+        """
+        Reflect on recent trading performance.
+        Returns insights for course correction.
+        """
+        if not self.chitta:
+            return {"insight": "No memory", "action": "continue"}
+        return self.chitta.reflect_recent(n_trades=n_trades)
+
+    def store_trade_experience(self, trade: TradeExperience):
+        """Store completed trade in Chitta Memory for learning."""
+        if self.chitta:
+            self.chitta.store_trade(trade)
+            self.logger.info(f"{self.agent_name} stored trade {trade.trade_id} in Chitta")
+
+    def should_pause_trading(self, drawdown_limit: float = 0.08) -> tuple[bool, str]:
+        """
+        Check if agent should pause trading based on Chitta state.
+        Returns: (should_pause, reason)
+        """
+        if not self.chitta:
+            return False, ""
+        return self.chitta.should_pause_trading(drawdown_limit=drawdown_limit)
+
+    def generate_llm_analysis(self, prompt: str, temperature: float = 0.3) -> dict[str, Any]:
+        """
+        Generate analysis using LLM with agent context.
+        """
+        if not self.llm_provider:
+            return {"text": "No LLM", "confidence": 0.0, "reasoning": "LLM not available"}
+
+        # Import here to avoid circular dependency
+        from backend.core.llm.llm_provider import LLMProvider
+
+        if isinstance(self.llm_provider, LLMProvider):
+            system_prompt = f"""JIJ = {self.agent_name}, een conscious trading agent.
+Je hebt toegang tot {len(self.chitta.trades) if self.chitta else 0} trades in je geheugen.
+Wees analytisch, geef confidence score (0-1), en leg uit WAAROM."""
+            return self.llm_provider.generate(
+                prompt, system_prompt=system_prompt, temperature=temperature
+            )
+
+        # Fallback for old LLM provider interface
+        return {"text": "Legacy LLM", "confidence": 0.5, "reasoning": "Using legacy LLM"}
+
+    def get_conscious_stats(self) -> dict[str, Any]:
+        """Get conscious agent statistics including Chitta and LLM."""
+        return {
+            "agent_name": self.agent_name,
+            "chitta_stats": self.chitta.get_summary() if self.chitta else None,
+            "trades_in_memory": len(self.chitta.trades) if self.chitta else 0,
+            "has_llm": self.llm_provider is not None,
+        }
+
+    # ========== END v11 CHITTA METHODS ==========
+
     def get_memory_stats(self) -> dict[str, Any]:
         """
         Get detailed memory usage statistics.
@@ -327,7 +485,7 @@ class BaseAgent(ABC):
         Returns:
             Dictionary with memory statistics
         """
-        return {
+        stats = {
             "reasoning_history": {
                 "current": len(self.reasoning_history),
                 "max": self._max_reasoning_history,
@@ -343,3 +501,9 @@ class BaseAgent(ABC):
                 "keys": len(self.state),
             },
         }
+
+        # v11: Add Chitta stats
+        if self.chitta:
+            stats["chitta_memory"] = self.chitta.get_summary()
+
+        return stats

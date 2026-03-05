@@ -1,6 +1,6 @@
 """
-Sentiment Agent V2 - Optimized for GPU-accelerated Ollama
-Uses LLM Gateway for intelligent routing.
+Sentiment Agent V2 - Conscious Agent with Chitta Memory
+Optimized for GPU-accelerated Ollama with persistent learning.
 """
 
 import asyncio
@@ -10,8 +10,11 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
+# v11: Import BaseAgent for consciousness
+from backend.agents.base_agent import BaseAgent
 from backend.core.agent_router import AgentRouter
 from backend.core.memory_agent import MemoryAgent
+from backend.governance.agent_gatekeeper import AgentRole
 from backend.llm.gateway import LLMGateway
 from backend.schemas.agent_messages import AgentMessage
 
@@ -44,14 +47,16 @@ class SentimentResult:
         }
 
 
-class SentimentAgentV2:
+class SentimentAgentV2(BaseAgent):
     """
-    Optimized Sentiment Agent using LLM Gateway.
+    Conscious Sentiment Agent with Chitta Memory.
 
     Characteristics:
-    - STANDARD_PATH (uses Ollama GPU)
+    - Inherits consciousness (Chitta + LLM) from BaseAgent
+    - Uses LLM Gateway for intelligent routing
     - Batch processing support
     - Caching for repeated queries
+    - Persistent learning from sentiment analysis
     """
 
     def __init__(
@@ -60,13 +65,25 @@ class SentimentAgentV2:
         message_bus=None,
         llm_gateway: LLMGateway | None = None,
         enable_cache: bool = True,
+        # BaseAgent params
+        llm_provider=None,
+        event_bus=None,
+        agent_role=AgentRole.STRATEGIST,
     ):
+        # v11: Initialize BaseAgent first (gives us Chitta + LLM)
+        super().__init__(
+            agent_name="SentimentAgentV2",
+            llm_provider=llm_provider,
+            event_bus=event_bus or message_bus,
+            agent_role=agent_role,
+        )
+
+        # Original initialization
         self.memory = memory_agent or MemoryAgent()
         self.message_bus = message_bus
         self.llm_gateway = llm_gateway
         self.router: AgentRouter | None = None
 
-        self.name = "SentimentAgentV2"
         self.prana = 50.0
         self.is_active = True
 
@@ -386,4 +403,97 @@ Score: 0.0-0.4 bearish, 0.4-0.6 neutral, 0.6-1.0 bullish"""
             "cache_hit_rate": f"{hit_rate:.1%}",
             "queue_size": len(self._batch_queue),
             "gateway_stats": self.llm_gateway.get_stats() if self.llm_gateway else {},
+        }
+
+    # ========== v11: BaseAgent Required Methods ==========
+
+    async def analyze(self, features: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+        """
+        BaseAgent required: ReAct analysis with Chitta integration.
+
+        This bridges BaseAgent interface with SentimentAgentV2 functionality.
+        """
+        # THINK step
+        self.think(f"Analyzing sentiment for: {features.get('symbol', 'UNKNOWN')}")
+
+        # Retrieve similar past sentiment analyses
+        similar = self.retrieve_similar_experiences(features, top_k=3)
+        if similar:
+            self.think(f"Found {len(similar)} similar past analyses")
+
+        # Reflect on recent performance
+        reflection = self.reflect_recent_performance(n_trades=5)
+        if reflection.get("recommended_action") == "pause":
+            return {
+                "action": "HOLD",
+                "confidence": 0.1,
+                "reasoning": "Reflection suggests pause due to: " + str(reflection.get("insights")),
+                "sentiment_score": 0.5,
+                "trend": "neutral",
+            }
+
+        # ACT: Perform actual sentiment analysis
+        headlines = features.get("headlines", [])
+        coin = features.get("symbol", "BTC")
+
+        result = await self.analyze_news(headlines, coin)
+
+        # Store for learning (convert to TradeExperience-like format)
+        from backend.core.conscious.chitta_memory import TradeExperience
+
+        experience = TradeExperience(
+            trade_id=f"sentiment_{datetime.now(UTC).isoformat()}",
+            timestamp=datetime.now(UTC).isoformat(),
+            symbol=coin,
+            side="analysis",
+            entry_price=0,
+            exit_price=0,
+            size=0,
+            net_pnl=result.confidence - 0.5,  # Use confidence as pseudo-PnL
+            return_pct=result.score - 0.5,
+            bars_held=1,
+            market_regime="sentiment_analysis",
+            trend_1d=result.score - 0.5,
+            adx=50,
+            rsi=50 + (result.score - 0.5) * 50,
+            volatility=0.02,
+            harmony_score=result.confidence,
+            confidence=result.confidence,
+            coherence=result.confidence,
+            dominant_element="air",  # Sentiment is Air element
+            guna_dominant="sattva" if result.trend == "neutral" else "rajas",
+            is_maya=False,
+            exit_reason="analysis_complete",
+        )
+        self.store_trade_experience(experience)
+
+        # Return in BaseAgent format
+        return {
+            "action": (
+                "BUY"
+                if result.trend == "bullish"
+                else "SELL" if result.trend == "bearish" else "HOLD"
+            ),
+            "confidence": result.confidence,
+            "reasoning": result.rationale,
+            "sentiment_score": result.score,
+            "trend": result.trend,
+            "key_factors": result.key_factors,
+            "chitta_reflection": reflection,
+        }
+
+    def get_conscious_sentiment_stats(self) -> dict[str, Any]:
+        """Get combined sentiment + consciousness stats."""
+        base_stats = self.get_stats()
+        conscious_stats = self.get_conscious_stats()
+
+        return {
+            **base_stats,
+            **conscious_stats,
+            "total_sentiment_analyses": len(self.chitta.trades) if self.chitta else 0,
+            "avg_sentiment_confidence": (
+                sum(t.confidence for t in self.chitta.trades) / len(self.chitta.trades)
+                if self.chitta and self.chitta.trades
+                else 0
+            ),
         }

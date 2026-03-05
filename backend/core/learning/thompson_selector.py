@@ -42,10 +42,7 @@ class ThompsonSamplingSelector:
         Sample from each strategy's Beta distribution and return
         the strategy with the highest sampled value.
         """
-        samples = {
-            s: random.betavariate(self.alpha[s], self.beta[s])
-            for s in self.alpha
-        }
+        samples = {s: random.betavariate(self.alpha[s], self.beta[s]) for s in self.alpha}
         return max(samples, key=samples.get)
 
     def update(self, strategy: str, reward: float) -> None:
@@ -69,10 +66,7 @@ class ThompsonSamplingSelector:
         Return the expected success probability (mean of Beta distribution)
         for each strategy: E[Beta(a,b)] = a / (a + b).
         """
-        return {
-            s: self.alpha[s] / (self.alpha[s] + self.beta[s])
-            for s in self.alpha
-        }
+        return {s: self.alpha[s] / (self.alpha[s] + self.beta[s]) for s in self.alpha}
 
     def get_stats(self) -> dict[str, dict[str, float]]:
         """Return full alpha/beta stats per strategy for monitoring."""

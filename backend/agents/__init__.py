@@ -1,6 +1,7 @@
 """Agents package."""
 
 from backend.agents.agent_with_tools import AgentWithTools
+
 # from backend.agents.asset_discovery_agent import AssetDiscoveryAgent
 from backend.agents.base_agent import BaseAgent
 from backend.agents.data_scout_agent import DataScoutAgent

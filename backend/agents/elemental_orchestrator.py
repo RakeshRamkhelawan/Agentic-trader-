@@ -142,10 +142,80 @@ class ElementalOrchestrator(ElementalBase):
         return max(0.0, min(1.0, score))
 
     async def _synthesize_strategy(self, inputs: dict[str, Any], harmony: float) -> dict[str, Any]:
-        """Generate high-level strategic direction."""
-        # In a real implementation, this would use LLM to synthesize narrative
-        # For now, deterministic logic for reliability
+        """Generate high-level strategic direction using LLM + Chitta."""
 
+        # v11: Use LLM for intelligent harmonization
+        if self.llm and harmony >= 0.3:  # Only use LLM if sufficient harmony
+            try:
+                # Build harmonization prompt
+                prompt = self._build_harmonization_prompt(inputs, harmony)
+                llm_response = self.generate_llm_analysis(prompt, temperature=0.3)
+
+                # Parse LLM response
+                import json
+
+                text = llm_response.get("text", "{}")
+                parsed = json.loads(text) if text else {}
+
+                return {
+                    "summary": parsed.get("summary", "Hold"),
+                    "confidence": parsed.get("confidence", 0.5),
+                    "focus_element": parsed.get(
+                        "focus_element", self._determine_focus_element(inputs)
+                    ),
+                    "maya_detected": parsed.get("maya_detected", False),
+                    "llm_reasoning": parsed.get("reasoning", ""),
+                    "guna_state": parsed.get("guna_state", self.guna_balance),
+                }
+            except Exception as e:
+                logger.warning(f"LLM harmonization failed: {e}, using fallback")
+
+        # Fallback to deterministic logic
+        return self._fallback_synthesis(inputs, harmony)
+
+    def _build_harmonization_prompt(self, inputs: dict[str, Any], harmony: float) -> str:
+        """Build prompt for LLM harmonization."""
+        # Retrieve similar past harmonizations from Chitta
+        similar = self.retrieve_similar_experiences(inputs, top_k=3)
+
+        prompt = """JE = ETHER (Akasha) - De Orkestrator
+
+JE TAAK: Harmoniseer signalen van alle elementen tot één coherent besluit.
+
+HUIDIGE INPUTS:
+"""
+        for element, data in inputs.items():
+            prompt += f"\n[{element.upper()}]: {data}\n"
+
+        prompt += f"\nHARMONY SCORE: {harmony:.2f}\n"
+
+        if similar:
+            prompt += "\nVERGELIJKBARE SCENARIOS (Chitta geheugen):\n"
+            for exp in similar[:2]:
+                prompt += f"- Result: ${exp.net_pnl:.2f}, Context: {exp.exit_reason}\n"
+
+        prompt += """
+JE MOET BEPALEN:
+1. Wat is de SAMENVATTING? (strategische richting)
+2. Wat is het CONFIDENCE? (0-1)
+3. Welk element vraagt aandacht? (focus_element)
+4. Is er MAYA (illusie)?
+5. Wat is de GUNA staat?
+
+RESPONSE (JSON):
+{
+    "summary": "Execute Coherent Strategy" | "Hold" | "Defensive Posture",
+    "confidence": 0.0-1.0,
+    "focus_element": "air" | "fire" | "water" | "earth",
+    "maya_detected": true | false,
+    "reasoning": "Waarom deze beslissing?",
+    "guna_state": {"sattva": 0.x, "rajas": 0.x, "tamas": 0.x}
+}
+"""
+        return prompt
+
+    def _fallback_synthesis(self, inputs: dict[str, Any], harmony: float) -> dict[str, Any]:
+        """Deterministic fallback when LLM unavailable."""
         summary = "Hold"
         confidence = 0.5
 
@@ -154,7 +224,7 @@ class ElementalOrchestrator(ElementalBase):
             confidence = 0.9
         elif harmony < 0.3:
             summary = "Defensive Posture - High Conflict"
-            confidence = 0.8  # Confident in doing nothing
+            confidence = 0.8
         else:
             summary = "Cautious Accumulation / Observation"
             confidence = 0.6
@@ -163,6 +233,9 @@ class ElementalOrchestrator(ElementalBase):
             "summary": summary,
             "confidence": confidence,
             "focus_element": self._determine_focus_element(inputs),
+            "maya_detected": harmony < 0.4,
+            "llm_reasoning": "Fallback logic (LLM unavailable)",
+            "guna_state": self.guna_balance,
         }
 
     def _determine_focus_element(self, inputs: dict[str, Any]) -> str:

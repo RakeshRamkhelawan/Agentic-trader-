@@ -4,8 +4,10 @@ import os
 import time
 import uuid
 
+from backend.agents.elemental_orchestrator import ElementalOrchestrator
 from backend.core.zero_copy_bridge import TradingIntent, ZeroCopyBridge
 from backend.execution.shadow_portfolio import ShadowPortfolioManager
+from backend.orchestration.shiva_shakti_sync import get_synchronizer
 from backend.schemas.orders import OrderRequest, OrderSide, OrderStatus
 
 logger = logging.getLogger(__name__)
@@ -17,6 +19,7 @@ class ReflexExecutor:
     - Operates at high frequency (<10ms polling or event-driven).
     - Reads 'TradingIntent' from Shared Memory (Zero-Copy).
     - Executes order if 'Action Trigger' conditions are met (Price, Volume).
+    - Checks Shiva-Shakti Synchronicity (Spanda) before execution.
     - NO heavy computation allowed here.
     """
 
@@ -33,6 +36,12 @@ class ReflexExecutor:
         self.market_bridge: ZeroCopyBridge | None = None
         self.running = False
         self._task: asyncio.Task | None = None
+
+        # Shiva-Shakti Synchronizer (v7)
+        self.synchronizer = get_synchronizer()
+
+        # Elemental Orchestrator (v7 - Mahabhuta Layer)
+        self.orchestrator = ElementalOrchestrator()
 
         # 🔒 PAPER MODE: ALTIJD hardcoded op "paper" voor veiligheid
         # Dit kan alleen worden overschreven via expliciete environment variable in live deployments
@@ -208,27 +217,74 @@ class ReflexExecutor:
                     # Staleness check is now inside read_intent, so we only get valid intents here
 
                     if intent.action != 0:
-                        # 2. Check Execution Triggers (Price, etc.)
-                        action_str = "BUY" if intent.action == 1 else "SELL"
-                        latency_ns = time.time_ns() - intent.timestamp_ns
-                        latency_ms = latency_ns / 1_000_000
-                        latency_sec = latency_ns / 1_000_000_000
+                        # 2. Shiva-Shakti Synchronicity Check (Spanda)
+                        market_vol = 0.02
+                        if self.market_bridge:
+                            m_data = self.market_bridge.read_market_data(symbol)
+                            if m_data:
+                                market_vol = m_data.get("volatility", 0.02)
 
-                        self.metrics.order_execution_latency_seconds.observe(latency_sec)
+                        equity = 10000.0
+                        pnl = 0.0
+                        if self.portfolio:
+                            balance = self.portfolio.get_balance()
+                            equity = balance.get("total", 10000.0)
+                            # Simple PnL: current equity vs initial (assuming 10k)
+                            pnl = equity - 10000.0
 
-                        logger.info(
-                            f"[REFLEX] EXECUTE {action_str} {symbol} Size={intent.size} (Latency={latency_ms:.2f}ms)"
+                        sync = self.synchronizer.calculate_sync(
+                            strategy_pnl=pnl, market_vol=market_vol, current_equity=equity
                         )
 
-                        # 🔒 ALTIJD paper mode executie - GEEN echte exchange calls
-                        if self.trading_mode == "paper":
-                            fill = await self._execute_paper_order(intent)
-                            if fill:
-                                # Hier zou je ook kunnen broadcasten via WebSocket
-                                pass
+                        # 3. Elemental Harmony Check (Mahabhuta - Layer 3 Final Reflex)
+                        # Derive element states from intent and market
+                        element_inputs = {
+                            "fire": {"approved": intent.confidence > 0.6},
+                            "air": {
+                                "sentiment": (
+                                    0.5
+                                    if intent.action == 1
+                                    else -0.5 if intent.action == 2 else 0.0
+                                )
+                            },
+                            "water": {"regime": "expansion" if market_vol < 0.03 else "volatile"},
+                            "earth": {"valuation_gap": 0.01 if intent.action != 0 else 0.0},
+                        }
+                        # Synchronous wrapper for process_signal
+                        import asyncio
+
+                        # We use a simplified internal check for L3 speed
+                        harmony_score = self.orchestrator._calculate_harmony(element_inputs)
+
+                        if sync["harmony_level"] == "low" or harmony_score < 0.3:
+                            logger.warning(
+                                f"🚫 SYSTEM DISHARMONY: Sync={sync['harmony_level']}, Elemental={harmony_score:.2f} "
+                                f"Skipping {symbol} execution."
+                            )
+                            # Skip this execution
                         else:
-                            # Dit zou nooit mogen gebeuren vanwege de guard bovenaan
-                            logger.critical("🚫 LIVE MODE EXECUTION BLOCKED!")
+                            # 4. Check Execution Triggers (Price, etc.)
+                            action_str = "BUY" if intent.action == 1 else "SELL"
+                            latency_ns = time.time_ns() - intent.timestamp_ns
+                            latency_ms = latency_ns / 1_000_000
+                            latency_sec = latency_ns / 1_000_000_000
+
+                            self.metrics.order_execution_latency_seconds.observe(latency_sec)
+
+                            logger.info(
+                                f"[REFLEX] EXECUTE {action_str} {symbol} Size={intent.size} "
+                                f"(Harmony={sync['harmony_level']}, Latency={latency_ms:.2f}ms)"
+                            )
+
+                            # 🔒 ALTIJD paper mode executie - GEEN echte exchange calls
+                            if self.trading_mode == "paper":
+                                fill = await self._execute_paper_order(intent)
+                                if fill:
+                                    # Hier zou je ook kunnen broadcasten via WebSocket
+                                    pass
+                            else:
+                                # Dit zou nooit mogen gebeuren vanwege de guard bovenaan
+                                logger.critical("🚫 LIVE MODE EXECUTION BLOCKED!")
 
                     # else: HOLD/WATCH - efficient no-op
 

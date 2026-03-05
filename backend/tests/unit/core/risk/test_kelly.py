@@ -10,7 +10,7 @@ class TestKellyPositionSizer:
     def setup_method(self):
         # Default parameters: 25% Kelly (quarter-Kelly), max 10% position cap
         self.sizer = KellyPositionSizer(default_kelly_fraction=0.25, max_position=0.1)
-        
+
     def test_ideal_kelly_calculation(self):
         """
         Test a standard winning scenario:
@@ -28,7 +28,7 @@ class TestKellyPositionSizer:
             avg_loss=0.05
         )
         assert abs(size - 0.10) < 0.0001
-        
+
     def test_capped_position(self):
         """
         Test that a very high Kelly allocation is still capped by max_position.
@@ -45,7 +45,7 @@ class TestKellyPositionSizer:
             avg_loss=0.05
         )
         assert size == 0.10
-        
+
     def test_negative_edge(self):
         """
         Test a losing strategy where Kelly should return 0.0.
@@ -61,7 +61,7 @@ class TestKellyPositionSizer:
             avg_loss=0.10
         )
         assert size == 0.0
-        
+
     def test_zero_loss(self):
         """If average loss is zero, we cannot compute b, return 0.0."""
         size = self.sizer.calculate_size(
@@ -70,7 +70,7 @@ class TestKellyPositionSizer:
             avg_loss=0.0
         )
         assert size == 0.0
-        
+
     def test_custom_fraction_override(self):
         """Test passing a custom kelly fraction during the call."""
         # Using the ideal ratio scenario (Full Kelly = 0.4)

@@ -20,7 +20,7 @@ class TestTradingConsensusEngine:
             {"provider": "mtf_analyzer", "score": 1.0, "reasoning": "Macro aligned"},
             {"provider": "risk_manager", "score": 1.0, "reasoning": "Risk OK"},
         ]
-        
+
         result = engine.evaluate_proposal(votes)
         assert result["approved"] is True
         assert result["score"] == 1.0
@@ -34,7 +34,7 @@ class TestTradingConsensusEngine:
             {"provider": "mtf_analyzer", "score": 1.0, "reasoning": "Macro bullish"},
             {"provider": "risk_manager", "score": -0.9, "reasoning": "VETO: Exposure too high"},
         ]
-        
+
         result = engine.evaluate_proposal(votes)
         assert result["approved"] is False
         assert "VETO by risk_manager" in result["reasoning"]
@@ -45,7 +45,7 @@ class TestTradingConsensusEngine:
         votes: list[Vote] = [
             {"provider": "technical_strategy", "score": 0.8, "reasoning": "Good setup"},
         ]
-        
+
         result = engine.evaluate_proposal(votes)
         # Normalized score should be (0.8 * 0.40) / 0.40 = 0.8
         assert result["approved"] is True

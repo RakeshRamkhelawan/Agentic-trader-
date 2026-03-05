@@ -10,13 +10,13 @@ class TestIntelligentRegimeDetector:
 
     def setup_method(self):
         self.detector = IntelligentRegimeDetector()
-        
+
     def test_missing_features_defaults_to_sideways(self):
         """Testing normalization default values giving a SIDEWAYS regime."""
         features = {}  # Empty dict
         regime = self.detector.detect_regime(features)
         assert regime == MarketRegime.SIDEWAYS
-        
+
     def test_strongly_bullish_features(self):
         """High price momentum and RSI over 50 should trigger BULLish regime."""
         features = {
@@ -28,7 +28,7 @@ class TestIntelligentRegimeDetector:
         }
         regime = self.detector.detect_regime(features)
         assert regime == MarketRegime.BULL
-        
+
     def test_strongly_bearish_features(self):
         """Negative price momentum and low RSI should trigger BEARish regime."""
         features = {
@@ -40,7 +40,7 @@ class TestIntelligentRegimeDetector:
         }
         regime = self.detector.detect_regime(features)
         assert regime == MarketRegime.BEAR
-        
+
     def test_weak_trend_forces_sideways(self):
         """Even with directional momentum, weak ADX and volatility force SIDEWAYS."""
         features = {
@@ -52,7 +52,7 @@ class TestIntelligentRegimeDetector:
         }
         regime = self.detector.detect_regime(features)
         assert regime == MarketRegime.SIDEWAYS
-        
+
     def test_feature_normalization(self):
         """Verify internal limits on RSI and ADX scales do not break math boundaries."""
         features = {
@@ -63,7 +63,7 @@ class TestIntelligentRegimeDetector:
         norm = self.detector._normalize_features(features)
         assert norm["rsi_14"] == 1.0
         assert norm["adx_14"] == 1.0
-        
+
         features_zero = {
             "rsi_14": 0.0,
             "adx_14": 0.0

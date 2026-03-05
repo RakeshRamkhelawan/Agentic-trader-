@@ -322,7 +322,9 @@ class TechnicalIndicators:
         periods = sorted(ema_stack.keys())
         if len(periods) < 2:
             return False
-        return all(ema_stack[periods[i]] > ema_stack[periods[i + 1]] for i in range(len(periods) - 1))
+        return all(
+            ema_stack[periods[i]] > ema_stack[periods[i + 1]] for i in range(len(periods) - 1)
+        )
 
     @staticmethod
     def is_ema_bearish_aligned(ema_stack: dict[int, float]) -> bool:
@@ -330,7 +332,9 @@ class TechnicalIndicators:
         periods = sorted(ema_stack.keys())
         if len(periods) < 2:
             return False
-        return all(ema_stack[periods[i]] < ema_stack[periods[i + 1]] for i in range(len(periods) - 1))
+        return all(
+            ema_stack[periods[i]] < ema_stack[periods[i + 1]] for i in range(len(periods) - 1)
+        )
 
     @staticmethod
     def calculate_obv(

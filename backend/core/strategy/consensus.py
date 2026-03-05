@@ -14,15 +14,17 @@ logger = logging.getLogger(__name__)
 
 class Vote(TypedDict):
     """Represents a vote from a signal provider."""
+
     provider: str
-    score: float       # -1.0 (Strong Reject) to 1.0 (Strong Approve)
+    score: float  # -1.0 (Strong Reject) to 1.0 (Strong Approve)
     reasoning: str
 
 
 class ConsensusResult(TypedDict):
     """The result of the consensus evaluation."""
+
     approved: bool
-    score: float       # -1.0 to 1.0
+    score: float  # -1.0 to 1.0
     threshold: float
     votes: list[Vote]
     reasoning: str
@@ -35,9 +37,10 @@ class TradingConsensusEngine:
 
     # Static weight configuration for signal providers. Sum should ideally be 1.0
     PROVIDER_WEIGHTS = {
-        "technical_strategy": 0.40,  # The primary strategy (e.g. EnhancedMomentum)
-        "mtf_analyzer": 0.30,        # Multi-timeframe trend alignment
-        "risk_manager": 0.30,        # Risk & Portfolio context
+        "technical_strategy": 0.35,  # The primary strategy (e.g. EnhancedMomentum)
+        "mtf_analyzer": 0.25,  # Multi-timeframe trend alignment
+        "risk_manager": 0.25,  # Risk & Portfolio context
+        "sentiment": 0.15,  # Sentiment alignment
     }
 
     # If the score drops below this, it's a VETO (regardless of positive weight sum)
@@ -61,13 +64,13 @@ class TradingConsensusEngine:
             ConsensusResult dict containing the decision and aggregated scores.
         """
         if not votes:
-             return {
-                 "approved": False,
-                 "score": 0.0,
-                 "threshold": self.approval_threshold,
-                 "votes": [],
-                 "reasoning": "No votes provided."
-             }
+            return {
+                "approved": False,
+                "score": 0.0,
+                "threshold": self.approval_threshold,
+                "votes": [],
+                "reasoning": "No votes provided.",
+            }
 
         total_score = 0.0
         applied_weight = 0.0
@@ -80,7 +83,7 @@ class TradingConsensusEngine:
         for vote in votes:
             provider = vote["provider"]
             score = vote["score"]
-            
+
             # Check for absolute veto from any provider
             if score <= self.VETO_THRESHOLD:
                 is_vetoed = True
@@ -109,14 +112,20 @@ class TradingConsensusEngine:
             reasoning = veto_reason
         elif final_score >= self.approval_threshold:
             approved = True
-            reasoning = f"APPROVED. Composite score {final_score:.2f} >= threshold {self.approval_threshold:.2f}. Breakdown: " + ", ".join(reasoning_parts)
+            reasoning = (
+                f"APPROVED. Composite score {final_score:.2f} >= threshold {self.approval_threshold:.2f}. Breakdown: "
+                + ", ".join(reasoning_parts)
+            )
         else:
-            reasoning = f"REJECTED. Composite score {final_score:.2f} < threshold {self.approval_threshold:.2f}. Breakdown: " + ", ".join(reasoning_parts)
+            reasoning = (
+                f"REJECTED. Composite score {final_score:.2f} < threshold {self.approval_threshold:.2f}. Breakdown: "
+                + ", ".join(reasoning_parts)
+            )
 
         return {
             "approved": approved,
             "score": round(final_score, 4),
             "threshold": self.approval_threshold,
             "votes": votes,
-            "reasoning": reasoning
+            "reasoning": reasoning,
         }

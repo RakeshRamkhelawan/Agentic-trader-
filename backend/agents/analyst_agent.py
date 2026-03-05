@@ -288,18 +288,19 @@ class AnalystAgent(BaseAgent):
     ) -> MarketRegime:
         """
         Detecteer market regime met de IntelligentRegimeDetector (ML pipeline).
-        
+
         Berekent additionele features zoals volatiliteit en momentum voor
         het ml-model.
         """
         import math
+
         prices = self.price_history.get_prices(observation.symbol)
-        
+
         # Calculate trailing momentum (10 periods if available)
         momentum_10d = 0.0
         if len(prices) >= 11:
             momentum_10d = (prices[-1] - prices[-11]) / prices[-11]
-            
+
         # Volatility 20d
         volatility_20d = 0.0
         if len(prices) >= 20:
@@ -311,15 +312,15 @@ class AnalystAgent(BaseAgent):
             vol_raw = std_20 / mean_20 if mean_20 > 0 else 0.0
             # Cap on reasonable norm factor
             volatility_20d = min(vol_raw * 20.0, 1.0)
-            
+
         features = {
             "volatility_20d": volatility_20d,
             "price_momentum_10d": momentum_10d,
             "rsi_14": indicators.get("rsi", 50.0),
             "adx_14": indicators.get("adx", 25.0),
-            "bb_width_norm": min(indicators.get("bb_width", 0.0) / 5.0, 1.0) 
+            "bb_width_norm": min(indicators.get("bb_width", 0.0) / 5.0, 1.0),
         }
-        
+
         return self.regime_detector.detect_regime(features)
 
     def _calculate_technical_confidence(self, indicators: dict[str, float]) -> float:

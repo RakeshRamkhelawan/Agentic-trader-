@@ -22,9 +22,9 @@ import numpy as np
 from backend.config.schemas import TattvaConfig, TattvaLayer
 from backend.core.config.settings import settings
 from backend.core.decision_discriminator import DecisionDiscriminator
-from backend.core.memory_system import MemorySystem
 from backend.core.navagraha.service import NavagrahaService
 from backend.core.sensory_processor import SensoryProcessor
+from backend.core.vasana_cache import OptimizedMemorySystem
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class SystemIdentity:
         # Core cognitive subsystems
         self.navagraha_service = NavagrahaService()  # Interface to Cosmic Time
         self.sensory_processor = SensoryProcessor()  # Input processing (Jnanendriyas)
-        self.memory_system = MemorySystem()  # Pattern storage (Chitta)
+        self.memory_system = OptimizedMemorySystem()  # Pattern storage (Chitta) met VasanaCache
         self.decision_maker = DecisionDiscriminator(self.memory_system)  # Decision logic (Buddhi)
 
         # 36 Tattva configuration (consciousness architecture)

@@ -10,6 +10,8 @@ from backend.core.config.settings import settings
 from backend.core.karma.episode_memory import EpisodeMemory
 from backend.core.navagraha.service import NavagrahaService
 from backend.core.regime_detector import MarketRegime, RegimeDetector
+from backend.core.system_identity import SystemIdentity
+from backend.councils.dynamic_guna_council import DynamicGunaCouncil
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,7 @@ class EternalSoulService:
     - Maintain the "System Consciousness" level.
     - Track Cosmic Time (Rahu Kala, Muhurtas).
     - Detect high-level Market Regime (Bull/Bear/Volatile).
+    - Analyze Market Gunas (Sattva/Rajas/Tamas) via GunaCouncil.
     - Publish 'Soul Context' to Redis for faster layers (Mind/Body) to consume.
     """
 
@@ -30,7 +33,9 @@ class EternalSoulService:
         self.redis_client: redis.Redis | None = None
         self.navagraha = NavagrahaService()
         self.regime_detector = RegimeDetector()
+        self.guna_council = DynamicGunaCouncil()
         self.episode_memory = EpisodeMemory()
+        self.system_identity = SystemIdentity()  # 통합 36 Tattvas & VasanaCache
 
         # State
         self.price_history: list[float] = []
@@ -45,6 +50,9 @@ class EternalSoulService:
             return
 
         logger.info("Awakening the Eternal Soul...")
+
+        # Initialize System Identity
+        await self.system_identity.initialize()
 
         # Connect to Redis
         try:
@@ -122,15 +130,46 @@ class EternalSoulService:
             logger.error(f"Karma check error: {e}, using default threshold")
             causality_threshold = 0.6
 
-        # 4. Synthesize Soul Context
+        # 4. Analyze Market Gunas (Samkhya Interaction Logic)
+        market_guna_data = {
+            "volatility_1m": vol,
+            "momentum_1d": (current_price - sma_50) / sma_50 if sma_50 else 0,
+            "volume_ratio": market_ctx.get("volume_ratio", 1.0),
+            "bid_ask_spread": market_ctx.get("spread", 0.001),
+            "trend": 1 if sma_50 > sma_200 else -1 if sma_50 < sma_200 else 0,
+            "regime": regime.value,
+        }
+        market_guna_vector = self.guna_council.analyze(market_guna_data)
+
+        # 5. Integrated System Awareness (36 Tattvas)
+        import numpy as np
+
+        # Prepare data for SystemIdentity cycle
+        price_array = np.array(self.price_history, dtype=np.float32)
+        volume_array = np.array(
+            [market_ctx.get("volume_ratio", 1.0)] * len(self.price_history), dtype=np.float32
+        )
+
+        system_cycle = await self.system_identity.process_market_cycle(
+            price_data=price_array,
+            volume_data=volume_array,
+            orderbook_imbalance=market_ctx.get("spread", 0.0),  # Simplified proxy
+            funding_rate=0.0,
+            social_sentiment=0.0,  # Will be populated by Layer 2 agents
+        )
+
         soul_context = {
             "timestamp": start_time.isoformat(),
             "rahu_kala_active": navagraha_state.rahu_kala_active,
             "consciousness_level": navagraha_state.consciousness_level,
-            "guna_dominance": navagraha_state.guna_distribution.dominant_guna,
+            "guna_dominance": guna_dominance,
+            "market_guna": market_guna_vector,
+            "cosmic_guna": cosmic_guna,
             "trading_gate_open": navagraha_state.trading_gate_open,
             "market_regime": regime.value,
             "causality_threshold": causality_threshold,
+            "system_state": system_cycle.get("system_state", {}),
+            "tattva_metrics": system_cycle.get("tattva_metrics", {}),
             "market_metrics": {
                 "price": current_price,
                 "sma_50": sma_50,

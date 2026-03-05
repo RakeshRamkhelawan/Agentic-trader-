@@ -87,6 +87,9 @@ class OODALoopCoordinator:
         system_identity: SystemIdentity | None = None,  # SystemIdentity (36-Tattva)
         risk_orchestrator: RiskOrchestrator | None = None,  # RiskOrchestrator
         karma_register: KarmaRegister | None = None,  # KarmaRegister
+        vedastro_agent: Any | None = None,  # VedastroSignalAgent (Exo-System)
+        elemental_orchestrator: Any | None = None,  # ElementalOrchestrator
+        clickhouse_client: Any | None = None,  # ClickHouseClient
     ):
         """
         Initialiseer OODA Coordinator.
@@ -135,6 +138,12 @@ class OODALoopCoordinator:
         self.system_identity = system_identity
         self.risk_orchestrator = risk_orchestrator
         self.karma_register = karma_register
+        self.vedastro_agent = vedastro_agent
+        self.elemental_orchestrator = elemental_orchestrator
+        self.clickhouse_client = clickhouse_client
+
+        # Inject ClickHouse client into agents
+        self._inject_database_into_agents()
 
         # Runtime state
         self.cycles_completed = 0
@@ -152,8 +161,32 @@ class OODALoopCoordinator:
             f"navagraha_service={'enabled' if navagraha_service else 'disabled'}, "
             f"system_identity={'enabled' if system_identity else 'disabled'}\n"
             f"  risk_orchestrator={'enabled' if risk_orchestrator else 'disabled'}, "
-            f"karma_register={'enabled' if karma_register else 'disabled'}"
+            f"karma_register={'enabled' if karma_register else 'disabled'}\n"
+            f"  clickhouse_persistence={'enabled' if clickhouse_client else 'disabled'}"
         )
+
+    def _inject_database_into_agents(self) -> None:
+        """Inject ClickHouse client into all participating agents for persistence."""
+        if not self.clickhouse_client:
+            return
+
+        agents = [
+            self.data_scout,
+            self.analyst,
+            self.trader,
+            self.risk_manager,
+            self.fund_manager,
+            self.bull_researcher,
+            self.bear_researcher,
+            self.orchestrator,
+            self.vedastro_agent,
+            self.elemental_orchestrator,
+        ]
+
+        for agent in agents:
+            if agent and hasattr(agent, "clickhouse_client"):
+                agent.clickhouse_client = self.clickhouse_client
+                logger.debug(f"Injected ClickHouse client into {agent.agent_name}")
 
     async def run_cycle(
         self, symbol: str, current_price: float, strategy_id: str = "momentum_v1"
@@ -460,6 +493,26 @@ class OODALoopCoordinator:
             except Exception as e:
                 logger.warning(f"RAG retrieval failed: {e}")
 
+        # 2b. Vedastro Oracle (Pre-Orient)
+        if self.vedastro_agent:
+            try:
+                v_result = await self.vedastro_agent.analyze(
+                    features={"symbol": observation.symbol, "price": observation.close_price},
+                    context={},
+                )
+                if v_result:
+                    action = v_result.get("action", "hold")
+                    conf = v_result.get("confidence", 0.0)
+                    reason = v_result.get("reason", "")
+                    rag_context.append(
+                        f"VEDASTRO_SIGNAL: {action.upper()} (conf: {conf:.2f}) - {reason}"
+                    )
+                    logger.debug(
+                        f"[ORIENT] Vedastro Pre-Orient Signal: {action.upper()} (conf: {conf:.2f})"
+                    )
+            except Exception as e:
+                logger.warning(f"Vedastro Oracle failed (proceeding): {e}")
+
         # 3. Analyst orientation (met guna context)
         orientation = await self.analyst.orient(
             observation=observation,
@@ -520,6 +573,46 @@ class OODALoopCoordinator:
         if proposal is None:
             logger.info("No trade signal from Trader")
             return None, None, None
+
+        # === ELEMENTAL ORCHESTRATOR FALLBACK (Micro-Swarm) ===
+        if proposal.confidence < 0.60 and self.elemental_orchestrator:
+            logger.info(
+                f"Trader proposal confidence low ({proposal.confidence:.2f}). Consulting ElementalOrchestrator fallback."
+            )
+
+            elemental_signal = {
+                "inputs": {
+                    "air": {"sentiment": orientation.core_sentiment},
+                    "water": {"regime": orientation.regime.value},
+                    "fire": {"approved": True},
+                    "earth": {"valuation_gap": 0},
+                }
+            }
+            fallback_result = await self.elemental_orchestrator.process_signal(elemental_signal)
+
+            harmony_score = fallback_result.get("harmony_score", 0.5)
+            synthesis = fallback_result.get("synthesis", {})
+
+            logger.info(
+                f"ElementalOrchestrator harmony: {harmony_score:.2f}, action: {synthesis.get('summary')}"
+            )
+
+            if harmony_score < 0.4:
+                logger.warning("ElementalOrchestrator rejects cohesion. Abandoning trade.")
+                from backend.core.schemas.ooda_types import RiskAssessment, RiskDecision
+
+                risk_assessment = RiskAssessment(
+                    decision=RiskDecision.REJECT,
+                    risk_score=1.0,
+                    rationale=f"ElementalOrchestrator blocked: harmony {harmony_score:.2f} too low",
+                    var_95=None,
+                    max_drawdown_pct=None,
+                    recommended_position_size=0.0,
+                )
+                return proposal, risk_assessment, None
+            elif harmony_score > 0.7:
+                logger.info("ElementalOrchestrator confirms macro-harmony. Boosting confidence.")
+                proposal.confidence = max(proposal.confidence, 0.65)
 
         # === RISK ORCHESTRATOR (Kanchuka-laag) (Phase C) ===
         if self.risk_orchestrator:

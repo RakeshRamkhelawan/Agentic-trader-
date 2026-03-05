@@ -132,7 +132,7 @@ class EnhancedMeanReversionStrategy(BaseStrategy):
         # 3. Volume analysis
         volume_confirmed = False
         if len(volumes) >= self.bb_period:
-            avg_volume = sum(volumes[-self.bb_period:]) / self.bb_period
+            avg_volume = sum(volumes[-self.bb_period :]) / self.bb_period
             if avg_volume > 0:
                 volume_ratio = volumes[-1] / avg_volume
                 metrics["volume_ratio"] = round(volume_ratio, 2)

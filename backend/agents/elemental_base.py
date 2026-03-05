@@ -1,18 +1,23 @@
 """
-Elemental Base Agent - Samkhya/Vedic Layer.
+Elemental Base Agent - Samkhya/Vedic Layer with Consciousness (v11).
 
 This module defines the abstract base class for all Elemental Agents (Ether, Air, Fire, Water, Earth).
-It adds Samkhya philosophy properties to the standard BaseAgent:
+It adds Samkhya philosophy properties AND conscious capabilities:
 - Guna Balance (Sattva, Rajas, Tamas)
 - Prana Energy (Lifecycle and Depletion)
 - Tattva Layer Registration (SystemIdentity)
+- Chitta Memory (Persistent learning per agent)
+- LLM Integration (DeepSeek/Ollama)
 """
 
 import logging
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any
 
 from backend.agents.base_agent import BaseAgent
+from backend.core.conscious.chitta_memory import ChittaMemory, TradeExperience
+from backend.core.llm.llm_provider import LLMProvider, create_llm_provider
 from backend.governance.agent_gatekeeper import AgentRole
 
 logger = logging.getLogger(__name__)
@@ -75,12 +80,24 @@ class ElementalBase(BaseAgent, ABC):
         self._validate_gunas(guna_balance)
         self.guna_balance = guna_balance
 
+        # Initialize Chitta Memory (v11 - Consciousness)
+        memory_path = f"backend/data/conscious_memory/{self.agent_name.lower()}_chitta"
+        self.chitta = ChittaMemory(storage_path=memory_path)
+
+        # Initialize LLM if not provided (v11 - Intelligence)
+        if llm_provider is None:
+            self.llm = create_llm_provider(backend="ollama", model="llama3.2")
+        else:
+            self.llm = llm_provider
+
         # Register with SystemIdentity if available
         if self.system_identity and hasattr(self.system_identity, "register_elemental_agent"):
             # Logic to register would go here - keeping it non-blocking for init
             self._register_with_identity()
 
-        logger.info(f"Initialized {self.agent_name} ({self.element}) - Prana: {self.prana}")
+        logger.info(
+            f"Initialized {self.agent_name} ({self.element}) - Prana: {self.prana} | Chitta: {len(self.chitta.trades)} trades"
+        )
 
     def _validate_gunas(self, balance: dict[str, float]):
         """Ensure Gunas sum to 1.0 within floating point tolerance."""
@@ -174,6 +191,69 @@ class ElementalBase(BaseAgent, ABC):
             }
         )
         return base_health
+
+    # ========== CONSCIOUS CAPABILITIES (v11) ==========
+
+    def retrieve_similar_experiences(self, market_state: Any, top_k: int = 5) -> list:
+        """
+        Retrieve similar historical setups from Chitta Memory.
+        RAG: Retrieval-Augmented Generation for trading.
+        """
+        if not self.chitta or len(self.chitta.trades) < 5:
+            return []
+        return self.chitta.retrieve_similar_setups(market_state, top_k=top_k)
+
+    def reflect_recent_performance(self, n_trades: int = 10) -> dict[str, Any]:
+        """
+        Reflect on recent trading performance.
+        Returns insights for course correction.
+        """
+        if not self.chitta:
+            return {"insight": "No memory", "action": "continue"}
+        return self.chitta.reflect_recent(n_trades=n_trades)
+
+    def store_trade_experience(self, trade: TradeExperience):
+        """Store completed trade in Chitta Memory for learning."""
+        if self.chitta:
+            self.chitta.store_trade(trade)
+            logger.info(f"{self.agent_name} stored trade {trade.trade_id} in Chitta")
+
+    def should_pause_trading(self, drawdown_limit: float = 0.08) -> tuple[bool, str]:
+        """
+        Check if agent should pause trading based on Chitta/Ahamkara state.
+        Returns: (should_pause, reason)
+        """
+        if not self.chitta:
+            return False, ""
+        return self.chitta.should_pause_trading(drawdown_limit=drawdown_limit)
+
+    def generate_llm_analysis(self, prompt: str, temperature: float = 0.3) -> dict[str, Any]:
+        """
+        Generate analysis using LLM (DeepSeek/Ollama).
+        """
+        if not self.llm:
+            return {"text": "No LLM", "confidence": 0.0, "reasoning": "LLM not available"}
+
+        system_prompt = f"""JIJ = {self.agent_name}, een {self.element.upper()} element trading agent.
+JE ROL: Analyseer markt vanuit {self.element} perspectief.
+JE GEHEUGEN: {len(self.chitta.trades)} trades opgeslagen.
+
+Wees analytisch, geef confidence score (0-1), en leg uit WAAROM."""
+
+        return self.llm.generate(prompt, system_prompt=system_prompt, temperature=temperature)
+
+    def get_conscious_stats(self) -> dict[str, Any]:
+        """Get conscious agent statistics including Chitta and LLM."""
+        return {
+            "agent_name": self.agent_name,
+            "element": self.element,
+            "prana": self.prana,
+            "guna_balance": self.guna_balance,
+            "chitta_stats": self.chitta.get_summary() if self.chitta else None,
+            "llm_stats": self.llm.get_stats() if self.llm else None,
+        }
+
+    # ========== ABSTRACT METHODS ==========
 
     @abstractmethod
     async def process_signal(self, signal: dict[str, Any]) -> dict[str, Any]:

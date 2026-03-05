@@ -11,9 +11,9 @@ from typing import Any
 from backend.agents.base_agent import BaseAgent
 from backend.core.indicators.mtf import MultiTimeframeAnalyzer
 from backend.core.risk.kelly import KellyPositionSizer
-from backend.core.strategy.sentiment_scorer import SentimentScorer
 from backend.core.schemas.ooda_types import MarketRegime, Orientation, TradeProposal
 from backend.core.strategy.consensus import TradingConsensusEngine, Vote
+from backend.core.strategy.sentiment_scorer import SentimentScorer
 from backend.execution.fast_config import FastConfig
 from backend.governance.agent_gatekeeper import AgentRole
 
@@ -67,7 +67,7 @@ class TraderAgent(BaseAgent):
 
         # Historical trade statistics for Kelly sizing (updated externally)
         self._trade_stats: dict[str, dict] = {}
-        
+
         # Current sentiment data (updated externally per tick)
         self._sentiment_data: dict[str, dict] = {}
 
@@ -160,18 +160,34 @@ class TraderAgent(BaseAgent):
             risk_score = 0.5  # Temporary placeholder for RiskAgent output
 
             votes: list[Vote] = [
-                {"provider": "technical_strategy", "score": technical_score, "reasoning": f"Tech signal {side.upper()} (conf: {orientation.confidence:.2f})"},
-                {"provider": "mtf_analyzer", "score": mtf_score, "reasoning": f"MTF Macro Trend: {mtf_score:.2f}"},
-                {"provider": "risk_manager", "score": risk_score, "reasoning": "Default risk assessment OK"},
+                {
+                    "provider": "technical_strategy",
+                    "score": technical_score,
+                    "reasoning": f"Tech signal {side.upper()} (conf: {orientation.confidence:.2f})",
+                },
+                {
+                    "provider": "mtf_analyzer",
+                    "score": mtf_score,
+                    "reasoning": f"MTF Macro Trend: {mtf_score:.2f}",
+                },
+                {
+                    "provider": "risk_manager",
+                    "score": risk_score,
+                    "reasoning": "Default risk assessment OK",
+                },
             ]
-            
+
             # 4th vote: Sentiment
             sentiment_data = self._sentiment_data.get(orientation.symbol, {})
             sentiment_value = sentiment_data.get("sentiment", 0.0)
             news_impact = sentiment_data.get("news_impact", 0.0)
             sentiment_score = self.sentiment_scorer.score(sentiment_value, news_impact, side)
             votes.append(
-                {"provider": "sentiment", "score": sentiment_score, "reasoning": f"Sentiment alignment: {sentiment_score:.2f}"}
+                {
+                    "provider": "sentiment",
+                    "score": sentiment_score,
+                    "reasoning": f"Sentiment alignment: {sentiment_score:.2f}",
+                }
             )
 
             consensus = self.consensus_engine.evaluate_proposal(votes)
@@ -189,7 +205,9 @@ class TraderAgent(BaseAgent):
             )
 
             # Calculate position size (confidence-weighted)
-            size = self._calculate_position_size(orientation.confidence, orientation.regime, orientation.symbol)
+            size = self._calculate_position_size(
+                orientation.confidence, orientation.regime, orientation.symbol
+            )
 
             # Calculate stop loss & take profit
             stop_loss, take_profit = self._calculate_levels(current_price, side, orientation.regime)
@@ -271,7 +289,9 @@ class TraderAgent(BaseAgent):
             # SIDEWAYS, VOLATILE, UNKNOWN → geen trade
             return None
 
-    def update_trade_stats(self, symbol: str, win_rate: float, avg_win: float, avg_loss: float) -> None:
+    def update_trade_stats(
+        self, symbol: str, win_rate: float, avg_win: float, avg_loss: float
+    ) -> None:
         """Update historical trade statistics for Kelly sizing."""
         self._trade_stats[symbol] = {
             "win_rate": win_rate,
@@ -279,7 +299,9 @@ class TraderAgent(BaseAgent):
             "avg_loss": avg_loss,
         }
 
-    def _calculate_position_size(self, confidence: float, regime: MarketRegime, symbol: str = "") -> float:
+    def _calculate_position_size(
+        self, confidence: float, regime: MarketRegime, symbol: str = ""
+    ) -> float:
         """
         Bereken position size met Kelly Criterion als historische stats beschikbaar zijn,
         anders fallback naar confidence * regime multiplier.
@@ -308,7 +330,9 @@ class TraderAgent(BaseAgent):
             if kelly_size > 0:
                 # Scale Kelly by regime multiplier
                 size = kelly_size * multiplier
-                logger.info(f"Kelly position size for {symbol}: {kelly_size:.4f} * {multiplier:.1f} = {size:.4f}")
+                logger.info(
+                    f"Kelly position size for {symbol}: {kelly_size:.4f} * {multiplier:.1f} = {size:.4f}"
+                )
                 return min(size, 1.0)
 
         # Fallback: original formula

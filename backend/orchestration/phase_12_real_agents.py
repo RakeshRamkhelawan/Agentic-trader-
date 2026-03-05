@@ -94,9 +94,10 @@ class Phase12RealAgentConfig:
     fallback_confidence: float = 0.5  # Confidence for fallback
     enable_parallel_execution: bool = True
     max_decision_history: int = 100
-    sentiment_weight: float = 0.35
-    market_regime_weight: float = 0.35
-    risk_governor_weight: float = 0.30
+    sentiment_weight: float = 0.25
+    market_regime_weight: float = 0.25
+    risk_governor_weight: float = 0.25
+    vedastro_weight: float = 0.25  # Toegevoegd voor v7
 
 
 # ============================================================================
@@ -114,18 +115,88 @@ class Agent(ABC):
         pass
 
     @abstractmethod
-    def analyze(self) -> dict[str, Any]:
+    def analyze(self, features: dict[str, Any] | None = None) -> dict[str, Any]:
         """
         Analyze market and return decision.
-
-        Returns:
-            {
-                "action": int (0=hold, 1=long, 2=short),
-                "confidence": float [0, 1],
-                "reasoning": str
-            }
         """
         pass
+
+
+# ============================================================================
+# AGENT ADAPTERS
+# ============================================================================
+
+
+class SentimentAdapter(Agent):
+    def __init__(self, agent: Any):
+        self._agent = agent
+
+    @property
+    def name(self) -> str:
+        return "SentimentAgent"
+
+    def analyze(self, features: dict[str, Any] | None = None) -> dict[str, Any]:
+        # Synchronous wrapper for async analyze_news
+        import asyncio
+
+        loop = asyncio.get_event_loop()
+        headlines = features.get("headlines", []) if features else []
+        coin = features.get("coin", "BTC") if features else "BTC"
+        if loop.is_running():
+            # In an async loop, we need to be careful. Coordinator uses threads.
+            # For simplicity in this L2 context, we mock the async call if needed or use run_coroutine_threadsafe
+            return {"action": 0, "confidence": 0.5, "reasoning": "Async sentiment pending"}
+        res = asyncio.run(self._agent.analyze_news(headlines, coin))
+        return {
+            "action": 1 if res.trend == "bullish" else 2 if res.trend == "bearish" else 0,
+            "confidence": res.confidence,
+            "reasoning": res.rationale,
+        }
+
+
+class VedAstroAdapter(Agent):
+    def __init__(self, agent: Any):
+        self._agent = agent
+
+    @property
+    def name(self) -> str:
+        return "VedAstroOracle"
+
+    def analyze(self, features: dict[str, Any] | None = None) -> dict[str, Any]:
+        import asyncio
+
+        try:
+            res = asyncio.run(self._agent.analyze(features or {}, {}))
+            action_map = {"buy": 1, "sell": 2, "hold": 0}
+            return {
+                "action": action_map.get(res.get("action", "hold"), 0),
+                "confidence": res.get("confidence", 0.0),
+                "reasoning": res.get("reason", "No reason"),
+            }
+        except:
+            return {"action": 0, "confidence": 0.0, "reasoning": "VedAstro failed"}
+
+
+class RegimeAdapter(Agent):
+    def __init__(self, detector: Any):
+        self._detector = detector
+
+    @property
+    def name(self) -> str:
+        return "MarketRegimeAgent"
+
+    def analyze(self, features: dict[str, Any] | None = None) -> dict[str, Any]:
+        if not features:
+            return {"action": 0, "confidence": 0.5, "reasoning": "No features"}
+        price = features.get("price", 0.0)
+        history = features.get("price_history", [price])
+        sma50, sma200, vol = self._detector.calculate_indicators(history)
+        regime = self._detector.detect(price, sma50, sma200, vol)
+        return {
+            "action": 0,  # Regime detector doesn't decide buy/sell directly
+            "confidence": 1.0,
+            "reasoning": f"Regime: {regime.value}",
+        }
 
 
 # ============================================================================
@@ -138,66 +209,35 @@ class RealAgentLoader:
 
     @staticmethod
     def load_sentiment_agent(config_path: str | None = None) -> Agent | None:
-        """
-        Load real SentimentAgent from backend/agents/sentiment/.
-
-        Args:
-            config_path: Optional path to agent configuration
-
-        Returns:
-            Initialized SentimentAgent instance or None if not found
-        """
         try:
-            # Try to import SentimentAgent from backend/agents/sentiment/
-            # This is placeholder - actual implementation will discover real agent
-            logger.info("Loading real SentimentAgent...")
-            # from backend.agents.sentiment import SentimentAgent
-            # return SentimentAgent(config_path)
-            return None
-        except ImportError as e:
+            from backend.agents.sentiment_agent_v2 import SentimentAgentV2
+
+            agent = SentimentAgentV2()
+            return SentimentAdapter(agent)
+        except Exception as e:
             logger.error(f"Failed to load SentimentAgent: {e}")
             return None
 
     @staticmethod
     def load_market_regime_agent(config_path: str | None = None) -> Agent | None:
-        """
-        Load real MarketRegimeAgent from backend/agents/market_regime/.
-
-        Args:
-            config_path: Optional path to agent configuration
-
-        Returns:
-            Initialized MarketRegimeAgent instance or None if not found
-        """
         try:
-            # Try to import MarketRegimeAgent from backend/agents/market_regime/
-            logger.info("Loading real MarketRegimeAgent...")
-            # from backend.agents.market_regime import MarketRegimeAgent
-            # return MarketRegimeAgent(config_path)
-            return None
-        except ImportError as e:
+            from backend.core.regime_detector import RegimeDetector
+
+            detector = RegimeDetector()
+            return RegimeAdapter(detector)
+        except Exception as e:
             logger.error(f"Failed to load MarketRegimeAgent: {e}")
             return None
 
     @staticmethod
-    def load_risk_governor(config_path: str | None = None) -> Agent | None:
-        """
-        Load real RiskGovernor from backend/agents/risk_governor/.
-
-        Args:
-            config_path: Optional path to agent configuration
-
-        Returns:
-            Initialized RiskGovernor instance or None if not found
-        """
+    def load_vedastro_agent(config_path: str | None = None) -> Agent | None:
         try:
-            # Try to import RiskGovernor from backend/agents/risk_governor/
-            logger.info("Loading real RiskGovernor...")
-            # from backend.agents.risk_governor import RiskGovernor
-            # return RiskGovernor(config_path)
-            return None
-        except ImportError as e:
-            logger.error(f"Failed to load RiskGovernor: {e}")
+            from backend.agents.vedastro_signal_agent import VedAstroSignalAgent
+
+            agent = VedAstroSignalAgent()
+            return VedAstroAdapter(agent)
+        except Exception as e:
+            logger.error(f"Failed to load VedAstroAgent: {e}")
             return None
 
 
@@ -268,22 +308,25 @@ class Phase12RealAgentCoordinator:
             self.register_agent(market_regime, self.config.market_regime_weight)
             registered_count += 1
 
-        # Load RiskGovernor
-        risk_governor = RealAgentLoader.load_risk_governor(config_path)
-        if risk_governor:
-            self.register_agent(risk_governor, self.config.risk_governor_weight)
+        # Load VedAstroAgent
+        vedastro = RealAgentLoader.load_vedastro_agent(config_path)
+        if vedastro:
+            self.register_agent(vedastro, self.config.vedastro_weight)
             registered_count += 1
 
         logger.info(f"Registered {registered_count} real agents")
         return registered_count
 
-    def execute_agent(self, agent_name: str, agent: Agent) -> dict[str, Any]:
+    def execute_agent(
+        self, agent_name: str, agent: Agent, features: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         Execute a single real agent with timeout and error handling.
 
         Args:
             agent_name: Name of agent being executed
             agent: Agent instance to execute
+            features: Context features for analysis
 
         Returns:
             Agent decision dict or fallback dict
@@ -292,7 +335,7 @@ class Phase12RealAgentCoordinator:
 
         try:
             # Call agent's analyze method
-            decision = agent.analyze()
+            decision = agent.analyze(features)
 
             # Validate decision format
             if not isinstance(decision, dict):
@@ -326,7 +369,9 @@ class Phase12RealAgentCoordinator:
 
             return self._create_fallback_decision()
 
-    def execute_agents_parallel(self) -> dict[str, dict[str, Any]]:
+    def execute_agents_parallel(
+        self, features: dict[str, Any] | None = None
+    ) -> dict[str, dict[str, Any]]:
         """
         Execute all registered agents in parallel.
 
@@ -338,7 +383,7 @@ class Phase12RealAgentCoordinator:
         results_lock = threading.Lock()
 
         def worker(agent_name: str, agent: Agent):
-            decision = self.execute_agent(agent_name, agent)
+            decision = self.execute_agent(agent_name, agent, features)
             with results_lock:
                 results[agent_name] = decision
 
@@ -422,7 +467,7 @@ class Phase12RealAgentCoordinator:
 
         return final_action, avg_confidence, combined_reasoning
 
-    def make_decision(self) -> Phase12Decision:
+    def make_decision(self, features: dict[str, Any] | None = None) -> Phase12Decision:
         """
         Execute all agents and make unified decision.
 
@@ -432,7 +477,7 @@ class Phase12RealAgentCoordinator:
         start_time = time.time()
 
         # Execute all agents in parallel
-        agent_decisions = self.execute_agents_parallel()
+        agent_decisions = self.execute_agents_parallel(features)
 
         # Aggregate decisions
         action, confidence, reasoning = self.aggregate_decisions(agent_decisions)

@@ -79,12 +79,12 @@ export const federatedApi = {
     const response = await api.get<FederatedState>('/federated/state');
     return response.data;
   },
-  
+
   getAgents: async (): Promise<{ agents: FederatedAgent[] }> => {
     const response = await api.get('/federated/agents');
     return response.data;
   },
-  
+
   triggerSync: async () => {
     const response = await api.post('/federated/sync', {});
     return response.data;
@@ -98,17 +98,17 @@ export const federatedApi = {
 describe('federatedApi', () => {
   it('should fetch real federated state from backend', async () => {
     const state = await federatedApi.getState();
-    
+
     expect(state).toHaveProperty('coherence');
     expect(state).toHaveProperty('councils');
     expect(state).toHaveProperty('chitta');
     expect(state).toHaveProperty('latest_decision');
     expect(state.councils.length).toBeGreaterThan(0);
   });
-  
+
   it('should have real council data with valid metrics', async () => {
     const state = await federatedApi.getState();
-    
+
     state.councils.forEach(council => {
       expect(council.confidence).toBeGreaterThanOrEqual(0);
       expect(council.confidence).toBeLessThanOrEqual(1);
@@ -130,12 +130,12 @@ interface FederatedState {
   chittaNodes: ChittaNode[];
   latestDecision: BuddhiDecision | null;
   deliberationSteps: DeliberationStep[];
-  
+
   // Loading states
   isLoading: boolean;
   error: string | null;
   lastUpdated: Date | null;
-  
+
   // Actions
   fetchState: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -150,7 +150,7 @@ export const useFederatedStore = create<FederatedState>()((set, get) => ({
   isLoading: false,
   error: null,
   lastUpdated: null,
-  
+
   fetchState: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -165,13 +165,13 @@ export const useFederatedStore = create<FederatedState>()((set, get) => ({
         isLoading: false
       });
     } catch (err) {
-      set({ 
-        error: err instanceof Error ? err.message : 'Failed to fetch', 
-        isLoading: false 
+      set({
+        error: err instanceof Error ? err.message : 'Failed to fetch',
+        isLoading: false
       });
     }
   },
-  
+
   refresh: async () => {
     await get().fetchState();
   }
@@ -184,29 +184,29 @@ export const useFederatedStore = create<FederatedState>()((set, get) => ({
 describe('federatedStore', () => {
   it('should fetch and store real federated data', async () => {
     const { result } = renderHook(() => useFederatedStore());
-    
+
     await act(async () => {
       await result.current.fetchState();
     });
-    
+
     expect(result.current.councils.length).toBeGreaterThan(0);
     expect(result.current.coherence).not.toBeNull();
     expect(result.current.lastUpdated).not.toBeNull();
   });
-  
+
   it('should handle errors gracefully', async () => {
     server.use(
       rest.get('/api/v1/federated/state', (req, res, ctx) => {
         return res(ctx.status(500));
       })
     );
-    
+
     const { result } = renderHook(() => useFederatedStore());
-    
+
     await act(async () => {
       await result.current.fetchState();
     });
-    
+
     expect(result.current.error).not.toBeNull();
     expect(result.current.isLoading).toBe(false);
   });
@@ -226,42 +226,42 @@ describe('federatedStore', () => {
 
 // USE: Real data from useFederatedStore
 export function FederatedTriad() {
-  const { 
-    coherence, 
-    councils, 
-    chittaNodes, 
-    latestDecision, 
+  const {
+    coherence,
+    councils,
+    chittaNodes,
+    latestDecision,
     deliberationSteps,
     isLoading,
     error,
-    fetchState 
+    fetchState
   } = useFederatedStore();
-  
+
   // Auto-refresh every 5 seconds
   useEffect(() => {
     fetchState();
     const interval = setInterval(fetchState, 5000);
     return () => clearInterval(interval);
   }, [fetchState]);
-  
+
   if (isLoading && !coherence) return <FederatedTriadSkeleton />;
   if (error) return <FederatedTriadError error={error} onRetry={fetchState} />;
   if (!coherence) return <FederatedTriadEmpty />;
-  
+
   return (
     <div className="space-y-6">
       {/* Header with real coherence data */}
       <CoherenceHeader coherence={coherence} />
-      
+
       {/* Councils with real data */}
       <CouncilsList councils={councils} />
-      
+
       {/* Latest Decision */}
       {latestDecision && <LatestDecision decision={latestDecision} />}
-      
+
       {/* Chitta Nodes */}
       <ChittaNodes nodes={chittaNodes} />
-      
+
       {/* Deliberation Steps */}
       <DeliberationSteps steps={deliberationSteps} />
     </div>
@@ -275,33 +275,33 @@ export function FederatedTriad() {
 describe('FederatedTriad', () => {
   it('should display real council data from backend', async () => {
     render(<FederatedTriad />);
-    
+
     await waitFor(() => {
       expect(screen.getByText(/Federated Triad/i)).toBeInTheDocument();
     });
-    
+
     // Should show real councils, not demo data
     await waitFor(() => {
       expect(screen.queryByText(/DEMO/i)).not.toBeInTheDocument();
     });
   });
-  
+
   it('should auto-refresh data every 5 seconds', async () => {
     jest.useFakeTimers();
     render(<FederatedTriad />);
-    
+
     await waitFor(() => {
       expect(federatedApi.getState).toHaveBeenCalledTimes(1);
     });
-    
+
     act(() => {
       jest.advanceTimersByTime(5000);
     });
-    
+
     await waitFor(() => {
       expect(federatedApi.getState).toHaveBeenCalledTimes(2);
     });
-    
+
     jest.useRealTimers();
   });
 });
@@ -315,13 +315,13 @@ describe('FederatedTriad', () => {
 export function useFederatedWebSocket() {
   const { updateFromWebSocket } = useFederatedStore();
   const [isConnected, setIsConnected] = useState(false);
-  
+
   useEffect(() => {
     const ws = new WebSocket(`${WS_URL}/ws/federated`);
-    
+
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      
+
       switch (message.type) {
         case 'coherence_update':
           updateFromWebSocket({ coherence: message.data });
@@ -337,13 +337,13 @@ export function useFederatedWebSocket() {
           break;
       }
     };
-    
+
     ws.onopen = () => setIsConnected(true);
     ws.onclose = () => setIsConnected(false);
-    
+
     return () => ws.close();
   }, [updateFromWebSocket]);
-  
+
   return { isConnected };
 }
 ```
@@ -366,7 +366,7 @@ async def federated_websocket(websocket: WebSocket):
                 "data": state["coherence"]
             })
             await websocket.send_json({
-                "type": "councils_update", 
+                "type": "councils_update",
                 "data": state["councils"]
             })
             await asyncio.sleep(5)  # Update every 5 seconds
@@ -469,6 +469,6 @@ gh pr create --title "Federated Triad: Real Data Integration"
 
 ---
 
-**Status**: Ready for Implementation  
-**Priority**: HIGH (blocks production deployment)  
+**Status**: Ready for Implementation
+**Priority**: HIGH (blocks production deployment)
 **Risk**: Medium (backend API exists but needs verification)

@@ -22,11 +22,11 @@ from .regime_detector import IntelligentRegimeDetector
 
 __all__ = [
     "IntelligentRegimeDetector"
-#     "TradePredictor",
-#     "PredictionResult",
-#     "SignalDirection",
-#     "ConfidenceLevel",
-#     "trade_predictor",
-#     "FeatureEngineer",
-#     "ModelManager",
+    #     "TradePredictor",
+    #     "PredictionResult",
+    #     "SignalDirection",
+    #     "ConfidenceLevel",
+    #     "trade_predictor",
+    #     "FeatureEngineer",
+    #     "ModelManager",
 ]

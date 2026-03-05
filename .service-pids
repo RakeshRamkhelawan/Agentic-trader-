@@ -1,0 +1,4 @@
+﻿Backend PID: 137964
+Frontend PID: 111228
+Backend Port: 8001 (via nginx on 8000)
+Frontend Port: 5173 (via nginx on 80)

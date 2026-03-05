@@ -54,6 +54,39 @@
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### 🧠 The Complete Agent Architecture
+
+The true power of the platform lies in its massive, multi-tiered hierarchy of specialized AI agents. Every agent is active and plays a distinct role in the flow:
+
+#### 1. Market Scouting (The Horizon)
+- **DataScoutAgent:** Ingests bulk raw data feeds (tickers, orderbooks) across exchanges.
+- **AssetDiscoveryAgent:** Analyzes scout data for sudden volume/volatility anomalies and proposes new tradable assets to the managers.
+
+#### 2. The Exo-System (Exotic & Fundamental Signals)
+- **Vedastro Oracle / VedastroSignalAgent:** Generates entirely uncorrelated market signals based on planetary cycles and Vedic astrology.
+- **NewsAgent & SentimentAgent (v2):** Scrapes real-time news and uses LLMs to convert headlines into numeric bullish/bearish impact scores.
+- **ResearcherAgents:** Dives deep into structural documents (whitepapers, earnings) for long-term context.
+
+#### 3. Capital Hierarchy (The Money Managers)
+- **FundManagerAgent:** Dictates macro capital allocation across multiple sub-portfolios constraints.
+- **PortfolioManagerAgent:** Actively manages asset weights within a portfolio to optimize diversification and reduce correlation risks.
+- **RiskManagerAgent:** Handlers hard circuit breakers, portfolio VaR limits, and maximum drawdown enforceability.
+
+#### 4. The Live Trade Motor (The Sensory Triad)
+For every individual asset selected by the Portfolio Manager, a dedicated intelligence loop takes over:
+- **Data Sensors:** `TechnicalIndicators`, `IntelligentRegimeDetector` (ML uptrend/downtrend classification), and `MultiTimeframeAnalyzer` process the ticks.
+- **The Federated Triad (Councils):**
+  - *DynamicGunaCouncil:* Evaluates trend vs stability (Sattva vs Tamas).
+  - *MindCouncil:* Evaluates psychology; excels at contrarian mean-reversion buying on extreme Fear.
+  - *BodyCouncil:* Evaluates physical execution readiness (orderbook liquidity, spread).
+- **Buddhi Mind (The CEO):** Computes consensus and coherence across the Triad. Issues final `BUY/SELL/HOLD` command.
+
+#### 5. The Elemental Swarm (Decentralized Micro-Agents)
+A secondary swarm managed by the `ElementalOrchestrator` to parallelize thinking. Contains distinct highly-specialized micro-tasks: `ElementalValuation`, `ElementalMacro`, `ElementalRiskGuardian`.
+
+#### 6. The Conductor: OODA Loop Coordinator
+The entire flow is orchestrated in real-time by the `CognitiveOrchestrator` using the **Observe-Orient-Decide-Act (OODA)** methodology. The Orchestrator dynamically decides *which* of the above agent networks to consult based on the immediate market context.
+
 ---
 
 ## 🚀 Quick Start

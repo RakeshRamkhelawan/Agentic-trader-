@@ -54,9 +54,14 @@ class DynamicGunaCouncil:
         spread = market_data.get("bid_ask_spread", 0.001)
         trend = market_data.get("trend", 0)
 
+        # Enriched features from Sprint 1-4 (optional)
+        rsi = market_data.get("rsi", 50.0)
+        adx = market_data.get("adx", 20.0)
+        regime = market_data.get("regime", "SIDEWAYS")
+
         # Calculate scores
         sattva_score = self._calc_sattva(vol, spread, vol_ratio)
-        rajas_score = self._calc_rajas(vol, momentum, vol_ratio, trend)
+        rajas_score = self._calc_rajas(vol, momentum, vol_ratio, trend, rsi, adx)
         tamas_score = self._calc_tamas(vol, vol_ratio, spread, trend)
 
         # Normalize
@@ -68,19 +73,42 @@ class DynamicGunaCouncil:
                 sattva=sattva_score / total, rajas=rajas_score / total, tamas=tamas_score / total
             )
 
-        perspective, confidence = self._get_perspective(guna, trend)
+        # === Samkhya Interaction Logic (v7) ===
+        # In Samkhya, Gunas are not isolated; they interact.
+        interactions = self._calculate_guna_interactions(guna)
+
+        perspective, confidence = self._get_philosophical_perspective(guna, interactions, trend)
 
         return {
             "council_type": "guna",
             "guna_vector": guna.to_dict(),
+            "interactions": interactions,
             "perspective": perspective,
             "confidence": round(confidence, 3),
-            "key_insights": self._generate_insights(guna, vol, momentum, vol_ratio),
+            "key_insights": self._generate_philosophical_insights(
+                guna, interactions, vol, momentum
+            ),
             "raw_scores": {
                 "sattva": round(sattva_score, 3),
                 "rajas": round(rajas_score, 3),
                 "tamas": round(tamas_score, 3),
             },
+        }
+
+    def _calculate_guna_interactions(self, guna: GunaVector) -> dict:
+        """Calculate Samkhya-based Guna interactions."""
+        # Rajas moves things, but it needs Sattva for direction.
+        # Rajas + Tamas = Chaos/Noise.
+        # Rajas + Sattva = Purposeful Action.
+
+        sattvic_rajas = min(guna.sattva, guna.rajas) * 2.0
+        tamasic_rajas = min(guna.tamas, guna.rajas) * 2.0
+
+        return {
+            "sattvic_rajas": round(sattvic_rajas, 3),  # Pure Trend
+            "tamasic_rajas": round(tamasic_rajas, 3),  # Market Noise
+            "balance_factor": round(guna.sattva / (guna.tamas + 0.001), 3),
+            "purity_index": round(guna.sattva - guna.tamas, 3),
         }
 
     def _calc_sattva(self, vol: float, spread: float, vol_ratio: float) -> float:
@@ -101,32 +129,52 @@ class DynamicGunaCouncil:
 
         return (vol_score * 0.5) + (spread_score * 0.3) + (vol_ratio_score * 0.2)
 
-    def _calc_rajas(self, vol: float, momentum: float, vol_ratio: float, trend: int) -> float:
-        """Rajas = activiteit, beweging."""
+    def _calc_rajas(
+        self,
+        vol: float,
+        momentum: float,
+        vol_ratio: float,
+        trend: int,
+        rsi: float = 50.0,
+        adx: float = 20.0,
+    ) -> float:
+        """Rajas = activiteit, beweging. Enhanced with RSI/ADX."""
         if vol > self.high_vol:
             vol_score = 1.0
         elif vol > self.normal_vol:
             vol_score = 0.6
         else:
-            vol_score = 0.1
+            vol_score = 0.2  # Was 0.1 - verhoogd voor daily data
 
-        momentum_score = min(1.0, momentum * 20)
+        # Enhanced momentum detection for daily data (lower threshold)
+        momentum_score = min(1.0, momentum * 50)  # Was *20, nu gevoeliger
 
         if vol_ratio > self.high_volume:
             vol_ratio_score = 1.0
-        elif vol_ratio > 1.1:
+        elif vol_ratio > 1.05:  # Was 1.1, nu gevoeliger
             vol_ratio_score = 0.5
         else:
             vol_ratio_score = 0.0
 
         trend_score = 1.0 if trend != 0 else 0.2
 
-        return (
-            (vol_score * 0.3)
-            + (momentum_score * 0.3)
-            + (vol_ratio_score * 0.2)
-            + (trend_score * 0.2)
+        # RSI extremes boost Rajas (strong momentum signal)
+        rsi_boost = 0.0
+        if rsi > 65 or rsi < 35:
+            rsi_boost = 0.3
+        elif rsi > 55 or rsi < 45:
+            rsi_boost = 0.1
+
+        # ADX > 20 indicates trending market = more Rajas
+        adx_boost = min(0.3, max(0, (adx - 15) / 50))
+
+        base = (
+            (vol_score * 0.25)
+            + (momentum_score * 0.25)
+            + (vol_ratio_score * 0.15)
+            + (trend_score * 0.15)
         )
+        return min(1.0, base + rsi_boost * 0.1 + adx_boost * 0.1)
 
     def _calc_tamas(self, vol: float, vol_ratio: float, spread: float, trend: int) -> float:
         """Tamas = inertie, stagnatie."""
@@ -156,41 +204,45 @@ class DynamicGunaCouncil:
             + (low_vol_score * 0.1)
         )
 
-    def _get_perspective(self, guna: GunaVector, trend: int) -> tuple:
-        """Bepaal trading perspective."""
+    def _get_philosophical_perspective(
+        self, guna: GunaVector, interactions: dict, trend: int
+    ) -> tuple:
+        """Determine perspective based on Guna-interaction (Viveka light)."""
         dominant = guna.dominant()
+        purity = interactions["purity_index"]
+        s_rajas = interactions["sattvic_rajas"]
+        t_rajas = interactions["tamasic_rajas"]
 
-        if dominant == "rajas":
+        # Case 1: Active market with direction (Sattvic Rajas)
+        if s_rajas > t_rajas and s_rajas > 0.4:
             if trend > 0:
-                return "bullish", guna.rajas
-            elif trend < 0:
-                return "bearish", guna.rajas
-            else:
-                return "neutral", guna.rajas * 0.6
-        elif dominant == "tamas":
-            return "neutral", 1 - guna.tamas
-        else:
-            return "neutral", guna.sattva
+                return "bullish", s_rajas * 0.9
+            if trend < 0:
+                return "bearish", s_rajas * 0.9
 
-    def _generate_insights(
-        self, guna: GunaVector, vol: float, momentum: float, vol_ratio: float
+        # Case 2: Market is noisy/chaotic (Tamasic Rajas dominant)
+        if t_rajas > s_rajas and t_rajas > 0.3:
+            return "neutral", 0.4  # Ignore the trend, it's Maya/Noise
+
+        # Case 3: Pure Sattvic state (Quiet wisdom/Consolidation)
+        if dominant == "sattva" and purity > 0.2:
+            return "neutral", 0.6  # Conscious waiting
+
+        # Default back to standard dominant logic if interactions aren't clear
+        return self._get_perspective(guna, trend)
+
+    def _generate_philosophical_insights(
+        self, guna: GunaVector, interactions: dict, vol: float, momentum: float
     ) -> list:
-        """Genereer insights."""
+        """Insights using Samkhya terminology."""
         insights = []
-        dominant = guna.dominant()
-
-        if dominant == "sattva":
-            insights.append(f"Sattva {guna.sattva:.0%}: Harmonious conditions")
-            if vol < self.normal_vol:
-                insights.append(f"Low volatility ({vol:.2%}) suggests consolidation")
-        elif dominant == "rajas":
-            insights.append(f"Rajas {guna.rajas:.0%}: Active market")
-            if momentum > 0.02:
-                insights.append(f"Strong momentum ({momentum:+.1%})")
+        if interactions["sattvic_rajas"] > interactions["tamasic_rajas"]:
+            insights.append("Samkhya: Sattvic Rajas dominant - Action has clear direction.")
         else:
-            insights.append(f"Tamas {guna.tamas:.0%}: Market inertia")
-            if vol_ratio < 0.7:
-                insights.append(f"Low volume ({vol_ratio:.1f}x) suggests indecision")
+            insights.append("Samkhya: Tamasic Rajas dominant - Action is obscured by noise (Maya).")
+
+        if interactions["purity_index"] < 0:
+            insights.append("Alert: Tamas heavy - Discernment (Viveka) is clouded.")
 
         return insights
 

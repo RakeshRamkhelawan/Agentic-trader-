@@ -86,23 +86,23 @@ interface PaperTradingState {
 ```typescript
 it('should start and stop paper trading session', async () => {
   const { result } = renderHook(() => usePaperTradingStore());
-  
+
   // Start session
   await act(async () => {
     await result.current.startSession({ duration: 8, capital: 10000 });
   });
-  
+
   expect(result.current.isRunning).toBe(true);
   expect(fetch).toHaveBeenCalledWith('/api/v1/paper-trading/start', {
     method: 'POST',
     body: JSON.stringify({ duration: 8, capital: 10000 })
   });
-  
+
   // Stop session
   await act(async () => {
     await result.current.stopSession();
   });
-  
+
   expect(result.current.isRunning).toBe(false);
 });
 ```
@@ -116,40 +116,40 @@ it('should start and stop paper trading session', async () => {
 describe('usePaperTradingWebSocket', () => {
   it('should connect when session is running', () => {
     const mockWS = new WebSocket('ws://localhost');
-    const { result } = renderHook(() => 
+    const { result } = renderHook(() =>
       usePaperTradingWebSocket({ isRunning: true })
     );
-    
+
     expect(result.current.isConnected).toBe(true);
   });
-  
+
   it('should update trades on trade message', () => {
-    const { result } = renderHook(() => 
+    const { result } = renderHook(() =>
       usePaperTradingWebSocket({ isRunning: true })
     );
-    
+
     const tradeMessage = {
       type: 'trade',
       data: { symbol: 'BTC/EUR', side: 'buy', price: 50000, qty: 0.1 }
     };
-    
+
     act(() => {
       mockWebSocket.triggerMessage(tradeMessage);
     });
-    
+
     expect(result.current.trades[0]).toMatchObject(tradeMessage.data);
   });
-  
+
   it('should update portfolio on portfolio message', () => {
     const portfolioMessage = {
       type: 'portfolio',
       data: { cash: 9000, total_value: 10000, pnl: 1000 }
     };
-    
+
     act(() => {
       mockWebSocket.triggerMessage(portfolioMessage);
     });
-    
+
     expect(result.current.portfolio).toMatchObject(portfolioMessage.data);
   });
 });
@@ -163,13 +163,13 @@ export function usePaperTradingWebSocket({ isRunning }: { isRunning: boolean }) 
   const [trades, setTrades] = useState<Trade[]>([]);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  
+
   useEffect(() => {
     if (!isRunning) return;
-    
+
     const ws = new WebSocket(`${WS_URL}/ws/paper-trading`);
     wsRef.current = ws;
-    
+
     ws.onopen = () => setIsConnected(true);
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
@@ -185,10 +185,10 @@ export function usePaperTradingWebSocket({ isRunning }: { isRunning: boolean }) 
           break;
       }
     };
-    
+
     return () => ws.close();
   }, [isRunning]);
-  
+
   return { isConnected, trades, portfolio };
 }
 ```
@@ -202,7 +202,7 @@ export function usePaperTradingWebSocket({ isRunning }: { isRunning: boolean }) 
 describe('PaperOrderPanel', () => {
   it('should place buy order via paper trading API', async () => {
     render(<PaperOrderPanel />);
-    
+
     fireEvent.change(screen.getByLabelText('Symbol'), {
       target: { value: 'BTC/EUR' }
     });
@@ -210,7 +210,7 @@ describe('PaperOrderPanel', () => {
       target: { value: '0.1' }
     });
     fireEvent.click(screen.getByText('Buy'));
-    
+
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith('/api/v1/trading/orders', {
         method: 'POST',
@@ -227,7 +227,7 @@ describe('PaperOrderPanel', () => {
 export function PaperOrderPanel() {
   const { isRunning } = usePaperTradingStore();
   const { createOrder } = useOrdersApi();
-  
+
   const handleSubmit = async (values: OrderFormValues) => {
     if (!isRunning) {
       toast.error('Start paper trading session first');
@@ -241,9 +241,9 @@ export function PaperOrderPanel() {
       price: values.price
     });
   };
-  
+
   return (
-    <OrderForm 
+    <OrderForm
       onSubmit={handleSubmit}
       disabled={!isRunning}
       mode="paper"
@@ -261,21 +261,21 @@ export function PaperOrderPanel() {
 describe('PaperTradingChart', () => {
   it('should fetch candle data for selected symbol', async () => {
     render(<PaperTradingChart symbol="BTC/EUR" timeframe="1h" />);
-    
+
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/trading/candles/BTC-EUR')
       );
     });
   });
-  
+
   it('should display price data on chart', async () => {
     const mockCandles = [
       { time: 1234567890, open: 50000, high: 51000, low: 49000, close: 50500 }
     ];
-    
+
     render(<PaperTradingChart symbol="BTC/EUR" />);
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('chart')).toBeInTheDocument();
     });
@@ -292,12 +292,12 @@ describe('PaperTradingChart', () => {
 describe('PaperAIAdvisor', () => {
   it('should get advice specific to paper trading context', async () => {
     render(<PaperAIAdvisor />);
-    
+
     fireEvent.change(screen.getByPlaceholderText('Ask about your trades...'), {
       target: { value: 'Should I buy BTC now?' }
     });
     fireEvent.click(screen.getByText('Send'));
-    
+
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith('/api/v1/agents/chat', {
         method: 'POST',
@@ -317,7 +317,7 @@ describe('PaperAIAdvisor', () => {
 describe('PaperTrading Page', () => {
   it('should render all dashboard-equivalent components', () => {
     render(<PaperTradingPage />);
-    
+
     expect(screen.getByTestId('portfolio-stats')).toBeInTheDocument();
     expect(screen.getByTestId('trading-chart')).toBeInTheDocument();
     expect(screen.getByTestId('order-panel')).toBeInTheDocument();
@@ -326,10 +326,10 @@ describe('PaperTrading Page', () => {
     expect(screen.getByTestId('ai-advisor')).toBeInTheDocument();
     expect(screen.getByTestId('agent-status')).toBeInTheDocument();
   });
-  
+
   it('should disable trading controls when session not running', () => {
     render(<PaperTradingPage />);
-    
+
     expect(screen.getByTestId('order-panel')).toBeDisabled();
   });
 });
@@ -366,17 +366,17 @@ const usePaperTradingStore = create<PaperTradingState>()(
       sessionId: null,
       isRunning: false,
       sessionConfig: null,
-      
+
       // Reuse existing API methods
       startSession: async (config) => {
         const response = await api.post('/paper-trading/start', config);
-        set({ 
-          isRunning: true, 
+        set({
+          isRunning: true,
           sessionId: response.data.session_id,
           sessionConfig: config
         });
       },
-      
+
       // Sync with main appStore for shared data
       syncWithAppStore: () => {
         const { portfolio, trades } = get();
@@ -515,7 +515,7 @@ type WSMessage =
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-03-02  
-**Author**: AI Assistant  
+**Document Version**: 1.0
+**Last Updated**: 2026-03-02
+**Author**: AI Assistant
 **Status**: Ready for Implementation

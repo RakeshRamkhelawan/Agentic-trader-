@@ -162,6 +162,33 @@ class PortfolioManagerAgent(BaseAgent):
             return "medium"
         return "low"
 
+    async def get_tradable_universe(self) -> list[str]:
+        """
+        Dynamically fetch the active trading universe from the database.
+        This provides the link: AssetDiscoveryAgent -> Database -> PortfolioManagerAgent.
+        """
+        from sqlalchemy import select
+
+        from backend.assets.models import Asset, AssetStatus
+        from backend.core.database import AsyncSessionLocal
+
+        try:
+            async with AsyncSessionLocal() as session:
+                result = await session.execute(
+                    select(Asset.symbol).where(Asset.status == AssetStatus.ACTIVE)
+                )
+                symbols = [row[0] for row in result.fetchall()]
+
+            if not symbols:
+                self.logger.warning(
+                    "[PortfolioManagerAgent] No ACTIVE symbols found. Using fallback."
+                )
+                return ["BTC/EUR", "ETH/EUR"]  # Fallback
+            return symbols
+        except Exception as e:
+            self.logger.error(f"[PortfolioManagerAgent] Failed to fetch tradable universe: {e}")
+            return ["BTC/EUR", "ETH/EUR"]
+
     async def can_allocate(self, amount_usd: float) -> bool:
         """
         Check if amount can be allocated.
