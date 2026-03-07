@@ -46,7 +46,7 @@ from backend.core.llm.llm_provider import create_llm_provider
 def _init_chitta_memory(self):
     memory_path = f"backend/data/conscious_memory/{self.agent_name.lower()}_chitta"
     self.chitta = ChittaMemory(storage_path=memory_path)
-    
+
     if not self.llm_provider:
         self.llm_provider = create_llm_provider(backend="ollama", model="llama3.2")
 ```

@@ -34,6 +34,7 @@ interface PaperTradingState {
   portfolio: Portfolio | null;
   trades: Trade[];
   stats: SessionStats | null;
+  lastUpdated: string | null;
   
   // Loading states
   isLoading: boolean;
@@ -66,6 +67,7 @@ const initialState = {
   portfolio: null,
   trades: [],
   stats: null,
+  lastUpdated: null,
   isLoading: false,
   isStarting: false,
   isStopping: false,
@@ -144,6 +146,7 @@ export const usePaperTradingStore = create<PaperTradingState>()(
             portfolio: status.portfolio || null,
             stats: status.stats || null,
             trades: status.trades || [],
+            lastUpdated: new Date().toISOString(),
             isLoading: false,
             error: null,
           });
@@ -192,14 +195,14 @@ export const usePaperTradingStore = create<PaperTradingState>()(
        * Update portfolio (from WebSocket)
        */
       updatePortfolio: (portfolio) => {
-        set({ portfolio });
+        set({ portfolio, lastUpdated: new Date().toISOString() });
       },
 
       /**
        * Update stats (from WebSocket)
        */
       updateStats: (stats) => {
-        set({ stats });
+        set({ stats, lastUpdated: new Date().toISOString() });
       },
 
       /**

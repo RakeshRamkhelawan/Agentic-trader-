@@ -135,10 +135,10 @@ backend/
     - __init__.py
     - adapter.py          # StrategicV8Adapter
     - README.md           # This file
-  
+
   core/mcts/
     - planner.py          # StrategicMCTSPlanner
-  
+
   scripts/
     - run_v9_integrated_backtest.py  # Main entry point
 ```

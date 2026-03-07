@@ -17,14 +17,14 @@ from .base_conscious_agent import BaseConsciousAgent
 class ConsciousFireAgent(BaseConsciousAgent):
     """
     Fire Agent with LLM consciousness
-    
+
     Personality:
     - Passionate, decisive
     - Focuses on momentum and energy
     - Values action and transformation
     - Guna: Rajas (action) + Sattva (clarity)
     """
-    
+
     def __init__(self, llm_backend: str = "ollama", llm_model: str = None):
         super().__init__(
             name="Conscious_Fire",
@@ -32,9 +32,9 @@ class ConsciousFireAgent(BaseConsciousAgent):
             role="Momentum Detection & Risk Assessment",
             llm_backend=llm_backend,
             llm_model=llm_model,
-            memory_path=f"backend/data/conscious_memory/fire_agent_chitta"
+            memory_path="backend/data/conscious_memory/fire_agent_chitta",
         )
-    
+
     def _create_system_prompt(self) -> str:
         """Fire-specific system prompt"""
         return f"""JIJ = {self.name.upper()}, het VUUR (Agni) trading agent.
@@ -83,7 +83,7 @@ RESPONSE FORMAT (JSON):
 
 Denk als vuur: Transformeer analyse in krachtige actie, maar brand niet op.
 """
-    
+
     def analyze(self, market_state: Any) -> Dict[str, Any]:
         """Fire-specific analysis with LLM + Chitta"""
         self.system_prompt = self._create_system_prompt()

@@ -293,7 +293,8 @@ export function FederatedTriad() {
                 key={council.name} 
                 className={`border-l-4 ${
                   council.status === 'active' ? 'border-l-green-500' : 
-                  council.status === 'idle' ? 'border-l-blue-500' : 'border-l-red-500'
+                  council.status === 'idle' ? 'border-l-blue-500' : 
+                  council.status === 'error' ? 'border-l-red-500' : 'border-l-gray-500'
                 }`}
               >
                 <CardHeader className="p-4">
@@ -309,7 +310,7 @@ export function FederatedTriad() {
                         <p className="text-xs text-muted-foreground capitalize">{council.type}</p>
                       </div>
                     </div>
-                    {getStatusIcon(council.status)}
+                    {getStatusIcon(council.status || 'idle')}
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-2">

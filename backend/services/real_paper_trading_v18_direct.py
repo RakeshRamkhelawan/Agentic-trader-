@@ -18,7 +18,7 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -91,7 +91,7 @@ class RealPaperTradingV18:
     Gebruikt directe Python imports i.p.v. MCP client voor snellere executie.
     """
 
-    def __init__(self, initial_capital: float = 10000.0):
+    def __init__(self, initial_capital: float = 10000.0, use_database: bool = True):
         self.initial_capital = initial_capital
         self.config = PaperTradingConfig(initial_cash=initial_capital)
         self.state = PaperTradingState(cash=initial_capital, total_value=initial_capital)
@@ -121,6 +121,21 @@ class RealPaperTradingV18:
         self._circuit_breaker_active = False
         self._circuit_breaker_until: datetime | None = None
 
+        # Database integration
+        self.use_database = use_database
+        self.db: Optional[Any] = None
+        self.db_session_id: Optional[int] = None
+
+        # Chitta Memory integration
+        self.use_chitta = use_database  # Use same flag for now
+        self.chitta: Optional[Any] = None
+
+        # RAG Vector Memory integration (ChromaDB)
+        self.use_rag = use_database  # Use same flag for now
+        self.chroma_client: Optional[Any] = None
+        self.chroma_collection: Optional[Any] = None
+        self.rag_embedding_model = None
+
         print("=" * 80)
         print("     REAL PAPER TRADING V18 - Direct Tool Edition")
         print("=" * 80)
@@ -131,11 +146,83 @@ class RealPaperTradingV18:
         print(f"VedAstro Min Confidence: {self.config.min_vedastro_confidence}%")
         print(f"VedAstro Min Score: {self.config.min_vedastro_score}")
         print(f"Cycle Interval: {self.config.cycle_interval_seconds}s")
+        print(f"Database: {'ENABLED' if use_database else 'DISABLED'}")
         print()
 
     async def initialize(self):
-        """Initialize Data Agent."""
+        """Initialize Data Agent and Database."""
         logger.info("Initializing Paper Trading V18 Direct...")
+
+        # Initialize Database
+        if self.use_database:
+            try:
+                from backend.services.paper_trading_db import PaperTradingDB
+
+                self.db = PaperTradingDB()
+
+                async with self.db:
+                    session = await self.db.create_session(
+                        session_id=self.session_id,
+                        initial_capital=self.initial_capital,
+                        duration_hours=8,
+                        account_id=self.config.account_id,
+                    )
+                    self.db_session_id = session.id
+                    logger.info(f"[DB] Session {self.session_id} created in database")
+            except Exception as e:
+                logger.error(f"[DB] Failed to initialize database: {e}")
+                logger.warning("[DB] Continuing without database persistence")
+                self.use_database = False
+
+        # Initialize Chitta Memory
+        if self.use_chitta:
+            try:
+                from backend.core.conscious.chitta_memory import ChittaMemory
+
+                self.chitta = ChittaMemory(agent_id="V18_Elemental")
+                logger.info("[CHITTA] Memory system initialized")
+            except Exception as e:
+                logger.error(f"[CHITTA] Failed to initialize: {e}")
+                self.use_chitta = False
+
+        # Initialize RAG Vector Memory (ChromaDB)
+        if self.use_rag:
+            try:
+                import chromadb
+                from chromadb.config import Settings
+
+                # Connect to ChromaDB
+                self.chroma_client = chromadb.HttpClient(
+                    host="localhost",
+                    port=8100,
+                    settings=Settings(allow_reset=False, anonymized_telemetry=False),
+                )
+
+                # Get or create collection
+                try:
+                    self.chroma_collection = self.chroma_client.get_collection("trading_knowledge")
+                    logger.info("[RAG] ChromaDB connected, collection 'trading_knowledge' loaded")
+                except Exception:
+                    logger.warning("[RAG] Collection 'trading_knowledge' not found, RAG disabled")
+                    self.use_rag = False
+
+                # Try to load sentence transformer for embeddings
+                if self.use_rag:
+                    try:
+                        from sentence_transformers import SentenceTransformer
+
+                        self.rag_embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+                        logger.info("[RAG] Embedding model loaded")
+                    except ImportError:
+                        logger.warning("[RAG] sentence-transformers not installed, using fallback")
+                        self.rag_embedding_model = None
+                    except Exception as e:
+                        logger.warning(f"[RAG] Failed to load embedding model: {e}")
+                        self.rag_embedding_model = None
+
+            except Exception as e:
+                logger.error(f"[RAG] Failed to initialize ChromaDB: {e}")
+                self.use_rag = False
 
         # Initialize Data Pre-fetch Agent
         from backend.services.data_prefetch_agent import DataPreFetchAgent
@@ -153,8 +240,42 @@ class RealPaperTradingV18:
         logger.info("Paper Trading V18 Direct ready")
 
     async def close(self):
-        """Cleanup resources."""
+        """Cleanup resources and close database."""
         self.running = False
+
+        # Close database session
+        if self.use_database and self.db:
+            try:
+                async with self.db:
+                    # Calculate final portfolio value
+                    if self.data_agent:
+                        prices = await self.data_agent.get_all_prices()
+                        final_value = await self._calculate_portfolio_value(prices)
+                    else:
+                        final_value = self.state.total_value
+
+                    # Determine stop reason
+                    if self._circuit_breaker_active:
+                        reason = "circuit_breaker"
+                    elif self.state.total_pnl < 0:
+                        reason = "negative_pnl"
+                    else:
+                        reason = "completed"
+
+                    await self.db.end_session(
+                        session_id=self.session_id, final_capital=final_value, reason=reason
+                    )
+                    logger.info(f"[DB] Session {self.session_id} closed in database")
+            except Exception as e:
+                logger.error(f"[DB] Error closing session: {e}")
+
+        # Close RAG (ChromaDB doesn't need explicit close for HttpClient)
+        if self.use_rag and self.chroma_client:
+            try:
+                # ChromaDB HttpClient doesn't require explicit close
+                logger.info("[RAG] ChromaDB client ready for cleanup")
+            except Exception as e:
+                logger.error(f"[RAG] Error with ChromaDB: {e}")
 
         if self.data_agent:
             try:
@@ -389,6 +510,63 @@ class RealPaperTradingV18:
                 f"[VEDASTRO] {symbol}: {signal} (conf={confidence:.1f}, score={strength_score:.1f}, planet={dominant_planet})"
             )
 
+            # ============================================================
+            # 1b. RAG ORIENT PHASE - Retrieve similar scenarios from ChromaDB
+            # ============================================================
+            rag_insights = []
+            rag_adjustment = 0.0
+            if self.use_rag and self.chroma_collection:
+                try:
+                    # Build query context
+                    query_text = f"{symbol} {signal} {dominant_planet} market regime"
+
+                    # Query ChromaDB (synchronous)
+                    results = self.chroma_collection.query(
+                        query_texts=[query_text],
+                        n_results=3,
+                        where=(
+                            {"category": "scenario"} if False else None
+                        ),  # Filter by category if needed
+                    )
+
+                    if results and results["documents"] and results["documents"][0]:
+                        documents = results["documents"][0]
+                        metadatas = results["metadatas"][0]
+                        distances = results["distances"][0]
+
+                        rag_insights = [
+                            {"content": doc, "metadata": meta, "distance": dist}
+                            for doc, meta, dist in zip(documents, metadatas, distances)
+                        ]
+
+                        logger.info(f"[RAG] {symbol}: Found {len(rag_insights)} similar scenarios")
+
+                        # Calculate adjustment based on historical outcomes
+                        for insight in rag_insights:
+                            content = insight["content"]
+                            meta = insight["metadata"]
+
+                            # Check metadata first
+                            outcome = meta.get("outcome", "").lower() if meta else ""
+                            if outcome == "success" or "success" in content.lower():
+                                rag_adjustment += 0.05
+                            elif outcome == "failure" or "failure" in content.lower():
+                                rag_adjustment -= 0.05
+
+                        # Limit adjustment
+                        rag_adjustment = max(-0.15, min(0.15, rag_adjustment))
+
+                        analysis["rag"] = {
+                            "insights_count": len(rag_insights),
+                            "adjustment": rag_adjustment,
+                            "top_scenario": (
+                                rag_insights[0]["content"][:100] if rag_insights else None
+                            ),
+                        }
+
+                except Exception as e:
+                    logger.warning(f"[RAG] {symbol}: Failed to retrieve insights: {e}")
+
             # VedAstro vote berekening (EERST!)
             signal_upper = signal.upper() if signal else "HOLD"
 
@@ -409,7 +587,12 @@ class RealPaperTradingV18:
             else:  # SELL
                 vedastro_vote = -0.5 * (confidence / 100)
 
-            analysis["vedastro"]["vote"] = vedastro_vote
+            # Apply RAG adjustment to VedAstro vote
+            vedastro_vote_adjusted = vedastro_vote + rag_adjustment
+            vedastro_vote_adjusted = max(-1.0, min(1.0, vedastro_vote_adjusted))  # Clamp
+
+            analysis["vedastro"]["vote"] = vedastro_vote_adjusted
+            analysis["vedastro"]["rag_adjustment"] = rag_adjustment
 
             # ============================================================
             # 2. ELEMENTAL EARTH ANALYSIS (Prithvi - Stabiliteit/Risk)
@@ -679,6 +862,44 @@ class RealPaperTradingV18:
             # Pas Vayu demping toe op consensus
             total_vote = raw_consensus * vayu_dampener
 
+            # ============================================================
+            # 7b. CHITTA EXPERIENCE ADJUSTMENT (Learning from past)
+            # ============================================================
+            chitta_adjustment = 0.0
+            if self.use_chitta and self.chitta:
+                try:
+                    # Get similar past experiences
+                    similar_experiences = await self.chitta.get_similar_experiences(
+                        symbol=symbol,
+                        regime=regime,
+                        dominant_planet=current_dominant_planet,
+                        limit=10,
+                    )
+
+                    if similar_experiences:
+                        # Calculate win rate from similar experiences
+                        wins = sum(1 for exp in similar_experiences if exp.is_win())
+                        total = len(similar_experiences)
+                        win_rate = wins / total if total > 0 else 0.5
+
+                        # Adjust consensus based on past performance
+                        # More wins = boost confidence, more losses = reduce confidence
+                        confidence_factor = 0.8 + (win_rate * 0.4)  # 0.8 to 1.2
+
+                        # Scale adjustment based on number of samples
+                        confidence = min(1.0, total / 5)  # Max confidence at 5+ samples
+                        chitta_adjustment = (confidence_factor - 1.0) * confidence * 0.1
+
+                        logger.debug(
+                            f"[CHITTA] {symbol}: Adjusted by {chitta_adjustment:+.3f} "
+                            f"(win rate: {win_rate:.1%}, samples: {total})"
+                        )
+                except Exception as e:
+                    logger.warning(f"[CHITTA] Failed to get experiences: {e}")
+
+            # Apply Chitta adjustment
+            total_vote += chitta_adjustment
+
             # Bereken dominant agent (hoogste gewogen bijdrage)
             weighted_votes = {
                 "VEDASTRO": vedastro_vote_adjusted * weights["vedastro"],
@@ -721,7 +942,7 @@ class RealPaperTradingV18:
                     "entry_type": None,
                     "dominant_agent": dominant_agent,
                 }
-                self._log_analysis(analysis)
+                await self._log_analysis(analysis)
 
                 # Broadcast hold decision to frontend
                 await broadcast_agent_decision(
@@ -753,7 +974,7 @@ class RealPaperTradingV18:
                     "action": "SKIP",
                     "reason": f"Position too small (€{position_size:.2f} < €50)",
                 }
-                self._log_analysis(analysis)
+                await self._log_analysis(analysis)
 
                 # Broadcast hold decision to frontend
                 await broadcast_agent_decision(
@@ -794,7 +1015,7 @@ class RealPaperTradingV18:
                     "action": "SKIP",
                     "reason": f"Trade not filled ({result.get('status', 'UNKNOWN')})",
                 }
-                self._log_analysis(analysis)
+                await self._log_analysis(analysis)
                 logger.warning(f"{symbol}: Trade not filled - {result.get('status')}")
                 return False
 
@@ -833,6 +1054,42 @@ class RealPaperTradingV18:
             self.state.trades.append(trade)
             self.state.total_trades += 1
 
+            # Save to database if enabled
+            if self.use_database and self.db:
+                try:
+                    async with self.db:
+                        db_trade = {
+                            "session_id": self.session_id,
+                            "symbol": symbol,
+                            "side": "buy",
+                            "quantity": quantity,
+                            "price": current_price,
+                            "value": position_size,
+                            "commission": commission,
+                            "agent": "V18_Elemental",
+                            "strategy": "vedastro_consensus",
+                            "consensus_score": total_vote,
+                            "dominant_agent": dominant_agent,
+                            "entry_type": entry_type,
+                            "vedastro_signal": signal_upper,
+                            "vedastro_confidence": confidence,
+                            "vedastro_score": strength_score,
+                            "dominant_planet": dominant_planet,
+                            "elemental_votes": {
+                                "earth": earth_vote,
+                                "fire": fire_vote,
+                                "water": water_vote,
+                            },
+                            "regime": regime,
+                            "trade_type": "entry",
+                            "exchange": "Bitvavo",
+                            "analysis_data": analysis,
+                        }
+                        await self.db.save_trade(db_trade)
+                        logger.debug(f"[DB] Saved entry trade for {symbol}")
+                except Exception as e:
+                    logger.error(f"[DB] Failed to save entry trade: {e}")
+
             # Record for Earth element tracking
             if symbol not in self.trade_history:
                 self.trade_history[symbol] = []
@@ -854,7 +1111,7 @@ class RealPaperTradingV18:
                 "vayu_dampener": vayu_dampener,
                 "regime": regime,
             }
-            self._log_analysis(analysis)
+            await self._log_analysis(analysis)
 
             # ============================================================
             # 10. BROADCAST RESULTS
@@ -879,7 +1136,7 @@ class RealPaperTradingV18:
         except Exception as e:
             logger.error(f"Error evaluating entry for {symbol}: {e}", exc_info=True)
             analysis["error"] = str(e)
-            self._log_analysis(analysis)
+            await self._log_analysis(analysis)
             return False
 
     async def _evaluate_exit(self, symbol: str, current_price: float) -> bool:
@@ -1069,6 +1326,79 @@ class RealPaperTradingV18:
                 {"pnl": pnl_pct, "win": win, "timestamp": datetime.utcnow().isoformat()}
             )
 
+            # Save to database if enabled
+            if self.use_database and self.db:
+                try:
+                    async with self.db:
+                        # Save exit trade
+                        db_trade = {
+                            "session_id": self.session_id,
+                            "symbol": symbol,
+                            "side": "sell",
+                            "quantity": quantity,
+                            "price": current_price,
+                            "value": proceeds,
+                            "commission": commission,
+                            "pnl": pnl,
+                            "pnl_pct": pnl_pct,
+                            "agent": "V18_Elemental",
+                            "strategy": "exit_manager",
+                            "trade_type": "exit",
+                            "exit_reason": reason,
+                            "is_hard_exit": is_hard_exit,
+                            "exchange": "Bitvavo",
+                        }
+                        await self.db.save_trade(db_trade)
+
+                        # Update agent performance
+                        await self.db.update_agent_performance(
+                            agent="V18_Elemental",
+                            symbol=symbol,
+                            regime="unknown",  # Could get this from analysis
+                            pnl=pnl,
+                            was_win=win,
+                        )
+
+                        # Save experience for Chitta learning
+                        if self.use_chitta and self.chitta:
+                            try:
+                                from backend.core.conscious.chitta_memory import TradeExperience
+
+                                experience = TradeExperience(
+                                    trade_id=f"{self.session_id}_{symbol}_{datetime.utcnow().timestamp()}",
+                                    timestamp=datetime.utcnow().isoformat(),
+                                    symbol=symbol,
+                                    side="sell",
+                                    entry_price=position_size / quantity if quantity > 0 else 0,
+                                    exit_price=current_price,
+                                    size=quantity,
+                                    net_pnl=pnl,
+                                    return_pct=pnl_pct,
+                                    bars_held=0,  # Could calculate this
+                                    market_regime="unknown",
+                                    trend_1d=0.0,
+                                    adx=0.0,
+                                    rsi=0.0,
+                                    volatility=0.0,
+                                    harmony_score=0.5,
+                                    confidence=0.9 if is_hard_exit else 0.7,
+                                    coherence=0.5,
+                                    dominant_element="EARTH" if is_hard_exit else "CONSENSUS",
+                                    guna_dominant="rajas",
+                                    is_maya=False,
+                                    exit_reason=reason,
+                                    max_favorable_excursion=0.0,
+                                    max_adverse_excursion=-0.07 if is_hard_exit else 0.0,
+                                )
+                                await self.chitta.add_experience(experience)
+                                logger.debug(f"[CHITTA] Saved experience for {symbol}")
+                            except Exception as e:
+                                logger.error(f"[CHITTA] Failed to save experience: {e}")
+
+                        logger.debug(f"[DB] Saved exit trade for {symbol}")
+                except Exception as e:
+                    logger.error(f"[DB] Failed to save exit trade: {e}")
+
             # Log exit analytics
             exit_log = {
                 "timestamp": datetime.utcnow().isoformat(),
@@ -1082,7 +1412,7 @@ class RealPaperTradingV18:
                 "portfolio_value": self.state.total_value,
                 "cash": self.state.cash,
             }
-            self._log_analysis(exit_log)
+            await self._log_analysis(exit_log)
 
             # Broadcast
             await broadcast_trade(trade)
@@ -1123,6 +1453,36 @@ class RealPaperTradingV18:
         """Get dominant planet for date."""
         planets = ["SUN", "MOON", "MARS", "MERCURY", "JUPITER", "VENUS", "SATURN"]
         return planets[date.day % 7]
+
+    def _create_fallback_embedding(self, text: str, dim: int = 384) -> list[float]:
+        """
+        Create a simple deterministic embedding from text.
+        Used when sentence-transformers is not available.
+        """
+        import hashlib
+
+        # Create deterministic hash-based embedding
+        hash_val = hashlib.md5(text.encode()).hexdigest()
+
+        # Generate embedding values from hash
+        embedding = []
+        for i in range(dim):
+            # Use different parts of hash for each dimension
+            hash_byte = int(hash_val[i % 32], 16)
+            # Normalize to [-1, 1] range
+            val = (hash_byte / 15.0) * 2 - 1
+            # Add some variation based on position
+            val += (i / dim) * 0.1
+            embedding.append(float(val))
+
+        # Normalize to unit vector
+        import math
+
+        norm = math.sqrt(sum(x**2 for x in embedding))
+        if norm > 0:
+            embedding = [x / norm for x in embedding]
+
+        return embedding
 
     async def _status_reporter(self, interval: int = 60):
         """Periodically report status."""
@@ -1171,13 +1531,12 @@ class RealPaperTradingV18:
         except Exception as e:
             logger.debug(f"Broadcast error: {e}")
 
-    def _log_analysis(self, analysis: dict[str, Any]):
+    async def _log_analysis(self, analysis: dict[str, Any]):
         """Log detailed analysis for post-session analytics.
 
-        Writes JSON-structured logs for:
-        - Consensus model fine-tuning
-        - Agent performance analysis
-        - Signal correlation analysis
+        Writes to:
+        - JSONL files (for quick access)
+        - Database (for querying and aggregation)
         """
         try:
             # Create analytics directory if not exists
@@ -1198,6 +1557,61 @@ class RealPaperTradingV18:
             # Append detailed analysis (JSONL format)
             with open(detailed_file, "a") as f:
                 f.write(json.dumps(analysis, default=str) + "\n")
+
+            # Also save to database if enabled
+            if self.use_database and self.db:
+                try:
+                    # Prepare analytics data for database
+                    db_analysis = {
+                        "session_id": self.session_id,
+                        "cycle": analysis.get("cycle", self._cycle_count),
+                        "symbol": analysis.get("symbol", "UNKNOWN"),
+                        "analysis_type": (
+                            "entry"
+                            if analysis.get("decision", {}).get("action") == "BUY"
+                            else "exit"
+                        ),
+                        "current_price": analysis.get("current_price", 0),
+                        "vedastro_signal": analysis.get("vedastro", {}).get("signal"),
+                        "vedastro_confidence": analysis.get("vedastro", {}).get("confidence"),
+                        "vedastro_score": analysis.get("vedastro", {}).get("strength_score"),
+                        "vedastro_vote": analysis.get("vedastro", {}).get("vote"),
+                        "dominant_planet": analysis.get("vedastro", {}).get("dominant_planet"),
+                        "earth_vote": analysis.get("elemental", {}).get("earth", {}).get("vote"),
+                        "earth_can_enter": analysis.get("elemental", {})
+                        .get("earth", {})
+                        .get("can_enter"),
+                        "fire_vote": analysis.get("elemental", {}).get("fire", {}).get("vote"),
+                        "fire_position_size": analysis.get("elemental", {})
+                        .get("fire", {})
+                        .get("position_size_raw"),
+                        "water_vote": analysis.get("elemental", {}).get("water", {}).get("vote"),
+                        "water_regime": analysis.get("elemental", {})
+                        .get("water", {})
+                        .get("regime"),
+                        "sattva": analysis.get("gunas", {}).get("sattva"),
+                        "rajas": analysis.get("gunas", {}).get("rajas"),
+                        "tamas": analysis.get("gunas", {}).get("tamas"),
+                        "guna_multiplier": analysis.get("gunas", {}).get("multiplier"),
+                        "vayu_dampener": analysis.get("vayu", {}).get("dampener"),
+                        "vayu_sentiment": analysis.get("vayu", {}).get("sentiment"),
+                        "total_vote": analysis.get("consensus", {}).get("total_vote"),
+                        "raw_consensus": analysis.get("consensus", {}).get("raw_consensus"),
+                        "threshold": analysis.get("consensus", {}).get("threshold"),
+                        "passed": analysis.get("consensus", {}).get("passed"),
+                        "dominant_agent": analysis.get("consensus", {}).get("dominant_agent"),
+                        "portfolio_value": self.state.total_value,
+                        "cash": self.state.cash,
+                        "open_positions_count": len(self.state.open_positions),
+                        "action": analysis.get("decision", {}).get("action"),
+                        "decision_reason": analysis.get("decision", {}).get("reason"),
+                        "full_analysis": analysis,
+                    }
+
+                    async with self.db:
+                        await self.db.save_analytics(db_analysis)
+                except Exception as e:
+                    logger.error(f"[DB] Failed to save analytics: {e}")
 
             # Update summary stats
             summary = {}

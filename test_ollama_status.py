@@ -8,7 +8,7 @@ async def test_ollama():
     print("=" * 50)
     print("OLLAMA STATUS CHECK")
     print("=" * 50)
-    
+
     # Test 1: Basic connectivity
     print("\n[1] Checking Ollama server...")
     try:
@@ -28,7 +28,7 @@ async def test_ollama():
         print(f"   [FAIL] {e}")
         print("   Is Ollama installed? Run: ollama serve")
         return
-    
+
     # Test 2: Pull a model if none installed
     if not models:
         print("\n[2] No models found. Pulling llama3.2 (lightweight)...")
@@ -46,7 +46,7 @@ async def test_ollama():
                         print(f"   [FAIL] Status: {resp.status}")
         except Exception as e:
             print(f"   [FAIL] {e}")
-    
+
     # Test 3: Generate a test response
     print("\n[3] Testing generation...")
     try:
@@ -69,7 +69,7 @@ async def test_ollama():
                     print(f"   [FAIL] Status: {resp.status}")
     except Exception as e:
         print(f"   [FAIL] {e}")
-    
+
     print("\n" + "=" * 50)
     print("Test complete!")
     print("=" * 50)

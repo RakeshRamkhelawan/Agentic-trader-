@@ -55,18 +55,18 @@ async def test_ollama():
         print("       To install llama3.2, run: ollama pull llama3.2")
         print()
         print("       Falling back to MOCK mode for testing...")
-    
+
     try:
         result = llm.generate(
             prompt="What is 2+2? Answer with just the number.",
             system_prompt="You are a helpful assistant.",
         )
-        
+
         if result.get('metadata', {}).get('backend') == 'mock':
             print("[OK] MOCK Response (Ollama model not available):")
         else:
             print("[OK] Ollama Response:")
-        
+
         print(f"   Text: {result.get('text', 'N/A')[:100]}...")
         print(f"   Confidence: {result.get('confidence', 'N/A')}")
         print(f"   Reasoning: {result.get('reasoning', 'N/A')[:100]}...")

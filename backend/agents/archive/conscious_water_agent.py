@@ -17,14 +17,14 @@ from .base_conscious_agent import BaseConsciousAgent
 class ConsciousWaterAgent(BaseConsciousAgent):
     """
     Water Agent with LLM consciousness
-    
+
     Personality:
     - Intuitive, flowing
     - Focuses on trends and multi-timeframe
     - Values adaptability and persistence
     - Guna: Sattva (clarity) + Rajas (flow)
     """
-    
+
     def __init__(self, llm_backend: str = "ollama", llm_model: str = None):
         super().__init__(
             name="Conscious_Water",
@@ -32,9 +32,9 @@ class ConsciousWaterAgent(BaseConsciousAgent):
             role="Trend Following & Multi-Timeframe Analysis",
             llm_backend=llm_backend,
             llm_model=llm_model,
-            memory_path=f"backend/data/conscious_memory/water_agent_chitta"
+            memory_path="backend/data/conscious_memory/water_agent_chitta",
         )
-    
+
     def _create_system_prompt(self) -> str:
         """Water-specific system prompt"""
         return f"""JIJ = {self.name.upper()}, het WATER (Apas) trading agent.
@@ -83,7 +83,7 @@ RESPONSE FORMAT (JSON):
 
 Denk als water: Vind het pad van de minste weerstand, stroom mee.
 """
-    
+
     def analyze(self, market_state: Any) -> Dict[str, Any]:
         """Water-specific analysis with LLM + Chitta"""
         self.system_prompt = self._create_system_prompt()

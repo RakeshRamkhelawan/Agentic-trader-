@@ -20,18 +20,19 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import numpy as np
 
+from backend.councils.buddhi_mind import get_buddhi_mind
+
 # --- CORE COMPONENTS ---
 from backend.councils.dynamic_guna_council import DynamicGunaCouncil
-from backend.councils.buddhi_mind import get_buddhi_mind
 from backend.orchestration.shiva_shakti_sync import get_synchronizer
 
 # Reusing proven v6 infra
 from backend.scripts.run_v6_backtest import (
-    download_data,
-    UniverseRiskManager,
     AgentDecisionLogger,
-    UnifiedMarketAnalyzer,
     PositionTracker,
+    UnifiedMarketAnalyzer,
+    UniverseRiskManager,
+    download_data,
 )
 
 # =============================================================================
@@ -56,12 +57,26 @@ LOG_DIR = PROJECT_ROOT / "backend" / "data" / "backtest_logs"
 RESULTS_DIR = PROJECT_ROOT / "backend" / "data" / "backtest_results"
 
 SYMBOL_MAP = {
-    "BTC/EUR": "BTC-EUR", "ETH/EUR": "ETH-EUR", "ADA/EUR": "ADA-EUR",
-    "DOT/EUR": "DOT-EUR", "XRP/EUR": "XRP-EUR", "SOL/EUR": "SOL-EUR",
-    "EUR/USD": "EURUSD=X", "GBP/USD": "GBPUSD=X", "USD/JPY": "JPY=X",
-    "EUR/GBP": "EURGBP=X", "USD/CHF": "CHF=X", "AUD/USD": "AUDUSD=X",
-    "SPX500": "^GSPC", "NAS100": "^IXIC", "GER40": "^GDAXI", "UK100": "^FTSE",
-    "XAU/USD": "GC=F", "XAG/USD": "SI=F", "OIL/USD": "CL=F", "COTTON/USD": "CT=F",
+    "BTC/EUR": "BTC-EUR",
+    "ETH/EUR": "ETH-EUR",
+    "ADA/EUR": "ADA-EUR",
+    "DOT/EUR": "DOT-EUR",
+    "XRP/EUR": "XRP-EUR",
+    "SOL/EUR": "SOL-EUR",
+    "EUR/USD": "EURUSD=X",
+    "GBP/USD": "GBPUSD=X",
+    "USD/JPY": "JPY=X",
+    "EUR/GBP": "EURGBP=X",
+    "USD/CHF": "CHF=X",
+    "AUD/USD": "AUDUSD=X",
+    "SPX500": "^GSPC",
+    "NAS100": "^IXIC",
+    "GER40": "^GDAXI",
+    "UK100": "^FTSE",
+    "XAU/USD": "GC=F",
+    "XAG/USD": "SI=F",
+    "OIL/USD": "CL=F",
+    "COTTON/USD": "CT=F",
 }
 
 UNIVERSE_GROUPS = {
@@ -76,16 +91,18 @@ UNIVERSE_GROUPS = {
 # BACKTEST-SAFE AGENT ADAPTERS (No external API calls)
 # =============================================================================
 
+
 class BacktestSentimentAgent:
     """
     Offline sentiment agent for backtesting.
     Uses momentum and volatility as proxy for market sentiment.
     """
+
     def analyze(self, market_data: dict) -> dict:
         momentum = market_data.get("momentum_1d", 0.0)
         vol = market_data.get("volatility_1m", 0.02)
         rsi = market_data.get("rsi", 50.0)
-        
+
         # RSI-based sentiment
         if rsi > 70:
             sentiment = 0.8  # Very bullish (but potentially overbought)
@@ -102,18 +119,18 @@ class BacktestSentimentAgent:
         else:
             sentiment = 0.5
             perspective = "neutral"
-        
+
         # Adjust by momentum
         if momentum > 0.02:
             sentiment = min(1.0, sentiment + 0.15)
         elif momentum < -0.02:
             sentiment = max(0.0, sentiment - 0.15)
-        
+
         # High vol reduces confidence
         confidence = max(0.3, 1.0 - vol * 10)
-        
+
         action = 1 if perspective == "bullish" else 2 if perspective == "bearish" else 0
-        
+
         return {
             "action": action,
             "confidence": round(confidence, 3),
@@ -128,6 +145,7 @@ class BacktestVedAstroAgent:
     Simulates planetary-cycle alignment using lunar phase approximation.
     In production, this calls the real VedAstro API.
     """
+
     def analyze(self, date_str: str, market_data: dict) -> dict:
         # Simple lunar phase proxy: use day-of-year modulo 29.5 (synodic month)
         try:
@@ -138,29 +156,35 @@ class BacktestVedAstroAgent:
             day_of_year = dt.timetuple().tm_yday
         except:
             day_of_year = 1
-        
+
         lunar_phase = (day_of_year % 29.5) / 29.5  # 0-1 cycle
-        
+
         # Planetary alignment score (simplified)
         # New moon (0, 1) = caution, Full moon (0.5) = activity
         alignment = math.sin(lunar_phase * 2 * math.pi)
-        
+
         # Combine with market trend
         trend = market_data.get("trend", 0)
-        
+
         if alignment > 0.3 and trend > 0:
             action = 1  # Buy - favorable cosmic + trend
             confidence = 0.6 + alignment * 0.2
-            reasoning = f"VedAstro: Favorable alignment (phase={lunar_phase:.2f}, score={alignment:.2f})"
+            reasoning = (
+                f"VedAstro: Favorable alignment (phase={lunar_phase:.2f}, score={alignment:.2f})"
+            )
         elif alignment < -0.3 and trend < 0:
             action = 2  # Sell - unfavorable cosmic + downtrend
             confidence = 0.6 + abs(alignment) * 0.2
-            reasoning = f"VedAstro: Unfavorable alignment (phase={lunar_phase:.2f}, score={alignment:.2f})"
+            reasoning = (
+                f"VedAstro: Unfavorable alignment (phase={lunar_phase:.2f}, score={alignment:.2f})"
+            )
         else:
             action = 0  # Hold
             confidence = 0.5
-            reasoning = f"VedAstro: Neutral alignment (phase={lunar_phase:.2f}, score={alignment:.2f})"
-        
+            reasoning = (
+                f"VedAstro: Neutral alignment (phase={lunar_phase:.2f}, score={alignment:.2f})"
+            )
+
         return {
             "action": action,
             "confidence": round(min(confidence, 0.85), 3),
@@ -175,19 +199,26 @@ class BacktestRegimeAgent:
     Offline regime detection agent for backtesting.
     Uses the RegimeDetector directly.
     """
+
     def __init__(self):
         from backend.core.regime_detector import RegimeDetector
+
         self.detector = RegimeDetector()
-    
+
     def analyze(self, price_history: list, current_price: float) -> dict:
         if len(price_history) < 50:
-            return {"action": 0, "confidence": 0.5, "reasoning": "Insufficient data", "regime": "unknown"}
-        
+            return {
+                "action": 0,
+                "confidence": 0.5,
+                "reasoning": "Insufficient data",
+                "regime": "unknown",
+            }
+
         sma50, sma200, vol = self.detector.calculate_indicators(price_history)
         regime = self.detector.detect(current_price, sma50, sma200, vol)
-        
+
         # Regime informs direction
-        regime_str = regime.value if hasattr(regime, 'value') else str(regime)
+        regime_str = regime.value if hasattr(regime, "value") else str(regime)
         if regime_str in ["bull", "BULL"]:
             action = 1
             confidence = 0.7
@@ -200,7 +231,7 @@ class BacktestRegimeAgent:
         else:
             action = 0
             confidence = 0.5
-        
+
         return {
             "action": action,
             "confidence": round(confidence, 3),
@@ -220,24 +251,28 @@ def aggregate_agent_decisions(sentiment, vedastro, regime, guna_result):
         "regime": 0.25,
         "guna": 0.25,
     }
-    
+
     agents = {
         "sentiment": sentiment,
         "vedastro": vedastro,
         "regime": regime,
         "guna": {
-            "action": 1 if guna_result.get("perspective") == "bullish" else 2 if guna_result.get("perspective") == "bearish" else 0,
+            "action": (
+                1
+                if guna_result.get("perspective") == "bullish"
+                else 2 if guna_result.get("perspective") == "bearish" else 0
+            ),
             "confidence": guna_result.get("confidence", 0.5),
             "reasoning": f"Guna: {guna_result.get('guna', {}).get('dominant', 'unknown')} dominant",
         },
     }
-    
+
     # Weighted vote
     buy_score = 0.0
     sell_score = 0.0
     hold_score = 0.0
     total_conf = 0.0
-    
+
     for name, dec in agents.items():
         w = weights[name]
         c = dec["confidence"]
@@ -248,7 +283,7 @@ def aggregate_agent_decisions(sentiment, vedastro, regime, guna_result):
         else:
             hold_score += w * c
         total_conf += w * c
-    
+
     if buy_score > sell_score and buy_score > hold_score:
         action = 1
         confidence = buy_score / (buy_score + sell_score + hold_score + 1e-9)
@@ -258,7 +293,7 @@ def aggregate_agent_decisions(sentiment, vedastro, regime, guna_result):
     else:
         action = 0
         confidence = hold_score / (buy_score + sell_score + hold_score + 1e-9)
-    
+
     return {
         "action": action,
         "confidence": round(confidence, 3),
@@ -270,6 +305,7 @@ def aggregate_agent_decisions(sentiment, vedastro, regime, guna_result):
 # =============================================================================
 # MAIN BACKTEST
 # =============================================================================
+
 
 def run_v7_backtest():
     print("=" * 80)
@@ -309,20 +345,24 @@ def run_v7_backtest():
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     decision_logger = AgentDecisionLogger(LOG_DIR / "v7_agent_decisions.jsonl")
     symbol_metrics = {sym: {"trades": 0, "wins": 0, "pnl": 0.0} for sym in all_data.keys()}
-    price_history = {sym: {"prices": [], "vols": [], "highs": [], "lows": []} for sym in all_data.keys()}
+    price_history = {
+        sym: {"prices": [], "vols": [], "highs": [], "lows": []} for sym in all_data.keys()
+    }
 
     fine_tuning_records = []
     total_days = len(sorted_dates)
     progress_interval = max(1, total_days // 20)
 
-    print(f"  Starting simulation...")
+    print("  Starting simulation...")
     sim_start = time.time()
 
     for day_idx, date in enumerate(sorted_dates):
         if day_idx % progress_interval == 0:
             pct = (day_idx / total_days) * 100
             elapsed = time.time() - sim_start
-            print(f"  [{pct:5.1f}%] Day {day_idx}/{total_days} | Capital: ${capital:,.0f} | Time: {elapsed:.0f}s")
+            print(
+                f"  [{pct:5.1f}%] Day {day_idx}/{total_days} | Capital: ${capital:,.0f} | Time: {elapsed:.0f}s"
+            )
 
         # Step 1: Update bars
         current_prices = {}
@@ -350,11 +390,15 @@ def run_v7_backtest():
                 # Spanda Sync Exit
                 if not reason and len(price_history[sym]["prices"]) >= 20:
                     m_data = analyzer.analyze(
-                        price_history[sym]["prices"], price_history[sym]["vols"],
-                        price_history[sym]["highs"], price_history[sym]["lows"],
+                        price_history[sym]["prices"],
+                        price_history[sym]["vols"],
+                        price_history[sym]["highs"],
+                        price_history[sym]["lows"],
                     )
                     sync_report = sync.calculate_sync(
-                        tracker.mark_to_market(bar["close"]), m_data["volatility_1m"], capital,
+                        tracker.mark_to_market(bar["close"]),
+                        m_data["volatility_1m"],
+                        capital,
                     )
                     if sync_report["harmony_level"] == "low":
                         reason = "spanda_disharmony"
@@ -370,14 +414,23 @@ def run_v7_backtest():
                     if pnl > 0:
                         symbol_metrics[sym]["wins"] += 1
                     symbol_metrics[sym]["pnl"] += pnl
-                    decision_logger.log({
-                        "ts": date, "symbol": sym, "action": "close",
-                        "reason": reason, "pnl": round(pnl, 2),
-                    })
+                    decision_logger.log(
+                        {
+                            "ts": date,
+                            "symbol": sym,
+                            "action": "close",
+                            "reason": reason,
+                            "pnl": round(pnl, 2),
+                        }
+                    )
 
         # Step 3: Scan for Entries
         for sym, tracker in trackers.items():
-            if tracker.position == 0 and sym in current_prices and len(price_history[sym]["prices"]) >= 65:
+            if (
+                tracker.position == 0
+                and sym in current_prices
+                and len(price_history[sym]["prices"]) >= 65
+            ):
                 sector = next((s for s, syms in UNIVERSE_GROUPS.items() if sym in syms), "unknown")
 
                 if risk_manager.can_open(sym, sector):
@@ -425,19 +478,44 @@ def run_v7_backtest():
                             # "mind" = Sentiment + VedAstro aggregated
                             "council_type": "mind",
                             "perspective": (
-                                "bullish" if (sentiment_result["action"] + vedastro_result["action"]) >= 2
-                                else "bearish" if (sentiment_result["action"] + vedastro_result["action"]) >= 4
-                                else "neutral" if (sentiment_result["action"] == 0 and vedastro_result["action"] == 0)
-                                else "bullish" if sentiment_result["action"] == 1 or vedastro_result["action"] == 1
-                                else "bearish" if sentiment_result["action"] == 2 or vedastro_result["action"] == 2
-                                else "neutral"
+                                "bullish"
+                                if (sentiment_result["action"] + vedastro_result["action"]) >= 2
+                                else (
+                                    "bearish"
+                                    if (sentiment_result["action"] + vedastro_result["action"]) >= 4
+                                    else (
+                                        "neutral"
+                                        if (
+                                            sentiment_result["action"] == 0
+                                            and vedastro_result["action"] == 0
+                                        )
+                                        else (
+                                            "bullish"
+                                            if sentiment_result["action"] == 1
+                                            or vedastro_result["action"] == 1
+                                            else (
+                                                "bearish"
+                                                if sentiment_result["action"] == 2
+                                                or vedastro_result["action"] == 2
+                                                else "neutral"
+                                            )
+                                        )
+                                    )
+                                )
                             ),
-                            "confidence": (sentiment_result["confidence"] + vedastro_result["confidence"]) / 2,
+                            "confidence": (
+                                sentiment_result["confidence"] + vedastro_result["confidence"]
+                            )
+                            / 2,
                         },
                         {
                             # "body" = Regime detection
                             "council_type": "body",
-                            "perspective": "bullish" if regime_result["action"] == 1 else "bearish" if regime_result["action"] == 2 else "neutral",
+                            "perspective": (
+                                "bullish"
+                                if regime_result["action"] == 1
+                                else "bearish" if regime_result["action"] == 2 else "neutral"
+                            ),
                             "confidence": regime_result["confidence"],
                         },
                     ]
@@ -473,7 +551,9 @@ def run_v7_backtest():
                             pos_usd = (risk_usd / stop_dist) * market_data["close"]
 
                             if pos_usd >= 200:
-                                cost = tracker.open_position(action, pos_usd, market_data["close"], market_data["atr"])
+                                cost = tracker.open_position(
+                                    action, pos_usd, market_data["close"], market_data["atr"]
+                                )
                                 capital -= cost
                                 risk_manager.add_trade(sym, sector, action, risk_usd)
 
@@ -487,10 +567,18 @@ def run_v7_backtest():
                                     "confidence": round(confidence, 3),
                                     "pos_usd": round(pos_usd, 2),
                                     # L1: Guna
-                                    "guna_dominant": guna_result.get("guna", {}).get("dominant", "?"),
-                                    "guna_sattva": round(guna_result.get("guna", {}).get("sattva", 0), 3),
-                                    "guna_rajas": round(guna_result.get("guna", {}).get("rajas", 0), 3),
-                                    "guna_tamas": round(guna_result.get("guna", {}).get("tamas", 0), 3),
+                                    "guna_dominant": guna_result.get("guna", {}).get(
+                                        "dominant", "?"
+                                    ),
+                                    "guna_sattva": round(
+                                        guna_result.get("guna", {}).get("sattva", 0), 3
+                                    ),
+                                    "guna_rajas": round(
+                                        guna_result.get("guna", {}).get("rajas", 0), 3
+                                    ),
+                                    "guna_tamas": round(
+                                        guna_result.get("guna", {}).get("tamas", 0), 3
+                                    ),
                                     "guna_perspective": guna_result.get("perspective", "?"),
                                     # L2: Sentiment
                                     "sentiment_action": sentiment_result["action"],
@@ -554,7 +642,9 @@ def run_v7_backtest():
     # Per-sector breakdown
     print("\n  --- PER SECTOR ---")
     for sector, syms in UNIVERSE_GROUPS.items():
-        s_trades = sum(symbol_metrics.get(s, {}).get("trades", 0) for s in syms if s in symbol_metrics)
+        s_trades = sum(
+            symbol_metrics.get(s, {}).get("trades", 0) for s in syms if s in symbol_metrics
+        )
         s_wins = sum(symbol_metrics.get(s, {}).get("wins", 0) for s in syms if s in symbol_metrics)
         s_pnl = sum(symbol_metrics.get(s, {}).get("pnl", 0) for s in syms if s in symbol_metrics)
         s_wr = (s_wins / s_trades * 100) if s_trades > 0 else 0
@@ -565,8 +655,10 @@ def run_v7_backtest():
     sorted_syms = sorted(symbol_metrics.items(), key=lambda x: x[1]["pnl"], reverse=True)
     for sym, m in sorted_syms:
         if m["trades"] > 0:
-            wr = (m["wins"] / m["trades"] * 100)
-            print(f"  {sym:12s} | Trades: {m['trades']:3d} | WR: {wr:5.1f}% | PNL: ${m['pnl']:>10,.2f}")
+            wr = m["wins"] / m["trades"] * 100
+            print(
+                f"  {sym:12s} | Trades: {m['trades']:3d} | WR: {wr:5.1f}% | PNL: ${m['pnl']:>10,.2f}"
+            )
 
     # Save fine-tuning data
     ft_path = RESULTS_DIR / "v7_fine_tuning_data.jsonl"

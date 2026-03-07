@@ -17,7 +17,7 @@ async def test_portfolio_manager_dynamic_universe(mock_portfolio_manager):
     that can be handed over to the execution loop.
     """
     universe = await mock_portfolio_manager.get_tradable_universe()
-    
+
     assert len(universe) == 3
     assert "BTC/EUR" in universe
     assert "UNKNOWN_COIN/EUR" in universe
@@ -30,13 +30,13 @@ async def test_execution_loop_intersection_logic():
     """
     # Mocking the dynamic universe handed over by the PortfolioManagerAgent
     dynamic_universe = ["BTC/EUR", "ETH/EUR", "INVALID/EUR", "AAPL"]
-    
+
     # Simulating the SYMBOL_MAP available in the execution environment
     SYMBOL_MAP = {
         "BTC/EUR": "BINANCE:BTCEUR",
         "ETH/EUR": "BINANCE:ETHEUR"
     }
-    
+
     # The handover logic
     symbols_to_test = []
     for sym in dynamic_universe:
@@ -46,10 +46,9 @@ async def test_execution_loop_intersection_logic():
             # Fallback for cryptos not explicitly mapped
             formatted = sym.replace("/", "")
             symbols_to_test.append(f"KRAKEN:{formatted}")
-            
+
     assert len(symbols_to_test) == 3
     assert "BINANCE:BTCEUR" in symbols_to_test
     assert "BINANCE:ETHEUR" in symbols_to_test
     assert "KRAKEN:INVALIDEUR" in symbols_to_test
     assert "AAPL" not in symbols_to_test
-

@@ -17,14 +17,14 @@ from .base_conscious_agent import BaseConsciousAgent
 class ConsciousEarthAgent(BaseConsciousAgent):
     """
     Earth Agent with LLM consciousness
-    
+
     Personality:
     - Grounded, patient
     - Focuses on value and levels
     - Values stability and precision
     - Guna: Tamas (inertia) + Sattva (clarity)
     """
-    
+
     def __init__(self, llm_backend: str = "ollama", llm_model: str = None):
         super().__init__(
             name="Conscious_Earth",
@@ -32,9 +32,9 @@ class ConsciousEarthAgent(BaseConsciousAgent):
             role="Valuation & Execution Timing",
             llm_backend=llm_backend,
             llm_model=llm_model,
-            memory_path=f"backend/data/conscious_memory/earth_agent_chitta"
+            memory_path="backend/data/conscious_memory/earth_agent_chitta",
         )
-    
+
     def _create_system_prompt(self) -> str:
         """Earth-specific system prompt"""
         return f"""JIJ = {self.name.upper()}, de AARDE (Prithvi) trading agent.
@@ -85,7 +85,7 @@ RESPONSE FORMAT (JSON):
 
 Denk als aarde: Wees gegrond, waardeer wat echt is, handel met precisie.
 """
-    
+
     def analyze(self, market_state: Any) -> Dict[str, Any]:
         """Earth-specific analysis with LLM + Chitta"""
         self.system_prompt = self._create_system_prompt()

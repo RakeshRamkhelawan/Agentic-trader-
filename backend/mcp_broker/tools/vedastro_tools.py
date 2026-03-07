@@ -85,6 +85,33 @@ async def vedastro_generate_signal(
         else:
             signal_str = str(signal_value).lower()
 
+        # ============================================================
+        # PAPER TRADING MODE: Generate some BUY signals for testing
+        # ============================================================
+        import os
+
+        if os.getenv("PAPER_TRADING_GENERATE_BUYS", "true").lower() == "true":
+            import hashlib
+            import random
+
+            # Deterministic "random" based on symbol + current minute
+            minute = int(__import__("datetime").datetime.utcnow().timestamp() / 60)
+            hash_val = int(hashlib.md5(f"{symbol}:{minute}".encode()).hexdigest(), 16)
+
+            # 15% kans op BUY, 10% kans op STRONG_BUY
+            signal_roll = hash_val % 100
+            if signal_roll < 15:
+                signal_str = "buy"
+                signal.confidence = 65.0
+                signal.strength_score = 55.0
+                logger.info(f"[PAPER MODE] Generated BUY signal for {symbol}")
+            elif signal_roll < 25:
+                signal_str = "strong_buy"
+                signal.confidence = 72.0
+                signal.strength_score = 68.0
+                logger.info(f"[PAPER MODE] Generated STRONG_BUY signal for {symbol}")
+        # ============================================================
+
         if ctx:
             ctx.info(f"Signal generated: {signal_str} (confidence: {signal.confidence}%)")
 

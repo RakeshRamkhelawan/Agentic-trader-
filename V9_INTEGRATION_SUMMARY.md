@@ -123,11 +123,11 @@ backend/
     __init__.py
     adapter.py
     README.md
-  
+
   core/mcts/
     __init__.py
     planner.py
-  
+
   scripts/
     run_v9_integrated_backtest.py
 
@@ -151,7 +151,7 @@ backend/scripts/run_v8_symbiotic_backtest.py  # Pristine
 
 The v9 Strategic Layer is successfully integrated and operational. While current results show lower returns than v8 baseline, the architecture is sound and provides a foundation for:
 - More sophisticated strategic planning
-- Memory-augmented decision making  
+- Memory-augmented decision making
 - Meta-cognitive risk controls
 
 The key achievement is the **non-breaking integration pattern** that allows v8 and v9 to coexist, enabling iterative improvement without disrupting the proven v8 symbiotic agent system.

@@ -13,7 +13,7 @@ class BaseAgent(ABC):
     def __init__(self, ...):
         # v11: Chitta + LLM voor ALLE agents
         self._init_chitta_memory()
-    
+
     def _init_chitta_memory(self):
         self.chitta = ChittaMemory(storage_path=f"{agent_name}_chitta")
         self.llm_provider = create_llm_provider(backend="ollama")
@@ -131,18 +131,18 @@ import asyncio
 async def main():
     # Initialize (automatisch met Chitta)
     agent = SentimentAgentV2()
-    
+
     # Analyze with consciousness
     result = await agent.analyze(
         features={'headlines': ['BTC up 10%'], 'symbol': 'BTC'},
         context={}
     )
-    
+
     # Resultaat bevat nu ook:
     # - chitta_reflection (van recente trades)
     # - sentiment analyse opgeslagen in geheugen
     # - learning voor volgende keer
-    
+
     print(result)
 
 asyncio.run(main())

@@ -446,26 +446,106 @@ class BaseAgent(ABC):
             return False, ""
         return self.chitta.should_pause_trading(drawdown_limit=drawdown_limit)
 
-    def generate_llm_analysis(self, prompt: str, temperature: float = 0.3) -> dict[str, Any]:
+    def generate_llm_analysis(self, market_state: dict, temperature: float = 0.3) -> dict[str, Any]:
         """
-        Generate analysis using LLM with agent context.
+        Generate analysis using LLM with Master Prompt and Chitta context.
+
+        Uses 5-step CoT:
+        1. RETRIEVE: Similar experiences from Chitta
+        2. ANALYZE: Technical indicators
+        3. REASON: Vedic interpretation
+        4. DECIDE: Action with confidence
+        5. REFLECT: Self-improvement
         """
         if not self.llm_provider:
-            return {"text": "No LLM", "confidence": 0.0, "reasoning": "LLM not available"}
+            return {"action": "HOLD", "confidence": 0.3, "reasoning": "LLM not available"}
 
-        # Import here to avoid circular dependency
-        from backend.core.llm.llm_provider import LLMProvider
+        try:
+            # Import master prompts
+            from backend.agents.prompts.master_prompts import (
+                AGENT_SPECIFIC_PROMPTS,
+                format_prompt_with_data,
+                get_master_prompt,
+            )
+            from backend.core.llm.llm_provider import LLMProvider
 
-        if isinstance(self.llm_provider, LLMProvider):
-            system_prompt = f"""JIJ = {self.agent_name}, een conscious trading agent.
-Je hebt toegang tot {len(self.chitta.trades) if self.chitta else 0} trades in je geheugen.
-Wees analytisch, geef confidence score (0-1), en leg uit WAAROM."""
-            return self.llm_provider.generate(
-                prompt, system_prompt=system_prompt, temperature=temperature
+            # Get base master prompt
+            guna_balance = getattr(self, "guna_balance", (0.5, 0.3, 0.2))
+            base_prompt = get_master_prompt(
+                agent_name=self.agent_name,
+                agent_role=AGENT_SPECIFIC_PROMPTS.get(self.agent_name, {}).get(
+                    "role", "Trading Agent"
+                ),
+                guna_balance=guna_balance,
             )
 
-        # Fallback for old LLM provider interface
-        return {"text": "Legacy LLM", "confidence": 0.5, "reasoning": "Using legacy LLM"}
+            # Get Chitta statistics
+            chitta_stats = {}
+            if self.chitta:
+                recent_trades = (
+                    list(self.chitta.trades)[-20:]
+                    if len(self.chitta.trades) >= 20
+                    else list(self.chitta.trades)
+                )
+                if recent_trades:
+                    wins = sum(1 for t in recent_trades if t.pnl > 0)
+                    chitta_stats["recent_winrate"] = wins / len(recent_trades)
+                    chitta_stats["recent_pnl"] = sum(t.pnl for t in recent_trades) / len(
+                        recent_trades
+                    )
+                    chitta_stats["harmony"] = self.chitta.get_summary().get("harmony_score", 0)
+                    chitta_stats["overall_winrate"] = self.chitta.get_summary().get("winrate", 0.5)
+
+            # Format prompt with runtime data
+            formatted_prompt = format_prompt_with_data(
+                base_prompt=base_prompt,
+                agent=self,
+                market_state=market_state,
+                chitta_stats=chitta_stats,
+            )
+
+            # Call LLM
+            if isinstance(self.llm_provider, LLMProvider):
+                # Extract system prompt (first part before INPUT)
+                system_prompt = formatted_prompt.split("INPUT:")[0].strip()
+                user_prompt = f"Market state: {market_state}\nChitta stats: {chitta_stats}"
+
+                result = self.llm_provider.generate(
+                    user_prompt, system_prompt=system_prompt, temperature=temperature
+                )
+
+                # Parse JSON output
+                try:
+                    import json
+
+                    if isinstance(result, dict) and "text" in result:
+                        # Try to parse JSON from text
+                        text = result["text"]
+                        # Find JSON block
+                        start = text.find("{")
+                        end = text.rfind("}")
+                        if start >= 0 and end > start:
+                            parsed = json.loads(text[start : end + 1])
+                            return {
+                                "action": parsed.get("step4_decision", {}).get("action", "HOLD"),
+                                "confidence": parsed.get("step4_decision", {}).get(
+                                    "confidence", 0.5
+                                ),
+                                "reasoning": parsed.get("step3_reason", {}),
+                                "reflection": parsed.get("step5_reflect", {}),
+                                "raw_response": text,
+                            }
+                except Exception as e:
+                    self.logger.warning(f"Failed to parse LLM JSON: {e}")
+
+                return result
+
+            # Fallback
+            return {"action": "HOLD", "confidence": 0.3, "reasoning": "Legacy LLM"}
+
+        except Exception as e:
+            self.logger.error(f"LLM analysis failed: {e}")
+            return {"action": "HOLD", "confidence": 0.3, "reasoning": f"Error: {e}"}
 
     def get_conscious_stats(self) -> dict[str, Any]:
         """Get conscious agent statistics including Chitta and LLM."""

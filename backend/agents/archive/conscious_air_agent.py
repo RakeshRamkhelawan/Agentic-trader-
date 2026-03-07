@@ -17,14 +17,14 @@ from .base_conscious_agent import BaseConsciousAgent
 class ConsciousAirAgent(BaseConsciousAgent):
     """
     Air Agent with LLM consciousness
-    
+
     Personality:
     - Observant, analytical
     - Focuses on market regime and sentiment
     - Values clarity and information flow
     - Guna: Sattva (clarity) + Rajas (movement)
     """
-    
+
     def __init__(self, llm_backend: str = "ollama", llm_model: str = None):
         super().__init__(
             name="Conscious_Air",
@@ -32,9 +32,9 @@ class ConsciousAirAgent(BaseConsciousAgent):
             role="Regime Detection & Sentiment Analysis",
             llm_backend=llm_backend,
             llm_model=llm_model,
-            memory_path=f"backend/data/conscious_memory/air_agent_chitta"
+            memory_path="backend/data/conscious_memory/air_agent_chitta",
         )
-    
+
     def _create_system_prompt(self) -> str:
         """Air-specific system prompt"""
         return f"""JIJ = {self.name.upper()}, de LUCHT (Vayu) trading agent.
@@ -81,7 +81,7 @@ RESPONSE FORMAT (JSON):
 
 Denk als de wind: Voel de beweging, niet de vorm.
 """
-    
+
     def analyze(self, market_state: Any) -> Dict[str, Any]:
         """Air-specific analysis with LLM + Chitta"""
         # Add Air-specific context to prompt

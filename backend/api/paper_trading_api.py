@@ -31,6 +31,17 @@ _trading_logs: list = []
 _trading_trades: list = []
 _session_start_time: datetime | None = None
 
+
+def get_paper_trading_engine():
+    """Get the current paper trading engine instance (for federated triad integration)."""
+    return _trading_engine
+
+
+def is_paper_trading_active():
+    """Check if paper trading is currently active."""
+    return _trading_task is not None and not _trading_task.done()
+
+
 # Import engine type for type hints
 try:
     from backend.services.real_paper_trading_v18_direct import RealPaperTradingV18

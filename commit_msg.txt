@@ -1,0 +1,41 @@
+feat(paper-trading): V18 Three-Tier Integration with Live Federated Triad
+
+Database Integration (PostgreSQL):
+- PaperTradingSession, PaperTrade, PaperPosition models
+- AgentPerformance tracking per symbol/regime
+- ChittaExperience for learning from trades
+- Full Alembic migration
+
+Chitta Integration (Experience Learning):
+- TradeExperience capture on exit with embeddings
+- Similarity search for historical trades
+- Consensus adjustment based on win rate
+- Persistent storage via ChittaMemory
+
+RAG Integration (ChromaDB):
+- Strategy playbooks (V18 entry/exit rules)
+- Market regime guidance (expansion/contraction/neutral)
+- Historical scenarios (BTC, ETH, SOL, ADA, DOT examples)
+- VedAstro planet influence guide
+
+Federated Triad Integration:
+- Real-time council state from V18 engine
+- VedAstro, Earth, Fire, Water councils
+- Coherence metrics based on portfolio performance
+- Chitta nodes from live positions
+
+Frontend:
+- Combined PaperTrading page with Dashboard + Trading
+- Top 10 Stijgers/Dalers market data
+- Federated Triad realtime visualization
+- Session controls (Start/Stop)
+
+VedAstro Paper Trading Mode:
+- 15% chance BUY signals
+- 10% chance STRONG_BUY signals
+
+Fixed:
+- NGINX proxy to port 8002
+- CORS origins for frontend
+- API timeout (60s)
+- ShadowPortfolioManager positions attribute

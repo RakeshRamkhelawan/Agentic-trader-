@@ -77,7 +77,7 @@ while ($true) {
     Start-Sleep -Seconds 5
     $backendRunning = Get-Process -Id $backendProcess.Id -ErrorAction SilentlyContinue
     $frontendRunning = Get-Process -Id $frontendProcess.Id -ErrorAction SilentlyContinue
-    
+
     if (-not $backendRunning) {
         Write-Host "[WARNING] Backend stopped!" -ForegroundColor Red
         break

@@ -1,6 +1,7 @@
 """Analyze v3 backtest results to diagnose poor performance."""
-import json
+
 import csv
+import json
 import os
 import sys
 from pathlib import Path

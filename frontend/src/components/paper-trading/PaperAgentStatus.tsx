@@ -33,11 +33,11 @@ export function PaperAgentStatus() {
       setIsLoading(true);
       try {
         const data = await agentsApi.getStatus();
-        const agentsList = Object.entries(data.agents || {}).map(([id, agent]: [string, any]) => ({
+        const agentsList: AgentWithPerformance[] = Object.entries(data.agents || {}).map(([id, agent]: [string, any]) => ({
           id,
           name: agent.name || agent.type || id,
           type: agent.type || 'unknown',
-          status: agent.is_active ? 'running' : 'paused',
+          status: agent.is_active ? 'running' : 'paused' as 'running' | 'paused' | 'error',
           performance: agent.performance || 0,
           trades: agent.state?.total_trades || 0,
           prana: agent.prana || 0,

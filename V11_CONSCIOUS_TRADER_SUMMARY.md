@@ -13,7 +13,7 @@ v11 introduces **true trading consciousness** by addressing the core limitations
 ```
 ┌─ Ahamkara (Self-Aware Meta-Agent)
 │  ├── Intrinsic Goal: Max PnL, DD < 8%
-│  ├── Emotional State: Anxiety, Confidence, Clarity  
+│  ├── Emotional State: Anxiety, Confidence, Clarity
 │  ├── Self-Reflection: "What did I learn?"
 │  └── Pause Triggers: Loss streaks, high anxiety, DD > 10%
 │
@@ -50,15 +50,15 @@ v11 introduces **true trading consciousness** by addressing the core limitations
 ```python
 class ChittaMemory:
     """Stores trade experiences with embeddings for similarity search"""
-    
+
     def store_trade(self, trade: TradeExperience):
         # Store samskara (mental impression)
         self.trades.append(trade)
-        
+
     def retrieve_similar_setups(self, market_state, top_k=5):
         # RAG: Find similar historical trades
         return similar_trades
-        
+
     def reflect_recent(self, n_trades=10):
         # Analyze recent performance
         return insights, recommended_action
@@ -76,11 +76,11 @@ class ChittaMemory:
 ```python
 class AhamkaraMetaAgent:
     """Self-aware meta-agent with intrinsic motivation"""
-    
+
     SYSTEM_PROMPT = """
     JIJ = PROFESSIONAL TRADER met BEWUSTZIJN.
     JE DOEL: Maximaliseer PnL met Max Drawdown < 8%.
-    
+
     REGELS:
     - NOOIT traden met harmony < 0.5
     - PAUZE bij 10 verliezen op rij

@@ -14,7 +14,7 @@ from backend.core.config.settings import settings
 
 # Import models
 # Import consolidated models
-from backend.data.models import Base
+from backend.db_data.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

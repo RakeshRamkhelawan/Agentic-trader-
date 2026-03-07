@@ -50,7 +50,7 @@ async def _synthesize_strategy(self, inputs, harmony):
         prompt = self._build_harmonization_prompt(inputs, harmony)
         llm_response = self.generate_llm_analysis(prompt)
         return parse_llm_response(llm_response)
-    
+
     # Fallback to deterministic logic
     return self._fallback_synthesis(inputs, harmony)
 ```

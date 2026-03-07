@@ -90,11 +90,11 @@ Write-Host ""
 Write-Host "Press Ctrl+C to stop viewing logs (services keep running)" -ForegroundColor DarkGray
 while ($true) {
     Start-Sleep -Seconds 5
-    
+
     # Check if processes are still running
     $backendRunning = Get-Process -Id $backendProcess.Id -ErrorAction SilentlyContinue
     $frontendRunning = Get-Process -Id $frontendProcess.Id -ErrorAction SilentlyContinue
-    
+
     if (-not $backendRunning) {
         Write-Host "⚠️  Backend stopped!" -ForegroundColor Red
         break

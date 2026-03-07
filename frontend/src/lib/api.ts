@@ -40,7 +40,7 @@ const api: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: 60000, // 60 seconds for paper trading
 });
 
 // Request interceptor - add auth token
@@ -63,6 +63,15 @@ api.interceptors.response.use(
       accessToken = null;
       window.location.href = '/login';
     }
+    
+    // Extract meaningful error message from backend
+    const errorData = error.response?.data as { detail?: string; message?: string };
+    if (errorData?.detail) {
+      error.message = errorData.detail;
+    } else if (errorData?.message) {
+      error.message = errorData.message;
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -743,6 +752,7 @@ export interface CouncilView {
   confidence: number;
   insights: string[];
   contradictions?: string[];
+  status?: 'active' | 'idle' | 'error';
 }
 
 export interface ChittaNode {

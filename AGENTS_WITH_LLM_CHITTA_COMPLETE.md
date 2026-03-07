@@ -169,13 +169,13 @@ from backend.core.llm.llm_provider import create_llm_provider, LLMBackend
 
 # Ollama (lokaal)
 agent.llm_provider = create_llm_provider(
-    backend=LLMBackend.OLLAMA, 
+    backend=LLMBackend.OLLAMA,
     model="tinyllama"
 )
 
 # DeepSeek (cloud)
 agent.llm_provider = create_llm_provider(
-    backend=LLMBackend.DEEPSEEK, 
+    backend=LLMBackend.DEEPSEEK,
     model="deepseek-chat"
 )
 ```
@@ -191,16 +191,16 @@ from backend.agents.sentiment_agent_v2 import SentimentAgentV2
 async def test_conscious_agent():
     # Initialize agent (automatisch met Chitta + LLM)
     agent = SentimentAgentV2()
-    
+
     print(f"Agent: {agent.agent_name}")
     print(f"Has Chitta: {agent.chitta is not None}")
     print(f"Has LLM: {agent.llm_provider is not None}")
     print(f"Trades in memory: {len(agent.chitta.trades) if agent.chitta else 0}")
-    
+
     # Test consciousness methods
     stats = agent.get_conscious_stats()
     print(f"Conscious stats: {stats}")
-    
+
     # Test LLM
     result = agent.generate_llm_analysis("What is the meaning of trading?")
     print(f"LLM result: {result}")

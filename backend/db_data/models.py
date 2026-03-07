@@ -9,19 +9,28 @@ for Alembic migrations and Repository access.
 from backend.assets.models import Asset
 from backend.core.database import Base
 
-# Governance
-from backend.governance.decision_audit import DecisionAuditLog
-
 # Learning & Knowledge
-from backend.models.agent_experience import AgentExperience
-from backend.models.config import RuntimeConfig
+from backend.db_models.agent_experience import AgentExperience
+from backend.db_models.config import RuntimeConfig
 
 # Trading & Market
-from backend.models.market_data import MarketCandle, MarketTick
-from backend.models.orders import Order, OrderStatus
+from backend.db_models.market_data import MarketCandle, MarketTick
+from backend.db_models.orders import Order, OrderStatus
+
+# Paper Trading Models (V18)
+from backend.db_models.paper_trading import (
+    AgentPerformance,
+    ChittaExperience,
+    PaperTrade,
+    PaperTradingAnalytics,
+    PaperTradingSession,
+)
 
 # Identity & Access
-from backend.models.user_settings import APIKey, User, UserPreferences, UserProfile, UserSecurity
+from backend.db_models.user_settings import APIKey, User, UserPreferences, UserProfile, UserSecurity
+
+# Governance
+from backend.governance.decision_audit import DecisionAuditLog
 from backend.rag.vector_memory import TradingKnowledge
 
 __all__ = [
@@ -40,4 +49,10 @@ __all__ = [
     "DecisionAuditLog",
     "RuntimeConfig",
     "Asset",
+    # Paper Trading Models
+    "PaperTradingSession",
+    "PaperTrade",
+    "PaperTradingAnalytics",
+    "AgentPerformance",
+    "ChittaExperience",
 ]

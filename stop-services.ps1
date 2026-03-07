@@ -20,17 +20,17 @@ if (Test-Path ".service-pids") {
 }
 
 # Kill any uvicorn processes in this directory
-Get-Process -Name "python" -ErrorAction SilentlyContinue | 
-    Where-Object { $_.Path -like "*$PWD*" } | 
-    ForEach-Object { 
+Get-Process -Name "python" -ErrorAction SilentlyContinue |
+    Where-Object { $_.Path -like "*$PWD*" } |
+    ForEach-Object {
         Stop-Process -Id $_.Id -Force
         Write-Host "✅ Stopped Python process $($_.Id)" -ForegroundColor Green
     }
 
 # Kill npm/node processes for this project
-Get-Process -Name "node" -ErrorAction SilentlyContinue | 
-    Where-Object { $_.Path -like "*$PWD*" } | 
-    ForEach-Object { 
+Get-Process -Name "node" -ErrorAction SilentlyContinue |
+    Where-Object { $_.Path -like "*$PWD*" } |
+    ForEach-Object {
         Stop-Process -Id $_.Id -Force
         Write-Host "✅ Stopped Node process $($_.Id)" -ForegroundColor Green
     }

@@ -17,14 +17,14 @@ from .base_conscious_agent import BaseConsciousAgent
 class ConsciousEtherAgent(BaseConsciousAgent):
     """
     Ether Agent with LLM consciousness - The Orchestrator
-    
+
     Personality:
     - Wise, holistic
     - Harmonizes all elements
     - Detects Maya (illusion)
     - Guna: Pure Sattva (harmony)
     """
-    
+
     def __init__(self, llm_backend: str = "ollama", llm_model: str = None):
         super().__init__(
             name="Conscious_Ether",
@@ -32,9 +32,9 @@ class ConsciousEtherAgent(BaseConsciousAgent):
             role="Orchestration & Maya Detection",
             llm_backend=llm_backend,
             llm_model=llm_model,
-            memory_path=f"backend/data/conscious_memory/ether_agent_chitta"
+            memory_path="backend/data/conscious_memory/ether_agent_chitta",
         )
-    
+
     def _create_system_prompt(self) -> str:
         """Ether-specific system prompt"""
         return f"""JIJ = {self.name.upper()}, de ETHER (Akasha) - De Bewuste Orkestrator.
@@ -95,12 +95,8 @@ RESPONSE FORMAT (JSON):
 
 Denk als ether: Zie alles, verbind alles, wees het bewustzijn zelf.
 """
-    
-    def harmonize_signals(
-        self, 
-        signals: List[Dict], 
-        market_state: Any
-    ) -> Dict[str, Any]:
+
+    def harmonize_signals(self, signals: List[Dict], market_state: Any) -> Dict[str, Any]:
         """
         Harmonize all element signals into collective decision
         Uses LLM + Chitta memory of past harmonizations
@@ -108,26 +104,23 @@ Denk als ether: Zie alles, verbind alles, wees het bewustzijn zelf.
         # Check prana
         if self.prana < 5:
             return self._insufficient_prana_response()
-        
+
         self.prana -= 4
-        
+
         # Retrieve similar harmonization scenarios
         similar = self.chitta.retrieve_similar_setups(market_state, top_k=3)
-        
+
         # Build harmonization prompt
         prompt = self._build_harmonization_prompt(signals, market_state, similar)
-        
+
         # Generate LLM response
         llm_response = self.llm.generate(prompt, self.system_prompt)
-        
+
         # Parse response
         return self._parse_harmonization_response(llm_response, signals)
-    
+
     def _build_harmonization_prompt(
-        self, 
-        signals: List[Dict], 
-        market_state: Any,
-        similar_scenarios: list
+        self, signals: List[Dict], market_state: Any, similar_scenarios: list
     ) -> str:
         """Build prompt for harmonizing signals"""
         prompt = f"""
@@ -139,18 +132,20 @@ Prijs: {getattr(market_state, 'price', 0):.2f}
 
 SIGNALEN VAN ELEMENTEN:
 """
-        
+
         for signal in signals:
             prompt += f"\n[{signal['element'].upper()}] {signal['agent_name']}\n"
             prompt += f"  Action: {signal['action']}, Confidence: {signal['confidence']:.2f}\n"
             prompt += f"  Reasoning: {signal['reasoning'][:100]}...\n"
-        
+
         # Add similar scenarios from memory
         if similar_scenarios:
-            prompt += f"\nVERGELIJKBARE SCENARIOS (uit geheugen):\n"
+            prompt += "\nVERGELIJKBARE SCENARIOS (uit geheugen):\n"
             for scenario in similar_scenarios[:3]:
-                prompt += f"- Result: ${scenario.net_pnl:.2f}, Harmony: {scenario.harmony_score:.2f}\n"
-        
+                prompt += (
+                    f"- Result: ${scenario.net_pnl:.2f}, Harmony: {scenario.harmony_score:.2f}\n"
+                )
+
         prompt += """
 
 JE TAAK:
@@ -162,45 +157,50 @@ JE TAAK:
 Geef je harmonisatie als JSON.
 """
         return prompt
-    
+
     def _parse_harmonization_response(
-        self, 
-        llm_response: Dict, 
-        signals: List[Dict]
+        self, llm_response: Dict, signals: List[Dict]
     ) -> Dict[str, Any]:
         """Parse LLM harmonization response"""
         try:
-            text = llm_response.get('text', '{}')
+            text = llm_response.get("text", "{}")
             import json
+
             parsed = json.loads(text)
-            
+
             return {
-                'agent_name': self.name,
-                'element': self.element,
-                'action': parsed.get('action', 'HOLD'),
-                'confidence': parsed.get('confidence', 0.5),
-                'strength': 1.0 if parsed.get('action') == 'BUY' else -1.0 if parsed.get('action') == 'SELL' else 0.0,
-                'reasoning': parsed.get('reasoning', 'No reasoning'),
-                'harmony_score': parsed.get('harmony_score', 0.5),
-                'coherence': parsed.get('coherence', 0.5),
-                'is_maya': parsed.get('is_maya', False),
-                'guna_state': parsed.get('guna_state', {'sattva': 0.33, 'rajas': 0.33, 'tamas': 0.34}),
-                'metadata': {
-                    'element_weights': parsed.get('element_weights', {}),
-                    'participating_agents': [s['agent_name'] for s in signals]
-                }
+                "agent_name": self.name,
+                "element": self.element,
+                "action": parsed.get("action", "HOLD"),
+                "confidence": parsed.get("confidence", 0.5),
+                "strength": (
+                    1.0
+                    if parsed.get("action") == "BUY"
+                    else -1.0 if parsed.get("action") == "SELL" else 0.0
+                ),
+                "reasoning": parsed.get("reasoning", "No reasoning"),
+                "harmony_score": parsed.get("harmony_score", 0.5),
+                "coherence": parsed.get("coherence", 0.5),
+                "is_maya": parsed.get("is_maya", False),
+                "guna_state": parsed.get(
+                    "guna_state", {"sattva": 0.33, "rajas": 0.33, "tamas": 0.34}
+                ),
+                "metadata": {
+                    "element_weights": parsed.get("element_weights", {}),
+                    "participating_agents": [s["agent_name"] for s in signals],
+                },
             }
         except Exception as e:
             # Fallback
             return {
-                'agent_name': self.name,
-                'element': self.element,
-                'action': 'HOLD',
-                'confidence': 0.3,
-                'strength': 0.0,
-                'reasoning': f'Harmonization parse error: {str(e)[:50]}',
-                'harmony_score': 0.5,
-                'coherence': 0.3,
-                'is_maya': True,
-                'metadata': {'error': 'parse_failed'}
+                "agent_name": self.name,
+                "element": self.element,
+                "action": "HOLD",
+                "confidence": 0.3,
+                "strength": 0.0,
+                "reasoning": f"Harmonization parse error: {str(e)[:50]}",
+                "harmony_score": 0.5,
+                "coherence": 0.3,
+                "is_maya": True,
+                "metadata": {"error": "parse_failed"},
             }
