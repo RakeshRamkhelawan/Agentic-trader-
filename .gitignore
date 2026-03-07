@@ -48,6 +48,37 @@ desktop.ini
 # ============================================================================
 *.log
 logs/
+
+# ============================================================================
+# LARGE LOCAL DATA FILES (keep local, don't commit)
+# ============================================================================
+# Audit logs - can be very large (>100MB)
+backend/data/audit_logs/*.json
+backend/data/audit_csv/*.csv
+
+# Backtest archives
+backtest_results/
+backtest_logs/
+data/backtest_archive/
+
+# Large models
+models/*.pt
+models/**/*.pt
+*.pt
+
+# Bandit results
+backend/bandit_results.json
+
+# Exchange API test data
+bitvavo_*.json
+revolut_*.json
+
+# Agent logs (large CSVs)
+backend/data/agent_logs/*.csv
+v12_*.csv
+v13_*.csv
+agent_decisions_*.csv
+godtier_*.csv
 *.out
 *.tmp
 *.temp
