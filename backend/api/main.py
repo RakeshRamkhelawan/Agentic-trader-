@@ -29,6 +29,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from backend.api.auth_api import router as auth_router
+from backend.api.competitions_api import router as competitions_router
+from backend.api.kyc_api import router as kyc_router
 from backend.api.metrics_middleware import MetricsMiddleware
 from backend.api.paper_trading_api import router as paper_trading_router
 from backend.api.paper_trading_ws_simple import router as paper_trading_ws_router
@@ -43,6 +46,7 @@ from backend.api.routers import (
     trading,
 )
 from backend.api.security_middleware import SecurityHeadersMiddleware
+from backend.api.user_settings_api import router as user_settings_router
 from backend.api.websocket_endpoints import router as websocket_router
 from backend.core.config.settings import settings
 from backend.observability.metrics import metrics_endpoint
@@ -135,6 +139,12 @@ app.include_router(ooda.router, prefix="/api/v1")
 app.include_router(federated.router, prefix="/api/v1")
 app.include_router(websocket_router)
 app.include_router(paper_trading_ws_router)
+
+# Authentication & User Management routers
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(kyc_router, prefix="/api/v1/kyc", tags=["KYC"])
+app.include_router(user_settings_router, prefix="/api/v1/settings", tags=["Settings"])
+app.include_router(competitions_router, prefix="/api/v1/competitions", tags=["Competitions"])
 
 # Include MCP ToolBroker router (if available)
 try:

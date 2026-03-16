@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   User, 
   Bell, 
@@ -7,7 +7,8 @@ import {
   Globe, 
   Key,
   Smartphone,
-  Mail
+  Mail,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,22 +18,159 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { settingsApi, type UserProfile, type NotificationSettings, type SecuritySettings, type UserPreferences } from '@/lib/api';
 
 export function Settings() {
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: true,
-    trades: true,
-    priceAlerts: true,
-    agentUpdates: false,
-    marketing: false,
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Profile state
+  const [profile, setProfile] = useState<UserProfile>({
+    first_name: '',
+    last_name: '',
+    email: null,
   });
 
-  const [security, setSecurity] = useState({
-    twoFactor: true,
-    biometric: false,
-    withdrawalConfirm: true,
+  // Notifications state
+  const [notifications, setNotifications] = useState<NotificationSettings>({
+    order_executions: true,
+    price_alerts: true,
+    ai_signals: true,
+    security_alerts: true,
   });
+
+  // Security state
+  const [security, setSecurity] = useState<SecuritySettings>({
+    two_factor_enabled: false,
+    last_password_change: null,
+  });
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Trading preferences state
+  const [preferences, setPreferences] = useState<UserPreferences>({
+    default_currency: 'EUR',
+    default_exchange: 'bitvavo',
+  });
+
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      setIsLoading(true);
+      const allSettings = await settingsApi.getAll();
+      
+      setProfile(allSettings.profile);
+      setNotifications(allSettings.notifications);
+      setSecurity(allSettings.security);
+      setPreferences(allSettings.preferences);
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+      toast.error('Failed to load settings');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Profile handlers
+  const handleSaveProfile = async () => {
+    try {
+      setIsSaving(true);
+      await settingsApi.updateProfile(profile);
+      toast.success('Profile saved successfully');
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      toast.error('Failed to save profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Notification handlers
+  const handleSaveNotifications = async () => {
+    try {
+      setIsSaving(true);
+      await settingsApi.updateNotifications(notifications);
+      toast.success('Notification preferences saved');
+    } catch (error) {
+      console.error('Failed to save notifications:', error);
+      toast.error('Failed to save notification preferences');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Security handlers
+  const handleToggle2FA = async (enabled: boolean) => {
+    try {
+      setIsSaving(true);
+      await settingsApi.toggle2FA(enabled);
+      setSecurity({ ...security, two_factor_enabled: enabled });
+      toast.success(`Two-factor authentication ${enabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Failed to toggle 2FA:', error);
+      toast.error('Failed to update 2FA settings');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await settingsApi.changePassword(currentPassword, newPassword);
+      toast.success('Password changed successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('Failed to change password:', error);
+      toast.error('Failed to change password');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Trading preferences handlers
+  const handleSavePreferences = async () => {
+    try {
+      setIsSaving(true);
+      await settingsApi.updatePreferences(preferences);
+      toast.success('Trading preferences saved');
+    } catch (error) {
+      console.error('Failed to save preferences:', error);
+      toast.error('Failed to save trading preferences');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span>Loading settings...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-4xl">
@@ -74,7 +212,9 @@ export function Settings() {
             <CardContent className="space-y-6">
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-trade-purple to-trade-blue flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">T</span>
+                  <span className="text-2xl font-bold text-white">
+                    {profile.first_name?.charAt(0) || profile.email?.charAt(0) || 'T'}
+                  </span>
                 </div>
                 <div>
                   <Button variant="outline" className="border-[#262626] bg-transparent text-white hover:bg-[#1A1A1A]">
@@ -86,36 +226,48 @@ export function Settings() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-white">Display Name</Label>
+                  <Label className="text-white">First Name</Label>
                   <Input 
-                    defaultValue="Trader" 
+                    value={profile.first_name}
+                    onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+                    placeholder="Enter your first name"
+                    className="bg-[#0A0A0A] border-[#262626] text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white">Last Name</Label>
+                  <Input 
+                    value={profile.last_name}
+                    onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                    placeholder="Enter your last name"
                     className="bg-[#0A0A0A] border-[#262626] text-white"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-white">Email</Label>
                   <Input 
-                    defaultValue="trader@example.com" 
+                    value={profile.email || ''}
+                    onChange={(e) => setProfile({ ...profile, email: e.target.value || null })}
+                    placeholder="Enter your email"
                     className="bg-[#0A0A0A] border-[#262626] text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-white">Phone</Label>
+                  <Label className="text-white">Display Name</Label>
                   <Input 
-                    placeholder="+1 (555) 000-0000" 
-                    className="bg-[#0A0A0A] border-[#262626] text-white"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white">Timezone</Label>
-                  <Input 
-                    defaultValue="UTC-5 (Eastern Time)" 
-                    className="bg-[#0A0A0A] border-[#262626] text-white"
+                    value={`${profile.first_name} ${profile.last_name}`.trim() || 'Trader'}
+                    disabled
+                    className="bg-[#0A0A0A] border-[#262626] text-white opacity-50"
                   />
                 </div>
               </div>
 
-              <Button className="bg-trade-blue hover:bg-trade-blue/90 text-white">
+              <Button 
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="bg-trade-blue hover:bg-trade-blue/90 text-white"
+              >
+                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Save Changes
               </Button>
             </CardContent>
@@ -142,8 +294,8 @@ export function Settings() {
                     </div>
                   </div>
                   <Switch 
-                    checked={notifications.email}
-                    onCheckedChange={(v) => setNotifications({...notifications, email: v})}
+                    checked={notifications.order_executions}
+                    onCheckedChange={(v) => setNotifications({...notifications, order_executions: v})}
                   />
                 </div>
 
@@ -156,8 +308,8 @@ export function Settings() {
                     </div>
                   </div>
                   <Switch 
-                    checked={notifications.push}
-                    onCheckedChange={(v) => setNotifications({...notifications, push: v})}
+                    checked={notifications.ai_signals}
+                    onCheckedChange={(v) => setNotifications({...notifications, ai_signals: v})}
                   />
                 </div>
 
@@ -170,8 +322,8 @@ export function Settings() {
                     </div>
                   </div>
                   <Switch 
-                    checked={notifications.trades}
-                    onCheckedChange={(v) => setNotifications({...notifications, trades: v})}
+                    checked={notifications.order_executions}
+                    onCheckedChange={(v) => setNotifications({...notifications, order_executions: v})}
                   />
                 </div>
 
@@ -184,8 +336,8 @@ export function Settings() {
                     </div>
                   </div>
                   <Switch 
-                    checked={notifications.priceAlerts}
-                    onCheckedChange={(v) => setNotifications({...notifications, priceAlerts: v})}
+                    checked={notifications.price_alerts}
+                    onCheckedChange={(v) => setNotifications({...notifications, price_alerts: v})}
                   />
                 </div>
 
@@ -198,11 +350,34 @@ export function Settings() {
                     </div>
                   </div>
                   <Switch 
-                    checked={notifications.agentUpdates}
-                    onCheckedChange={(v) => setNotifications({...notifications, agentUpdates: v})}
+                    checked={notifications.ai_signals}
+                    onCheckedChange={(v) => setNotifications({...notifications, ai_signals: v})}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-3 border-b border-[#262626]">
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-white font-medium">Security Alerts</p>
+                      <p className="text-sm text-muted-foreground">Important security notifications</p>
+                    </div>
+                  </div>
+                  <Switch 
+                    checked={notifications.security_alerts}
+                    onCheckedChange={(v) => setNotifications({...notifications, security_alerts: v})}
                   />
                 </div>
               </div>
+
+              <Button 
+                onClick={handleSaveNotifications}
+                disabled={isSaving}
+                className="bg-trade-blue hover:bg-trade-blue/90 text-white"
+              >
+                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Preferences
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -227,47 +402,62 @@ export function Settings() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-trade-green/10 text-trade-green border-trade-green/20">
-                      Enabled
+                    <Badge className={security.two_factor_enabled 
+                      ? "bg-trade-green/10 text-trade-green border-trade-green/20" 
+                      : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"}>
+                      {security.two_factor_enabled ? 'Enabled' : 'Disabled'}
                     </Badge>
                     <Switch 
-                      checked={security.twoFactor}
-                      onCheckedChange={(v) => setSecurity({...security, twoFactor: v})}
+                      checked={security.two_factor_enabled}
+                      onCheckedChange={handleToggle2FA}
                     />
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between py-3 border-b border-[#262626]">
-                  <div className="flex items-center gap-3">
-                    <Shield className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-white font-medium">Biometric Login</p>
-                      <p className="text-sm text-muted-foreground">Use fingerprint or face recognition</p>
-                    </div>
-                  </div>
-                  <Switch 
-                    checked={security.biometric}
-                    onCheckedChange={(v) => setSecurity({...security, biometric: v})}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between py-3 border-b border-[#262626]">
-                  <div className="flex items-center gap-3">
-                    <Wallet className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-white font-medium">Withdrawal Confirmation</p>
-                      <p className="text-sm text-muted-foreground">Require email confirmation for withdrawals</p>
-                    </div>
-                  </div>
-                  <Switch 
-                    checked={security.withdrawalConfirm}
-                    onCheckedChange={(v) => setSecurity({...security, withdrawalConfirm: v})}
-                  />
-                </div>
               </div>
 
-              <div className="pt-4">
-                <Button variant="outline" className="border-[#262626] bg-transparent text-white hover:bg-[#1A1A1A]">
+              <Separator className="bg-[#262626]" />
+
+              <div className="space-y-4">
+                <h4 className="text-white font-medium">Change Password</h4>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label className="text-white">Current Password</Label>
+                    <Input 
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Enter current password"
+                      className="bg-[#0A0A0A] border-[#262626] text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white">New Password</Label>
+                    <Input 
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password (min 8 characters)"
+                      className="bg-[#0A0A0A] border-[#262626] text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white">Confirm New Password</Label>
+                    <Input 
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="bg-[#0A0A0A] border-[#262626] text-white"
+                    />
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={handleChangePassword}
+                  disabled={isSaving || !currentPassword || !newPassword || !confirmPassword}
+                  className="border-[#262626] bg-transparent text-white hover:bg-[#1A1A1A]"
+                >
+                  {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Change Password
                 </Button>
               </div>
@@ -287,18 +477,29 @@ export function Settings() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-white">Default Order Type</Label>
-                  <Input 
-                    defaultValue="Limit" 
-                    className="bg-[#0A0A0A] border-[#262626] text-white"
-                  />
+                  <Label className="text-white">Default Currency</Label>
+                  <select
+                    value={preferences.default_currency}
+                    onChange={(e) => setPreferences({ ...preferences, default_currency: e.target.value as 'EUR' | 'USD' | 'GBP' })}
+                    className="w-full h-10 px-3 rounded-md bg-[#0A0A0A] border border-[#262626] text-white focus:outline-none focus:ring-2 focus:ring-trade-blue"
+                  >
+                    <option value="EUR">EUR (€)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="GBP">GBP (£)</option>
+                  </select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-white">Default Time in Force</Label>
-                  <Input 
-                    defaultValue="GTC (Good Till Canceled)" 
-                    className="bg-[#0A0A0A] border-[#262626] text-white"
-                  />
+                  <Label className="text-white">Default Exchange</Label>
+                  <select
+                    value={preferences.default_exchange}
+                    onChange={(e) => setPreferences({ ...preferences, default_exchange: e.target.value as 'binance' | 'kraken' | 'coinbase' | 'bitvavo' })}
+                    className="w-full h-10 px-3 rounded-md bg-[#0A0A0A] border border-[#262626] text-white focus:outline-none focus:ring-2 focus:ring-trade-blue"
+                  >
+                    <option value="bitvavo">Bitvavo</option>
+                    <option value="binance">Binance</option>
+                    <option value="kraken">Kraken</option>
+                    <option value="coinbase">Coinbase</option>
+                  </select>
                 </div>
               </div>
 
@@ -330,7 +531,12 @@ export function Settings() {
                 </div>
               </div>
 
-              <Button className="bg-trade-blue hover:bg-trade-blue/90 text-white">
+              <Button 
+                onClick={handleSavePreferences}
+                disabled={isSaving}
+                className="bg-trade-blue hover:bg-trade-blue/90 text-white"
+              >
+                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Save Preferences
               </Button>
             </CardContent>

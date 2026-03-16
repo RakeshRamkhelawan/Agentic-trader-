@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Trophy, Target, Share2, TrendingUp, Calendar, Users, Award, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Trophy, Target, Share2, TrendingUp, Calendar, Users, Award, Zap, Loader2 } from 'lucide-react';
 import Leaderboard from '../components/competitions/Leaderboard';
 import TournamentCard from '../components/competitions/TournamentCard';
 import StrategyShare from '../components/competitions/StrategyShare';
 import LeagueBadge from '../components/competitions/LeagueBadge';
+import { competitionsApi } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface Tournament {
   id: string;
@@ -27,7 +29,7 @@ interface LeagueInfo {
   max_members: number;
 }
 
-const Competitions: React.FC = () => {
+const Competitions = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'tournaments' | 'leaderboard' | 'strategies'>('overview');
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [leagueInfo, setLeagueInfo] = useState<Record<string, LeagueInfo>>({});
@@ -50,16 +52,15 @@ const Competitions: React.FC = () => {
     setLoading(true);
     try {
       // Fetch tournaments
-      const tourneyRes = await fetch('/api/competitions/tournaments?status=active');
-      const tourneyData = await tourneyRes.json();
+      const tourneyData = await competitionsApi.getTournaments('active');
       setTournaments(tourneyData.tournaments || []);
 
       // Fetch league info
-      const leagueRes = await fetch('/api/competitions/league-info');
-      const leagueData = await leagueRes.json();
+      const leagueData = await competitionsApi.getLeagueInfo();
       setLeagueInfo(leagueData);
     } catch (error) {
       console.error('Failed to fetch competition data:', error);
+      toast.error('Failed to load competition data');
     } finally {
       setLoading(false);
     }
@@ -67,23 +68,16 @@ const Competitions: React.FC = () => {
 
   const handleEnterTournament = async (tournamentId: string) => {
     try {
-      const response = await fetch('/api/competitions/enter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          competitor_id: 'current-user-id',
-          tournament_id: tournamentId,
-        }),
-      });
-      const data = await response.json();
+      const data = await competitionsApi.enterTournament('current-user-id', tournamentId);
       if (data.success) {
-        alert('Successfully entered tournament!');
+        toast.success('Successfully entered tournament!');
         fetchData();
       } else {
-        alert(data.error || 'Failed to enter tournament');
+        toast.error(data.error || 'Failed to enter tournament');
       }
     } catch (error) {
       console.error('Failed to enter tournament:', error);
+      toast.error('Failed to enter tournament');
     }
   };
 
@@ -97,10 +91,10 @@ const Competitions: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse space-y-4">
-            <div className="h-32 bg-slate-900 rounded-lg" />
-            <div className="h-64 bg-slate-900 rounded-lg" />
+        <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center gap-2 text-slate-400">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Loading competitions...</span>
           </div>
         </div>
       </div>

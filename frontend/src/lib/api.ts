@@ -837,6 +837,216 @@ export const federatedApi = {
 };
 
 // ============================================================================
+// SETTINGS API  →  /api/v1/settings/...
+// ============================================================================
+
+export interface UserProfile {
+  first_name: string;
+  last_name: string;
+  email: string | null;
+}
+
+export interface NotificationSettings {
+  order_executions: boolean;
+  price_alerts: boolean;
+  ai_signals: boolean;
+  security_alerts: boolean;
+}
+
+export interface SecuritySettings {
+  two_factor_enabled: boolean;
+  last_password_change: string | null;
+}
+
+export interface AppearanceSettings {
+  theme: 'dark' | 'light' | 'system';
+}
+
+export interface UserPreferences {
+  default_currency: 'EUR' | 'USD' | 'GBP';
+  default_exchange: 'binance' | 'kraken' | 'coinbase' | 'bitvavo';
+}
+
+export interface AllSettings {
+  profile: UserProfile;
+  notifications: NotificationSettings;
+  security: SecuritySettings;
+  appearance: AppearanceSettings;
+  preferences: UserPreferences;
+  api_keys: Array<{
+    id: string;
+    exchange: string;
+    api_key_masked: string;
+    created_at: string;
+    is_valid: boolean;
+  }>;
+}
+
+export const settingsApi = {
+  /** GET /api/v1/settings/all - Get all settings at once */
+  getAll: async (): Promise<AllSettings> => {
+    const response = await api.get<AllSettings>('/settings/all');
+    return response.data;
+  },
+
+  /** GET /api/v1/settings/profile */
+  getProfile: async (): Promise<UserProfile> => {
+    const response = await api.get<UserProfile>('/settings/profile');
+    return response.data;
+  },
+
+  /** PUT /api/v1/settings/profile */
+  updateProfile: async (profile: UserProfile): Promise<UserProfile> => {
+    const response = await api.put<UserProfile>('/settings/profile', profile);
+    return response.data;
+  },
+
+  /** GET /api/v1/settings/notifications */
+  getNotifications: async (): Promise<NotificationSettings> => {
+    const response = await api.get<NotificationSettings>('/settings/notifications');
+    return response.data;
+  },
+
+  /** PUT /api/v1/settings/notifications */
+  updateNotifications: async (settings: NotificationSettings): Promise<NotificationSettings> => {
+    const response = await api.put<NotificationSettings>('/settings/notifications', settings);
+    return response.data;
+  },
+
+  /** GET /api/v1/settings/security */
+  getSecurity: async (): Promise<SecuritySettings> => {
+    const response = await api.get<SecuritySettings>('/settings/security');
+    return response.data;
+  },
+
+  /** POST /api/v1/settings/security/2fa */
+  toggle2FA: async (enabled: boolean): Promise<{ enabled: boolean }> => {
+    const response = await api.post<{ enabled: boolean }>('/settings/security/2fa', null, {
+      params: { enabled },
+    });
+    return response.data;
+  },
+
+  /** POST /api/v1/settings/security/password */
+  changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean }> => {
+    const response = await api.post<{ success: boolean }>('/settings/security/password', null, {
+      params: { current_password: currentPassword, new_password: newPassword },
+    });
+    return response.data;
+  },
+
+  /** GET /api/v1/settings/appearance */
+  getAppearance: async (): Promise<AppearanceSettings> => {
+    const response = await api.get<AppearanceSettings>('/settings/appearance');
+    return response.data;
+  },
+
+  /** PUT /api/v1/settings/appearance */
+  updateAppearance: async (settings: AppearanceSettings): Promise<AppearanceSettings> => {
+    const response = await api.put<AppearanceSettings>('/settings/appearance', settings);
+    return response.data;
+  },
+
+  /** GET /api/v1/settings/preferences */
+  getPreferences: async (): Promise<UserPreferences> => {
+    const response = await api.get<UserPreferences>('/settings/preferences');
+    return response.data;
+  },
+
+  /** PUT /api/v1/settings/preferences */
+  updatePreferences: async (prefs: UserPreferences): Promise<UserPreferences> => {
+    const response = await api.put<UserPreferences>('/settings/preferences', prefs);
+    return response.data;
+  },
+
+  /** GET /api/v1/settings/api-keys */
+  getApiKeys: async () => {
+    const response = await api.get('/settings/api-keys');
+    return response.data;
+  },
+
+  /** POST /api/v1/settings/api-keys */
+  addApiKey: async (data: { exchange: string; api_key: string; api_secret: string; passphrase?: string }) => {
+    const response = await api.post('/settings/api-keys', data);
+    return response.data;
+  },
+
+  /** DELETE /api/v1/settings/api-keys/{keyId} */
+  deleteApiKey: async (keyId: string) => {
+    const response = await api.delete(`/settings/api-keys/${keyId}`);
+    return response.data;
+  },
+};
+
+// ============================================================================
+// COMPETITIONS API  →  /api/v1/competitions/...
+// ============================================================================
+
+export interface Tournament {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  participants: number;
+  max_participants: number;
+  ends_at: string;
+  time_remaining: string;
+  entry_fee: number;
+  prize_pool: number;
+}
+
+export interface LeagueInfo {
+  tier: string;
+  name: string;
+  min_points: number;
+  max_points: number;
+  current_members: number;
+  max_members: number;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  competitor_id: string;
+  name: string;
+  tier: string;
+  points: number;
+  win_rate: number;
+  total_pnl: number;
+}
+
+export const competitionsApi = {
+  /** GET /api/v1/competitions/tournaments?status=active|upcoming */
+  getTournaments: async (status: 'active' | 'upcoming' = 'active'): Promise<{ tournaments: Tournament[]; count: number }> => {
+    const response = await api.get('/competitions/tournaments', { params: { status } });
+    return response.data;
+  },
+
+  /** GET /api/v1/competitions/league-info */
+  getLeagueInfo: async (): Promise<Record<string, LeagueInfo>> => {
+    const response = await api.get('/competitions/league-info');
+    return response.data;
+  },
+
+  /** POST /api/v1/competitions/enter */
+  enterTournament: async (competitorId: string, tournamentId: string): Promise<{ success: boolean; error?: string }> => {
+    const response = await api.post('/competitions/enter', { competitor_id: competitorId, tournament_id: tournamentId });
+    return response.data;
+  },
+
+  /** GET /api/v1/competitions/leaderboard */
+  getLeaderboard: async (tier?: string, limit: number = 20): Promise<{ entries: LeaderboardEntry[]; total: number }> => {
+    const response = await api.get('/competitions/leaderboard', { params: { tier, limit } });
+    return response.data;
+  },
+
+  /** GET /api/v1/competitions/badges/{competitorId} */
+  getBadges: async (competitorId: string): Promise<{ competitor_id: string; badges: string[]; total_badges: number }> => {
+    const response = await api.get(`/competitions/badges/${competitorId}`);
+    return response.data;
+  },
+};
+
+// ============================================================================
 // ERROR HANDLING
 // ============================================================================
 

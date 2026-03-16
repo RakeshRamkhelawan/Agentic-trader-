@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown, DollarSign, Activity, Zap, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
@@ -22,7 +23,7 @@ function StatCard({
   delay,
   isEmpty = false,
   emptyHint,
-}:  {
+}: {
   title: string;
   value: string;
   change: string;
@@ -81,6 +82,9 @@ function StatCard({
 }
 
 export function Dashboard() {
+  const navigate = useNavigate();
+  const orderPanelRef = useRef<HTMLDivElement>(null);
+
   const {
     portfolioValue,
     portfolioPnl,
@@ -108,7 +112,7 @@ export function Dashboard() {
     const id = setInterval(() => fetchAssets(), 30_000);
     return () => clearInterval(id);
   }, [fetchAssets]);
-  
+
   // Top Movers refresh every 60 seconds (1 minute)
   useEffect(() => {
     const id = setInterval(() => {
@@ -140,11 +144,15 @@ export function Dashboard() {
           <Button
             variant='outline'
             className='border-[#262626] bg-transparent text-white hover:bg-[#1A1A1A] hover:border-[#333333]'
+            onClick={() => navigate('/portfolio')}
           >
             <Activity className='w-4 h-4 mr-2' />
             Analytics
           </Button>
-          <Button className='bg-trade-blue hover:bg-trade-blue/90 text-white shadow-glow-blue'>
+          <Button
+            className='bg-trade-blue hover:bg-trade-blue/90 text-white shadow-glow-blue'
+            onClick={() => orderPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+          >
             <Zap className='w-4 h-4 mr-2' />
             Quick Trade
           </Button>
@@ -204,7 +212,9 @@ export function Dashboard() {
           <MarketOverview />
         </div>
         <div className='space-y-6'>
-          <OrderPanel />
+          <div ref={orderPanelRef}>
+            <OrderPanel />
+          </div>
           <AIAdvisor />
           <AIAgentStatus />
           <RecentActivity />

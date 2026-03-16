@@ -9,7 +9,8 @@ import {
   LogOut,
   Zap,
   ChevronRight,
-  Bot
+  Bot,
+  Trophy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { id: 'terminal', label: 'Terminal', icon: Terminal, path: '/terminal' },
   { id: 'history', label: 'History', icon: History, path: '/history' },
   { id: 'paper-trading', label: 'Live Paper Trading', icon: Bot, path: '/paper-trading' },
+  { id: 'competitions', label: 'Competitions', icon: Trophy, path: '/competitions' },
   { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
 ];
 

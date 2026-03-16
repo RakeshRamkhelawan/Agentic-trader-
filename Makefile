@@ -3,7 +3,7 @@
 # Convenient shortcuts for Docker operations
 # =============================================================================
 
-.PHONY: help start stop restart build logs clean reset test migrate dev prod
+.PHONY: help start stop restart build logs clean reset test migrate dev prod format format-check lint security-check
 
 # Default target
 .DEFAULT_GOAL := help
@@ -116,3 +116,36 @@ volume-ls: ## List volumes
 
 network-ls: ## List networks
 	@docker network ls | grep agentic || docker network ls
+
+# Code Quality Commands
+format: ## Auto-format all Python files (black + isort)
+	@echo "$(BLUE)Formatting Python code...$(NC)"
+	@black backend/ --line-length=100
+	@isort backend/ --profile=black --line-length=100
+	@echo "$(GREEN)✓ Formatting complete$(NC)"
+
+format-check: ## Check formatting without making changes
+	@echo "$(BLUE)Checking Python formatting...$(NC)"
+	@black backend/ --line-length=100 --check --diff
+	@isort backend/ --profile=black --line-length=100 --check-only --diff
+	@echo "$(GREEN)✓ Formatting check complete$(NC)"
+
+lint: ## Run all linters (ruff, black check, isort check)
+	@echo "$(BLUE)Running linters...$(NC)"
+	@ruff check backend/ --fix --exit-non-zero-on-fix
+	@black backend/ --line-length=100 --check --diff
+	@isort backend/ --profile=black --line-length=100 --check-only --diff
+	@echo "$(GREEN)✓ Linting complete$(NC)"
+
+security-check: ## Run security scans (bandit + pip-audit)
+	@echo "$(BLUE)Running security scans...$(NC)"
+	@bandit -r backend/ --exclude backend/tests/ -f json -o bandit-report.json || true
+	@pip-audit --requirement requirements/base.txt || true
+	@echo "$(GREEN)✓ Security scan complete$(NC)"
+
+quality-gate: ## Run all quality checks (format, lint, security)
+	@echo "$(BLUE)Running full quality gate...$(NC)"
+	@make format
+	@make lint
+	@make security-check
+	@echo "$(GREEN)✓ All quality checks passed$(NC)"

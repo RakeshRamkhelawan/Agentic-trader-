@@ -20,7 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.models.user_settings import User, UserPreferences, UserProfile
+from backend.db_models.user_settings import User, UserPreferences, UserProfile
 
 # Password hashing
 try:

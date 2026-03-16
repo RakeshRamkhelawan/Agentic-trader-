@@ -21,7 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps import get_admin_db
-from backend.models.user_settings import User
+from backend.db_models.user_settings import User
 
 # Check if KYC is enabled (disabled by default)
 ENABLE_KYC = os.getenv("ENABLE_KYC", "false").lower() == "true"

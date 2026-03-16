@@ -11,11 +11,11 @@ from cryptography.fernet import Fernet
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from backend.models.user_settings import APIKey as DBAPIKey
-from backend.models.user_settings import User as DBUser
-from backend.models.user_settings import UserPreferences as DBUserPreferences
-from backend.models.user_settings import UserProfile as DBUserProfile
-from backend.models.user_settings import UserSecurity as DBUserSecurity
+from backend.db_models.user_settings import APIKey as DBAPIKey
+from backend.db_models.user_settings import User as DBUser
+from backend.db_models.user_settings import UserPreferences as DBUserPreferences
+from backend.db_models.user_settings import UserProfile as DBUserProfile
+from backend.db_models.user_settings import UserSecurity as DBUserSecurity
 from backend.schemas.user_settings import (
     AppearanceSettings,
     BrokerAPIKey,
@@ -131,6 +131,9 @@ class UserSettingsService:
         result = await db.execute(select(DBUserSecurity).where(DBUserSecurity.user_id == user.id))
         db_sec = result.scalars().first()
 
+        if db_sec is None:
+            return SecuritySettings(two_factor_enabled=False, last_password_change=None)
+
         return SecuritySettings(
             two_factor_enabled=db_sec.two_factor_enabled,
             last_password_change=db_sec.last_password_change,
@@ -141,7 +144,13 @@ class UserSettingsService:
         result = await db.execute(select(DBUserSecurity).where(DBUserSecurity.user_id == user.id))
         db_sec = result.scalars().first()
 
-        db_sec.two_factor_enabled = enabled
+        if db_sec is None:
+            # Create security record if it doesn't exist
+            db_sec = DBUserSecurity(user_id=user.id, two_factor_enabled=enabled)
+            db.add(db_sec)
+        else:
+            db_sec.two_factor_enabled = enabled
+
         await db.commit()
         return enabled
 

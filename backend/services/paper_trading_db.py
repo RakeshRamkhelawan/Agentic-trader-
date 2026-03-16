@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database import get_db_session
+from backend.core.database import SessionManager
 from backend.db_models.paper_trading import (
     AgentPerformance,
     ChittaExperience,
@@ -35,16 +35,20 @@ class PaperTradingDB:
 
     def __init__(self):
         self.session: Optional[AsyncSession] = None
+        self.session_manager = None
 
     async def __aenter__(self):
         """Async context manager entry."""
-        self.session = await get_db_session().__aenter__()
+        self.session_manager = SessionManager.system_admin_session()
+        self.session = await self.session_manager.__aenter__()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
-        if self.session:
-            await self.session.__aexit__(exc_type, exc_val, exc_tb)
+        if self.session_manager:
+            await self.session_manager.__aexit__(exc_type, exc_val, exc_tb)
+            self.session = None
+            self.session_manager = None
 
     # ========================================================================
     # Session Management
@@ -90,7 +94,7 @@ class PaperTradingDB:
             .where(
                 and_(
                     PaperTradingSession.account_id == account_id,
-                    PaperTradingSession.is_active == True,
+                    PaperTradingSession.is_active.is_(True),
                 )
             )
             .order_by(desc(PaperTradingSession.started_at))
@@ -294,17 +298,25 @@ class PaperTradingDB:
         performance = result.scalar_one_or_none()
 
         if not performance:
-            performance = AgentPerformance(agent=agent, symbol=symbol, regime=regime)
+            performance = AgentPerformance(
+                agent=agent,
+                symbol=symbol,
+                regime=regime,
+                total_trades=0,
+                winning_trades=0,
+                losing_trades=0,
+                total_pnl=0.0,
+            )
             self.session.add(performance)
 
         # Update stats
-        performance.total_trades += 1
+        performance.total_trades = (performance.total_trades or 0) + 1
         if was_win:
-            performance.winning_trades += 1
+            performance.winning_trades = (performance.winning_trades or 0) + 1
         else:
-            performance.losing_trades += 1
+            performance.losing_trades = (performance.losing_trades or 0) + 1
 
-        performance.total_pnl += pnl
+        performance.total_pnl = (performance.total_pnl or 0) + pnl
         performance.win_rate = (
             performance.winning_trades / performance.total_trades * 100
             if performance.total_trades > 0
