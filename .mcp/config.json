@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/spec/main/schema/mcp-schema.json",
+  "mcpServers": {
+    "codegraphcontext": {
+      "name": "CodeGraphContext",
+      "description": "Code graph analysis and context extraction for efficient AI prompts",
+      "command": "codegraphcontext-mcp",
+      "args": ["--port", "8000"],
+      "transport": "stdio",
+      "enabled": true,
+      "tools": [
+        {
+          "name": "get_call_graph",
+          "description": "Get call graph for a specific function"
+        },
+        {
+          "name": "get_symbol_context",
+          "description": "Get context around a symbol (function, class, variable)"
+        },
+        {
+          "name": "query_graph",
+          "description": "Query the code graph with custom criteria"
+        }
+      ],
+      "env": {
+        "CODEGRAPH_ROOT": "${workspaceFolder}",
+        "CODEGRAPH_CACHE": "${workspaceFolder}/.cache/codegraph"
+      }
+    }
+  },
+  "settings": {
+    "autoStart": true,
+    "logLevel": "info",
+    "timeout": 30000
+  }
+}

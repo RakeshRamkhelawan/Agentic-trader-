@@ -19,6 +19,8 @@
 10. [Security Considerations](#security-considerations)
 11. [Common Patterns](#common-patterns)
 12. [Troubleshooting](#troubleshooting)
+13. [MCP Server Integration](#mcp-server-integration)
+14. [Additional Resources](#additional-resources)
 
 ---
 
@@ -999,6 +1001,123 @@ pre-commit run --all-files
 
 ---
 
+## MCP Server Integration
+
+The Agentic Trader Platform supports MCP (Model Context Protocol) servers for enhanced AI capabilities. MCP allows AI agents to access external tools, query code graphs, and maintain context efficiently.
+
+### What is MCP?
+
+MCP is an open standard for connecting AI assistants with:
+- **Code Graph Analysis** - Navigate code relationships efficiently
+- **External APIs** - Secure access to trading data and services
+- **Specialized Tools** - Domain-specific utilities (VaR calculations, charting)
+- **Context Management** - Token-efficient context preservation
+
+### Available MCP Servers
+
+#### CodeGraphContext (Recommended)
+
+Provides intelligent code analysis for large-scale development.
+
+**Capabilities:**
+- Query call graphs for specific functions
+- Extract context around symbols (functions, classes)
+- Filter code by relevance to minimize token usage
+
+**Setup:**
+
+1. Install the server:
+   ```bash
+   pip install codegraphcontext
+   ```
+
+2. Start the MCP server:
+   ```bash
+   codegraphcontext-mcp --port 8000
+   ```
+
+3. Configure in your IDE (configuration in `.mcp/config.json`)
+
+### IDE Configuration
+
+#### Antigravity IDE
+
+1. Open **MCP Servers** → **Manage MCP Servers**
+2. Click **View raw config**
+3. Paste the configuration from `.mcp/config.json`
+4. Save and refresh
+
+#### VS Code / Cursor
+
+Add to `.vscode/settings.json`:
+```json
+{
+  "mcp.servers": {
+    "codegraphcontext": {
+      "command": "codegraphcontext-mcp",
+      "args": ["--port", "8000"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+#### Kimi Code CLI / Other Editors
+
+Use the configuration in `.mcp/config.json` and reference it in your editor's MCP settings.
+
+### Using MCP in Development
+
+Once configured, you can use MCP tools in prompts:
+
+```
+@codegraphcontext: show call graph for function `calculate_var`
+```
+
+Or:
+
+```
+@codegraphcontext: get context for class `RiskManager`
+```
+
+### Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `.mcp/config.json` | Main MCP server configuration |
+| `.mcp/README.md` | MCP setup documentation |
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `CODEGRAPH_ROOT` | Root directory for code analysis |
+| `CODEGRAPH_CACHE` | Cache directory for graph data |
+| `MCP_LOG_LEVEL` | MCP logging level (debug/info/warn) |
+
+### Troubleshooting
+
+**Server won't start:**
+```bash
+# Check if port is available
+lsof -i :8000
+
+# Or use a different port
+codegraphcontext-mcp --port 8001
+```
+
+**Connection refused:**
+- Verify the server is running: `curl http://localhost:8000/mcp/config`
+- Check firewall settings
+- Ensure the port matches your configuration
+
+**Tools not available:**
+- Refresh the MCP server list in your IDE
+- Check `.mcp/config.json` syntax
+- Review IDE MCP logs for errors
+
+---
+
 ## Additional Resources
 
 ### Documentation
@@ -1012,6 +1131,7 @@ pre-commit run --all-files
 | `PORT_ALLOCATION_SSOT.md` | Port allocation guide |
 | `docs/guides/QUICK_START.md` | Detailed setup guide |
 | `docs/operations/DOCKER.md` | Docker operations |
+| `.mcp/README.md` | MCP server configuration |
 
 ### External References
 
