@@ -1,55 +1,154 @@
+# =============================================================================
+# DEPENDABOT CONFIGURATION
+# Automated dependency updates for Agentic Trader Platform
+# =============================================================================
+
 version: 2
+
 updates:
-  # Python dependencies
+  # -----------------------------------------------------------------------------
+  # Python Dependencies (pip)
+  # -----------------------------------------------------------------------------
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
     open-pull-requests-limit: 10
+    reviewers:
+      - "RakeshRamkhelawan"
+    assignees:
+      - "RakeshRamkhelawan"
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps(dev)"
+      include: "scope"
+    # Group related updates to reduce PR noise
+    groups:
+      security-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+      minor-patch-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Ignore major version updates that might break compatibility
+      # These should be handled manually with proper testing
+      - dependency-name: "sqlalchemy"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pydantic"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "fastapi"
+        update-types: ["version-update:semver-major"]
+
+  # -----------------------------------------------------------------------------
+  # Python Dependencies (requirements folder)
+  # -----------------------------------------------------------------------------
+  - package-ecosystem: "pip"
+    directory: "/requirements"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 5
     reviewers:
       - "RakeshRamkhelawan"
     labels:
       - "dependencies"
       - "python"
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "deps"
+      prefix-development: "deps(dev)"
       include: "scope"
 
-  # Frontend dependencies
+  # -----------------------------------------------------------------------------
+  # Node.js Dependencies (Frontend)
+  # -----------------------------------------------------------------------------
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
     open-pull-requests-limit: 10
     reviewers:
+      - "RakeshRamkhelawan"
+    assignees:
       - "RakeshRamkhelawan"
     labels:
       - "dependencies"
       - "javascript"
+      - "frontend"
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "deps"
+      prefix-development: "deps(dev)"
       include: "scope"
+    groups:
+      security-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+      minor-patch-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # React major versions require careful migration
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      # TypeScript major versions may have breaking changes
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
+  # -----------------------------------------------------------------------------
   # GitHub Actions
+  # -----------------------------------------------------------------------------
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
     open-pull-requests-limit: 5
     reviewers:
       - "RakeshRamkhelawan"
     labels:
       - "dependencies"
       - "github-actions"
+      - "ci-cd"
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "ci"
       include: "scope"
 
-  # Docker
+  # -----------------------------------------------------------------------------
+  # Docker Dependencies
+  # -----------------------------------------------------------------------------
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
     open-pull-requests-limit: 5
     reviewers:
       - "RakeshRamkhelawan"
@@ -57,5 +156,23 @@ updates:
       - "dependencies"
       - "docker"
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "deps"
+      include: "scope"
+
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "RakeshRamkhelawan"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "frontend"
+    commit-message:
+      prefix: "deps"
       include: "scope"

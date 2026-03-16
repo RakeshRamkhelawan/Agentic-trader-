@@ -56,12 +56,12 @@ jobs:
       - name: Frontend Build Test
         working-directory: frontend
         run: |
-          npm ci --legacy-peer-deps
+          npm ci
           npm run build 2>&1 | tee build.log || {
-            echo "⚠️ Build had warnings/errors but continuing..."
+            echo "❌ Build failed"
             tail -50 build.log
+            exit 1
           }
-        continue-on-error: true
 
       - name: Quick Health Check
         run: |
@@ -172,13 +172,13 @@ jobs:
         continue-on-error: true
 
   # ============================================================================
-  # JOB 4: Security Scan (Non-blocking)
+  # JOB 4: Security Scan (Blocking)
   # ============================================================================
   security-scan:
     name: Security Scan
     needs: quick-checks
     runs-on: ubuntu-latest
-    continue-on-error: true  # Don't fail the pipeline
+    # Blocking - code must pass security checks
 
     steps:
       - name: Checkout Code
@@ -187,8 +187,11 @@ jobs:
       - name: Run Bandit (Python Security)
         run: |
           pip install bandit
-          bandit -r backend/ --exclude backend/tests -f json -o bandit-report.json || true
-          echo "Bandit scan complete (non-blocking)"
+          bandit -r backend/ --exclude backend/tests -f json -o bandit-report.json || {
+            echo "❌ Bandit found security issues"
+            exit 1
+          }
+          echo "✅ Bandit scan complete"
 
       - name: Upload Bandit Report
         uses: actions/upload-artifact@v4
@@ -202,9 +205,10 @@ jobs:
         working-directory: frontend
         run: |
           npm audit --audit-level=high || {
-            echo "⚠️ NPM audit found issues - review recommended"
+            echo "❌ NPM audit found high/critical vulnerabilities"
+            exit 1
           }
-        continue-on-error: true
+          echo "✅ NPM audit passed"
 
   # ============================================================================
   # JOB 5: Container Security Scan (Trivy)
@@ -249,13 +253,13 @@ jobs:
           exit-code: '1'  # Fail on CRITICAL vulnerabilities only
 
   # ============================================================================
-  # JOB 6: Code Quality (Non-blocking)
+  # JOB 6: Code Quality (Blocking)
   # ============================================================================
   code-quality:
     name: Code Quality Check
     needs: quick-checks
     runs-on: ubuntu-latest
-    continue-on-error: true  # Don't fail the pipeline
+    # Blocking - code must pass quality checks
 
     steps:
       - name: Checkout Code
@@ -273,18 +277,28 @@ jobs:
       - name: Check Code Formatting
         run: |
           echo "Running Black (formatting check)..."
-          black --check backend/ 2>&1 || {
-            echo "⚠️ Code formatting issues found. Run 'black backend/' to fix."
+          black --check backend/ --line-length=100 2>&1 || {
+            echo "❌ Code formatting issues found. Run 'make format' to fix."
+            exit 1
           }
+          echo "✅ Black formatting check passed"
+
+          echo "Running isort (import sorting check)..."
+          isort --check-only backend/ --profile=black --line-length=100 2>&1 || {
+            echo "❌ Import sorting issues found. Run 'make format' to fix."
+            exit 1
+          }
+          echo "✅ isort check passed"
 
           echo "Running Ruff (linting)..."
           ruff check backend/ --output-format=github 2>&1 || {
-            echo "⚠️ Linting issues found. Review recommended."
+            echo "❌ Linting issues found. Run 'ruff check backend/ --fix' to fix auto-fixable issues."
+            exit 1
           }
-        continue-on-error: true
+          echo "✅ Ruff linting passed"
 
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
+      - name: Comment on PR (Success)
+        if: github.event_name == 'pull_request' && success()
         uses: actions/github-script@v7
         with:
           script: |
@@ -292,9 +306,20 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '👋 Code quality check complete. Review any formatting suggestions above.'
+              body: '✅ Code quality check passed! All formatting and linting checks successful.'
             })
-        continue-on-error: true
+
+      - name: Comment on PR (Failure)
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ Code quality check failed. Please run `make quality-gate` locally to fix issues before pushing.'
+            })
 
   # ============================================================================
   # JOB 6: Deploy to Production (Manual Only)

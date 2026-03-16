@@ -1,34 +1,46 @@
-# Agentic Trader Platform - Frontend Production Dockerfile
-# Multi-stage build for optimized React app
+# =============================================================================
+# AGENTIC TRADER - FRONTEND PRODUCTION DOCKERFILE
+# Multi-stage build with Nginx - Consolidated Version
+# =============================================================================
 
+# -----------------------------------------------------------------------------
 # Stage 1: Build
+# -----------------------------------------------------------------------------
 FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (use npm install instead of npm ci due to lockfile issues)
-RUN npm install --legacy-peer-deps
+# Install dependencies using npm ci for deterministic builds
+# Requires package-lock.json to be present and in sync
+RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Build the app
+# Build the application
 RUN npm run build
 
-# Stage 2: Production with Nginx
+# -----------------------------------------------------------------------------
+# Stage 2: Production (Nginx)
+# -----------------------------------------------------------------------------
 FROM nginx:alpine
 
-# Copy built files from builder
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Install curl for health checks
+RUN apk add --no-cache curl
 
-# Copy nginx config
+# Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port
+# Copy built files from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Create health check endpoint
+RUN echo '<!DOCTYPE html><html><body>OK</body></html>' > /usr/share/nginx/html/health
+
+# Expose ports
 EXPOSE 80
 
 # Default environment variables (can be overridden at runtime)
@@ -56,6 +68,10 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo 'fi' >> /start.sh && \
     echo 'exec nginx -g "daemon off;"' >> /start.sh && \
     chmod +x /start.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost/health || exit 1
 
 # Start with the script
 CMD ["/start.sh"]
