@@ -22,7 +22,10 @@ except ImportError:
 
 class TestDataNormalizer:
     def setup_method(self):
-        self.symbol_map = {("bybit", "BTCUSDT"): "BTC/USDT", ("kraken", "XBT/USDT"): "BTC/USDT"}
+        self.symbol_map = {
+            ("bybit", "BTCUSDT"): "BTC/USDT",
+            ("kraken", "XBT/USDT"): "BTC/USDT",
+        }
         if StandardNormalizer:
             self.normalizer = StandardNormalizer(self.symbol_map)
 

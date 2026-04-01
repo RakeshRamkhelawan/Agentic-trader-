@@ -14,7 +14,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-
 # ============================================================================
 # Taak 1.1: Auth Dependency Tests (deps.py)
 # ============================================================================
@@ -330,7 +329,9 @@ class TestSettingsDatabaseUrl:
                 JWT_SECRET_KEY="a" * 40,
                 _env_file=None,
             )
-            assert "postgresql+asyncpg://localhost:5432/agentic_trader" in s.DATABASE_URL
+            assert (
+                "postgresql+asyncpg://localhost:5432/agentic_trader" in s.DATABASE_URL
+            )
         finally:
             if env_backup is not None:
                 os.environ["DATABASE_URL"] = env_backup

@@ -280,7 +280,9 @@ class CognitiveMindService:
             kelly_size = self.portfolio_risk_calculator.calculate_kelly_size(0.55, 1.5, 1.0)
             _, guna_mult = self.portfolio_risk_calculator.get_guna_risk_params(current_guna)
             modulated_size = self.portfolio_risk_calculator.modulated_size(
-                kelly_size, guna_mult, risk_eval.capacity if "risk_eval" in locals() else 0.1
+                kelly_size,
+                guna_mult,
+                risk_eval.capacity if "risk_eval" in locals() else 0.1,
             )
 
             final_size = min(candidate_intent.size, modulated_size)

@@ -45,7 +45,9 @@ async def test_orchestrator_propagates_tenant_context_from_message():
     async def check_quota_side_effect(tid):
         # At this point, context var should be set
         current = get_current_tenant_optional()
-        assert current == "tenant-TEST-123", f"Context was {current}, expected tenant-TEST-123"
+        assert (
+            current == "tenant-TEST-123"
+        ), f"Context was {current}, expected tenant-TEST-123"
         return
 
     orchestrator._check_quota.side_effect = check_quota_side_effect

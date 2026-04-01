@@ -86,7 +86,9 @@ class LiveBinanceDataTest:
         logger.info("")
 
         # Phase 1: OBSERVE - DataScout with LIVE Binance data
-        self.data_scout = DataScoutAgent(data_source=self.ccxt_data_adapter)  # <- LIVE DATA SOURCE
+        self.data_scout = DataScoutAgent(
+            data_source=self.ccxt_data_adapter
+        )  # <- LIVE DATA SOURCE
         logger.info("[SUCCESS] DataScout initialized (LIVE BINANCE DATA)")
 
         # Phase 2: ORIENT - Analyst
@@ -103,7 +105,9 @@ class LiveBinanceDataTest:
 
         # Phase 5: ACT - OrderExecutor (NO adapter = PAPER TRADING)
         self.executor = OrderExecutor(
-            exchange_adapter=None, max_slippage_bps=50, order_timeout=30  # <- PAPER TRADING MODE
+            exchange_adapter=None,
+            max_slippage_bps=50,
+            order_timeout=30,  # <- PAPER TRADING MODE
         )
         logger.info("[SUCCESS] OrderExecutor initialized (PAPER TRADING MODE)")
         logger.info("")
@@ -119,7 +123,10 @@ class LiveBinanceDataTest:
 
         # Fetch LIVE data from Binance
         observation = await self.data_scout.observe(
-            symbol=self.symbol, trace_id=trace_id, include_orderbook=True, include_funding=True
+            symbol=self.symbol,
+            trace_id=trace_id,
+            include_orderbook=True,
+            include_funding=True,
         )
 
         logger.info("LIVE Market Observation:")
@@ -187,7 +194,9 @@ class LiveBinanceDataTest:
         logger.info("")
 
         proposal = await self.trader.propose_trade(
-            orientation=orientation, current_price=current_price, strategy_id="live_momentum_v1"
+            orientation=orientation,
+            current_price=current_price,
+            strategy_id="live_momentum_v1",
         )
 
         if proposal is None:
@@ -235,7 +244,9 @@ class LiveBinanceDataTest:
         logger.info("")
 
         assessment = await self.risk_manager.assess_risk(
-            proposal=proposal, current_regime=regime, current_position_size=0.0  # No open positions
+            proposal=proposal,
+            current_regime=regime,
+            current_position_size=0.0,  # No open positions
         )
 
         logger.info("Risk Assessment:")
@@ -313,10 +324,14 @@ class LiveBinanceDataTest:
             self.orientation = await self.run_orient_phase(self.observation)
 
             # Phase 3: DECIDE
-            self.proposal = await self.run_decide_phase(self.orientation, self.observation.price)
+            self.proposal = await self.run_decide_phase(
+                self.orientation, self.observation.price
+            )
 
             # Phase 4: HARMONIZE
-            self.assessment = await self.run_harmonize_phase(self.proposal, self.orientation.regime)
+            self.assessment = await self.run_harmonize_phase(
+                self.proposal, self.orientation.regime
+            )
 
             # Phase 5: ACT (PAPER TRADING)
             self.outcome = await self.run_act_phase(self.proposal, self.assessment)
@@ -328,12 +343,20 @@ class LiveBinanceDataTest:
             logger.info("")
             logger.info("[SUCCESS] Summary:")
             logger.info("   Data Source: LIVE BINANCE")
-            logger.info("   Market: %s @ $%,.2f", self.observation.symbol, self.observation.price)
+            logger.info(
+                "   Market: %s @ $%,.2f",
+                self.observation.symbol,
+                self.observation.price,
+            )
             logger.info("   Decision: %s", self.proposal.side.upper())
             logger.info("   Risk Decision: %s", self.assessment.decision.value)
             logger.info(
                 "   Paper Trade: %s",
-                "Success" if self.outcome and self.outcome.success else "Skipped/Failed",
+                (
+                    "Success"
+                    if self.outcome and self.outcome.success
+                    else "Skipped/Failed"
+                ),
             )
             logger.info("")
 

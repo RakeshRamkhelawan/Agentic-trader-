@@ -1,6 +1,8 @@
 import pytest
 
-from backend.agents.elemental_research import ElementalResearch  # Reuse Air for routing test
+from backend.agents.elemental_research import (  # Reuse Air for routing test
+    ElementalResearch,
+)
 from backend.agents.elemental_router import ElementalRouter
 from backend.agents.elemental_valuation import ElementalValuation
 
@@ -27,7 +29,10 @@ def router(earth_agent, air_agent):
 async def test_earth_valuation(earth_agent):
     """Test Earth agent valuation logic."""
     # Undervalued (Buy signal)
-    data = {"data": {"price": 100, "ma_200": 110}, "strategy": {"direction": "bullish"}}  # 10% gap
+    data = {
+        "data": {"price": 100, "ma_200": 110},
+        "strategy": {"direction": "bullish"},
+    }  # 10% gap
     result = await earth_agent.process_signal(data)
 
     assert result["valuation_gap"] == 10.0

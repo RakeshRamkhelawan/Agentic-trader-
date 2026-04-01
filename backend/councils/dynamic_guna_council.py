@@ -57,7 +57,6 @@ class DynamicGunaCouncil:
         # Enriched features from Sprint 1-4 (optional)
         rsi = market_data.get("rsi", 50.0)
         adx = market_data.get("adx", 20.0)
-        regime = market_data.get("regime", "SIDEWAYS")
 
         # Calculate scores
         sattva_score = self._calc_sattva(vol, spread, vol_ratio)
@@ -70,7 +69,9 @@ class DynamicGunaCouncil:
             guna = GunaVector(sattva=0.33, rajas=0.33, tamas=0.34)
         else:
             guna = GunaVector(
-                sattva=sattva_score / total, rajas=rajas_score / total, tamas=tamas_score / total
+                sattva=sattva_score / total,
+                rajas=rajas_score / total,
+                tamas=tamas_score / total,
             )
 
         # === Samkhya Interaction Logic (v7) ===

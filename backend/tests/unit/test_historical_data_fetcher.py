@@ -196,7 +196,9 @@ class TestMultiSymbolFetcher:
         with patch.object(HistoricalDataFetcher, "initialize", new=AsyncMock()):
             with patch.object(HistoricalDataFetcher, "close", new=AsyncMock()):
                 with patch.object(
-                    HistoricalDataFetcher, "download", new=AsyncMock(return_value=mock_df)
+                    HistoricalDataFetcher,
+                    "download",
+                    new=AsyncMock(return_value=mock_df),
                 ):
                     results = await fetcher.fetch_multiple(configs, max_concurrent=2)
 
@@ -216,8 +218,12 @@ class TestIntegration:
         # Create test CSV in expected format
         with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             f.write("timestamp,open,high,low,close,volume,datetime\n")
-            f.write("1609459200000,29000.0,29100.0,28900.0,29050.0,100.0,2021-01-01 00:00:00\n")
-            f.write("1609462800000,29050.0,29200.0,29000.0,29150.0,150.0,2021-01-01 01:00:00\n")
+            f.write(
+                "1609459200000,29000.0,29100.0,28900.0,29050.0,100.0,2021-01-01 00:00:00\n"
+            )
+            f.write(
+                "1609462800000,29050.0,29200.0,29000.0,29150.0,150.0,2021-01-01 01:00:00\n"
+            )
             csv_path = f.name
 
         # Load with HistoricalCSVData

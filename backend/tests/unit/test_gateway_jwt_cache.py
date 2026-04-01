@@ -226,7 +226,9 @@ class TestJWTManagerInvalidateCache:
     """Test cases for cache invalidation."""
 
     @pytest.mark.asyncio
-    async def test_invalidate_cache_removes_entry(self, jwt_manager, sample_token_payload):
+    async def test_invalidate_cache_removes_entry(
+        self, jwt_manager, sample_token_payload
+    ):
         """Test that cache invalidation removes entry."""
         token = jwt.encode(sample_token_payload, "test-secret-key", algorithm="HS256")
 

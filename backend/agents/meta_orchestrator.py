@@ -192,7 +192,7 @@ Output JSON met improvements, weight_adjustments, lessons.
 
         # 1. Global Reflection - Check collective health
         self.logger.info("Starting collective deliberation...")
-        collective_reflection = self.global_chitta.reflect_collective(n_trades=50)
+        _collective_reflection = self.global_chitta.reflect_collective(n_trades=50)
 
         # 2. Check if global pause needed
         should_pause, pause_reason = self.global_chitta.should_pause_global_trading(
@@ -309,7 +309,12 @@ Output JSON met improvements, weight_adjustments, lessons.
                     timestamp,
                     agent.agent_name,
                     symbol,
-                    {"action": "HOLD", "confidence": 0.0, "reasoning": f"Error: {e}", "weight": 0},
+                    {
+                        "action": "HOLD",
+                        "confidence": 0.0,
+                        "reasoning": f"Error: {e}",
+                        "weight": 0,
+                    },
                 )
                 return None
 

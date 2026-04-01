@@ -4,7 +4,6 @@ Tests voor Analyst Agent.
 Test orientation generation, regime detection, en confidence calculation.
 """
 
-
 import pytest
 
 from backend.agents.analyst_agent import AnalystAgent
@@ -38,7 +37,9 @@ class TestAnalystAgent:
         """Technical indicators zijn berekend."""
         agent = AnalystAgent()
 
-        orientation = await agent.orient(observation=sample_observation, core_sentiment=0.5)
+        orientation = await agent.orient(
+            observation=sample_observation, core_sentiment=0.5
+        )
 
         indicators = orientation.indicators
         assert "rsi" in indicators
@@ -56,7 +57,10 @@ class TestAnalystAgent:
             symbol="BTC/USDT",
             price=50000.0,
             volume=100.0,
-            orderbook={"bids": [[49500, 10.0]], "asks": [[50500, 10.0]]},  # Grote spread
+            orderbook={
+                "bids": [[49500, 10.0]],
+                "asks": [[50500, 10.0]],
+            },  # Grote spread
         )
 
         orientation = await agent.orient(obs, core_sentiment=0.5)
@@ -68,7 +72,9 @@ class TestAnalystAgent:
         """Confidence combineert core en technical."""
         agent = AnalystAgent(core_confidence_weight=0.7)
 
-        orientation = await agent.orient(observation=sample_observation, core_sentiment=0.8)
+        orientation = await agent.orient(
+            observation=sample_observation, core_sentiment=0.8
+        )
 
         # Confidence zou tussen core_sentiment en technical zijn
         # met weighting naar core_sentiment
@@ -79,7 +85,9 @@ class TestAnalystAgent:
         """Orient werkt zonder orderbook data."""
         agent = AnalystAgent()
 
-        obs = Observation(symbol="BTC/USDT", price=50000.0, volume=100.0, orderbook={})  # Leeg
+        obs = Observation(
+            symbol="BTC/USDT", price=50000.0, volume=100.0, orderbook={}
+        )  # Leeg
 
         orientation = await agent.orient(obs, core_sentiment=0.5)
 

@@ -64,7 +64,11 @@ async def get_trading_timings() -> dict[str, Any]:
             },
         ],
         "avoid_periods": [
-            {"start": "2026-02-23T12:00:00Z", "end": "2026-02-23T13:30:00Z", "reason": "Rahu Kalam"}
+            {
+                "start": "2026-02-23T12:00:00Z",
+                "end": "2026-02-23T13:30:00Z",
+                "reason": "Rahu Kalam",
+            }
         ],
     }
 

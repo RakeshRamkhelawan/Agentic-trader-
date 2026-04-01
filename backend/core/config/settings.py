@@ -1,7 +1,7 @@
 import os
 from functools import cached_property
 
-from pydantic import Field  # Explicit import
+from pydantic import Field, model_validator  # Explicit import
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -102,10 +102,22 @@ class Settings(BaseSettings):
         description="Auth0 tenant domain (e.g., your-app.auth0.com)",
     )
     AUTH0_API_AUDIENCE: str = Field(
-        default="", validation_alias="AUTH0_API_AUDIENCE", description="Auth0 API identifier"
+        default="",
+        validation_alias="AUTH0_API_AUDIENCE",
+        description="Auth0 API identifier",
     )
     AUTH0_ISSUER: str = Field(
-        default="", validation_alias="AUTH0_ISSUER", description="Auth0 token issuer URL"
+        default="",
+        validation_alias="AUTH0_ISSUER",
+        description="Auth0 token issuer URL",
+    )
+    AUTH0_CLIENT_ID: str = Field(
+        default="", validation_alias="AUTH0_CLIENT_ID", description="Auth0 client ID"
+    )
+    AUTH0_CLIENT_SECRET: str = Field(
+        default="",
+        validation_alias="AUTH0_CLIENT_SECRET",
+        description="Auth0 client secret",
     )
     AUTH0_ALGORITHM: str = Field(default="RS256", validation_alias="AUTH0_ALGORITHM")
 
@@ -147,6 +159,23 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore", case_sensitive=True
     )
+
+    @model_validator(mode="after")
+    def validate_auth(self) -> "Settings":
+        if not self.AUTH_DISABLED:
+            missing = []
+            if not self.AUTH0_DOMAIN:
+                missing.append("AUTH0_DOMAIN")
+            if not self.AUTH0_CLIENT_ID:
+                missing.append("AUTH0_CLIENT_ID")
+            if not self.AUTH0_CLIENT_SECRET:
+                missing.append("AUTH0_CLIENT_SECRET")
+            # If audience is also strictly required, we could add it
+            if missing:
+                raise ValueError(
+                    f"When AUTH_DISABLED is False, the following Auth0 settings must be provided: {', '.join(missing)}"
+                )
+        return self
 
     @cached_property
     def _vault_manager(self):

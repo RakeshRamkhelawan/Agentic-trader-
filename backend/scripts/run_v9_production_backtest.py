@@ -408,7 +408,9 @@ class TechnicalAnalyzer:
             plus_dm = max(high_diff, 0) if high_diff > low_diff else 0
             minus_dm = max(low_diff, 0) if low_diff > high_diff else 0
             tr = max(
-                highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])
+                highs[i] - lows[i],
+                abs(highs[i] - closes[i - 1]),
+                abs(lows[i] - closes[i - 1]),
             )
             plus_dms.append(plus_dm)
             minus_dms.append(minus_dm)
@@ -525,7 +527,11 @@ class MayaDetector:
         self.params = params
 
     def detect(
-        self, signals: List[AgentSignal], market: MarketState, coherence: float, guna: GunaVector
+        self,
+        signals: List[AgentSignal],
+        market: MarketState,
+        coherence: float,
+        guna: GunaVector,
     ) -> Tuple[bool, str]:
         """
         Returns: (is_maya, reason)
@@ -567,7 +573,10 @@ class MayaDetector:
         bullish_strong = sum(1 for s in signals if s.strength > 0.6)
         bearish_strong = sum(1 for s in signals if s.strength < -0.6)
         if bullish_strong > 0 and bearish_strong > 0:
-            return True, f"Conflicting strong signals: {bullish_strong} bull, {bearish_strong} bear"
+            return (
+                True,
+                f"Conflicting strong signals: {bullish_strong} bull, {bearish_strong} bear",
+            )
 
         return False, "Signal clear (Viveka validated)"
 
@@ -617,13 +626,22 @@ class AirAgent(ElementalAgent):
 
     def __init__(self, params: HyperParameters):
         super().__init__(
-            "Air_Regime", ElementType.AIR, {"sattva": 0.4, "rajas": 0.4, "tamas": 0.2}, params
+            "Air_Regime",
+            ElementType.AIR,
+            {"sattva": 0.4, "rajas": 0.4, "tamas": 0.2},
+            params,
         )
 
     def analyze(self, market: MarketState) -> AgentSignal:
         if not self.consume_prana():
             return AgentSignal(
-                self.name, self.element, ActionType.HOLD, 0.3, 0.0, "Low prana", {"depleted": True}
+                self.name,
+                self.element,
+                ActionType.HOLD,
+                0.3,
+                0.0,
+                "Low prana",
+                {"depleted": True},
             )
 
         if market.adx > 25:
@@ -632,7 +650,7 @@ class AirAgent(ElementalAgent):
             elif market.trend_1h < 0 and market.trend_4h < 0:
                 regime, strength = "strong_downtrend", -0.7
             else:
-                regime, strength = "trending_mixed", 0.2 if market.trend_1d > 0 else -0.2
+                regime, strength = "trending_mixed", (0.2 if market.trend_1d > 0 else -0.2)
         elif market.adx < 20:
             regime, strength = "ranging", 0.0
         else:
@@ -673,13 +691,22 @@ class FireAgent(ElementalAgent):
 
     def __init__(self, params: HyperParameters):
         super().__init__(
-            "Fire_Momentum", ElementType.FIRE, {"sattva": 0.25, "rajas": 0.6, "tamas": 0.15}, params
+            "Fire_Momentum",
+            ElementType.FIRE,
+            {"sattva": 0.25, "rajas": 0.6, "tamas": 0.15},
+            params,
         )
 
     def analyze(self, market: MarketState) -> AgentSignal:
         if not self.consume_prana(4.0):
             return AgentSignal(
-                self.name, self.element, ActionType.HOLD, 0.3, 0.0, "Low prana", {"depleted": True}
+                self.name,
+                self.element,
+                ActionType.HOLD,
+                0.3,
+                0.0,
+                "Low prana",
+                {"depleted": True},
             )
 
         momentum_score = market.momentum_1d * 20
@@ -711,7 +738,11 @@ class FireAgent(ElementalAgent):
             round(min(0.95, confidence), 3),
             round(final_strength, 3),
             f"Fire: mom={momentum_score:.2f}, OBV={obv_signal}",
-            {"momentum": momentum_score, "obv": market.obv, "volume_confirmed": volume_confirm},
+            {
+                "momentum": momentum_score,
+                "obv": market.obv,
+                "volume_confirmed": volume_confirm,
+            },
         )
 
 
@@ -720,13 +751,22 @@ class WaterAgent(ElementalAgent):
 
     def __init__(self, params: HyperParameters):
         super().__init__(
-            "Water_Trend", ElementType.WATER, {"sattva": 0.5, "rajas": 0.35, "tamas": 0.15}, params
+            "Water_Trend",
+            ElementType.WATER,
+            {"sattva": 0.5, "rajas": 0.35, "tamas": 0.15},
+            params,
         )
 
     def analyze(self, market: MarketState) -> AgentSignal:
         if not self.consume_prana():
             return AgentSignal(
-                self.name, self.element, ActionType.HOLD, 0.3, 0.0, "Low prana", {"depleted": True}
+                self.name,
+                self.element,
+                ActionType.HOLD,
+                0.3,
+                0.0,
+                "Low prana",
+                {"depleted": True},
             )
 
         trend_alignment = market.trend_1h + market.trend_4h + market.trend_1d
@@ -783,7 +823,13 @@ class EarthAgent(ElementalAgent):
     def analyze(self, market: MarketState) -> AgentSignal:
         if not self.consume_prana(2.5):
             return AgentSignal(
-                self.name, self.element, ActionType.HOLD, 0.3, 0.0, "Low prana", {"depleted": True}
+                self.name,
+                self.element,
+                ActionType.HOLD,
+                0.3,
+                0.0,
+                "Low prana",
+                {"depleted": True},
             )
 
         price = market.price
@@ -827,7 +873,11 @@ class EarthAgent(ElementalAgent):
             round(min(0.95, confidence), 3),
             round(final_strength, 3),
             f"Earth: {zone}",
-            {"zone": zone, "near_support": near_support, "near_resistance": near_resistance},
+            {
+                "zone": zone,
+                "near_support": near_support,
+                "near_resistance": near_resistance,
+            },
         )
 
 
@@ -1138,7 +1188,12 @@ class BacktestEngine:
         self.params = params
         self.analyzer = TechnicalAnalyzer()
         self.ether = EtherOrchestrator(params)
-        self.agents = [AirAgent(params), FireAgent(params), WaterAgent(params), EarthAgent(params)]
+        self.agents = [
+            AirAgent(params),
+            FireAgent(params),
+            WaterAgent(params),
+            EarthAgent(params),
+        ]
         self.risk = RiskManager(params=params)
 
     def run(self, data: Dict[str, List[Dict]], dates: List[str]) -> Dict[str, Any]:
@@ -1203,7 +1258,8 @@ class BacktestEngine:
                     and len(price_history[sym]["prices"]) >= 60
                 ):
                     sector = next(
-                        (s for s, syms in UNIVERSE_GROUPS.items() if sym in syms), "unknown"
+                        (s for s, syms in UNIVERSE_GROUPS.items() if sym in syms),
+                        "unknown",
                     )
                     ph = price_history[sym]
                     market = self.analyzer.analyze(
@@ -1283,7 +1339,7 @@ class BacktestEngine:
         return {
             "total_return_pct": (total_pnl / INITIAL_CAPITAL) * 100,
             "total_trades": total_trades,
-            "win_rate_pct": (winning_trades / total_trades * 100) if total_trades > 0 else 0,
+            "win_rate_pct": ((winning_trades / total_trades * 100) if total_trades > 0 else 0),
             "max_drawdown_pct": max_dd * 100,
             "sharpe_ratio": sharpe,
             "final_capital": equity[-1],

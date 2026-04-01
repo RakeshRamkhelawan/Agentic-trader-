@@ -227,7 +227,7 @@ class PaperTradingDB:
             "total_trades": total_trades,
             "winning_trades": winning_trades,
             "losing_trades": total_trades - winning_trades,
-            "win_rate": (winning_trades / total_trades * 100) if total_trades > 0 else 0,
+            "win_rate": ((winning_trades / total_trades * 100) if total_trades > 0 else 0),
         }
 
     # ========================================================================
@@ -282,7 +282,12 @@ class PaperTradingDB:
     # ========================================================================
 
     async def update_agent_performance(
-        self, agent: str, symbol: Optional[str], regime: Optional[str], pnl: float, was_win: bool
+        self,
+        agent: str,
+        symbol: Optional[str],
+        regime: Optional[str],
+        pnl: float,
+        was_win: bool,
     ) -> None:
         """Update agent performance metrics."""
         # Get or create performance record

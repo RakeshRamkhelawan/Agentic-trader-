@@ -67,13 +67,19 @@ async def test_research_agent_integration():
     tick2 = {"symbol": "ETH/USD", "price": 2000.0, "venue": "bybit"}
     tick3 = {"symbol": "ETH/USD", "price": 2100.0, "venue": "bybit"}  # Jump
 
-    msg1 = AgentMessage(source="orchestrator", target="research", type="TICK_DATA", payload=tick1)
+    msg1 = AgentMessage(
+        source="orchestrator", target="research", type="TICK_DATA", payload=tick1
+    )
     await agent.handle_message(msg1)
 
-    msg2 = AgentMessage(source="orchestrator", target="research", type="TICK_DATA", payload=tick2)
+    msg2 = AgentMessage(
+        source="orchestrator", target="research", type="TICK_DATA", payload=tick2
+    )
     await agent.handle_message(msg2)
 
-    msg3 = AgentMessage(source="orchestrator", target="research", type="TICK_DATA", payload=tick3)
+    msg3 = AgentMessage(
+        source="orchestrator", target="research", type="TICK_DATA", payload=tick3
+    )
     await agent.handle_message(msg3)
 
     # Verify mock_bus was called with SIGNAL

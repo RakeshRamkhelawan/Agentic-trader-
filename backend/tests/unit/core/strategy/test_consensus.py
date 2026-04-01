@@ -16,7 +16,11 @@ class TestTradingConsensusEngine:
     def test_strong_approval_all_providers(self):
         engine = TradingConsensusEngine(approval_threshold=0.5)
         votes: list[Vote] = [
-            {"provider": "technical_strategy", "score": 1.0, "reasoning": "Strong trend"},
+            {
+                "provider": "technical_strategy",
+                "score": 1.0,
+                "reasoning": "Strong trend",
+            },
             {"provider": "mtf_analyzer", "score": 1.0, "reasoning": "Macro aligned"},
             {"provider": "risk_manager", "score": 1.0, "reasoning": "Risk OK"},
         ]
@@ -30,9 +34,17 @@ class TestTradingConsensusEngine:
         engine = TradingConsensusEngine(approval_threshold=0.2)
         # Even with high scores from tech and MTF, Risk Manager veto drops approval
         votes: list[Vote] = [
-            {"provider": "technical_strategy", "score": 1.0, "reasoning": "Strong setup"},
+            {
+                "provider": "technical_strategy",
+                "score": 1.0,
+                "reasoning": "Strong setup",
+            },
             {"provider": "mtf_analyzer", "score": 1.0, "reasoning": "Macro bullish"},
-            {"provider": "risk_manager", "score": -0.9, "reasoning": "VETO: Exposure too high"},
+            {
+                "provider": "risk_manager",
+                "score": -0.9,
+                "reasoning": "VETO: Exposure too high",
+            },
         ]
 
         result = engine.evaluate_proposal(votes)
@@ -55,9 +67,21 @@ class TestTradingConsensusEngine:
         engine = TradingConsensusEngine(approval_threshold=0.5)
         # Mixed signals that don't reach 0.5 threshold
         votes: list[Vote] = [
-            {"provider": "technical_strategy", "score": 0.6, "reasoning": "Ok setup"}, # 0.6 * 0.4 = 0.24
-            {"provider": "mtf_analyzer", "score": -0.1, "reasoning": "Slight macro headwind"}, # -0.1 * 0.3 = -0.03
-            {"provider": "risk_manager", "score": 0.5, "reasoning": "Risk fine"}, # 0.5 * 0.3 = 0.15
+            {
+                "provider": "technical_strategy",
+                "score": 0.6,
+                "reasoning": "Ok setup",
+            },  # 0.6 * 0.4 = 0.24
+            {
+                "provider": "mtf_analyzer",
+                "score": -0.1,
+                "reasoning": "Slight macro headwind",
+            },  # -0.1 * 0.3 = -0.03
+            {
+                "provider": "risk_manager",
+                "score": 0.5,
+                "reasoning": "Risk fine",
+            },  # 0.5 * 0.3 = 0.15
         ]
         # Total score: 0.24 - 0.03 + 0.15 = 0.36
         # Applied weight: 0.4 + 0.3 + 0.3 = 1.0

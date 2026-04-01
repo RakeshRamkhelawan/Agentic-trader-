@@ -16,9 +16,7 @@ async def test_multi_broker_routing():
     """
     # 1. Setup ExecutionGateway with mocked exchanges
     gateway = ExecutionGateway(default_exchange_id="kraken")
-    gateway.dry_run = (
-        True  # Force dry run to avoid real keys check in execute_order (though we mock exchanges)
-    )
+    gateway.dry_run = True  # Force dry run to avoid real keys check in execute_order (though we mock exchanges)
 
     # Mock exchanges in the registry
     mock_bybit = AsyncMock()
@@ -26,7 +24,10 @@ async def test_multi_broker_routing():
 
     mock_revolut = AsyncMock()
     mock_revolut.submit_order.return_value = MagicMock(
-        order_id="rev_123", status=MagicMock(value="closed"), filled_qty=1.0, raw_response={}
+        order_id="rev_123",
+        status=MagicMock(value="closed"),
+        filled_qty=1.0,
+        raw_response={},
     )
 
     gateway.exchanges["bybit"] = mock_bybit

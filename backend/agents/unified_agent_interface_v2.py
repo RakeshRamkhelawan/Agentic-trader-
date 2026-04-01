@@ -159,11 +159,23 @@ class SelfImprovingAgentWrapper:
         rsi = market_state.get("rsi", 50)
 
         if rsi < 30:
-            return {"action": "BUY", "confidence": 0.6, "reasoning": f"RSI oversold: {rsi}"}
+            return {
+                "action": "BUY",
+                "confidence": 0.6,
+                "reasoning": f"RSI oversold: {rsi}",
+            }
         elif rsi > 70:
-            return {"action": "SELL", "confidence": 0.6, "reasoning": f"RSI overbought: {rsi}"}
+            return {
+                "action": "SELL",
+                "confidence": 0.6,
+                "reasoning": f"RSI overbought: {rsi}",
+            }
         else:
-            return {"action": "HOLD", "confidence": 0.5, "reasoning": f"RSI neutral: {rsi}"}
+            return {
+                "action": "HOLD",
+                "confidence": 0.5,
+                "reasoning": f"RSI neutral: {rsi}",
+            }
 
     def _get_recent_performance(self, performance_db: Dict = None) -> List[Dict]:
         """Get recent trades for this agent."""

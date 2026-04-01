@@ -942,7 +942,9 @@ async def multi_exchange__find_arbitrage() -> dict[str, Any]:
 
 
 @mcp.tool()
-async def multi_exchange__get_discrepancies(threshold_pct: float = 0.5) -> dict[str, Any]:
+async def multi_exchange__get_discrepancies(
+    threshold_pct: float = 0.5,
+) -> dict[str, Any]:
     """
     Find price discrepancies across exchanges.
 

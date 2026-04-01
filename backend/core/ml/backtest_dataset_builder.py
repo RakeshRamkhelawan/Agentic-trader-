@@ -244,8 +244,8 @@ class BacktestDatasetBuilder:
             "num_features": (
                 len(self.features[0][0]) if self.features and len(self.features[0]) > 0 else 0
             ),
-            "positive_labels": sum(1 for l in self.labels if l > 0) if self.labels else 0,
-            "negative_labels": sum(1 for l in self.labels if l < 0) if self.labels else 0,
+            "positive_labels": (sum(1 for l in self.labels if l > 0) if self.labels else 0),
+            "negative_labels": (sum(1 for l in self.labels if l < 0) if self.labels else 0),
         }
 
 

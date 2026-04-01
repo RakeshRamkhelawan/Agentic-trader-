@@ -195,7 +195,8 @@ async def start_paper_trading(request: StartSessionRequest):
 
     if settings.TRADING_MODE != "paper":
         raise HTTPException(
-            status_code=400, detail=f"TRADING_MODE is '{settings.TRADING_MODE}', must be 'paper'"
+            status_code=400,
+            detail=f"TRADING_MODE is '{settings.TRADING_MODE}', must be 'paper'",
         )
 
     # Check if already running

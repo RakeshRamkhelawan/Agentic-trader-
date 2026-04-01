@@ -238,7 +238,10 @@ class VectorizedElementalCalculator:
         return position_sizes
 
     def vectorized_trailing_stops(
-        self, entry_prices: np.ndarray, current_prices: np.ndarray, highest_prices: np.ndarray
+        self,
+        entry_prices: np.ndarray,
+        current_prices: np.ndarray,
+        highest_prices: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Vectorized trailing stop calculation.
@@ -390,7 +393,7 @@ async def process_symbols_batch(
             {
                 "symbol": symbol,
                 "portfolio_value": portfolio_value,
-                "vedastro_score": vedastro_scores.get(symbol, 50) if vedastro_scores else 50,
+                "vedastro_score": (vedastro_scores.get(symbol, 50) if vedastro_scores else 50),
                 "price_history": [100.0] * 20,  # Placeholder, should be actual data
             }
         )

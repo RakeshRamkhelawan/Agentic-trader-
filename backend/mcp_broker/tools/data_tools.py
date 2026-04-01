@@ -17,7 +17,11 @@ logger = logging.getLogger(__name__)
 @circuit_breaker(failure_threshold=10, timeout_seconds=30)
 @retry(max_attempts=3, initial_delay_ms=200)
 async def data_get_historical_prices(
-    symbol: str, start_date: str, end_date: str, timeframe: str = "1d", ctx: Context = None
+    symbol: str,
+    start_date: str,
+    end_date: str,
+    timeframe: str = "1d",
+    ctx: Context = None,
 ) -> dict[str, Any]:
     """
     Get historical price data.
@@ -233,7 +237,7 @@ async def data_get_market_regime(symbol: str, ctx: Context = None) -> dict[str, 
 
         return {
             "symbol": symbol,
-            "regime": "trending" if abs(current_price - sma_20) / sma_20 > 0.05 else "ranging",
+            "regime": ("trending" if abs(current_price - sma_20) / sma_20 > 0.05 else "ranging"),
             "trend": trend,
             "volatility": vol_label,
             "volatility_value": volatility,

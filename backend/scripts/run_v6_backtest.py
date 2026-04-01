@@ -167,7 +167,11 @@ class UniverseRiskManager:
         return True
 
     def add_trade(self, symbol: str, sector: str, side: str, risk_usd: float):
-        self.active_trades[symbol] = {"sector": sector, "side": side, "risk_usd": risk_usd}
+        self.active_trades[symbol] = {
+            "sector": sector,
+            "side": side,
+            "risk_usd": risk_usd,
+        }
 
     def remove_trade(self, symbol: str):
         if symbol in self.active_trades:
@@ -334,7 +338,7 @@ class PositionTracker:
         self.trades.append(
             {"date": date, "pnl": net, "side": "buy" if self.position > 0 else "sell"}
         )
-        p = self.position
+        _p = self.position
         self.position = 0.0
         return net, exit_cost
 
@@ -373,10 +377,10 @@ async def run_v6_backtest():
 
     # 2. Setup Agents
     analyzer = UnifiedMarketAnalyzer()
-    guna = DynamicGunaCouncil()
-    mind = MindCouncil()
-    body = BodyCouncil()
-    buddhi = BuddhiMind()
+    _guna = DynamicGunaCouncil()
+    _mind = MindCouncil()
+    _body = BodyCouncil()
+    _buddhi = BuddhiMind()
     # Mock councils for speed in this large loop
 
     risk_manager = UniverseRiskManager(max_total=3, max_per_sector=1)
@@ -433,7 +437,13 @@ async def run_v6_backtest():
                         symbol_metrics[sym]["wins"] += 1
                     symbol_metrics[sym]["pnl"] += pnl
                     logger.log(
-                        {"ts": date, "symbol": sym, "action": "close", "reason": reason, "pnl": pnl}
+                        {
+                            "ts": date,
+                            "symbol": sym,
+                            "action": "close",
+                            "reason": reason,
+                            "pnl": pnl,
+                        }
                     )
 
         # Step 3: Scan for Entries
@@ -449,7 +459,10 @@ async def run_v6_backtest():
                 if risk_manager.can_open(sym, sector):
                     p_hist = price_history[sym]
                     market_data = analyzer.analyze(
-                        p_hist["prices"], p_hist["vols"], p_hist["highs"], p_hist["lows"]
+                        p_hist["prices"],
+                        p_hist["vols"],
+                        p_hist["highs"],
+                        p_hist["lows"],
                     )
 
                     # Entry Filters
@@ -494,7 +507,10 @@ async def run_v6_backtest():
 
                             if pos_usd >= 200:
                                 cost = tracker.open_position(
-                                    action, pos_usd, market_data["close"], market_data["atr"]
+                                    action,
+                                    pos_usd,
+                                    market_data["close"],
+                                    market_data["atr"],
                                 )
                                 capital -= cost
                                 risk_manager.add_trade(sym, sector, action, risk_usd)

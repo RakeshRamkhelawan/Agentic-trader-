@@ -140,7 +140,6 @@ class AnalystAgentWrapper(UnifiedAgentInterface):
             rsi = market_state.get("rsi", 50)
             adx = market_state.get("adx", 20)
             regime = market_state.get("regime", "neutral")
-            price = market_state.get("price", 0)
 
             # Technical analysis logic
             action = "HOLD"

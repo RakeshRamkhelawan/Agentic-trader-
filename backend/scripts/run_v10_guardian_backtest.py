@@ -310,7 +310,12 @@ def run_v10_guardian_backtest() -> Dict[str, Any]:
                 if v10_size >= 200:
                     side = "buy" if decision.action == ActionType.BUY else "sell"
                     cost = pos.open_v10(
-                        side, v10_size, market_state.price, market_state.atr, exit_params, decision
+                        side,
+                        v10_size,
+                        market_state.price,
+                        market_state.atr,
+                        exit_params,
+                        decision,
                     )
                     capital -= cost
                     risk_manager.add_position(sym, sector, side, v10_size, 0)

@@ -108,7 +108,9 @@ class SymbolPartitioner:
 
     @staticmethod
     def adaptive(
-        symbols: list[str], historical_performance: dict[str, float], num_partitions: int
+        symbols: list[str],
+        historical_performance: dict[str, float],
+        num_partitions: int,
     ) -> list[list[str]]:
         """
         Adaptive partitioning based on historical processing times.
@@ -208,7 +210,11 @@ class ParallelBacktestEngine:
             await result_queue.put(worker_result)
 
     async def _run_symbol_backtest(
-        self, symbol: str, start_date: datetime, end_date: datetime, allocated_capital: float
+        self,
+        symbol: str,
+        start_date: datetime,
+        end_date: datetime,
+        allocated_capital: float,
     ) -> dict[str, Any]:
         """Run backtest for a single symbol."""
         trades = []
@@ -236,7 +242,8 @@ class ParallelBacktestEngine:
 
                 # Get VedAstro signal
                 signal = await self.client.call_tool(
-                    "vedastro__generate_signal", {"symbol": symbol, "current_price": price}
+                    "vedastro__generate_signal",
+                    {"symbol": symbol, "current_price": price},
                 )
 
                 vedastro_score = signal.get("score", 50)
@@ -347,7 +354,12 @@ class ParallelBacktestEngine:
         for worker_id, partition in enumerate(partitions):
             worker = asyncio.create_task(
                 self._worker_loop(
-                    worker_id, partition, start_date, end_date, initial_capital, result_queue
+                    worker_id,
+                    partition,
+                    start_date,
+                    end_date,
+                    initial_capital,
+                    result_queue,
                 )
             )
             workers.append(worker)
@@ -404,7 +416,10 @@ class ParallelBacktestEngine:
         return {
             "status": "completed",
             "symbols": symbols,
-            "date_range": {"start": start_date.isoformat(), "end": end_date.isoformat()},
+            "date_range": {
+                "start": start_date.isoformat(),
+                "end": end_date.isoformat(),
+            },
             "initial_capital": initial_capital,
             "total_trades": len(all_trades),
             "trades": all_trades,
@@ -413,9 +428,9 @@ class ParallelBacktestEngine:
             "performance": {
                 "total_time_seconds": total_time,
                 "worker_time_seconds": total_worker_time,
-                "parallel_efficiency": total_worker_time / total_time if total_time > 0 else 0,
-                "symbols_per_second": len(symbols) / total_time if total_time > 0 else 0,
-                "trades_per_second": len(all_trades) / total_time if total_time > 0 else 0,
+                "parallel_efficiency": (total_worker_time / total_time if total_time > 0 else 0),
+                "symbols_per_second": (len(symbols) / total_time if total_time > 0 else 0),
+                "trades_per_second": (len(all_trades) / total_time if total_time > 0 else 0),
             },
         }
 

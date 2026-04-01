@@ -105,7 +105,11 @@ async def execution_execute_paper_trade(
             "net_value": gross_value - order.commission,
             "timestamp": order.timestamp.isoformat(),
             "account_id": account_id,
-            "constraints_applied": ["max_2000_eur", "commission_0.05pct", "slippage_0.1pct"],
+            "constraints_applied": [
+                "max_2000_eur",
+                "commission_0.05pct",
+                "slippage_0.1pct",
+            ],
         }
 
     except Exception as e:
@@ -134,7 +138,11 @@ async def execution_execute_paper_trade(
             "net_value": net_value,
             "timestamp": datetime.utcnow().isoformat(),
             "account_id": account_id,
-            "constraints_applied": ["max_2000_eur", "commission_0.05pct", "slippage_0.1pct"],
+            "constraints_applied": [
+                "max_2000_eur",
+                "commission_0.05pct",
+                "slippage_0.1pct",
+            ],
             "note": "Mock execution for testing",
         }
 
@@ -302,4 +310,9 @@ async def execution_get_trade_history(
     except Exception as e:
         logger.warning(f"Failed to get trade history: {e}, using mock")
 
-        return {"account_id": account_id, "trades": [], "count": 0, "note": "Mock data for testing"}
+        return {
+            "account_id": account_id,
+            "trades": [],
+            "count": 0,
+            "note": "Mock data for testing",
+        }

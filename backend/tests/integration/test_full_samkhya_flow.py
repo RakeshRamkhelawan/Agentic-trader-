@@ -26,7 +26,9 @@ def mock_agent_registry():
 @pytest.fixture
 def mock_guna_quantifier():
     """Guna Quantifier met voorspelbare resultaten."""
-    quantifier = MagicMock(spec=GunaQuantifier)  # Moet een mock zijn voor assert_called_with
+    quantifier = MagicMock(
+        spec=GunaQuantifier
+    )  # Moet een mock zijn voor assert_called_with
     # Configureer de mock om een GunaVector terug te geven
     quantifier.quantify_text.return_value = GunaVector(
         sattva=0.3, rajas=0.5, tamas=0.2
@@ -91,7 +93,9 @@ def trading_system_samkhya(
 
     # In een echte setup zouden we ook de ExecutionGateway hier instantieren en injecteren
     # Voor deze E2E test, laten we de orchestrator direct de ShadowPortfolio gebruiken
-    orchestrator.agents["execution_gateway_v1"] = MagicMock()  # Mock de ExecutionGateway
+    orchestrator.agents["execution_gateway_v1"] = (
+        MagicMock()
+    )  # Mock de ExecutionGateway
     orchestrator.agents["execution_gateway_v1"].submit_order = AsyncMock(
         side_effect=shadow_portfolio.submit_order
     )
@@ -135,9 +139,7 @@ async def test_samkhya_e2e_rajasic_news_triggers_trade(
     )
 
     # --- EXTERNAL EVENT: RAJASIC NEWS ---
-    rajasic_news_text = (
-        "BREAKING NEWS: Bitcoin price surges 20% on massive trading volume. Urgent action required!"
-    )
+    rajasic_news_text = "BREAKING NEWS: Bitcoin price surges 20% on massive trading volume. Urgent action required!"
 
     # Configureer mock httpx client voor Research Agent
     mock_httpx_async_client.return_value.get.return_value = MagicMock(
@@ -228,10 +230,14 @@ async def test_samkhya_e2e_tamasic_market_blocks_trade(
     sys = trading_system_samkhya
 
     # Initiele Guna-balans forceren naar zeer Tamasic
-    sys["orchestrator"].current_guna_balance = GunaVector(sattva=0.1, rajas=0.1, tamas=0.8)
+    sys["orchestrator"].current_guna_balance = GunaVector(
+        sattva=0.1, rajas=0.1, tamas=0.8
+    )
 
     # --- EXTERNAL EVENT: RAJASIC NEWS ---
-    rajasic_news_text = "BREAKING NEWS: Huge opportunity! Market about to explode upwards!"
+    rajasic_news_text = (
+        "BREAKING NEWS: Huge opportunity! Market about to explode upwards!"
+    )
 
     # Configureer mock httpx client voor Research Agent
     mock_httpx_async_client.return_value.get.return_value = MagicMock(

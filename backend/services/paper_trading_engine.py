@@ -54,7 +54,12 @@ class TradingAgent:
 
         if self.strategy == "momentum":
             if price > price_history[-2] > price_history[-3]:
-                return {"side": OrderSide.BUY, "qty": 0.001, "confidence": 0.7, "reason": "uptrend"}
+                return {
+                    "side": OrderSide.BUY,
+                    "qty": 0.001,
+                    "confidence": 0.7,
+                    "reason": "uptrend",
+                }
             elif price < price_history[-2] < price_history[-3]:
                 return {
                     "side": OrderSide.SELL,
@@ -291,7 +296,12 @@ class LivePaperTradingProduction:
                 await self._execute_trade(exchange, symbol, agent, decision, price)
 
     async def _execute_trade(
-        self, exchange: str, symbol: str, agent: TradingAgent, decision: dict, price: float
+        self,
+        exchange: str,
+        symbol: str,
+        agent: TradingAgent,
+        decision: dict,
+        price: float,
     ):
         """Execute trade."""
         side = decision["side"]

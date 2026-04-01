@@ -158,10 +158,10 @@ class TradePredictor:
             "atr": self._calculate_atr(prices),
             # Momentum
             "rsi": self._calculate_rsi(prices),
-            "momentum_10": (prices[-1] - prices[-10]) / prices[-10] if len(prices) >= 10 else 0,
+            "momentum_10": ((prices[-1] - prices[-10]) / prices[-10] if len(prices) >= 10 else 0),
             # Volume
             "volume_sma_10": np.mean(volumes[-10:]) if len(volumes) >= 10 else 0,
-            "volume_ratio": volumes[-1] / np.mean(volumes[-10:]) if len(volumes) >= 10 else 1,
+            "volume_ratio": (volumes[-1] / np.mean(volumes[-10:]) if len(volumes) >= 10 else 1),
             # Price action
             "distance_from_high": (max(prices[-20:]) - prices[-1]) / prices[-1],
             "distance_from_low": (prices[-1] - min(prices[-20:])) / prices[-1],
@@ -291,11 +291,19 @@ class TradePredictor:
         rsi = features.get("rsi", 50)
         if rsi < 30:
             signals.append(
-                {"signal": "RSI_OVERSOLD", "strength": (30 - rsi) / 30, "direction": "buy"}
+                {
+                    "signal": "RSI_OVERSOLD",
+                    "strength": (30 - rsi) / 30,
+                    "direction": "buy",
+                }
             )
         elif rsi > 70:
             signals.append(
-                {"signal": "RSI_OVERBOUGHT", "strength": (rsi - 70) / 30, "direction": "sell"}
+                {
+                    "signal": "RSI_OVERBOUGHT",
+                    "strength": (rsi - 70) / 30,
+                    "direction": "sell",
+                }
             )
 
         if features.get("trend_slope", 0) > 0:

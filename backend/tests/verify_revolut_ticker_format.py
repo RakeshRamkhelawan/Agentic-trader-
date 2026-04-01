@@ -3,7 +3,9 @@ import os
 import sys
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from backend.core.config.settings import settings
 from backend.execution.exchange_adapter import ExchangeAdapter
@@ -32,7 +34,9 @@ async def test_formats():
         print(f"\nTesting format: {fmt}")
         try:
             # We use _request directly to bypass any logic in get_ticker/get_tickers
-            response = await adapter._request("GET", "/api/1.0/tickers", params={"symbols": fmt})
+            response = await adapter._request(
+                "GET", "/api/1.0/tickers", params={"symbols": fmt}
+            )
             print(f"Success! Response: {response}")
         except Exception as e:
             print(f"Failed: {e}")

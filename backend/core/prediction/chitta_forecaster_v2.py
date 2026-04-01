@@ -223,11 +223,19 @@ class ChittaForecasterV2:
 
         if predicted_trend == "down":
             shifts.append(
-                {"council": "guna", "shift": "rajas → tamas", "reason": "predicted_sell_off"}
+                {
+                    "council": "guna",
+                    "shift": "rajas → tamas",
+                    "reason": "predicted_sell_off",
+                }
             )
         elif predicted_trend == "up":
             shifts.append(
-                {"council": "guna", "shift": "tamas → rajas", "reason": "predicted_rally"}
+                {
+                    "council": "guna",
+                    "shift": "tamas → rajas",
+                    "reason": "predicted_rally",
+                }
             )
 
         return shifts

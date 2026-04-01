@@ -191,7 +191,9 @@ class ColdPathSaturator(HttpUser):
         """Trigger LLM-based anomaly detection."""
         anomaly_data = {
             "symbol": random.choice(SYMBOLS),
-            "anomaly_type": random.choice(["volume_spike", "price_gap", "pattern_break"]),
+            "anomaly_type": random.choice(
+                ["volume_spike", "price_gap", "pattern_break"]
+            ),
             "severity": random.choice(["low", "medium", "high"]),
             "timestamp": datetime.now(UTC).isoformat(),
         }

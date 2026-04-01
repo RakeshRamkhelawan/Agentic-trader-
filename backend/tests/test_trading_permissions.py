@@ -64,7 +64,9 @@ class TestTradingPermissions:
     def test_permission_denied_error_message(self):
         """PermissionDeniedError bevat context."""
         error = PermissionDeniedError(
-            user_id="user123", permission=TradingPermission.SET_AUTO, role=TradingRole.OPERATOR
+            user_id="user123",
+            permission=TradingPermission.SET_AUTO,
+            role=TradingRole.OPERATOR,
         )
 
         assert error.user_id == "user123"

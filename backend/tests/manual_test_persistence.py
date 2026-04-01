@@ -91,13 +91,17 @@ async def test_market_persistence():
     # 3. Verify in DB
     async with AsyncSessionLocal() as session:
         # Check Tick
-        result = await session.execute(select(MarketTick).where(MarketTick.symbol == "BTC-EUR"))
+        result = await session.execute(
+            select(MarketTick).where(MarketTick.symbol == "BTC-EUR")
+        )
         ticks = result.scalars().all()
         logger.info(f"Ticks in DB: {len(ticks)}")
         assert len(ticks) > 0
 
         # Check Candle
-        result = await session.execute(select(MarketCandle).where(MarketCandle.symbol == "BTC-EUR"))
+        result = await session.execute(
+            select(MarketCandle).where(MarketCandle.symbol == "BTC-EUR")
+        )
         candles = result.scalars().all()
         logger.info(f"Candles in DB: {len(candles)}")
         assert len(candles) > 0

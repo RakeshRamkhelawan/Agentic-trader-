@@ -14,7 +14,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-
 # ============================================================================
 # Taak 2.1: N+1 Query Fix Tests (user_settings.py)
 # ============================================================================
@@ -178,8 +177,13 @@ class TestFrontendConfigHardening:
 
         config_path = os.path.join(
             os.path.dirname(__file__),
-            "..", "..", "..",
-            "frontend", "src", "lib", "config.ts"
+            "..",
+            "..",
+            "..",
+            "frontend",
+            "src",
+            "lib",
+            "config.ts",
         )
         with open(config_path) as f:
             content = f.read()
@@ -195,16 +199,21 @@ class TestFrontendConfigHardening:
 
         config_path = os.path.join(
             os.path.dirname(__file__),
-            "..", "..", "..",
-            "frontend", "src", "lib", "config.ts"
+            "..",
+            "..",
+            "..",
+            "frontend",
+            "src",
+            "lib",
+            "config.ts",
         )
         with open(config_path) as f:
             content = f.read()
 
         # isDevMode must check import.meta.env.DEV
-        assert "import.meta.env.DEV && !AUTH0_DOMAIN" in content, (
-            "isDevMode should be 'import.meta.env.DEV && !AUTH0_DOMAIN'"
-        )
+        assert (
+            "import.meta.env.DEV && !AUTH0_DOMAIN" in content
+        ), "isDevMode should be 'import.meta.env.DEV && !AUTH0_DOMAIN'"
 
     def test_config_ts_no_prod_console_logs(self):
         """Console logs are wrapped in DEV check."""
@@ -212,8 +221,13 @@ class TestFrontendConfigHardening:
 
         config_path = os.path.join(
             os.path.dirname(__file__),
-            "..", "..", "..",
-            "frontend", "src", "lib", "config.ts"
+            "..",
+            "..",
+            "..",
+            "frontend",
+            "src",
+            "lib",
+            "config.ts",
         )
         with open(config_path) as f:
             lines = f.readlines()
@@ -223,11 +237,12 @@ class TestFrontendConfigHardening:
             stripped = line.strip()
             if stripped.startswith("console.log(") and not stripped.startswith("//"):
                 # Check the preceding non-empty line is an if block
-                prev_lines = [ln.strip() for ln in lines[max(0, i-5):i-1] if ln.strip()]
+                prev_lines = [
+                    ln.strip() for ln in lines[max(0, i - 5) : i - 1] if ln.strip()
+                ]
                 has_guard = any(
-                    "import.meta.env.DEV" in ln or "if (" in ln
-                    for ln in prev_lines
+                    "import.meta.env.DEV" in ln or "if (" in ln for ln in prev_lines
                 )
-                assert has_guard, (
-                    f"Line {i}: console.log not guarded by DEV check: {stripped}"
-                )
+                assert (
+                    has_guard
+                ), f"Line {i}: console.log not guarded by DEV check: {stripped}"

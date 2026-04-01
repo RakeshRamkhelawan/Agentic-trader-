@@ -355,14 +355,23 @@ class AuditCSVExporter:
                 {"metric": "decision_count", "value": info["decision_count"]},
                 {"metric": "trade_count", "value": info["trade_count"]},
                 {"metric": "rejection_count", "value": info["rejection_count"]},
-                {"metric": "agent_decisions", "value": len(self.data["agent_decisions"])},
+                {
+                    "metric": "agent_decisions",
+                    "value": len(self.data["agent_decisions"]),
+                },
                 {
                     "metric": "collective_deliberations",
                     "value": len(self.data["collective_deliberations"]),
                 },
                 {"metric": "risk_checks", "value": len(self.data["risk_checks"])},
-                {"metric": "position_sizing", "value": len(self.data["position_sizing"])},
-                {"metric": "trade_executions", "value": len(self.data["trade_executions"])},
+                {
+                    "metric": "position_sizing",
+                    "value": len(self.data["position_sizing"]),
+                },
+                {
+                    "metric": "trade_executions",
+                    "value": len(self.data["trade_executions"]),
+                },
                 {"metric": "trade_exits", "value": len(self.data["trade_exits"])},
             ]
 

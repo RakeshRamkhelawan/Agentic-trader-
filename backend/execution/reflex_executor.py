@@ -168,7 +168,9 @@ class ReflexExecutor:
         # FIX: Use deterministic hash based on symbol name for reproducible backtests
         import hashlib
 
-        symbol_hash = int(hashlib.md5(intent.symbol.encode()).hexdigest(), 16)
+        symbol_hash = int(
+            hashlib.md5(intent.symbol.encode(), usedforsecurity=False).hexdigest(), 16
+        )
         slippage_pct = 0.02 + (symbol_hash % 30) / 1000  # 0.02-0.05%
 
         # Voer order uit in portfolio
@@ -233,7 +235,9 @@ class ReflexExecutor:
                             pnl = equity - 10000.0
 
                         sync = self.synchronizer.calculate_sync(
-                            strategy_pnl=pnl, market_vol=market_vol, current_equity=equity
+                            strategy_pnl=pnl,
+                            market_vol=market_vol,
+                            current_equity=equity,
                         )
 
                         # 3. Elemental Harmony Check (Mahabhuta - Layer 3 Final Reflex)
@@ -247,7 +251,7 @@ class ReflexExecutor:
                                     else -0.5 if intent.action == 2 else 0.0
                                 )
                             },
-                            "water": {"regime": "expansion" if market_vol < 0.03 else "volatile"},
+                            "water": {"regime": ("expansion" if market_vol < 0.03 else "volatile")},
                             "earth": {"valuation_gap": 0.01 if intent.action != 0 else 0.0},
                         }
                         # Synchronous wrapper for process_signal

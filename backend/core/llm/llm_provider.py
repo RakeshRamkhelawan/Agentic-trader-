@@ -57,7 +57,10 @@ class LLMProvider:
         print(f"[LLM] Initialized: {self.config.backend.value}/{self.config.model}")
 
     def generate(
-        self, prompt: str, system_prompt: Optional[str] = None, temperature: Optional[float] = None
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Generate response from LLM

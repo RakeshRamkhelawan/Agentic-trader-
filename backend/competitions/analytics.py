@@ -247,9 +247,13 @@ class AnalyticsEngine:
                 for i, m in enumerate(metrics)
             ],
             "averages": {
-                "avg_win_rate": sum(m.win_rate for m in metrics) / len(metrics) if metrics else 0,
-                "avg_sharpe": sum(m.sharpe_ratio for m in metrics) / len(metrics) if metrics else 0,
-                "avg_trades": sum(m.total_trades for m in metrics) / len(metrics) if metrics else 0,
+                "avg_win_rate": (sum(m.win_rate for m in metrics) / len(metrics) if metrics else 0),
+                "avg_sharpe": (
+                    sum(m.sharpe_ratio for m in metrics) / len(metrics) if metrics else 0
+                ),
+                "avg_trades": (
+                    sum(m.total_trades for m in metrics) / len(metrics) if metrics else 0
+                ),
             },
             "best_performers": {
                 "highest_pnl": max((m.total_pnl for m in metrics), default=0),
@@ -272,7 +276,7 @@ class AnalyticsEngine:
             "best_pnl": max(pnls),
             "worst_pnl": min(pnls),
             "avg_balance": sum(balances) / len(balances),
-            "leader": max(entries, key=lambda e: e.pnl).competitor_id if entries else None,
+            "leader": (max(entries, key=lambda e: e.pnl).competitor_id if entries else None),
             "profitability": {
                 "profitable": len([p for p in pnls if p > 0]),
                 "unprofitable": len([p for p in pnls if p <= 0]),

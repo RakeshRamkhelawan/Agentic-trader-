@@ -31,7 +31,11 @@ async def set_tenant_context(db: AsyncSession, tenant_id: str):
     except Exception as e:
         # FAIL-CLOSED: Never silently continue without RLS context.
         # This prevents cross-tenant data leakage via connection pooling.
-        logger.error("CRITICAL: Failed to set RLS tenant context for tenant '%s': %s", tenant_id, e)
+        logger.error(
+            "CRITICAL: Failed to set RLS tenant context for tenant '%s': %s",
+            tenant_id,
+            e,
+        )
         raise RuntimeError(
             f"Failed to set RLS tenant context for tenant '{tenant_id}'. "
             f"Refusing to proceed without data isolation. Error: {e}"

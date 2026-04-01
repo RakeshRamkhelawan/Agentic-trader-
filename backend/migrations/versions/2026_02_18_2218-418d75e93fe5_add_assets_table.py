@@ -27,7 +27,14 @@ def upgrade() -> None:
         sa.Column("exchange", sa.String(), nullable=False),
         sa.Column(
             "status",
-            sa.Enum("DISCOVERED", "ACTIVE", "POOLED", "WATCHED", "INACTIVE", name="assetstatus"),
+            sa.Enum(
+                "DISCOVERED",
+                "ACTIVE",
+                "POOLED",
+                "WATCHED",
+                "INACTIVE",
+                name="assetstatus",
+            ),
             nullable=False,
         ),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=True),

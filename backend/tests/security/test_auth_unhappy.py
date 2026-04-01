@@ -41,15 +41,17 @@ class TestInvalidTokens:
             "/api/v1/agents",
             headers={"Authorization": "Bearer not-a-real-token"},
         )
-        assert response.status_code in (401, 403), (
-            f"/api/v1/agents accepted garbage token: {response.status_code}"
-        )
+        assert response.status_code in (
+            401,
+            403,
+        ), f"/api/v1/agents accepted garbage token: {response.status_code}"
 
     @pytest.mark.asyncio
     async def test_expired_jwt_rejected(self, async_client):
         """An expired JWT must be rejected."""
         try:
             import jwt as pyjwt
+
             from backend.auth.jwt_handler import JWTHandler
 
             handler = JWTHandler()
@@ -61,16 +63,15 @@ class TestInvalidTokens:
                 "iat": datetime.now(timezone.utc) - timedelta(hours=2),
                 "exp": datetime.now(timezone.utc) - timedelta(hours=1),
             }
-            expired_token = pyjwt.encode(
-                payload, handler.secret_key, algorithm="HS256"
-            )
+            expired_token = pyjwt.encode(payload, handler.secret_key, algorithm="HS256")
             response = await async_client.get(
                 "/api/v1/agents",
                 headers={"Authorization": f"Bearer {expired_token}"},
             )
-            assert response.status_code in (401, 403), (
-                f"Expired token was accepted: {response.status_code}"
-            )
+            assert response.status_code in (
+                401,
+                403,
+            ), f"Expired token was accepted: {response.status_code}"
         except (ImportError, AttributeError):
             pytest.skip("JWTHandler not available or incompatible")
 

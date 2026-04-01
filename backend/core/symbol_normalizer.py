@@ -3,7 +3,15 @@ class SymbolNormalizer:
     Normalizes cryptocurrency symbols between canonical, display, and exchange formats.
     """
 
-    KNOWN_QUOTE_CURRENCIES: list[str] = ["EUR", "USD", "USDT", "USDC", "GBP", "BTC", "ETH"]
+    KNOWN_QUOTE_CURRENCIES: list[str] = [
+        "EUR",
+        "USD",
+        "USDT",
+        "USDC",
+        "GBP",
+        "BTC",
+        "ETH",
+    ]
 
     @classmethod
     def to_canonical(cls, symbol: str) -> str:

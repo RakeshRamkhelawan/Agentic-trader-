@@ -8,7 +8,7 @@ from datetime import datetime
 
 import pytest
 
-from backend.agents.base_agent import BaseAgent, DEFAULT_MAX_HISTORY
+from backend.agents.base_agent import DEFAULT_MAX_HISTORY, BaseAgent
 from backend.governance.agent_gatekeeper import AgentRole
 
 

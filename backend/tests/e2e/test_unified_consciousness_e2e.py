@@ -63,7 +63,10 @@ class TestUnifiedConsciousnessE2E:
                     PlanetName.KETU: MagicMock(longitude=0, is_retrograde=True),
                 },
                 guna_distribution=GunaDistribution(
-                    sattva=0.5, rajas=0.3, tamas=0.2, calculated_at=datetime.now(timezone.utc)
+                    sattva=0.5,
+                    rajas=0.3,
+                    tamas=0.2,
+                    calculated_at=datetime.now(timezone.utc),
                 ),
                 aspects=[],
                 rahu_kala_active=False,
@@ -237,7 +240,10 @@ class TestUnifiedConsciousnessE2E:
             return NavagrahaState(
                 planets={},
                 guna_distribution=GunaDistribution(
-                    sattva=0.2, rajas=0.2, tamas=0.6, calculated_at=datetime.now(timezone.utc)
+                    sattva=0.2,
+                    rajas=0.2,
+                    tamas=0.6,
+                    calculated_at=datetime.now(timezone.utc),
                 ),
                 aspects=[],
                 rahu_kala_active=True,
@@ -302,9 +308,13 @@ class TestUnifiedConsciousnessE2E:
     async def test_e2e_strategy_selection_by_dasha(self, unified_system):
         """Test E2E: Dasha-based strategy selectie."""
         # Arrange
-        from backend.core.strategy.unified_strategy_registry import UnifiedStrategyRegistry
+        from backend.core.strategy.unified_strategy_registry import (
+            UnifiedStrategyRegistry,
+        )
 
-        registry = UnifiedStrategyRegistry(navagraha_service=unified_system["navagraha_service"])
+        registry = UnifiedStrategyRegistry(
+            navagraha_service=unified_system["navagraha_service"]
+        )
 
         # Act
         strategy_id, strategy = await registry.get_strategy_for_current_dasha()
@@ -339,7 +349,9 @@ class TestUnifiedConsciousnessE2E:
 
         # Assert
         assert "trader_agent" in karma.agent_karma
-        assert karma.agent_karma["trader_agent"] > 0  # Positive karma for positive trade
+        assert (
+            karma.agent_karma["trader_agent"] > 0
+        )  # Positive karma for positive trade
 
     @pytest.mark.asyncio
     async def test_e2e_system_identity_updates(self, unified_system):
@@ -376,7 +388,10 @@ class TestUnifiedConsciousnessE2E:
             return NavagrahaState(
                 planets={},
                 guna_distribution=GunaDistribution(
-                    sattva=0.5, rajas=0.3, tamas=0.2, calculated_at=datetime.now(timezone.utc)
+                    sattva=0.5,
+                    rajas=0.3,
+                    tamas=0.2,
+                    calculated_at=datetime.now(timezone.utc),
                 ),
                 aspects=[],
                 rahu_kala_active=False,

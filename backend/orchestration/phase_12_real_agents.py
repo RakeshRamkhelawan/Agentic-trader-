@@ -145,10 +145,14 @@ class SentimentAdapter(Agent):
         if loop.is_running():
             # In an async loop, we need to be careful. Coordinator uses threads.
             # For simplicity in this L2 context, we mock the async call if needed or use run_coroutine_threadsafe
-            return {"action": 0, "confidence": 0.5, "reasoning": "Async sentiment pending"}
+            return {
+                "action": 0,
+                "confidence": 0.5,
+                "reasoning": "Async sentiment pending",
+            }
         res = asyncio.run(self._agent.analyze_news(headlines, coin))
         return {
-            "action": 1 if res.trend == "bullish" else 2 if res.trend == "bearish" else 0,
+            "action": (1 if res.trend == "bullish" else 2 if res.trend == "bearish" else 0),
             "confidence": res.confidence,
             "reasoning": res.rationale,
         }

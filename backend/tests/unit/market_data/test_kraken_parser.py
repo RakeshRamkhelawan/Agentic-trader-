@@ -5,7 +5,6 @@ NOTE: These tests are skipped because the kraken_provider module was never imple
 These are placeholder tests for a future Fase 4.1 implementation.
 """
 
-
 import pytest
 
 # Skip all tests if kraken_provider module doesn't exist
@@ -21,7 +20,12 @@ class TestKrakenParser:
 
         # Kraken Trade Message Format (Simplified Example)
         # [channelID, [[price, volume, time, side, type, misc]], "trade", "XBT/USD"]
-        raw_msg = [0, [["50000.0", "0.1", "1600000000.0000", "b", "l", ""]], "trade", "XBT/USD"]
+        raw_msg = [
+            0,
+            [["50000.0", "0.1", "1600000000.0000", "b", "l", ""]],
+            "trade",
+            "XBT/USD",
+        ]
 
         events = provider._parse_raw(raw_msg)
         assert len(events) == 1
@@ -41,7 +45,11 @@ class TestKrakenParser:
         # [channelID, {"a": [ask, whole_volume, whole_lot_vol], "b": [bid, ...], ...}, "ticker", "XBT/USD"]
         raw_msg = [
             123,
-            {"a": ["50001.0", "1", "1"], "b": ["50000.0", "2", "2"], "c": ["50000.5", "0.1"]},
+            {
+                "a": ["50001.0", "1", "1"],
+                "b": ["50000.0", "2", "2"],
+                "c": ["50000.5", "0.1"],
+            },
             "ticker",
             "XBT/USD",
         ]

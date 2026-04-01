@@ -54,7 +54,9 @@ async def run_integration_manual():
     print("Verifying Sell route for BTC/EUR...")
     sell_res = await router.get_best_route("BTC/EUR", side="sell")
     if sell_res:
-        print(f"SELL Result -> Exchange: {sell_res.exchange_id}, Price: {sell_res.price}")
+        print(
+            f"SELL Result -> Exchange: {sell_res.exchange_id}, Price: {sell_res.price}"
+        )
         assert sell_res.exchange_id == "revolut"
         assert sell_res.price == 49500.0
         # Verification of SymbolNormalizer usage

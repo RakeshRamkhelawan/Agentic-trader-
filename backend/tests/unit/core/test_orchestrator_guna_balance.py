@@ -73,7 +73,9 @@ def mock_guna_quantifier():
     """Mock Guna Quantifier."""
     quantifier = MagicMock()
     # Standaard Rajas voor tekst, voor numeriek kunnen we later aanpassen
-    quantifier.quantify_text = MagicMock(return_value=GunaVector(sattva=0.3, rajas=0.5, tamas=0.2))
+    quantifier.quantify_text = MagicMock(
+        return_value=GunaVector(sattva=0.3, rajas=0.5, tamas=0.2)
+    )
     quantifier.quantify_numerical_data = MagicMock(
         return_value=GunaVector(sattva=0.4, rajas=0.4, tamas=0.2)
     )  # Standaard neutraal voor nummer
@@ -94,13 +96,17 @@ async def test_orchestrator_routes_by_guna(
 ):
     """Happy Path: Orchestrator routeert event naar meest geschikte agent o.b.v. Guna match."""
 
-    with patch("backend.services.cognitive_orchestrator.MemoryAgent") as MockMemoryAgent:
+    with patch(
+        "backend.services.cognitive_orchestrator.MemoryAgent"
+    ) as MockMemoryAgent:
         MockMemoryAgent.return_value = MagicMock()  # Mock the MemoryAgent instantiation
 
         # Simuleer een incoming event met een specifieke Guna-vibratie
         rajasic_event_text = "Market is extremely volatile today! Buy now!"
         rajasic_event_guna = GunaVector(sattva=0.1, rajas=0.8, tamas=0.1)
-        mock_guna_quantifier.quantify_text.return_value = rajasic_event_guna  # Maak deze dynamisch
+        mock_guna_quantifier.quantify_text.return_value = (
+            rajasic_event_guna  # Maak deze dynamisch
+        )
 
         # Maak een mock agent om de 'handle_message' te tracken
         mock_research_agent_instance = AsyncMock(spec=ResearchAgent)
@@ -148,7 +154,9 @@ async def test_orchestrator_maintains_guna_balance(
 ):
     """Happy Path: Orchestrator berekent globale balans en geeft door aan IntentMonitor."""
 
-    with patch("backend.services.cognitive_orchestrator.MemoryAgent") as MockMemoryAgent:
+    with patch(
+        "backend.services.cognitive_orchestrator.MemoryAgent"
+    ) as MockMemoryAgent:
         MockMemoryAgent.return_value = MagicMock()  # Mock the MemoryAgent instantiation
 
         # Configureer Guna Quantifier om een paar keer iets specifieks te returnen

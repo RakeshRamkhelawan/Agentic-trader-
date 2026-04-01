@@ -57,7 +57,7 @@ class TestKYCAPIIntegration:
             "occupation": "Software Engineer",
             "employment_status": "employed",
             "annual_income": "50k-100k",
-            "source_of_funds": "Salary"
+            "source_of_funds": "Salary",
         }
 
         response = await async_client.post("/api/v1/kyc/submit", json=kyc_data)
@@ -67,7 +67,9 @@ class TestKYCAPIIntegration:
 
         # When disabled, should accept but indicate it's disabled
         assert data["success"] is True
-        assert "disabled" in data["message"].lower() or "KYC submitted" in data["message"]
+        assert (
+            "disabled" in data["message"].lower() or "KYC submitted" in data["message"]
+        )
         assert data["status"] == "verified"
 
     async def test_kyc_submit_validation_error(self, async_client: AsyncClient):
@@ -87,7 +89,7 @@ class TestKYCAPIIntegration:
             "occupation": "Engineer",
             "employment_status": "invalid_status",  # Should be specific values
             "annual_income": "invalid",
-            "source_of_funds": "Salary"
+            "source_of_funds": "Salary",
         }
 
         response = await async_client.post("/api/v1/kyc/submit", json=invalid_data)
@@ -97,14 +99,9 @@ class TestKYCAPIIntegration:
     async def test_kyc_document_upload_disabled(self, async_client: AsyncClient):
         """Test document upload endpoint when KYC is disabled."""
         # Create a test file
-        files = {
-            "id_front": ("test.jpg", b"fake_image_data", "image/jpeg")
-        }
+        files = {"id_front": ("test.jpg", b"fake_image_data", "image/jpeg")}
 
-        response = await async_client.post(
-            "/api/v1/kyc/documents",
-            files=files
-        )
+        response = await async_client.post("/api/v1/kyc/documents", files=files)
 
         assert response.status_code == 200
         data = response.json()
@@ -113,16 +110,13 @@ class TestKYCAPIIntegration:
         assert data["success"] is True
         assert "disabled" in data["message"].lower()
 
-    async def test_kyc_document_upload_invalid_file_type(self, async_client: AsyncClient):
+    async def test_kyc_document_upload_invalid_file_type(
+        self, async_client: AsyncClient
+    ):
         """Test document upload with invalid file type."""
-        files = {
-            "id_front": ("test.txt", b"not an image", "text/plain")
-        }
+        files = {"id_front": ("test.txt", b"not an image", "text/plain")}
 
-        response = await async_client.post(
-            "/api/v1/kyc/documents",
-            files=files
-        )
+        response = await async_client.post("/api/v1/kyc/documents", files=files)
 
         # Should either succeed with warning (disabled mode) or fail validation
         assert response.status_code in [200, 400]
@@ -162,7 +156,7 @@ class TestKYCAPIIntegration:
             "occupation": "Software Engineer",
             "employment_status": "employed",
             "annual_income": "50k-100k",
-            "source_of_funds": "Salary"
+            "source_of_funds": "Salary",
         }
 
         submit_response = await async_client.post("/api/v1/kyc/submit", json=kyc_data)
@@ -174,9 +168,11 @@ class TestKYCAPIIntegration:
 
     @pytest.mark.skipif(
         os.getenv("ENABLE_KYC", "false").lower() != "true",
-        reason="KYC is disabled - set ENABLE_KYC=true to run this test"
+        reason="KYC is disabled - set ENABLE_KYC=true to run this test",
     )
-    async def test_kyc_status_when_enabled(self, async_client: AsyncClient, unique_email: str):
+    async def test_kyc_status_when_enabled(
+        self, async_client: AsyncClient, unique_email: str
+    ):
         """Test KYC status when KYC is enabled (requires ENABLE_KYC=true)."""
         # This test only runs when KYC is explicitly enabled
         response = await async_client.get("/api/v1/kyc/status")
@@ -187,13 +183,21 @@ class TestKYCAPIIntegration:
         # When enabled, should show actual status
         assert data["enabled"] is True
         assert data["required"] is True
-        assert data["status"] in ["not_started", "in_progress", "pending_review", "verified", "rejected"]
+        assert data["status"] in [
+            "not_started",
+            "in_progress",
+            "pending_review",
+            "verified",
+            "rejected",
+        ]
 
     @pytest.mark.skipif(
         os.getenv("ENABLE_KYC", "false").lower() != "true",
-        reason="KYC is disabled - set ENABLE_KYC=true to run this test"
+        reason="KYC is disabled - set ENABLE_KYC=true to run this test",
     )
-    async def test_kyc_submit_when_enabled(self, async_client: AsyncClient, unique_email: str):
+    async def test_kyc_submit_when_enabled(
+        self, async_client: AsyncClient, unique_email: str
+    ):
         """Test KYC submission when KYC is enabled (requires ENABLE_KYC=true)."""
         kyc_data = {
             "first_name": "John",
@@ -210,7 +214,7 @@ class TestKYCAPIIntegration:
             "occupation": "Software Engineer",
             "employment_status": "employed",
             "annual_income": "50k-100k",
-            "source_of_funds": "Salary"
+            "source_of_funds": "Salary",
         }
 
         response = await async_client.post("/api/v1/kyc/submit", json=kyc_data)

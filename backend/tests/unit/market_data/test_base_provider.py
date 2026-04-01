@@ -30,7 +30,9 @@ class TestableProvider(BaseExchangeProvider):
     """Concrete implementation for testing logic."""
 
     def __init__(self, name, out_queue):
-        super().__init__(name, out_queue, initial_backoff=0.01)  # Fast retry for testing
+        super().__init__(
+            name, out_queue, initial_backoff=0.01
+        )  # Fast retry for testing
         self.connect_count = 0
         self.fail_count = 0
         self.max_fails = 0
@@ -52,7 +54,9 @@ class TestableProvider(BaseExchangeProvider):
             await asyncio.sleep(0.01)
 
 
-@pytest.mark.skipif(BaseExchangeProvider is None, reason="BaseExchangeProvider not implemented")
+@pytest.mark.skipif(
+    BaseExchangeProvider is None, reason="BaseExchangeProvider not implemented"
+)
 class TestBaseProviderConnection:
     """Test suite for BaseExchangeProvider connection logic."""
 

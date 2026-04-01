@@ -113,7 +113,9 @@ class LiveDataPaperTradingTest:
 
         # Phase 5: ACT - OrderExecutor (NO adapter = PAPER TRADING)
         self.executor = OrderExecutor(
-            exchange_adapter=None, max_slippage_bps=50, order_timeout=30  # <- PAPER TRADING MODE
+            exchange_adapter=None,
+            max_slippage_bps=50,
+            order_timeout=30,  # <- PAPER TRADING MODE
         )
         logger.info("[SUCCESS] OrderExecutor initialized (PAPER TRADING MODE)")
         logger.info("")
@@ -200,7 +202,9 @@ class LiveDataPaperTradingTest:
         logger.info("")
 
         proposal = await self.trader.propose_trade(
-            orientation=orientation, current_price=current_price, strategy_id="live_momentum_v1"
+            orientation=orientation,
+            current_price=current_price,
+            strategy_id="live_momentum_v1",
         )
 
         if proposal is None:
@@ -248,7 +252,9 @@ class LiveDataPaperTradingTest:
         logger.info("")
 
         assessment = await self.risk_manager.assess_risk(
-            proposal=proposal, current_regime=regime, current_position_size=0.0  # No open positions
+            proposal=proposal,
+            current_regime=regime,
+            current_position_size=0.0,  # No open positions
         )
 
         logger.info("Risk Assessment:")
@@ -336,10 +342,14 @@ class LiveDataPaperTradingTest:
             self.orientation = await self.run_orient_phase(self.observation)
 
             # Phase 3: DECIDE
-            self.proposal = await self.run_decide_phase(self.orientation, self.observation.price)
+            self.proposal = await self.run_decide_phase(
+                self.orientation, self.observation.price
+            )
 
             # Phase 4: HARMONIZE
-            self.assessment = await self.run_harmonize_phase(self.proposal, self.orientation.regime)
+            self.assessment = await self.run_harmonize_phase(
+                self.proposal, self.orientation.regime
+            )
 
             # Phase 5: ACT (PAPER TRADING)
             self.outcome = await self.run_act_phase(self.proposal, self.assessment)
@@ -351,13 +361,21 @@ class LiveDataPaperTradingTest:
             logger.info("")
             logger.info("[SUCCESS] Summary:")
             logger.info("   Data Source: LIVE REVOLUT X")
-            logger.info("   Market: %s @ $%,.2f", self.observation.symbol, self.observation.price)
+            logger.info(
+                "   Market: %s @ $%,.2f",
+                self.observation.symbol,
+                self.observation.price,
+            )
             logger.info("   Decision: %s", self.proposal.side.upper())
             logger.info("   Size: %s", self.proposal.size)
             logger.info("   Risk Decision: %s", self.assessment.decision.value)
             logger.info(
                 "   Paper Trade: %s",
-                "Success" if self.outcome and self.outcome.success else "Skipped/Failed",
+                (
+                    "Success"
+                    if self.outcome and self.outcome.success
+                    else "Skipped/Failed"
+                ),
             )
             logger.info("")
             logger.info("[SUCCESS] LIVE DATA + PAPER TRADING TEST COMPLETED!")

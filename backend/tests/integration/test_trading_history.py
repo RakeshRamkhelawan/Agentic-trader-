@@ -5,7 +5,9 @@ from backend.models.orders import Order, OrderStatus
 
 
 @pytest.mark.asyncio
-async def test_order_history_endpoint(async_client: AsyncClient, db_session, test_user_token):
+async def test_order_history_endpoint(
+    async_client: AsyncClient, db_session, test_user_token
+):
     headers = {"Authorization": f"Bearer {test_user_token}"}
 
     # Setup: Create a historical order
@@ -22,7 +24,9 @@ async def test_order_history_endpoint(async_client: AsyncClient, db_session, tes
     await db_session.commit()
 
     # Test GET /history
-    resp = await async_client.get("/api/v1/trading/orders/history?limit=5", headers=headers)
+    resp = await async_client.get(
+        "/api/v1/trading/orders/history?limit=5", headers=headers
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert isinstance(data, list)

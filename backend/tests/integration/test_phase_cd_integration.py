@@ -254,7 +254,10 @@ class TestPhaseDStrategyIntegration:
             return NavagrahaState(
                 planets={},
                 guna_distribution=GunaDistribution(
-                    sattva=0.5, rajas=0.3, tamas=0.2, calculated_at=datetime.now(timezone.utc)
+                    sattva=0.5,
+                    rajas=0.3,
+                    tamas=0.2,
+                    calculated_at=datetime.now(timezone.utc),
                 ),
                 aspects=[],
                 rahu_kala_active=False,
@@ -286,7 +289,10 @@ class TestPhaseDStrategyIntegration:
             return NavagrahaState(
                 planets={},
                 guna_distribution=GunaDistribution(
-                    sattva=0.3, rajas=0.4, tamas=0.3, calculated_at=datetime.now(timezone.utc)
+                    sattva=0.3,
+                    rajas=0.4,
+                    tamas=0.3,
+                    calculated_at=datetime.now(timezone.utc),
                 ),
                 aspects=[],
                 rahu_kala_active=False,
@@ -371,7 +377,10 @@ class TestPhaseCDEndToEnd:
             return NavagrahaState(
                 planets={},
                 guna_distribution=GunaDistribution(
-                    sattva=0.5, rajas=0.3, tamas=0.2, calculated_at=datetime.now(timezone.utc)
+                    sattva=0.5,
+                    rajas=0.3,
+                    tamas=0.2,
+                    calculated_at=datetime.now(timezone.utc),
                 ),
                 aspects=[],
                 rahu_kala_active=False,

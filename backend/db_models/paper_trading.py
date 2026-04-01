@@ -81,7 +81,10 @@ class PaperTrade(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     session_id = Column(
-        String(50), ForeignKey("paper_trading_sessions.session_id"), nullable=False, index=True
+        String(50),
+        ForeignKey("paper_trading_sessions.session_id"),
+        nullable=False,
+        index=True,
     )
 
     # Trade details
@@ -152,7 +155,10 @@ class PaperTradingAnalytics(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     session_id = Column(
-        String(50), ForeignKey("paper_trading_sessions.session_id"), nullable=False, index=True
+        String(50),
+        ForeignKey("paper_trading_sessions.session_id"),
+        nullable=False,
+        index=True,
     )
 
     # Cycle info
@@ -265,7 +271,10 @@ class ChittaExperience(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     session_id = Column(
-        String(50), ForeignKey("paper_trading_sessions.session_id"), nullable=False, index=True
+        String(50),
+        ForeignKey("paper_trading_sessions.session_id"),
+        nullable=False,
+        index=True,
     )
 
     # Experience context

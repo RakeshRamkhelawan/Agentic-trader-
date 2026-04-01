@@ -27,7 +27,12 @@ class TestMarketDataBridge:
 
         # 3. Write Data
         writer.write_market_data(
-            symbol=symbol, bid=50000.0, ask=50010.0, last=50005.0, bid_size=1.5, ask_size=2.0
+            symbol=symbol,
+            bid=50000.0,
+            ask=50010.0,
+            last=50005.0,
+            bid_size=1.5,
+            ask_size=2.0,
         )
 
         # 4. Read Data

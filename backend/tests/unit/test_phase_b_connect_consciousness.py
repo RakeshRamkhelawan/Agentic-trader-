@@ -12,7 +12,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from backend.core.navagraha.models import GunaDistribution, NavagrahaState, PlanetName, PlanetState
+from backend.core.navagraha.models import (
+    GunaDistribution,
+    NavagrahaState,
+    PlanetName,
+    PlanetState,
+)
 from backend.core.navagraha.service import NavagrahaService
 from backend.core.system_identity import SystemIdentity
 from backend.orchestration.ooda_coordinator import OODALoopCoordinator
@@ -223,7 +228,10 @@ class TestNavagrahaTradingGate:
         """Test dat gate geblokkeerd is bij hoge tamas (>60%)."""
         # Arrange
         guna = GunaDistribution(
-            sattva=0.2, rajas=0.1, tamas=0.7, calculated_at=datetime.now(timezone.utc)  # High tamas
+            sattva=0.2,
+            rajas=0.1,
+            tamas=0.7,
+            calculated_at=datetime.now(timezone.utc),  # High tamas
         )
 
         state = NavagrahaState(
@@ -283,7 +291,10 @@ class TestNavagrahaGateInOODA:
             return NavagrahaState(
                 planets=create_mock_planets(),
                 guna_distribution=GunaDistribution(
-                    sattva=0.5, rajas=0.3, tamas=0.2, calculated_at=datetime.now(timezone.utc)
+                    sattva=0.5,
+                    rajas=0.3,
+                    tamas=0.2,
+                    calculated_at=datetime.now(timezone.utc),
                 ),
                 aspects=[],
                 rahu_kala_active=True,  # Blocked
@@ -324,7 +335,10 @@ class TestNavagrahaGateInOODA:
             return NavagrahaState(
                 planets=create_mock_planets(),
                 guna_distribution=GunaDistribution(
-                    sattva=0.4, rajas=0.4, tamas=0.2, calculated_at=datetime.now(timezone.utc)
+                    sattva=0.4,
+                    rajas=0.4,
+                    tamas=0.2,
+                    calculated_at=datetime.now(timezone.utc),
                 ),
                 aspects=[],
                 rahu_kala_active=False,

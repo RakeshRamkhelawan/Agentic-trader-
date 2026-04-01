@@ -55,16 +55,14 @@ class TestAuthIntegration:
         endpoints = ["/", "/api", "/api/v1/health"]
         for endpoint in endpoints:
             response = await async_client.get(endpoint)
-            assert response.headers.get("x-content-type-options") == "nosniff", (
-                f"{endpoint} missing X-Content-Type-Options"
-            )
-            assert response.headers.get("x-frame-options") == "DENY", (
-                f"{endpoint} missing X-Frame-Options"
-            )
+            assert (
+                response.headers.get("x-content-type-options") == "nosniff"
+            ), f"{endpoint} missing X-Content-Type-Options"
+            assert (
+                response.headers.get("x-frame-options") == "DENY"
+            ), f"{endpoint} missing X-Frame-Options"
             csp = response.headers.get("content-security-policy", "")
-            assert "default-src" in csp, (
-                f"{endpoint} missing Content-Security-Policy"
-            )
+            assert "default-src" in csp, f"{endpoint} missing Content-Security-Policy"
 
     @pytest.mark.asyncio
     async def test_rate_limiter_returns_headers(self, async_client):
@@ -78,9 +76,7 @@ class TestAuthIntegration:
         response2 = await async_client.get("/api/v1/config")
         if response2.status_code != 404:
             header_keys2 = [k.lower() for k in response2.headers.keys()]
-            has_ratelimit = has_ratelimit or any(
-                "ratelimit" in k for k in header_keys2
-            )
+            has_ratelimit = has_ratelimit or any("ratelimit" in k for k in header_keys2)
         assert has_ratelimit, (
             "No rate limit headers found on any endpoint. "
             "slowapi may not be properly configured."

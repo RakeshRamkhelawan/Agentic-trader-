@@ -53,8 +53,10 @@ class TestMultiTimeframeAnalyzer:
         # De EMAs zijn traag (55 period) en reageren nog op de downtrend
         # De RSI (14 period) reageert sneller op de recente spike
 
-        downtrend = [200.0 - i for i in range(60)] # EMA 8, 21, 55 reageren
-        recent_spike = [142.0 + i for i in range(10)] # Korte krachtige stijging, trekt RSI naar boven
+        downtrend = [200.0 - i for i in range(60)]  # EMA 8, 21, 55 reageren
+        recent_spike = [
+            142.0 + i for i in range(10)
+        ]  # Korte krachtige stijging, trekt RSI naar boven
         prices = downtrend + recent_spike
 
         data = {"1h": prices}
@@ -65,7 +67,7 @@ class TestMultiTimeframeAnalyzer:
 
     def test_too_little_data_returns_zero(self):
         """Als een timeframe < 55 data points heeft (te weinig voor EMA 55), wordt deze genegeerd."""
-        prices_short = [100.0] * 50 # length 50
+        prices_short = [100.0] * 50  # length 50
         data = {"1d": prices_short}
 
         score = MultiTimeframeAnalyzer.analyze_macro_trend(data)

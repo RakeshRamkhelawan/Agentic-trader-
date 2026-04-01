@@ -158,7 +158,11 @@ Maak een consensus beslissing."""
 
     def register_agent(self, name: str, agent: Any, weight: float = 1.0) -> None:
         """Registreer een agent."""
-        self.agents[name] = {"instance": agent, "base_weight": weight, "current_weight": weight}
+        self.agents[name] = {
+            "instance": agent,
+            "base_weight": weight,
+            "current_weight": weight,
+        }
         logger.info(f"Agent registered: {name} (weight: {weight})")
 
     async def deliberate(self, market_state: Dict[str, Any]) -> MetaDecisionV3:

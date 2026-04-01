@@ -28,7 +28,10 @@ def mock_data_source():
         }
     )
     source.fetch_orderbook = AsyncMock(
-        return_value={"bids": [[49999, 10.0], [49998, 5.0]], "asks": [[50001, 8.0], [50002, 3.0]]}
+        return_value={
+            "bids": [[49999, 10.0], [49998, 5.0]],
+            "asks": [[50001, 8.0], [50002, 3.0]],
+        }
     )
     source.fetch_funding_rate = AsyncMock(return_value=0.0001)
     return source
@@ -78,13 +81,19 @@ class TestEndToEndFlow:
 
     @pytest.mark.asyncio
     async def test_full_bullish_flow_execution(
-        self, mock_data_source, mock_event_bus, mock_cognitive_bridge, mock_order_executor
+        self,
+        mock_data_source,
+        mock_event_bus,
+        mock_cognitive_bridge,
+        mock_order_executor,
     ):
         """
         Scenario: Strong Bull Market -> Buy Signal -> Risk Approved -> Executed.
         """
         # 1. Setup Agents
-        data_scout = DataScoutAgent(data_source=mock_data_source, event_bus=mock_event_bus)
+        data_scout = DataScoutAgent(
+            data_source=mock_data_source, event_bus=mock_event_bus
+        )
         analyst = AnalystAgent()
         trader = TraderAgent()
         # Fixed init arguments
@@ -124,7 +133,12 @@ class TestEndToEndFlow:
         with patch.object(
             analyst,
             "_calculate_indicators",
-            return_value={"rsi": 70.0, "macd": 1.0, "volume_ma_ratio": 1.5, "spread_pct": 0.01},
+            return_value={
+                "rsi": 70.0,
+                "macd": 1.0,
+                "volume_ma_ratio": 1.5,
+                "spread_pct": 0.01,
+            },
         ):
             # 5. Run Cycle
             result = await coordinator.run_cycle("BTC/USDT", current_price=50000.0)
@@ -139,12 +153,18 @@ class TestEndToEndFlow:
 
     @pytest.mark.asyncio
     async def test_bearish_flow_notify_only(
-        self, mock_data_source, mock_event_bus, mock_cognitive_bridge, mock_order_executor
+        self,
+        mock_data_source,
+        mock_event_bus,
+        mock_cognitive_bridge,
+        mock_order_executor,
     ):
         """
         Scenario: Bear Market -> Sell Signal -> Risk Approved -> Notify Only (No Execution).
         """
-        data_scout = DataScoutAgent(data_source=mock_data_source, event_bus=mock_event_bus)
+        data_scout = DataScoutAgent(
+            data_source=mock_data_source, event_bus=mock_event_bus
+        )
         analyst = AnalystAgent()
         trader = TraderAgent()
         risk_manager = RiskManagerAgent()
@@ -175,7 +195,12 @@ class TestEndToEndFlow:
         with patch.object(
             analyst,
             "_calculate_indicators",
-            return_value={"rsi": 30.0, "macd": -1.0, "volume_ma_ratio": 1.5, "spread_pct": 0.01},
+            return_value={
+                "rsi": 30.0,
+                "macd": -1.0,
+                "volume_ma_ratio": 1.5,
+                "spread_pct": 0.01,
+            },
         ):
             result = await coordinator.run_cycle("BTC/USDT", current_price=40000.0)
 
@@ -185,17 +210,26 @@ class TestEndToEndFlow:
             assert result["risk_assessment"].decision == RiskDecision.APPROVE
 
             # Execution should be None or skipped
-            assert result["execution"] is None or result["execution"].get("status") == "skipped"
+            assert (
+                result["execution"] is None
+                or result["execution"].get("status") == "skipped"
+            )
             mock_order_executor.execute_trade.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_risk_rejection_flow(
-        self, mock_data_source, mock_event_bus, mock_cognitive_bridge, mock_order_executor
+        self,
+        mock_data_source,
+        mock_event_bus,
+        mock_cognitive_bridge,
+        mock_order_executor,
     ):
         """
         Scenario: Bull Market -> Buy Signal -> Risk Rejected (Too Risky).
         """
-        data_scout = DataScoutAgent(data_source=mock_data_source, event_bus=mock_event_bus)
+        data_scout = DataScoutAgent(
+            data_source=mock_data_source, event_bus=mock_event_bus
+        )
         analyst = AnalystAgent()
         trader = TraderAgent()
         risk_manager = RiskManagerAgent(min_confidence=0.99, max_position_size=0.1)
@@ -221,7 +255,12 @@ class TestEndToEndFlow:
         with patch.object(
             analyst,
             "_calculate_indicators",
-            return_value={"rsi": 75.0, "macd": 1.0, "volume_ma_ratio": 1.5, "spread_pct": 0.01},
+            return_value={
+                "rsi": 75.0,
+                "macd": 1.0,
+                "volume_ma_ratio": 1.5,
+                "spread_pct": 0.01,
+            },
         ):
             result = await coordinator.run_cycle("BTC/USDT", current_price=50000.0)
 

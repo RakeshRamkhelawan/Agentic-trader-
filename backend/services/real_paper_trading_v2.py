@@ -363,7 +363,7 @@ class RealPaperTradingV2:
                 {
                     "name": "WarmUp",
                     "type": "governance",
-                    "status": "online" if data_stats.get("warmup_complete") else "warming",
+                    "status": ("online" if data_stats.get("warmup_complete") else "warming"),
                     "agents_managed": 5,
                     "last_action": f"History: {data_stats.get('history_entries', 0)} entries",
                 },

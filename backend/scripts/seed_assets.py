@@ -57,7 +57,7 @@ async def seed_assets():
                 asset = Asset(
                     symbol=symbol,
                     exchange=exchange,
-                    status=AssetStatus.ACTIVE if category != "other" else AssetStatus.DISCOVERED,
+                    status=(AssetStatus.ACTIVE if category != "other" else AssetStatus.DISCOVERED),
                     category=category,
                 )
                 session.add(asset)

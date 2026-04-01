@@ -4,11 +4,14 @@ Test configuration for wiring integration tests with SQLite fallback.
 
 import os
 import sys
-import pytest
 from unittest.mock import AsyncMock, Mock
 
+import pytest
+
 # Set test environment variables BEFORE importing backend
-os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-integration-tests-12345-minimum-32-chars"
+os.environ["JWT_SECRET_KEY"] = (
+    "test-secret-key-for-integration-tests-12345-minimum-32-chars"
+)
 os.environ["AUTH_DISABLED"] = "true"
 os.environ["ENV"] = "test"
 
@@ -44,7 +47,9 @@ async def async_client() -> AsyncClient:
         await conn.run_sync(Base.metadata.create_all)
 
     # Patch the app's session
-    _ = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)  # noqa: F841
+    _ = sessionmaker(
+        bind=engine, class_=AsyncSession, expire_on_commit=False
+    )  # noqa: F841
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -57,4 +62,5 @@ async def async_client() -> AsyncClient:
 def unique_email():
     """Generate unique email for tests."""
     from uuid import uuid4
+
     return f"test_user_{uuid4().hex[:8]}@example.com"

@@ -570,7 +570,11 @@ class PortfolioManager:
         lines.extend(
             [
                 "-" * 60,
-                f"Cash Ratio: {latest.cash_ratio:.1%}" if latest.cash_ratio else "Cash Ratio: N/A",
+                (
+                    f"Cash Ratio: {latest.cash_ratio:.1%}"
+                    if latest.cash_ratio
+                    else "Cash Ratio: N/A"
+                ),
                 (
                     f"Max Position: {latest.max_position_pct:.1%}"
                     if latest.max_position_pct

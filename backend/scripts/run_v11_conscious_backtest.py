@@ -159,7 +159,6 @@ def run_v11_conscious_backtest() -> Dict[str, Any]:
     progress_interval = max(1, total_days // 20)
 
     pause_active = False
-    pause_reason = ""
 
     for day_idx, date in enumerate(sorted_dates):
         if day_idx % progress_interval == 0:
@@ -187,11 +186,9 @@ def run_v11_conscious_backtest() -> Dict[str, Any]:
         should_pause, reason = ahamkara.should_pause(drawdown_limit=0.08)
         if should_pause and not pause_active:
             pause_active = True
-            pause_reason = reason
             print(f"    [AHAMKARA] PAUSED: {reason}")
         elif not should_pause and pause_active:
             pause_active = False
-            pause_reason = ""
             print("    [AHAMKARA] RESUMED")
 
         # Update prices
@@ -313,10 +310,9 @@ def run_v11_conscious_backtest() -> Dict[str, Any]:
 
                 # Retrieve similar setups from Chitta
                 similar = chitta.retrieve_similar_setups(market_state, top_k=5)
-                similar_performance = None
                 if similar:
                     avg_pnl = sum(t.net_pnl for t in similar) / len(similar)
-                    similar_performance = f"Similar setups avg PnL: ${avg_pnl:.2f}"
+                    print(f"    [CHITTA] Similar setups avg PnL: ${avg_pnl:.2f}")
 
                 # Get memory reflection
                 memory_insights = chitta.reflect_recent(5)

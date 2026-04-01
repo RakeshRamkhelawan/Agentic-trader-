@@ -159,7 +159,8 @@ class BacktestEngineV18:
 
             # Get VedAstro signal
             vedastro_result = await self.mcp_client.call_tool(
-                "vedastro__generate_signal", {"symbol": symbol, "current_price": current_price}
+                "vedastro__generate_signal",
+                {"symbol": symbol, "current_price": current_price},
             )
 
             # Check VedAstro confidence
@@ -212,7 +213,9 @@ class BacktestEngineV18:
                 return
 
             should_exit, reason = await self.elemental_manager.evaluate_exit(
-                symbol=symbol, current_price=current_price, current_date=date.isoformat()
+                symbol=symbol,
+                current_price=current_price,
+                current_date=date.isoformat(),
             )
 
             if should_exit:
@@ -333,7 +336,8 @@ class BacktestEngineV18:
         import hashlib
 
         hash_val = int(
-            hashlib.blake2b(f"{symbol}{date.date()}".encode(), digest_size=8).hexdigest(), 16
+            hashlib.blake2b(f"{symbol}{date.date()}".encode(), digest_size=8).hexdigest(),
+            16,
         )
         return 100.0 + (hash_val % 100)
 
@@ -392,7 +396,10 @@ class BacktestEngineV18:
 
 
 async def run_backtest_v18(
-    symbols: list[str], start_date: datetime, end_date: datetime, initial_cash: float = 100000.0
+    symbols: list[str],
+    start_date: datetime,
+    end_date: datetime,
+    initial_cash: float = 100000.0,
 ) -> dict[str, Any]:
     """
     Convenience function to run a backtest.
@@ -407,7 +414,10 @@ async def run_backtest_v18(
         Backtest results
     """
     config = BacktestConfig(
-        start_date=start_date, end_date=end_date, symbols=symbols, initial_cash=initial_cash
+        start_date=start_date,
+        end_date=end_date,
+        symbols=symbols,
+        initial_cash=initial_cash,
     )
 
     engine = BacktestEngineV18(config)
@@ -424,7 +434,8 @@ async def run_backtest_v18(
 if __name__ == "__main__":
 
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
     # Run a quick test

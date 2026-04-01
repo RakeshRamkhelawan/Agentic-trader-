@@ -17,7 +17,9 @@ class TestPredictionDockerService:
     @pytest.fixture
     async def prediction_client(self) -> AsyncGenerator[httpx.AsyncClient, None]:
         """HTTP client for prediction service."""
-        async with httpx.AsyncClient(base_url="http://localhost:8002", timeout=30.0) as client:
+        async with httpx.AsyncClient(
+            base_url="http://localhost:8002", timeout=30.0
+        ) as client:
             yield client
 
     # =========================================================================
@@ -35,13 +37,17 @@ class TestPredictionDockerService:
     @pytest.mark.integration
     def test_happy_path_volume_is_defined(self):
         """Happy path: prediction_market_cache volume is defined."""
-        result = subprocess.run(["docker-compose", "config"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["docker-compose", "config"], capture_output=True, text=True
+        )
         assert "prediction_market_cache" in result.stdout
 
     @pytest.mark.integration
     def test_happy_path_service_depends_on_postgres(self):
         """Happy path: Service depends on postgres."""
-        result = subprocess.run(["docker-compose", "config"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["docker-compose", "config"], capture_output=True, text=True
+        )
         # Check that prediction-intelligence has postgres in depends_on
         config_text = result.stdout
         # Look for prediction-intelligence service block followed by depends_on with postgres
@@ -50,14 +56,18 @@ class TestPredictionDockerService:
     @pytest.mark.integration
     def test_happy_path_port_8002_exposed(self):
         """Happy path: Port 8002 is exposed in service definition."""
-        result = subprocess.run(["docker-compose", "config"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["docker-compose", "config"], capture_output=True, text=True
+        )
         # Check for port mapping
         assert "8002" in result.stdout
 
     @pytest.mark.integration
     def test_happy_path_healthcheck_configured(self):
         """Happy path: Health check is configured."""
-        result = subprocess.run(["docker-compose", "config"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["docker-compose", "config"], capture_output=True, text=True
+        )
         config_text = result.stdout
         # Health check should reference health endpoint
         assert "health" in config_text.lower()
@@ -65,7 +75,9 @@ class TestPredictionDockerService:
     @pytest.mark.integration
     def test_happy_path_compose_config_valid(self):
         """Happy path: Docker compose config is valid."""
-        result = subprocess.run(["docker-compose", "config"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["docker-compose", "config"], capture_output=True, text=True
+        )
         # Should not have error in stdout (warnings are OK)
         assert "error" not in result.stdout.lower() or result.returncode == 0
 
@@ -76,7 +88,9 @@ class TestPredictionDockerService:
     @pytest.mark.integration
     def test_unhappy_path_invalid_volume_name(self):
         """Unhappy path: Assert we didn't add wrong volume name."""
-        result = subprocess.run(["docker-compose", "config"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["docker-compose", "config"], capture_output=True, text=True
+        )
         # Verify we don't have typos in volume names
         assert "prediction_market_cache" in result.stdout
         assert "prediction_marketcache" not in result.stdout  # Common typo
@@ -99,14 +113,18 @@ class TestComposeSyntax:
 
     def test_happy_path_yaml_is_valid(self):
         """Happy path: docker-compose.yml is valid YAML."""
-        result = subprocess.run(["docker-compose", "config"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["docker-compose", "config"], capture_output=True, text=True
+        )
         # Config command validates YAML
         # Exit code should be 0 or 1 (1 is for warnings which are OK)
         assert result.returncode in [0, 1]
 
     def test_happy_path_no_syntax_errors(self):
         """Happy path: No syntax errors in compose file."""
-        result = subprocess.run(["docker-compose", "config"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["docker-compose", "config"], capture_output=True, text=True
+        )
         # Should not contain error messages (exclude warnings)
         stderr = result.stderr.lower()
         # Warnings are fine, but errors should not be present

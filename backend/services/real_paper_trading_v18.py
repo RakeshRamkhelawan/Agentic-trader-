@@ -255,7 +255,8 @@ class RealPaperTradingV18:
         try:
             # 1. Get VedAstro signal via MCP (same as backtest)
             vedastro_result = await self.mcp_client.call_tool(
-                "vedastro__generate_signal", {"symbol": symbol, "current_price": current_price}
+                "vedastro__generate_signal",
+                {"symbol": symbol, "current_price": current_price},
             )
 
             confidence = vedastro_result.get("confidence", 0)
@@ -296,7 +297,8 @@ class RealPaperTradingV18:
 
             # Max position constraint
             max_position = min(
-                self.state.total_value * self.config.max_position_pct, self.config.max_position_eur
+                self.state.total_value * self.config.max_position_pct,
+                self.config.max_position_eur,
             )
             position_size = min(position_size, max_position)
 

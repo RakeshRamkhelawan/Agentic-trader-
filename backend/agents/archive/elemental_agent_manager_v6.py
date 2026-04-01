@@ -566,7 +566,7 @@ class WaterAgentV6:
             "risk_on_score": (
                 0.6 if regime == "expansion" else 0.4 if regime == "contraction" else 0.5
             ),
-            "vix": 25 if regime == "contraction" else 18 if regime == "expansion" else 20,
+            "vix": (25 if regime == "contraction" else 18 if regime == "expansion" else 20),
             "trend_strength": abs(price_change_30d) / 30,  # Normalize
         }
 

@@ -222,20 +222,36 @@ async def vedic_get_nakshatra_analysis(nakshatra: str, pada: int = 1, ctx=None) 
 
         # Nakshatra characteristics for trading
         nakshatra_traits = {
-            "Ashwini": {"nature": "Mobile", "quality": "Swift", "trading": "Good for quick trades"},
-            "Bharani": {"nature": "Fixed", "quality": "Fierce", "trading": "Hold positions steady"},
+            "Ashwini": {
+                "nature": "Mobile",
+                "quality": "Swift",
+                "trading": "Good for quick trades",
+            },
+            "Bharani": {
+                "nature": "Fixed",
+                "quality": "Fierce",
+                "trading": "Hold positions steady",
+            },
             "Krittika": {
                 "nature": "Fixed",
                 "quality": "Sharp",
                 "trading": "Good for cutting losses",
             },
-            "Rohini": {"nature": "Fixed", "quality": "Soft", "trading": "Favorable for growth"},
+            "Rohini": {
+                "nature": "Fixed",
+                "quality": "Soft",
+                "trading": "Favorable for growth",
+            },
             "Mrigashira": {
                 "nature": "Soft",
                 "quality": "Searching",
                 "trading": "Research before trading",
             },
-            "Ardra": {"nature": "Soft", "quality": "Intense", "trading": "Volatile periods"},
+            "Ardra": {
+                "nature": "Soft",
+                "quality": "Intense",
+                "trading": "Volatile periods",
+            },
             "Punarvasu": {
                 "nature": "Movable",
                 "quality": "Renewal",
@@ -246,7 +262,11 @@ async def vedic_get_nakshatra_analysis(nakshatra: str, pada: int = 1, ctx=None) 
                 "quality": "Nourishing",
                 "trading": "Excellent for accumulation",
             },
-            "Ashlesha": {"nature": "Soft", "quality": "Coiling", "trading": "Be cautious of traps"},
+            "Ashlesha": {
+                "nature": "Soft",
+                "quality": "Coiling",
+                "trading": "Be cautious of traps",
+            },
             "Magha": {
                 "nature": "Fixed",
                 "quality": "Royal",
@@ -292,7 +312,11 @@ async def vedic_get_nakshatra_analysis(nakshatra: str, pada: int = 1, ctx=None) 
                 "quality": "Senior",
                 "trading": "Respect market elders/trends",
             },
-            "Mula": {"nature": "Fixed", "quality": "Root", "trading": "Find root causes of moves"},
+            "Mula": {
+                "nature": "Fixed",
+                "quality": "Root",
+                "trading": "Find root causes of moves",
+            },
             "Purva Ashadha": {
                 "nature": "Fixed",
                 "quality": "Invincible",
@@ -328,7 +352,11 @@ async def vedic_get_nakshatra_analysis(nakshatra: str, pada: int = 1, ctx=None) 
                 "quality": "Water",
                 "trading": "Emotional control needed",
             },
-            "Revati": {"nature": "Soft", "quality": "Wealth", "trading": "Nurturing positions"},
+            "Revati": {
+                "nature": "Soft",
+                "quality": "Wealth",
+                "trading": "Nurturing positions",
+            },
         }
 
         traits = nakshatra_traits.get(
@@ -388,7 +416,17 @@ async def vedic_calculate_transits(
         # In production, this would use Swiss Ephemeris
         # For now, return mock data structure
 
-        planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+        planets = [
+            "Sun",
+            "Moon",
+            "Mars",
+            "Mercury",
+            "Jupiter",
+            "Venus",
+            "Saturn",
+            "Rahu",
+            "Ketu",
+        ]
         signs = [
             "Aries",
             "Taurus",
@@ -548,7 +586,11 @@ def _calculate_mock_aspects(planet: str, sign_idx: int) -> list[dict]:
         aspect_signs = [(sign_idx + 4) % 12, (sign_idx + 7) % 12, (sign_idx + 8) % 12]
         for aspect_sign in aspect_signs:
             aspects.append(
-                {"aspected_sign": aspect_sign, "aspect_type": f"{planet}_special", "orb": 5.0}
+                {
+                    "aspected_sign": aspect_sign,
+                    "aspect_type": f"{planet}_special",
+                    "orb": 5.0,
+                }
             )
 
     # All planets aspect 7th house (opposition)
@@ -595,7 +637,7 @@ def _analyze_market_sentiment(transit_data: list[dict]) -> dict[str, Any]:
         "favorable_for": (
             ["growth stocks", "tech"] if sentiment == "bullish" else ["defensive", "utilities"]
         ),
-        "caution_for": ["speculative"] if sentiment == "bearish" else ["aggressive shorts"],
+        "caution_for": (["speculative"] if sentiment == "bearish" else ["aggressive shorts"]),
     }
 
 

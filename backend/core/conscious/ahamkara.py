@@ -101,7 +101,10 @@ JE BENT een WINNER. Handel dienovereenkomstig.
         print("[AHAMKARA] Self-aware meta-agent initialized")
 
     def update_state(
-        self, total_pnl: float, current_drawdown: float, recent_trades: List[Dict] = None
+        self,
+        total_pnl: float,
+        current_drawdown: float,
+        recent_trades: List[Dict] = None,
     ):
         """Update conscious state based on performance"""
         self.state.total_pnl = total_pnl
@@ -167,7 +170,10 @@ JE BENT een WINNER. Handel dienovereenkomstig.
         # Check drawdown (relaxed to 10%)
         if self.state.current_drawdown > drawdown_limit:
             self._initiate_pause(30)  # Shorter pause
-            return True, f"Drawdown {self.state.current_drawdown:.1%} > {drawdown_limit:.1%}"
+            return (
+                True,
+                f"Drawdown {self.state.current_drawdown:.1%} > {drawdown_limit:.1%}",
+            )
 
         # Check loss streak (increased to 10 for demo)
         if self.state.loss_streak >= 10:

@@ -20,7 +20,9 @@ from backend.schemas.orders import OrderRequest, OrderSide
 def mock_adapter():
     """Create a mock execution adapter."""
     adapter = AsyncMock()
-    adapter.get_ticker = AsyncMock(return_value={"bid": 50000, "ask": 50100, "volume": 1000})
+    adapter.get_ticker = AsyncMock(
+        return_value={"bid": 50000, "ask": 50100, "volume": 1000}
+    )
     adapter.submit_order = AsyncMock(
         return_value=MagicMock(
             order_id="test-123", status="filled", filled_qty=1.0, avg_price=50050
@@ -89,7 +91,9 @@ class TestExchangeCircuitBreaker:
 
     def test_recovery_timeout(self):
         """Test recovery timeout transitions to HALF_OPEN."""
-        cb = ExchangeCircuitBreaker("test_exchange", failure_threshold=1, recovery_timeout=0.01)
+        cb = ExchangeCircuitBreaker(
+            "test_exchange", failure_threshold=1, recovery_timeout=0.01
+        )
 
         # Open the circuit
         cb.record_failure()
@@ -106,7 +110,10 @@ class TestExchangeCircuitBreaker:
     def test_half_open_success_closes(self):
         """Test that successes in HALF_OPEN close the circuit."""
         cb = ExchangeCircuitBreaker(
-            "test_exchange", failure_threshold=1, recovery_timeout=0.01, success_threshold=2
+            "test_exchange",
+            failure_threshold=1,
+            recovery_timeout=0.01,
+            success_threshold=2,
         )
 
         # Open and transition to half-open
@@ -125,7 +132,9 @@ class TestExchangeCircuitBreaker:
 
     def test_half_open_failure_reopens(self):
         """Test that failure in HALF_OPEN reopens the circuit."""
-        cb = ExchangeCircuitBreaker("test_exchange", failure_threshold=1, recovery_timeout=0.01)
+        cb = ExchangeCircuitBreaker(
+            "test_exchange", failure_threshold=1, recovery_timeout=0.01
+        )
 
         # Open and transition to half-open
         cb.record_failure()
@@ -141,7 +150,10 @@ class TestExchangeCircuitBreaker:
     def test_half_open_max_calls(self):
         """Test that half_open limits concurrent test calls."""
         cb = ExchangeCircuitBreaker(
-            "test_exchange", failure_threshold=1, recovery_timeout=0.01, half_open_max_calls=2
+            "test_exchange",
+            failure_threshold=1,
+            recovery_timeout=0.01,
+            half_open_max_calls=2,
         )
 
         # Open and transition to half-open
@@ -190,7 +202,9 @@ class TestSmartOrderRouterCircuitBreaker:
         assert cb is None
 
     @pytest.mark.asyncio
-    async def test_successful_call_records_success(self, router_with_circuit_breaker, mock_adapter):
+    async def test_successful_call_records_success(
+        self, router_with_circuit_breaker, mock_adapter
+    ):
         """Test that successful calls record success for circuit breaker."""
         router = router_with_circuit_breaker
 
@@ -260,13 +274,17 @@ class TestSmartOrderRouterCircuitBreaker:
         )
 
         # Register healthy exchange
-        router.register_adapter("healthy_exchange", mock_adapter, ["BTC-EUR"], failure_threshold=5)
+        router.register_adapter(
+            "healthy_exchange", mock_adapter, ["BTC-EUR"], failure_threshold=5
+        )
 
         # Open the failing circuit
         await router.get_best_prices("BTC-EUR")
 
         # Route order - should failover to healthy exchange
-        order = OrderRequest(symbol="BTC-EUR", side=OrderSide.BUY, order_type="market", qty=1.0)
+        order = OrderRequest(
+            symbol="BTC-EUR", side=OrderSide.BUY, order_type="market", qty=1.0
+        )
 
         results = await router.route_order(order, use_vwap=False)
 
@@ -285,7 +303,9 @@ class TestSmartOrderRouterCircuitBreaker:
         # Open the circuit
         await router.get_best_prices("BTC-EUR")
 
-        order = OrderRequest(symbol="BTC-EUR", side=OrderSide.BUY, order_type="market", qty=1.0)
+        order = OrderRequest(
+            symbol="BTC-EUR", side=OrderSide.BUY, order_type="market", qty=1.0
+        )
 
         with pytest.raises(NoRouteFoundError, match="All execution adapters failed"):
             await router.route_and_execute(order)
@@ -308,9 +328,13 @@ class TestSmartOrderRouterCircuitBreaker:
         mock_adapter.submit_order = AsyncMock(side_effect=Exception("Execution failed"))
 
         router = SmartOrderRouter(enable_circuit_breaker=True)
-        router.register_adapter("failing_exec", mock_adapter, ["BTC-EUR"], failure_threshold=5)
+        router.register_adapter(
+            "failing_exec", mock_adapter, ["BTC-EUR"], failure_threshold=5
+        )
 
-        order = OrderRequest(symbol="BTC-EUR", side=OrderSide.BUY, order_type="market", qty=1.0)
+        order = OrderRequest(
+            symbol="BTC-EUR", side=OrderSide.BUY, order_type="market", qty=1.0
+        )
 
         try:
             await router.route_and_execute(order)

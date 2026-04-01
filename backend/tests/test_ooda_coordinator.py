@@ -136,7 +136,9 @@ class TestOODALoopCoordinator:
         """Happy path: Complete cyclus met approved trade (NOTIFY_ONLY default)."""
         # Setup mocks
         mock_agents["data_scout"].observe = AsyncMock(return_value=sample_observation)
-        mock_agents["cognitive_bridge"].process_observation = AsyncMock(return_value=0.75)
+        mock_agents["cognitive_bridge"].process_observation = AsyncMock(
+            return_value=0.75
+        )
         mock_agents["analyst"].orient = AsyncMock(return_value=sample_orientation)
         mock_agents["bull_researcher"].generate_hypothesis = AsyncMock(
             return_value="Bullish hypothesis"
@@ -145,8 +147,12 @@ class TestOODALoopCoordinator:
             return_value="Bearish hypothesis"
         )
         mock_agents["trader"].propose_trade = AsyncMock(return_value=sample_proposal)
-        mock_agents["risk_manager"].assess_risk = AsyncMock(return_value=approved_assessment)
-        mock_agents["fund_manager"].allocate_capital = AsyncMock(return_value=sample_allocation)
+        mock_agents["risk_manager"].assess_risk = AsyncMock(
+            return_value=approved_assessment
+        )
+        mock_agents["fund_manager"].allocate_capital = AsyncMock(
+            return_value=sample_allocation
+        )
 
         # Create coordinator (NOTIFY_ONLY default)
         coordinator = OODALoopCoordinator(
@@ -201,16 +207,28 @@ class TestOODALoopCoordinator:
         """Test: AUTO mode executes trade."""
         # Setup mocks
         mock_agents["data_scout"].observe = AsyncMock(return_value=sample_observation)
-        mock_agents["cognitive_bridge"].process_observation = AsyncMock(return_value=0.75)
+        mock_agents["cognitive_bridge"].process_observation = AsyncMock(
+            return_value=0.75
+        )
         mock_agents["analyst"].orient = AsyncMock(return_value=sample_orientation)
-        mock_agents["bull_researcher"].generate_hypothesis = AsyncMock(return_value="Bullish")
-        mock_agents["bear_researcher"].generate_hypothesis = AsyncMock(return_value="Bearish")
+        mock_agents["bull_researcher"].generate_hypothesis = AsyncMock(
+            return_value="Bullish"
+        )
+        mock_agents["bear_researcher"].generate_hypothesis = AsyncMock(
+            return_value="Bearish"
+        )
         mock_agents["trader"].propose_trade = AsyncMock(return_value=sample_proposal)
         mock_agents["trader"].agent_name = "TraderAgent_1"
         mock_agents["trader"].agent_role = AgentRole.STRATEGIST
-        mock_agents["risk_manager"].assess_risk = AsyncMock(return_value=approved_assessment)
-        mock_agents["fund_manager"].allocate_capital = AsyncMock(return_value=sample_allocation)
-        mock_agents["order_executor"].execute_trade = AsyncMock(return_value=successful_execution)
+        mock_agents["risk_manager"].assess_risk = AsyncMock(
+            return_value=approved_assessment
+        )
+        mock_agents["fund_manager"].allocate_capital = AsyncMock(
+            return_value=sample_allocation
+        )
+        mock_agents["order_executor"].execute_trade = AsyncMock(
+            return_value=successful_execution
+        )
 
         # Create coordinator in AUTO mode
         coordinator = OODALoopCoordinator(
@@ -241,7 +259,9 @@ class TestOODALoopCoordinator:
         """Trade rejected door RiskManager."""
         # Setup mocks
         mock_agents["data_scout"].observe = AsyncMock(return_value=sample_observation)
-        mock_agents["cognitive_bridge"].process_observation = AsyncMock(return_value=0.75)
+        mock_agents["cognitive_bridge"].process_observation = AsyncMock(
+            return_value=0.75
+        )
         mock_agents["analyst"].orient = AsyncMock(return_value=sample_orientation)
         mock_agents["trader"].propose_trade = AsyncMock(return_value=sample_proposal)
 
@@ -252,7 +272,9 @@ class TestOODALoopCoordinator:
             risk_score=0.8,
             win_probability=0.3,
         )
-        mock_agents["risk_manager"].assess_risk = AsyncMock(return_value=rejected_assessment)
+        mock_agents["risk_manager"].assess_risk = AsyncMock(
+            return_value=rejected_assessment
+        )
 
         coordinator = OODALoopCoordinator(
             data_scout=mock_agents["data_scout"],
@@ -273,10 +295,14 @@ class TestOODALoopCoordinator:
         assert result["execution"] is None  # Executie geskipped
 
     @pytest.mark.asyncio
-    async def test_cycle_no_signal(self, mock_agents, sample_observation, sample_orientation):
+    async def test_cycle_no_signal(
+        self, mock_agents, sample_observation, sample_orientation
+    ):
         """Geen trade signal van Trader."""
         mock_agents["data_scout"].observe = AsyncMock(return_value=sample_observation)
-        mock_agents["cognitive_bridge"].process_observation = AsyncMock(return_value=0.5)
+        mock_agents["cognitive_bridge"].process_observation = AsyncMock(
+            return_value=0.5
+        )
         mock_agents["analyst"].orient = AsyncMock(return_value=sample_orientation)
         mock_agents["trader"].propose_trade = AsyncMock(return_value=None)  # No signal
 
@@ -311,10 +337,14 @@ class TestOODALoopCoordinator:
     ):
         """NOTIFY_ONLY mode stopt voor execution."""
         mock_agents["data_scout"].observe = AsyncMock(return_value=sample_observation)
-        mock_agents["cognitive_bridge"].process_observation = AsyncMock(return_value=0.75)
+        mock_agents["cognitive_bridge"].process_observation = AsyncMock(
+            return_value=0.75
+        )
         mock_agents["analyst"].orient = AsyncMock(return_value=sample_orientation)
         mock_agents["trader"].propose_trade = AsyncMock(return_value=sample_proposal)
-        mock_agents["risk_manager"].assess_risk = AsyncMock(return_value=approved_assessment)
+        mock_agents["risk_manager"].assess_risk = AsyncMock(
+            return_value=approved_assessment
+        )
 
         coordinator = OODALoopCoordinator(
             data_scout=mock_agents["data_scout"],

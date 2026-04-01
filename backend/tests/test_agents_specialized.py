@@ -10,7 +10,5 @@ This suite consolidates validation for the entire "Trading Firm" layer:
 - Researchers: Thesis Generation
 """
 
-
-
 # Import test classes from individual files
 # Pytest will discover and run these classes

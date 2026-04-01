@@ -412,7 +412,9 @@ class TestPhase12MarketRegimeAgentRealIntegration:
         assert isinstance(decision["reasoning"], str)
 
     @pytest.mark.unit
-    def test_real_market_regime_agent_multiple_executions(self, real_market_regime_agent):
+    def test_real_market_regime_agent_multiple_executions(
+        self, real_market_regime_agent
+    ):
         """
         Execute real MarketRegimeAgent multiple times and verify variation.
 

@@ -7,7 +7,7 @@ import time
 import numpy as np
 import pytest
 
-from backend.core.vasana_cache import VasanaCache, CachedPattern, OptimizedMemorySystem
+from backend.core.vasana_cache import CachedPattern, OptimizedMemorySystem, VasanaCache
 
 
 class TestVasanaCache:
@@ -100,7 +100,9 @@ class TestVasanaCache:
     def test_clear(self):
         """Test cache clearing."""
         cache = VasanaCache()
-        cache._cache["key1"] = CachedPattern("key1", 1, 0.5, [], 1, time.time(), time.time())
+        cache._cache["key1"] = CachedPattern(
+            "key1", 1, 0.5, [], 1, time.time(), time.time()
+        )
         cache._hits = 10
 
         cache.clear()

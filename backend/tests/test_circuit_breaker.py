@@ -4,7 +4,6 @@ Tests voor Circuit Breaker.
 Test safety limits, trip conditions, reset logic, en persistence.
 """
 
-
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -143,7 +142,9 @@ class TestCircuitBreaker:
     @pytest.mark.asyncio
     async def test_manual_reset(self, db_session):
         """Manual reset clears breaker."""
-        breaker = CircuitBreaker(db_session, breaker_name="reset_test", max_daily_loss_pct=0.05)
+        breaker = CircuitBreaker(
+            db_session, breaker_name="reset_test", max_daily_loss_pct=0.05
+        )
 
         # Trip breaker
         await breaker.record_trade_result(pnl=-0.06)
@@ -178,12 +179,16 @@ class TestCircuitBreaker:
     async def test_trip_persistence(self, db_session):
         """Breaker state persists across instances."""
         # Trip breaker
-        breaker1 = CircuitBreaker(db_session, breaker_name="persist_test", max_daily_loss_pct=0.05)
+        breaker1 = CircuitBreaker(
+            db_session, breaker_name="persist_test", max_daily_loss_pct=0.05
+        )
         await breaker1.record_trade_result(pnl=-0.06)
         assert await breaker1.is_tripped()
 
         # Create new instance (simuleert restart)
-        breaker2 = CircuitBreaker(db_session, breaker_name="persist_test", max_daily_loss_pct=0.05)
+        breaker2 = CircuitBreaker(
+            db_session, breaker_name="persist_test", max_daily_loss_pct=0.05
+        )
 
         # Should still be tripped
         is_tripped = await breaker2.is_tripped()

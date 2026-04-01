@@ -127,7 +127,11 @@ class BaseTradingAgent:
         return None
 
     async def _analyze(
-        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+        self,
+        symbol: str,
+        price_data: PriceData,
+        history: list[PriceData],
+        portfolio_value: float,
     ) -> AgentDecision | None:
         """Override in subclass."""
         raise NotImplementedError
@@ -177,7 +181,11 @@ class SpreadMomentumAgent(BaseTradingAgent):
         self.sell_signals = 0
 
     async def _analyze(
-        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+        self,
+        symbol: str,
+        price_data: PriceData,
+        history: list[PriceData],
+        portfolio_value: float,
     ) -> AgentDecision | None:
 
         current = price_data.price
@@ -256,7 +264,11 @@ class MomentumAgent(BaseTradingAgent):
         )
 
     async def _analyze(
-        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+        self,
+        symbol: str,
+        price_data: PriceData,
+        history: list[PriceData],
+        portfolio_value: float,
     ) -> AgentDecision | None:
 
         min_history = 5 if self.paper_trading_mode else 10
@@ -333,7 +345,11 @@ class MeanReversionAgent(BaseTradingAgent):
         )
 
     async def _analyze(
-        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+        self,
+        symbol: str,
+        price_data: PriceData,
+        history: list[PriceData],
+        portfolio_value: float,
     ) -> AgentDecision | None:
 
         min_history = 10 if self.paper_trading_mode else 20
@@ -398,7 +414,11 @@ class BreakoutAgent(BaseTradingAgent):
         )
 
     async def _analyze(
-        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+        self,
+        symbol: str,
+        price_data: PriceData,
+        history: list[PriceData],
+        portfolio_value: float,
     ) -> AgentDecision | None:
 
         min_history = 10 if self.paper_trading_mode else 15
@@ -472,7 +492,11 @@ class ScalperAgent(BaseTradingAgent):
         self.last_direction = {}  # Track last trade direction per symbol
 
     async def _analyze(
-        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+        self,
+        symbol: str,
+        price_data: PriceData,
+        history: list[PriceData],
+        portfolio_value: float,
     ) -> AgentDecision | None:
 
         min_history = 3 if self.paper_trading_mode else 5
@@ -546,7 +570,11 @@ class PositionTraderAgent(BaseTradingAgent):
         )
 
     async def _analyze(
-        self, symbol: str, price_data: PriceData, history: list[PriceData], portfolio_value: float
+        self,
+        symbol: str,
+        price_data: PriceData,
+        history: list[PriceData],
+        portfolio_value: float,
     ) -> AgentDecision | None:
 
         min_history = 15 if self.paper_trading_mode else 25

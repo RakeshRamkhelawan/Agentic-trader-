@@ -268,7 +268,7 @@ class TradeAuditLogger:
             agent_name=agent_name,
             agent_element=agent_element,
             symbol=getattr(market_state, "symbol", "unknown"),
-            action=signal.action.name if hasattr(signal.action, "name") else str(signal.action),
+            action=(signal.action.name if hasattr(signal.action, "name") else str(signal.action)),
             confidence=signal.confidence,
             strength=signal.strength,
             reasoning=signal.reasoning,
@@ -299,7 +299,7 @@ class TradeAuditLogger:
                         sig.element.value if hasattr(sig.element, "value") else str(sig.element)
                     ),
                     symbol=getattr(market_state, "symbol", "unknown"),
-                    action=sig.action.name if hasattr(sig.action, "name") else str(sig.action),
+                    action=(sig.action.name if hasattr(sig.action, "name") else str(sig.action)),
                     confidence=sig.confidence,
                     strength=sig.strength,
                     reasoning=sig.reasoning,
@@ -351,7 +351,7 @@ class TradeAuditLogger:
             strategic_override=getattr(decision, "is_strategic_override", False),
             mcts_action=mcts_result.get("action", "") if mcts_result else "",
             mcts_confidence=mcts_result.get("confidence", 0.0) if mcts_result else 0.0,
-            expected_sharpe=mcts_result.get("expected_sharpe", 0.0) if mcts_result else 0.0,
+            expected_sharpe=(mcts_result.get("expected_sharpe", 0.0) if mcts_result else 0.0),
             strategic_rationale=getattr(decision, "strategic_rationale", ""),
         )
         self.collective_logs.append(log)
@@ -420,7 +420,7 @@ class TradeAuditLogger:
             base_risk=0.022,
             confidence=decision.confidence,
             harmony=getattr(decision, "harmony_score", 0.0),
-            guna_dominant=guna.dominant() if guna and hasattr(guna, "dominant") else "unknown",
+            guna_dominant=(guna.dominant() if guna and hasattr(guna, "dominant") else "unknown"),
             atr=atr,
             price=price,
             confidence_mult=decision.confidence,
@@ -434,7 +434,11 @@ class TradeAuditLogger:
         self.sizing_logs.append(log)
 
     def log_trade_execution(
-        self, decision: Any, position: Any, market_state: Any, collective_decision_id: str
+        self,
+        decision: Any,
+        position: Any,
+        market_state: Any,
+        collective_decision_id: str,
     ) -> str:
         """Log trade execution"""
         self.trade_count += 1

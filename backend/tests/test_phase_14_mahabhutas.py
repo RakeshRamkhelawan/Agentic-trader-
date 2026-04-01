@@ -120,7 +120,9 @@ class TestPhase14AkashaEther:
             (l for l in system_identity.tattva_config.layers if l.layer_number == 32),
             None,
         )
-        coherence = system_identity._process_layer_materialize(layer, {"network_latency_ms": 0.0})
+        coherence = system_identity._process_layer_materialize(
+            layer, {"network_latency_ms": 0.0}
+        )
         assert coherence == 1.0
 
     @pytest.mark.asyncio
@@ -147,7 +149,9 @@ class TestPhase14AkashaEther:
         assert coherence == 0.5
 
     @pytest.mark.asyncio
-    async def test_akasha_integrates_with_sensory_input(self, system_identity, market_data):
+    async def test_akasha_integrates_with_sensory_input(
+        self, system_identity, market_data
+    ):
         """Test that market data cycle includes Akasha metrics."""
         result = await system_identity.process_market_cycle(**market_data)
         assert "tattva_metrics" in result
@@ -195,7 +199,10 @@ class TestPhase14VayuAir:
     @pytest.mark.asyncio
     async def test_vayu_config_versioning(self, system_identity):
         """Test Vayu tracks configuration capabilities."""
-        assert system_identity.tattva_config.mahabhutas.vayu.max_config_versions_to_keep >= 10
+        assert (
+            system_identity.tattva_config.mahabhutas.vayu.max_config_versions_to_keep
+            >= 10
+        )
 
     def test_vayu_parameter_validation(self, tattva_config):
         """Test Vayu parameter validation config."""
@@ -218,7 +225,10 @@ class TestPhase14VayuAir:
     @pytest.mark.asyncio
     async def test_vayu_config_breadth_first_propagation(self, system_identity):
         """Test Vayu broadcast setting."""
-        assert system_identity.tattva_config.mahabhutas.vayu.broadcast_to_all_agents is True
+        assert (
+            system_identity.tattva_config.mahabhutas.vayu.broadcast_to_all_agents
+            is True
+        )
 
     def test_vayu_supports_hot_reload(self, tattva_config):
         """Test Vayu hot reload config."""
@@ -249,7 +259,9 @@ class TestPhase14AgniFireComputation:
         assert "Computation" in layer.key_function
 
     @pytest.mark.asyncio
-    async def test_computational_work_flows_through_agni(self, system_identity, market_data):
+    async def test_computational_work_flows_through_agni(
+        self, system_identity, market_data
+    ):
         """Test that all computation properly traverses Agni layer."""
         result = await system_identity.process_market_cycle(**market_data)
         assert 34 in result["tattva_metrics"]["current_layer_coherence"]
@@ -271,26 +283,34 @@ class TestPhase14AgniFireComputation:
             None,
         )
         # High load (90%) > 80% limit -> 0.7 coherence
-        coherence = system_identity._process_layer_materialize(layer, {"cpu_usage_percent": 90.0})
+        coherence = system_identity._process_layer_materialize(
+            layer, {"cpu_usage_percent": 90.0}
+        )
         assert coherence == 0.7
 
     @pytest.mark.asyncio
     async def test_agni_computation_timeout(self, system_identity):
         """Test Agni timeout config."""
-        assert system_identity.tattva_config.mahabhutas.agni.computation_timeout_ms >= 100
+        assert (
+            system_identity.tattva_config.mahabhutas.agni.computation_timeout_ms >= 100
+        )
 
     def test_agni_integrates_with_hot_path_engine(self, tattva_config):
         """Test Agni latency target."""
         assert tattva_config.mahabhutas.agni.latency_target_us <= 200.0
 
     @pytest.mark.asyncio
-    async def test_agni_computes_all_agent_decisions(self, system_identity, market_data):
+    async def test_agni_computes_all_agent_decisions(
+        self, system_identity, market_data
+    ):
         """Test Agni coherence under normal load."""
         layer = next(
             (l for l in system_identity.tattva_config.layers if l.layer_number == 34),
             None,
         )
-        coherence = system_identity._process_layer_materialize(layer, {"cpu_usage_percent": 30.0})
+        coherence = system_identity._process_layer_materialize(
+            layer, {"cpu_usage_percent": 30.0}
+        )
         assert coherence == 0.99
 
     def test_agni_supports_vectorized_operations(self, tattva_config):
@@ -417,10 +437,14 @@ class TestPhase14PrithviEarthStorage:
             (l for l in system_identity.tattva_config.layers if l.layer_number == 36),
             None,
         )
-        system_identity.tattva_config.mahabhutas.prithvi.enable_transaction_safety = True
+        system_identity.tattva_config.mahabhutas.prithvi.enable_transaction_safety = (
+            True
+        )
         assert system_identity._process_layer_materialize(layer) == 1.0
 
-        system_identity.tattva_config.mahabhutas.prithvi.enable_transaction_safety = False
+        system_identity.tattva_config.mahabhutas.prithvi.enable_transaction_safety = (
+            False
+        )
         assert system_identity._process_layer_materialize(layer) == 0.9
 
     def test_prithvi_backup_and_recovery(self, tattva_config):
@@ -441,7 +465,9 @@ class TestPhase14PrithviEarthStorage:
     @pytest.mark.asyncio
     async def test_prithvi_data_retention_policy(self, system_identity):
         """Test Prithvi retention limits."""
-        assert system_identity.tattva_config.mahabhutas.prithvi.data_retention_days >= 30
+        assert (
+            system_identity.tattva_config.mahabhutas.prithvi.data_retention_days >= 30
+        )
 
     def test_prithvi_concurrent_access(self, tattva_config):
         """Test Prithvi accessibility."""
@@ -460,7 +486,9 @@ class TestPhase14ElementalIntegration:
     """
 
     @pytest.mark.asyncio
-    async def test_all_five_elements_active_during_cycle(self, system_identity, market_data):
+    async def test_all_five_elements_active_during_cycle(
+        self, system_identity, market_data
+    ):
         """STUB: Test that all 5 elements are active in a market cycle."""
         # TODO: Implement
         # Should verify:

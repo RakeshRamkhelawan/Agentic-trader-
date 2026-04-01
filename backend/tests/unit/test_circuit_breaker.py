@@ -9,14 +9,15 @@ Tests cover:
 - Race conditions
 """
 
-import pytest
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 
+import pytest
+
 from backend.governance.circuit_breaker import (
+    BreakerState,
     CircuitBreaker,
     CircuitBreakerState,
-    BreakerState,
     TripReason,
 )
 
@@ -444,8 +445,7 @@ class TestCircuitBreakerEdgeCases:
         # Rapid trades
         for i in range(10):
             await breaker.record_trade_result(
-                pnl=(-1) ** i * 100.0,  # Alternating wins/losses
-                position_delta=0.0
+                pnl=(-1) ** i * 100.0, position_delta=0.0  # Alternating wins/losses
             )
 
         # Should have consistent state

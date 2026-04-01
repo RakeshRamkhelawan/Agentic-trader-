@@ -130,7 +130,11 @@ class StackingEnsemble(nn.Module):
     """
 
     def __init__(
-        self, input_size: int, n_models: int = 3, hidden_size: int = 128, dropout: float = 0.2
+        self,
+        input_size: int,
+        n_models: int = 3,
+        hidden_size: int = 128,
+        dropout: float = 0.2,
     ):
         super().__init__()
 

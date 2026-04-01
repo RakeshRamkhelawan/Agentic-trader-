@@ -49,7 +49,10 @@ class TestDataScoutPredictionEnrichment:
             assert signals[0]["signal_type"] == "bullish"
             assert signals[0]["confidence"] == 0.85
             assert signals[0]["market"] == "kalshi"
-            assert signals[0]["indicators"] == {"maker_advantage": 0.02, "volume_spike": 1.5}
+            assert signals[0]["indicators"] == {
+                "maker_advantage": 0.02,
+                "volume_spike": 1.5,
+            }
 
     @pytest.mark.asyncio
     async def test_happy_path_fetch_multiple_signals(self, data_scout):
@@ -89,7 +92,12 @@ class TestDataScoutPredictionEnrichment:
             orderbook={"bids": [], "asks": []},
             raw_ticker={"last": 50000.0},
             prediction_signals=[
-                {"id": "sig_1", "market": "kalshi", "signal_type": "bullish", "confidence": 0.8}
+                {
+                    "id": "sig_1",
+                    "market": "kalshi",
+                    "signal_type": "bullish",
+                    "confidence": 0.8,
+                }
             ],
         )
 
@@ -101,7 +109,9 @@ class TestDataScoutPredictionEnrichment:
     async def test_happy_path_observe_includes_prediction_signals(self, data_scout):
         """Happy path: observe() method includes prediction signals."""
         # Mock ticker fetch
-        with patch.object(data_scout, "_fetch_ticker", new_callable=AsyncMock) as mock_ticker:
+        with patch.object(
+            data_scout, "_fetch_ticker", new_callable=AsyncMock
+        ) as mock_ticker:
             mock_ticker.return_value = {
                 "last": 50000.0,
                 "volume": 100.0,
@@ -175,7 +185,9 @@ class TestDataScoutPredictionEnrichment:
         """Unhappy path: Service failure returns empty list."""
         with patch("backend.agents.data_scout_agent.get_prediction_client") as mock_get:
             mock_client = AsyncMock()
-            mock_client.get_signals = AsyncMock(side_effect=Exception("Connection failed"))
+            mock_client.get_signals = AsyncMock(
+                side_effect=Exception("Connection failed")
+            )
             mock_get.return_value = mock_client
 
             signals = await data_scout._fetch_prediction_signals("BTC")
@@ -189,7 +201,9 @@ class TestDataScoutPredictionEnrichment:
 
         with patch("backend.agents.data_scout_agent.get_prediction_client") as mock_get:
             mock_client = AsyncMock()
-            mock_client.get_signals = AsyncMock(side_effect=asyncio.TimeoutError("Request timeout"))
+            mock_client.get_signals = AsyncMock(
+                side_effect=asyncio.TimeoutError("Request timeout")
+            )
             mock_get.return_value = mock_client
 
             signals = await data_scout._fetch_prediction_signals("BTC")
@@ -220,10 +234,14 @@ class TestDataScoutPredictionEnrichment:
             assert signals == []
 
     @pytest.mark.asyncio
-    async def test_unhappy_path_prediction_failure_does_not_break_observe(self, data_scout):
+    async def test_unhappy_path_prediction_failure_does_not_break_observe(
+        self, data_scout
+    ):
         """Unhappy path: Prediction service failure doesn't break observe."""
         # Mock ticker fetch (success)
-        with patch.object(data_scout, "_fetch_ticker", new_callable=AsyncMock) as mock_ticker:
+        with patch.object(
+            data_scout, "_fetch_ticker", new_callable=AsyncMock
+        ) as mock_ticker:
             mock_ticker.return_value = {
                 "last": 50000.0,
                 "volume": 100.0,
@@ -272,8 +290,18 @@ class TestObservationSchema:
     def test_happy_path_prediction_signals_accepts_list_of_dicts(self):
         """Happy path: prediction_signals accepts list of dicts."""
         signals = [
-            {"id": "sig_1", "market": "kalshi", "signal_type": "bullish", "confidence": 0.8},
-            {"id": "sig_2", "market": "polymarket", "signal_type": "bearish", "confidence": 0.6},
+            {
+                "id": "sig_1",
+                "market": "kalshi",
+                "signal_type": "bullish",
+                "confidence": 0.8,
+            },
+            {
+                "id": "sig_2",
+                "market": "polymarket",
+                "signal_type": "bearish",
+                "confidence": 0.6,
+            },
         ]
 
         obs = Observation(
@@ -291,7 +319,12 @@ class TestObservationSchema:
             price=50000.0,
             volume=100.0,
             prediction_signals=[
-                {"id": "sig_1", "market": "kalshi", "signal_type": "bullish", "confidence": 0.8}
+                {
+                    "id": "sig_1",
+                    "market": "kalshi",
+                    "signal_type": "bullish",
+                    "confidence": 0.8,
+                }
             ],
         )
 

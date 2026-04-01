@@ -8,12 +8,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from backend.core.telemetry.tracing import (
-    TraceCorrelation,
     HotPathTracer,
-    setup_tracing,
-    get_tracer,
-    get_hot_path_tracer,
+    TraceCorrelation,
     create_span_context,
+    get_hot_path_tracer,
+    get_tracer,
+    setup_tracing,
 )
 
 
@@ -170,7 +170,9 @@ class TestTracingIntegration:
             mock_tracer.start_as_current_span.return_value.__enter__ = MagicMock(
                 return_value=mock_span
             )
-            mock_tracer.start_as_current_span.return_value.__exit__ = MagicMock(return_value=False)
+            mock_tracer.start_as_current_span.return_value.__exit__ = MagicMock(
+                return_value=False
+            )
             mock_get.return_value = mock_tracer
 
             # Simulate hot path operation

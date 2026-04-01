@@ -66,7 +66,8 @@ async def get_current_tenant_id(request: Request) -> str:
     if not auth_header or not auth_header.startswith("Bearer "):
         if _is_dev_fallback_allowed():
             logger.debug(
-                "Dev fallback: using tenant-dev (AUTH_DISABLED=True, ENV=%s)", settings.ENV
+                "Dev fallback: using tenant-dev (AUTH_DISABLED=True, ENV=%s)",
+                settings.ENV,
             )
             return "tenant-dev"
         raise HTTPException(

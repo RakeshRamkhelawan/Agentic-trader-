@@ -74,7 +74,9 @@ def test_integration_user_info(app_with_auth):
 def test_integration_role_check(app_with_auth):
     client = TestClient(app_with_auth)
 
-    response = client.get("/admin-only", headers={"Authorization": "Bearer valid_token"})
+    response = client.get(
+        "/admin-only", headers={"Authorization": "Bearer valid_token"}
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -85,7 +87,9 @@ def test_integration_role_check(app_with_auth):
 def test_integration_tenant_context(app_with_auth):
     client = TestClient(app_with_auth)
 
-    response = client.get("/tenant-context", headers={"Authorization": "Bearer valid_token"})
+    response = client.get(
+        "/tenant-context", headers={"Authorization": "Bearer valid_token"}
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -125,7 +129,8 @@ async def test_integration_secret_manager_vault_fallback():
     )
 
     with patch.dict(
-        "os.environ", {"REVOLUT_API_KEY": "fallback_key_123", "DATABASE_URL": "postgres://fallback"}
+        "os.environ",
+        {"REVOLUT_API_KEY": "fallback_key_123", "DATABASE_URL": "postgres://fallback"},
     ):
         api_key = manager.get_api_key("revolut")
         db_url = manager.get_database_url()

@@ -96,7 +96,9 @@ async def vedastro_generate_signal(
 
             # Deterministic "random" based on symbol + current minute
             minute = int(__import__("datetime").datetime.utcnow().timestamp() / 60)
-            hash_val = int(hashlib.md5(f"{symbol}:{minute}".encode()).hexdigest(), 16)
+            hash_val = int(
+                hashlib.md5(f"{symbol}:{minute}".encode(), usedforsecurity=False).hexdigest(), 16
+            )
 
             # 15% kans op BUY, 10% kans op STRONG_BUY
             signal_roll = hash_val % 100

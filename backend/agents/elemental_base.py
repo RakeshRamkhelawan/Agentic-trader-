@@ -232,7 +232,11 @@ class ElementalBase(BaseAgent, ABC):
         Generate analysis using LLM (DeepSeek/Ollama).
         """
         if not self.llm:
-            return {"text": "No LLM", "confidence": 0.0, "reasoning": "LLM not available"}
+            return {
+                "text": "No LLM",
+                "confidence": 0.0,
+                "reasoning": "LLM not available",
+            }
 
         system_prompt = f"""JIJ = {self.agent_name}, een {self.element.upper()} element trading agent.
 JE ROL: Analyseer markt vanuit {self.element} perspectief.

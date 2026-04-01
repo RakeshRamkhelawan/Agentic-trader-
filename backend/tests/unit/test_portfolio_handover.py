@@ -1,14 +1,20 @@
-import pytest
 import asyncio
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from backend.agents.portfolio_manager_agent import PortfolioManagerAgent
+
 
 @pytest.fixture
 def mock_portfolio_manager():
     # Setup mock capabilities for PortfolioManagerAgent
     pm = PortfolioManagerAgent()
-    pm.get_tradable_universe = AsyncMock(return_value=["BTC/EUR", "ETH/EUR", "UNKNOWN_COIN/EUR"])
+    pm.get_tradable_universe = AsyncMock(
+        return_value=["BTC/EUR", "ETH/EUR", "UNKNOWN_COIN/EUR"]
+    )
     return pm
+
 
 @pytest.mark.asyncio
 async def test_portfolio_manager_dynamic_universe(mock_portfolio_manager):
@@ -22,6 +28,7 @@ async def test_portfolio_manager_dynamic_universe(mock_portfolio_manager):
     assert "BTC/EUR" in universe
     assert "UNKNOWN_COIN/EUR" in universe
 
+
 @pytest.mark.asyncio
 async def test_execution_loop_intersection_logic():
     """
@@ -32,10 +39,7 @@ async def test_execution_loop_intersection_logic():
     dynamic_universe = ["BTC/EUR", "ETH/EUR", "INVALID/EUR", "AAPL"]
 
     # Simulating the SYMBOL_MAP available in the execution environment
-    SYMBOL_MAP = {
-        "BTC/EUR": "BINANCE:BTCEUR",
-        "ETH/EUR": "BINANCE:ETHEUR"
-    }
+    SYMBOL_MAP = {"BTC/EUR": "BINANCE:BTCEUR", "ETH/EUR": "BINANCE:ETHEUR"}
 
     # The handover logic
     symbols_to_test = []

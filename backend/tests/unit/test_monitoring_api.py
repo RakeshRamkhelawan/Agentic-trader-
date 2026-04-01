@@ -10,7 +10,6 @@ Tests cover:
 - Unhappy: partial failure, missing confirmation, redis down
 """
 
-
 import pytest
 from httpx import ASGITransport, AsyncClient
 

@@ -37,7 +37,9 @@ def trending_csv(tmp_path):
     for i in range(250):
         dt = datetime(2023, 1, 1) + timedelta(hours=i)
         price = 100.0 + i * 0.1 + np.random.randn() * 0.5
-        lines.append(f"{dt.isoformat()},{price:.2f},{price+1:.2f},{price-1:.2f},{price:.2f},1000")
+        lines.append(
+            f"{dt.isoformat()},{price:.2f},{price+1:.2f},{price-1:.2f},{price:.2f},1000"
+        )
     csv_file = tmp_path / "trending.csv"
     csv_file.write_text("\n".join(lines))
     return str(csv_file)
@@ -52,7 +54,9 @@ def volatile_csv(tmp_path):
         dt = datetime(2023, 1, 1) + timedelta(hours=i)
         price = 100.0 + np.random.randn() * 5.0  # Large swings
         price = max(50.0, price)  # Clamp to positive
-        lines.append(f"{dt.isoformat()},{price:.2f},{price+2:.2f},{price-2:.2f},{price:.2f},1000")
+        lines.append(
+            f"{dt.isoformat()},{price:.2f},{price+2:.2f},{price-2:.2f},{price:.2f},1000"
+        )
     csv_file = tmp_path / "volatile.csv"
     csv_file.write_text("\n".join(lines))
     return str(csv_file)

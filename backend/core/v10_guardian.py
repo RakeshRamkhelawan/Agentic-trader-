@@ -92,7 +92,11 @@ class V10Guardian:
         confidence = getattr(decision, "confidence", 0.0)
         if confidence < self.config.MIN_CONFIDENCE:
             self.rejection_stats["confidence_too_low"] += 1
-            return False, f"Confidence {confidence:.2f} < {self.config.MIN_CONFIDENCE}", 0.0
+            return (
+                False,
+                f"Confidence {confidence:.2f} < {self.config.MIN_CONFIDENCE}",
+                0.0,
+            )
 
         # Check 3: Maya detection
         is_maya = getattr(decision, "is_maya", False)
@@ -104,7 +108,11 @@ class V10Guardian:
         # Check 4: Max positions
         if active_positions >= self.config.MAX_TOTAL_POSITIONS:
             self.rejection_stats["max_positions"] += 1
-            return False, f"Max positions ({self.config.MAX_TOTAL_POSITIONS}) reached", 0.0
+            return (
+                False,
+                f"Max positions ({self.config.MAX_TOTAL_POSITIONS}) reached",
+                0.0,
+            )
 
         # Check 5: Rate limiting (max trades per hour)
         if self.hourly_trade_count >= self.config.MAX_TRADES_PER_HOUR:
@@ -179,7 +187,11 @@ class V10Guardian:
             else self.config.MAX_HOLD_TREND_MISALIGNED
         )
 
-        return {"trailing_mult": trailing_mult, "tp_mult": tp_mult, "max_hold": max_hold}
+        return {
+            "trailing_mult": trailing_mult,
+            "tp_mult": tp_mult,
+            "max_hold": max_hold,
+        }
 
     def _calculate_quality_score(self, decision: Any, market_state: Any) -> float:
         """Calculate overall trade quality score (0-1)"""

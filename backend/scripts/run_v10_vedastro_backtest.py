@@ -312,7 +312,12 @@ class MockVedAstroOrchestrator:
             ]
             blocked_windows = [
                 TimeWindow(
-                    time_class(0, 0), time_class(10, 0), TradingWindow.BLOCK, 0.1, "Pre-market", ""
+                    time_class(0, 0),
+                    time_class(10, 0),
+                    TradingWindow.BLOCK,
+                    0.1,
+                    "Pre-market",
+                    "",
                 ),
                 TimeWindow(
                     time_class(12, 0),
@@ -372,7 +377,7 @@ class MockVedAstroOrchestrator:
             tithi="Simulated",
             tithi_type=tithi_type,
             is_favorable_day=is_favorable,
-            warnings=["Rikta Tithi - Avoid new beginnings"] if tithi_type == "Rikta" else [],
+            warnings=(["Rikta Tithi - Avoid new beginnings"] if tithi_type == "Rikta" else []),
             top_assets=top_assets,
             avoid_assets=avoid_assets,
             trading_windows=trading_windows,
@@ -380,7 +385,7 @@ class MockVedAstroOrchestrator:
             best_entry_times=best_entry,
             best_exit_times=best_exit,
             max_positions=3 if muhurtha_rating >= 7 else 2,
-            risk_adjustment=1.2 if muhurtha_rating >= 8 else 1.0 if muhurtha_rating >= 6 else 0.6,
+            risk_adjustment=(1.2 if muhurtha_rating >= 8 else 1.0 if muhurtha_rating >= 6 else 0.6),
         )
 
         self.daily_plans[date_str] = plan
@@ -597,7 +602,11 @@ def run_v10_vedastro_backtest():
                         if pos_size >= 200:
                             side = "buy" if decision.action == ActionType.BUY else "sell"
                             cost = pos.open_position(
-                                side, pos_size, market_state.price, market_state.atr, decision
+                                side,
+                                pos_size,
+                                market_state.price,
+                                market_state.atr,
+                                decision,
                             )
                             capital -= cost
                             risk_manager.add_position(sym, sector, side, pos_size)

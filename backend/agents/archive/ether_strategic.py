@@ -81,7 +81,10 @@ class StrategicEtherAgent(EtherAgent):
         return combined
 
     def _build_mcts_state(
-        self, signals: List[AgentSignal], market: MarketState, v8_decision: CollectiveDecision
+        self,
+        signals: List[AgentSignal],
+        market: MarketState,
+        v8_decision: CollectiveDecision,
     ) -> Dict[str, Any]:
         """Build state dict for MCTS from v8 components"""
 
@@ -165,7 +168,10 @@ class StrategicEtherAgent(EtherAgent):
             )
 
         # Case 2: v8 HOLD, MCTS wants to trade → Respect v8 (tactical expertise)
-        elif v8_action == ActionType.HOLD and mcts_action in [ActionType.BUY, ActionType.SELL]:
+        elif v8_action == ActionType.HOLD and mcts_action in [
+            ActionType.BUY,
+            ActionType.SELL,
+        ]:
             final_action = ActionType.HOLD  # v8 wins
             final_confidence = v8.confidence * 0.9
             rationale = f"{v8.rationale} | MCTS suggests {mcts_action_str} but v8 holds"

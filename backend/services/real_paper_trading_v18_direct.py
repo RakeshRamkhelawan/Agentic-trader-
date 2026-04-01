@@ -263,7 +263,9 @@ class RealPaperTradingV18:
                         reason = "completed"
 
                     await self.db.end_session(
-                        session_id=self.session_id, final_capital=final_value, reason=reason
+                        session_id=self.session_id,
+                        final_capital=final_value,
+                        reason=reason,
                     )
                     logger.info(f"[DB] Session {self.session_id} closed in database")
             except Exception as e:
@@ -1175,7 +1177,12 @@ class RealPaperTradingV18:
                 )
                 reason_str = f"HARD_STOP_LOSS ({unrealized_pnl_pct*100:+.1f}%)"
                 return await self._execute_exit(
-                    symbol, current_price, quantity, position_size, reason_str, is_hard_exit=True
+                    symbol,
+                    current_price,
+                    quantity,
+                    position_size,
+                    reason_str,
+                    is_hard_exit=True,
                 )
 
             # ============================================================
@@ -1251,7 +1258,12 @@ class RealPaperTradingV18:
 
             reason_str = f"CONSENSUS_EXIT ({exit_consensus:.2f}) | Earth: {', '.join(earth_reasons) if earth_reasons else 'OK'}"
             return await self._execute_exit(
-                symbol, current_price, quantity, position_size, reason_str, is_hard_exit=False
+                symbol,
+                current_price,
+                quantity,
+                position_size,
+                reason_str,
+                is_hard_exit=False,
             )
 
         except Exception as e:
@@ -1369,7 +1381,7 @@ class RealPaperTradingV18:
                                     timestamp=datetime.utcnow().isoformat(),
                                     symbol=symbol,
                                     side="sell",
-                                    entry_price=position_size / quantity if quantity > 0 else 0,
+                                    entry_price=(position_size / quantity if quantity > 0 else 0),
                                     exit_price=current_price,
                                     size=quantity,
                                     net_pnl=pnl,
@@ -1383,12 +1395,12 @@ class RealPaperTradingV18:
                                     harmony_score=0.5,
                                     confidence=0.9 if is_hard_exit else 0.7,
                                     coherence=0.5,
-                                    dominant_element="EARTH" if is_hard_exit else "CONSENSUS",
+                                    dominant_element=("EARTH" if is_hard_exit else "CONSENSUS"),
                                     guna_dominant="rajas",
                                     is_maya=False,
                                     exit_reason=reason,
                                     max_favorable_excursion=0.0,
-                                    max_adverse_excursion=-0.07 if is_hard_exit else 0.0,
+                                    max_adverse_excursion=(-0.07 if is_hard_exit else 0.0),
                                 )
                                 await self.chitta.add_experience(experience)
                                 logger.debug(f"[CHITTA] Saved experience for {symbol}")
@@ -1462,7 +1474,7 @@ class RealPaperTradingV18:
         import hashlib
 
         # Create deterministic hash-based embedding
-        hash_val = hashlib.md5(text.encode()).hexdigest()
+        hash_val = hashlib.md5(text.encode(), usedforsecurity=False).hexdigest()
 
         # Generate embedding values from hash
         embedding = []

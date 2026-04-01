@@ -68,7 +68,7 @@ async def verify_v7_wiring():
     executor.market_bridge = MagicMock()
 
     # Mock intent
-    intent = TradingIntent(
+    _intent = TradingIntent(
         action=1,  # BUY
         size=0.1,
         confidence=0.8,

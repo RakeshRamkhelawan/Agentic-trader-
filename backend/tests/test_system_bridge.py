@@ -18,7 +18,12 @@ def mock_system_identity():
     """Mock SystemIdentity voor tests."""
     identity = Mock()
     identity.process_market_cycle = AsyncMock(
-        return_value={"confidence": 0.75, "action": 1, "perception": {}, "tattva_traversal": {}}
+        return_value={
+            "confidence": 0.75,
+            "action": 1,
+            "perception": {},
+            "tattva_traversal": {},
+        }
     )
     identity.get_system_statistics = Mock(
         return_value={"total_experiences": 42, "avg_coherence": 0.8}
@@ -39,7 +44,10 @@ class TestCognitiveBridge:
             symbol="BTC/USDT",
             price=50000.0,
             volume=100.5,
-            orderbook={"bids": [[49999, 10.0], [49998, 5.0]], "asks": [[50001, 8.0], [50002, 3.0]]},
+            orderbook={
+                "bids": [[49999, 10.0], [49998, 5.0]],
+                "asks": [[50001, 8.0], [50002, 3.0]],
+            },
             funding_rate=0.0001,
             social_sentiment=0.5,
         )
@@ -66,7 +74,8 @@ class TestCognitiveBridge:
     async def test_buffer_management(self, mock_system_identity):
         """Buffers correctly maintain sliding window."""
         bridge = CognitiveBridge(
-            system_identity=mock_system_identity, window_size=3  # Small window for testing
+            system_identity=mock_system_identity,
+            window_size=3,  # Small window for testing
         )
 
         # Add observations
@@ -140,7 +149,9 @@ class TestCognitiveBridge:
         bridge = CognitiveBridge(mock_system_identity)
 
         # Make SystemIdentity raise exception
-        mock_system_identity.process_market_cycle = AsyncMock(side_effect=Exception("Core failure"))
+        mock_system_identity.process_market_cycle = AsyncMock(
+            side_effect=Exception("Core failure")
+        )
 
         obs = Observation(symbol="BTC/USDT", price=50000, volume=100)
 

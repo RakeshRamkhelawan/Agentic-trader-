@@ -1,6 +1,11 @@
-
 from backend.core.agents.base import ElementType
-from backend.core.agents.elements import AgniAgent, AkashaAgent, JalaAgent, PrithviAgent, VayuAgent
+from backend.core.agents.elements import (
+    AgniAgent,
+    AkashaAgent,
+    JalaAgent,
+    PrithviAgent,
+    VayuAgent,
+)
 
 
 class TestElementalAgents:

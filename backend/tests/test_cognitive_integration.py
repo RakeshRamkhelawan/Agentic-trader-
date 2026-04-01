@@ -65,7 +65,9 @@ async def test_cognitive_event_integration(event_bus, system_identity, market_da
     }
 
     # Publish to event bus
-    event_id = await event_bus.publish(stream="cognitive_decisions", event_data=decision_event)
+    event_id = await event_bus.publish(
+        stream="cognitive_decisions", event_data=decision_event
+    )
 
     # Verify event was published
     assert event_id is not None
@@ -304,7 +306,9 @@ async def test_cognitive_cycle_latency(system_identity, market_data):
     elapsed = time.time() - start
 
     # Should complete in reasonable time (cold path)
-    assert elapsed < 2.0  # 2 seconds for full cycle is acceptable (includes startup overhead)
+    assert (
+        elapsed < 2.0
+    )  # 2 seconds for full cycle is acceptable (includes startup overhead)
 
     # Latency should be tracked
     cycle_stats = result.get("system_stats", {})

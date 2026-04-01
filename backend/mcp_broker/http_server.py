@@ -180,7 +180,8 @@ async def get_tool_info(tool_name: str):
     tool = mcp._tool_manager._tools.get(tool_name)
     if not tool:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Tool '{tool_name}' not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tool '{tool_name}' not found",
         )
 
     # Extract parameter info from the function signature
@@ -192,7 +193,9 @@ async def get_tool_info(tool_name: str):
         if param_name == "ctx":
             continue
         params[param_name] = {
-            "default": str(param.default) if param.default is not inspect.Parameter.empty else None,
+            "default": (
+                str(param.default) if param.default is not inspect.Parameter.empty else None
+            ),
             "annotation": (
                 str(param.annotation) if param.annotation is not inspect.Parameter.empty else "Any"
             ),

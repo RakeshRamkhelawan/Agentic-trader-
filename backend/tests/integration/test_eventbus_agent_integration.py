@@ -48,7 +48,9 @@ async def test_agent_publishes_to_event_bus():
     agent = ConcreteTestAgent(agent_name="test_agent", llm_provider=llm, event_bus=bus)
 
     # Agent should handle bus errors gracefully
-    await agent.publish_thought(reasoning="Test reasoning", confidence=0.9, data={"key": "value"})
+    await agent.publish_thought(
+        reasoning="Test reasoning", confidence=0.9, data={"key": "value"}
+    )
 
     # Should not crash even without Redis connection
     assert agent.agent_name == "test_agent"
@@ -77,7 +79,9 @@ async def test_agent_without_event_bus_works():
     agent = ConcreteTestAgent("standalone_agent", llm_provider=llm, event_bus=None)
 
     # Should not crash when publishing
-    await agent.publish_thought(reasoning="Standalone reasoning", confidence=0.7, data={})
+    await agent.publish_thought(
+        reasoning="Standalone reasoning", confidence=0.7, data={}
+    )
 
     # Agent should still function
     assert agent.agent_name == "standalone_agent"

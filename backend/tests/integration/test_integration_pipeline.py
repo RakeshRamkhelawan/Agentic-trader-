@@ -110,7 +110,9 @@ class TestIntegrationPipeline:
             decision.adjusted_size == 1.0
         ), "Pipeline Validation Failed: Guna Sizer (Sattva) should not reduce size."
 
-        print(f"[DECIDE] Risk Approved: {decision.reason} | Size: {decision.adjusted_size}")
+        print(
+            f"[DECIDE] Risk Approved: {decision.reason} | Size: {decision.adjusted_size}"
+        )
 
         # ============================================================================
         # 4. ACT (Execution)
@@ -119,7 +121,8 @@ class TestIntegrationPipeline:
         # 4a. Time Gate (Rahu Kala)
         # Mock time to be SAFE (Not Rahu Kala)
         with patch(
-            "backend.core.execution.rahu_kala_gate.RahuKalaGate.is_in_rahu_kala", return_value=False
+            "backend.core.execution.rahu_kala_gate.RahuKalaGate.is_in_rahu_kala",
+            return_value=False,
         ):
             can_execute = gate.can_enter_trade(datetime.now())
             assert (

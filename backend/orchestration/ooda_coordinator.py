@@ -497,7 +497,10 @@ class OODALoopCoordinator:
         if self.vedastro_agent:
             try:
                 v_result = await self.vedastro_agent.analyze(
-                    features={"symbol": observation.symbol, "price": observation.close_price},
+                    features={
+                        "symbol": observation.symbol,
+                        "price": observation.close_price,
+                    },
                     context={},
                 )
                 if v_result:

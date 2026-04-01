@@ -250,7 +250,13 @@ class NotificationManager:
             title="Trade Filled",
             message=message,
             priority=NotificationPriority.MEDIUM,
-            data={"symbol": symbol, "side": side, "quantity": quantity, "price": price, "pnl": pnl},
+            data={
+                "symbol": symbol,
+                "side": side,
+                "quantity": quantity,
+                "price": price,
+                "pnl": pnl,
+            },
         )
 
     async def notify_strategy_forked(

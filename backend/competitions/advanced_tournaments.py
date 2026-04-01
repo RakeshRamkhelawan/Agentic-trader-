@@ -145,7 +145,10 @@ class AdvancedTournamentEngine(TournamentEngine):
         """Create a tournament with special rules."""
         # Create base tournament
         tournament = self.create_tournament(
-            name=name, description=description, tournament_type=TournamentType.SPECIAL, **kwargs
+            name=name,
+            description=description,
+            tournament_type=TournamentType.SPECIAL,
+            **kwargs,
         )
 
         # Store variant info

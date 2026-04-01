@@ -91,7 +91,8 @@ class ElementalAgentManagerV18:
         trade_history = self.trade_history.get(symbol, [])
 
         earth_result = await self.mcp_client.call_tool(
-            "elemental__earth_entry_check", {"symbol": symbol, "trade_history": trade_history}
+            "elemental__earth_entry_check",
+            {"symbol": symbol, "trade_history": trade_history},
         )
 
         if not earth_result.get("can_enter", True):
@@ -101,7 +102,8 @@ class ElementalAgentManagerV18:
         # Check 2: Water regime check
         if len(price_history) >= 20:
             water_result = await self.mcp_client.call_tool(
-                "elemental__water_regime_check", {"symbol": symbol, "prices": price_history}
+                "elemental__water_regime_check",
+                {"symbol": symbol, "prices": price_history},
             )
 
             # For bonds, check regime shift

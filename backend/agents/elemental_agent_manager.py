@@ -184,7 +184,11 @@ class FireAgentV17:
         return statistics.mean(tr_list) if tr_list else 0.02
 
     def calculate_position_size(
-        self, symbol: str, portfolio_value: float, vedastro_score: float, dominant_planet: str
+        self,
+        symbol: str,
+        portfolio_value: float,
+        vedastro_score: float,
+        dominant_planet: str,
     ) -> float:
         """
         V17: Position sizing using VedAstro score (0-100) as harmony.
@@ -446,7 +450,11 @@ class VedAstroElementalAgentV17:
         return self.astro_cache.get(cache_key)
 
     async def evaluate_entry(
-        self, symbol: str, current_price: float, cycle_date: datetime, portfolio_value: float
+        self,
+        symbol: str,
+        current_price: float,
+        cycle_date: datetime,
+        portfolio_value: float,
     ) -> dict | None:
         """
         V17 Entry evaluation:
@@ -560,13 +568,19 @@ class VedAstroElementalAgentV17:
             "vedastro_confidence": signal.confidence,
             "vedastro_strength": signal.strength_score,
             "vedastro_risk": signal.risk_level,
-            "dasha_context": signal.dasha_context if hasattr(signal, "dasha_context") else "",
-            "primary_factors": signal.primary_factors if hasattr(signal, "primary_factors") else [],
+            "dasha_context": (signal.dasha_context if hasattr(signal, "dasha_context") else ""),
+            "primary_factors": (
+                signal.primary_factors if hasattr(signal, "primary_factors") else []
+            ),
             "planet": dominant_planet,
         }
 
     def evaluate_open_position(
-        self, symbol: str, current_price: float, current_date: datetime, entry_price: float
+        self,
+        symbol: str,
+        current_price: float,
+        current_date: datetime,
+        entry_price: float,
     ) -> tuple[bool, str]:
         """
         V17: Enhanced position evaluation with VedAstro SELL signals.

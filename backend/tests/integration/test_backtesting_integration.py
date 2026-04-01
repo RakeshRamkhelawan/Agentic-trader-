@@ -93,7 +93,9 @@ class TestBacktestingIntegration:
 
         for bar in bars:
             await strategy.on_bar("BTC/USD", bar)
-            equity_curve.append({"timestamp": bar["timestamp"], "equity": exchange.cash})
+            equity_curve.append(
+                {"timestamp": bar["timestamp"], "equity": exchange.cash}
+            )
 
         await strategy.on_stop()
 
@@ -128,7 +130,9 @@ class TestBacktestingIntegration:
 
         for bar in bars:
             await strategy.on_bar("BTC/USD", bar)
-            equity_curve.append({"timestamp": bar["timestamp"], "equity": exchange.cash})
+            equity_curve.append(
+                {"timestamp": bar["timestamp"], "equity": exchange.cash}
+            )
 
         await strategy.on_stop()
 
@@ -162,7 +166,9 @@ class TestBacktestingIntegration:
 
         for bar in bars:
             await strategy.on_bar("BTC/USD", bar)
-            equity_curve.append({"timestamp": bar["timestamp"], "equity": exchange.cash})
+            equity_curve.append(
+                {"timestamp": bar["timestamp"], "equity": exchange.cash}
+            )
 
         await strategy.on_stop()
 
@@ -183,8 +189,12 @@ class TestBacktestingIntegration:
         )
 
         # Calculate metrics
-        metrics_fixed = MetricsCalculator.calculate(equity_fixed, initial_capital=10000.0)
-        metrics_percent = MetricsCalculator.calculate(equity_percent, initial_capital=10000.0)
+        metrics_fixed = MetricsCalculator.calculate(
+            equity_fixed, initial_capital=10000.0
+        )
+        metrics_percent = MetricsCalculator.calculate(
+            equity_percent, initial_capital=10000.0
+        )
 
         # Verify
         assert metrics_fixed.total_return > 0

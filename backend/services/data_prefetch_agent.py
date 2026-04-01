@@ -321,7 +321,10 @@ class DataPreFetchAgent:
         # Subscribe in batches van 10
         for i in range(0, len(markets), 10):
             batch = markets[i : i + 10]
-            msg = {"action": "subscribe", "channels": [{"name": "ticker", "markets": batch}]}
+            msg = {
+                "action": "subscribe",
+                "channels": [{"name": "ticker", "markets": batch}],
+            }
             await ws.send(json.dumps(msg))
             await asyncio.sleep(0.3)
 

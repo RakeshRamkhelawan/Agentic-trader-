@@ -251,7 +251,10 @@ class OrderRiskValidator:
             overall_message = "Order approved"
 
         return ValidationResult(
-            order_id=order_id, status=status, checks=checks, overall_message=overall_message
+            order_id=order_id,
+            status=status,
+            checks=checks,
+            overall_message=overall_message,
         )
 
     # -------------------------------------------------------------------------
@@ -332,7 +335,10 @@ class OrderRiskValidator:
                     passed=False,
                     status=ValidationStatus.REJECTED,
                     message=f"Insufficient balance: need ${required:.2f}, have ${available:.2f}",
-                    details={"required": float(required), "available": float(available)},
+                    details={
+                        "required": float(required),
+                        "available": float(available),
+                    },
                 )
         else:  # SELL
             required = request.amount
@@ -344,7 +350,10 @@ class OrderRiskValidator:
                     passed=False,
                     status=ValidationStatus.REJECTED,
                     message=f"Insufficient position: need {required}, have {available}",
-                    details={"required": float(required), "available": float(available)},
+                    details={
+                        "required": float(required),
+                        "available": float(available),
+                    },
                 )
 
         return ValidationCheck(
@@ -355,7 +364,10 @@ class OrderRiskValidator:
         )
 
     def _validate_position_limit(
-        self, request: OrderRequest, portfolio_value: Decimal, current_positions: dict[str, Decimal]
+        self,
+        request: OrderRequest,
+        portfolio_value: Decimal,
+        current_positions: dict[str, Decimal],
     ) -> ValidationCheck:
         """Validate position doesn't exceed limits."""
 

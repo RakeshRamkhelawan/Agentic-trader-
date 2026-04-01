@@ -169,7 +169,9 @@ class TestPhase13SystemIdentityTattvaIntegration:
             assert system_identity.system_state["tattva_coherence"][layer_num] == 1.0
 
     @pytest.mark.asyncio
-    async def test_process_market_cycle_with_tattva_traversal(self, system_identity, market_data):
+    async def test_process_market_cycle_with_tattva_traversal(
+        self, system_identity, market_data
+    ):
         """Test that market cycle traverses all 36 Tattva layers."""
         result = await system_identity.process_market_cycle(
             price_data=market_data["price_data"],
@@ -186,7 +188,9 @@ class TestPhase13SystemIdentityTattvaIntegration:
         assert "overall_coherence" in result["tattva_traversal"]
 
     @pytest.mark.asyncio
-    async def test_tattva_traversal_visits_all_36_layers(self, system_identity, market_data):
+    async def test_tattva_traversal_visits_all_36_layers(
+        self, system_identity, market_data
+    ):
         """Test that market cycle visits all 36 Tattva layers."""
         result = await system_identity.process_market_cycle(
             price_data=market_data["price_data"],
@@ -203,7 +207,9 @@ class TestPhase13SystemIdentityTattvaIntegration:
         assert all(1 <= layer <= 36 for layer in layers_traversed)
 
     @pytest.mark.asyncio
-    async def test_tattva_coherence_per_layer_tracked(self, system_identity, market_data):
+    async def test_tattva_coherence_per_layer_tracked(
+        self, system_identity, market_data
+    ):
         """Test that coherence is tracked for each layer."""
         result = await system_identity.process_market_cycle(
             price_data=market_data["price_data"],
@@ -219,7 +225,9 @@ class TestPhase13SystemIdentityTattvaIntegration:
             assert 0.0 <= coherence <= 1.0
 
     @pytest.mark.asyncio
-    async def test_shuddha_tattvas_maintain_perfect_coherence(self, system_identity, market_data):
+    async def test_shuddha_tattvas_maintain_perfect_coherence(
+        self, system_identity, market_data
+    ):
         """Test Shuddha Tattvas (1-5) maintain perfect coherence."""
         result = await system_identity.process_market_cycle(
             price_data=market_data["price_data"],
@@ -234,7 +242,9 @@ class TestPhase13SystemIdentityTattvaIntegration:
             assert coherence_dict[layer_num] == 1.0
 
     @pytest.mark.asyncio
-    async def test_kanchukas_introduce_expected_friction(self, system_identity, market_data):
+    async def test_kanchukas_introduce_expected_friction(
+        self, system_identity, market_data
+    ):
         """Test Kanchukas (6-12) introduce expected coherence reduction."""
         result = await system_identity.process_market_cycle(
             price_data=market_data["price_data"],
@@ -245,12 +255,16 @@ class TestPhase13SystemIdentityTattvaIntegration:
         )
 
         coherence_dict = result["tattva_traversal"]["coherence_per_layer"]
-        kanchukas_coherence = [coherence_dict[i] for i in range(6, 13) if i in coherence_dict]
+        kanchukas_coherence = [
+            coherence_dict[i] for i in range(6, 13) if i in coherence_dict
+        ]
         # Kanchukas should be around 0.93-0.95
         assert all(0.90 <= c <= 1.0 for c in kanchukas_coherence)
 
     @pytest.mark.asyncio
-    async def test_mahabhutas_maintain_high_coherence(self, system_identity, market_data):
+    async def test_mahabhutas_maintain_high_coherence(
+        self, system_identity, market_data
+    ):
         """Test Mahabhutas (32-36) maintain high coherence (physical layer)."""
         result = await system_identity.process_market_cycle(
             price_data=market_data["price_data"],
@@ -268,7 +282,9 @@ class TestPhase13SystemIdentityTattvaIntegration:
                 assert coherence_dict[layer_num] >= 0.80
 
     @pytest.mark.asyncio
-    async def test_overall_tattva_coherence_calculated(self, system_identity, market_data):
+    async def test_overall_tattva_coherence_calculated(
+        self, system_identity, market_data
+    ):
         """Test that overall Tattva coherence is calculated correctly."""
         result = await system_identity.process_market_cycle(
             price_data=market_data["price_data"],
@@ -471,7 +487,9 @@ class TestPhase13InformationFlow:
         assert "coherence" in perception or "primary_frequency" in perception
 
     @pytest.mark.asyncio
-    async def test_no_information_loss_through_layers(self, system_identity, market_data):
+    async def test_no_information_loss_through_layers(
+        self, system_identity, market_data
+    ):
         """Test that critical information isn't lost through layer traversal."""
         result = await system_identity.process_market_cycle(
             price_data=market_data["price_data"],
@@ -487,7 +505,9 @@ class TestPhase13InformationFlow:
         assert "rationale" in result
 
     @pytest.mark.asyncio
-    async def test_latency_measured_through_all_layers(self, system_identity, market_data):
+    async def test_latency_measured_through_all_layers(
+        self, system_identity, market_data
+    ):
         """Test that latency is measured through complete layer traversal."""
         result = await system_identity.process_market_cycle(
             price_data=market_data["price_data"],
@@ -500,10 +520,14 @@ class TestPhase13InformationFlow:
         assert "cycle_latency_us" in result
         assert result["cycle_latency_us"] > 0
         # Python async operations take ~50-100ms realistically (after psutil bottleneck fix)
-        assert result["cycle_latency_us"] < 100000  # 100ms max for realistic Python/async
+        assert (
+            result["cycle_latency_us"] < 100000
+        )  # 100ms max for realistic Python/async
 
     @pytest.mark.asyncio
-    async def test_system_state_updated_after_traversal(self, system_identity, market_data):
+    async def test_system_state_updated_after_traversal(
+        self, system_identity, market_data
+    ):
         """Test that system state is updated after Tattva traversal."""
         initial_experiences = system_identity.system_state["total_experiences"]
 
@@ -515,7 +539,9 @@ class TestPhase13InformationFlow:
             social_sentiment=market_data["social_sentiment"],
         )
 
-        assert system_identity.system_state["total_experiences"] == initial_experiences + 1
+        assert (
+            system_identity.system_state["total_experiences"] == initial_experiences + 1
+        )
 
 
 # ============================================================================
@@ -572,7 +598,9 @@ class TestPhase13BackwardCompatibility:
         assert 0.0 <= result["confidence"] <= 1.0
 
     @pytest.mark.asyncio
-    async def test_system_state_contains_expected_fields(self, system_identity, market_data):
+    async def test_system_state_contains_expected_fields(
+        self, system_identity, market_data
+    ):
         """Test that system state has Phase 12 fields."""
         result = await system_identity.process_market_cycle(
             price_data=market_data["price_data"],
@@ -650,7 +678,9 @@ class TestPhase13SystemStatistics:
         assert "tattva_metrics" in stats
 
     @pytest.mark.asyncio
-    async def test_tattva_metrics_avg_layer_coherence(self, system_identity, market_data):
+    async def test_tattva_metrics_avg_layer_coherence(
+        self, system_identity, market_data
+    ):
         """Test that average layer coherence is calculated."""
         for _ in range(3):
             await system_identity.process_market_cycle(
@@ -729,7 +759,9 @@ class TestPhase13SystemStatistics:
         assert "decision_stats" in stats
 
     @pytest.mark.asyncio
-    async def test_multiple_cycles_accumulate_metrics(self, system_identity, market_data):
+    async def test_multiple_cycles_accumulate_metrics(
+        self, system_identity, market_data
+    ):
         """Test that metrics accumulate across multiple cycles."""
         initial_stats = system_identity.get_system_statistics()
         initial_count = initial_stats["system_state"].get("total_experiences", 0)
@@ -757,7 +789,9 @@ class TestPhase13CoherenceMaintenance:
     """Test coherence maintenance across layers."""
 
     @pytest.mark.asyncio
-    async def test_system_maintains_valid_coherence_range(self, system_identity, market_data):
+    async def test_system_maintains_valid_coherence_range(
+        self, system_identity, market_data
+    ):
         """Test that system maintains coherence within valid range (0-1)."""
         for _ in range(10):
             result = await system_identity.process_market_cycle(
@@ -800,7 +834,9 @@ class TestPhase13CoherenceMaintenance:
 
         # Coherence should still be meaningful (realistic ranges under actual conditions)
         assert normal_coherence > 0.6  # Normal conditions maintain minimum coherence
-        assert extreme_coherence > 0.4  # Extreme stress still maintains coherence backbone
+        assert (
+            extreme_coherence > 0.4
+        )  # Extreme stress still maintains coherence backbone
 
     @pytest.mark.asyncio
     async def test_shuddha_maintains_high_coherence(self, system_identity, market_data):
@@ -826,7 +862,9 @@ class TestPhase13CoherenceMaintenance:
         assert avg_shuddha_coherence > 0.6  # Shuddha average should be respectable
 
     @pytest.mark.asyncio
-    async def test_restrictions_applied_consistently(self, system_identity, market_data):
+    async def test_restrictions_applied_consistently(
+        self, system_identity, market_data
+    ):
         """Test that Kanchukas restrictions are applied consistently."""
         results = []
         for _ in range(3):

@@ -27,9 +27,9 @@ class TestGitignoreIntegrity:
         gitignore_path = os.path.normpath(gitignore_path)
         with open(gitignore_path, "rb") as f:
             content = f.read()
-        assert b"\x00" not in content, (
-            ".gitignore contains null bytes -- file is corrupt"
-        )
+        assert (
+            b"\x00" not in content
+        ), ".gitignore contains null bytes -- file is corrupt"
 
     def test_no_duplicate_lines(self):
         """Gitignore must not have fully duplicated blocks."""
@@ -93,9 +93,9 @@ class TestSettingsJWTField:
         """Settings must have get_jwt_secret() for Vault-aware secret retrieval."""
         from backend.core.config.settings import Settings
 
-        assert hasattr(Settings, "get_jwt_secret"), (
-            "Settings is missing get_jwt_secret() method for Vault integration"
-        )
+        assert hasattr(
+            Settings, "get_jwt_secret"
+        ), "Settings is missing get_jwt_secret() method for Vault integration"
 
     def test_settings_has_production_validator(self):
         """Settings must have a production safety validator."""
@@ -106,9 +106,7 @@ class TestSettingsJWTField:
             for name in dir(Settings)
             if "validate" in name.lower() and "production" in name.lower()
         ]
-        assert len(validators) > 0, (
-            "Settings is missing a production safety validator"
-        )
+        assert len(validators) > 0, "Settings is missing a production safety validator"
 
 
 class TestNoHardcodedSecrets:
@@ -124,15 +122,15 @@ class TestNoHardcodedSecrets:
             content = f.read()
         # Known real secret fragments that must NOT appear
         real_secret_fragments = [
-            "4NlFXRRcUKDhcIYtbJ5Vn",   # Revolut key fragment
-            "36bb859f4f5f56d2",          # Bitvavo key fragment
-            "sk-bfcf03fad1e5",           # DeepSeek key fragment
+            "4NlFXRRcUKDhcIYtbJ5Vn",  # Revolut key fragment
+            "36bb859f4f5f56d2",  # Bitvavo key fragment
+            "sk-bfcf03fad1e5",  # DeepSeek key fragment
             "dev-secret-key-change-in-production",  # Known insecure JWT default
         ]
         for fragment in real_secret_fragments:
-            assert fragment not in content, (
-                f".env.example contains a real secret fragment: {fragment[:15]}..."
-            )
+            assert (
+                fragment not in content
+            ), f".env.example contains a real secret fragment: {fragment[:15]}..."
 
     def test_docker_compose_no_hardcoded_passwords(self):
         """Docker Compose files must not have hardcoded passwords."""
@@ -152,9 +150,9 @@ class TestNoHardcodedSecrets:
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
             for password in forbidden_passwords:
-                assert password not in content, (
-                    f"{compose_file} contains hardcoded password: {password}"
-                )
+                assert (
+                    password not in content
+                ), f"{compose_file} contains hardcoded password: {password}"
 
 
 class TestNoSecretsInRoot:
@@ -166,9 +164,9 @@ class TestNoSecretsInRoot:
             os.path.join(os.path.dirname(__file__), "..", "..", "..")
         )
         pem_files = glob.glob(os.path.join(project_root, "*.pem"))
-        assert len(pem_files) == 0, (
-            f".pem files found in project root: {[os.path.basename(f) for f in pem_files]}"
-        )
+        assert (
+            len(pem_files) == 0
+        ), f".pem files found in project root: {[os.path.basename(f) for f in pem_files]}"
 
     def test_no_key_in_root(self):
         """No .key files should exist in the project root directory."""
@@ -176,6 +174,6 @@ class TestNoSecretsInRoot:
             os.path.join(os.path.dirname(__file__), "..", "..", "..")
         )
         key_files = glob.glob(os.path.join(project_root, "*.key"))
-        assert len(key_files) == 0, (
-            f".key files found in project root: {[os.path.basename(f) for f in key_files]}"
-        )
+        assert (
+            len(key_files) == 0
+        ), f".key files found in project root: {[os.path.basename(f) for f in key_files]}"

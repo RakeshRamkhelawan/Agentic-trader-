@@ -118,7 +118,11 @@ class OptimizedBacktestEngineV18:
         self._metrics_collector = self._profiler.start_profiling()
 
     async def run_backtest(
-        self, symbols: list[str], start_date: datetime, end_date: datetime, interval: str = "1d"
+        self,
+        symbols: list[str],
+        start_date: datetime,
+        end_date: datetime,
+        interval: str = "1d",
     ) -> dict[str, Any]:
         """
         Run optimized backtest.
@@ -162,7 +166,11 @@ class OptimizedBacktestEngineV18:
         return results
 
     async def _run_sequential(
-        self, symbols: list[str], start_date: datetime, end_date: datetime, interval: str
+        self,
+        symbols: list[str],
+        start_date: datetime,
+        end_date: datetime,
+        interval: str,
     ) -> dict[str, Any]:
         """Run sequential backtest with batching."""
         all_trades = []
@@ -286,7 +294,8 @@ class OptimizedBacktestEngineV18:
                     )
 
                     position_size = min(
-                        position.get("position_size_eur", 1000), self.config.max_position_eur
+                        position.get("position_size_eur", 1000),
+                        self.config.max_position_eur,
                     )
 
                     if position_size > 100:
@@ -325,7 +334,8 @@ class OptimizedBacktestEngineV18:
         # Fetch from MCP
         with self._metrics_collector.time_tool_call("vedastro__generate_signal"):
             result = await self._client.call_tool(
-                "vedastro__generate_signal", {"symbol": symbol, "date": date.isoformat()}
+                "vedastro__generate_signal",
+                {"symbol": symbol, "date": date.isoformat()},
             )
 
         await self._metrics_collector.record_signal()
@@ -382,7 +392,11 @@ class OptimizedBacktestEngineV18:
         return result
 
     async def _calculate_position_cached(
-        self, symbol: str, portfolio_value: float, vedastro_score: float, market_data: dict
+        self,
+        symbol: str,
+        portfolio_value: float,
+        vedastro_score: float,
+        market_data: dict,
     ) -> dict:
         """Calculate position size with caching."""
         # Use vectorized calculation if enabled
@@ -393,7 +407,10 @@ class OptimizedBacktestEngineV18:
                     np.array([portfolio_value]), np.array([vedastro_score])
                 )
 
-                return {"position_size_eur": float(sizes[0]), "confidence": vedastro_score / 100.0}
+                return {
+                    "position_size_eur": float(sizes[0]),
+                    "confidence": vedastro_score / 100.0,
+                }
         else:
             # Use MCP tool
             with self._metrics_collector.time_tool_call("elemental__fire_position_size"):
@@ -414,7 +431,12 @@ class OptimizedBacktestEngineV18:
         with self._metrics_collector.time_tool_call("execution__execute_paper_trade"):
             result = await self._client.call_tool(
                 "execution__execute_paper_trade",
-                {"symbol": symbol, "action": action, "quantity": quantity, "current_price": price},
+                {
+                    "symbol": symbol,
+                    "action": action,
+                    "quantity": quantity,
+                    "current_price": price,
+                },
             )
 
         if "error" not in result:

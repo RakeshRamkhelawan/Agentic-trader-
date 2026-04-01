@@ -384,7 +384,7 @@ class CouncilIndex:
         self.cache = {
             "last_update": datetime.now(UTC).isoformat(),
             "node_count": len(nodes),
-            "avg_confidence": sum(n.confidence for n in nodes) / len(nodes) if nodes else 0,
+            "avg_confidence": (sum(n.confidence for n in nodes) / len(nodes) if nodes else 0),
             "insights": [n.content for n in nodes[:10]],
         }
 
@@ -396,7 +396,7 @@ class CouncilIndex:
 
         return CouncilView(
             council_type=self.council_type,
-            perspective=trend if trend in ["bullish", "bearish", "neutral"] else "neutral",
+            perspective=(trend if trend in ["bullish", "bearish", "neutral"] else "neutral"),
             confidence=confidence,
             key_insights=self.cache.get("insights", []),
         )

@@ -52,7 +52,9 @@ async def test_postgres_connection():
 
 def test_clickhouse_connection():
     """Verify ClickHouse connection."""
-    print(f"Connecting to ClickHouse at {settings.CLICKHOUSE_HOST}:{settings.CLICKHOUSE_PORT}")
+    print(
+        f"Connecting to ClickHouse at {settings.CLICKHOUSE_HOST}:{settings.CLICKHOUSE_PORT}"
+    )
     client = get_clickhouse_client()
     assert client is not None
     result = client.command("SELECT 1")
@@ -71,9 +73,13 @@ async def test_clickhouse_writer_integration():
     assert client is not None
 
     # Ensure table exists (MEMORY engine for speed/cleanup)
-    client.command("CREATE TABLE IF NOT EXISTS market_events_test ENGINE = Memory AS market_events")
+    client.command(
+        "CREATE TABLE IF NOT EXISTS market_events_test ENGINE = Memory AS market_events"
+    )
 
-    writer = ClickHouseWriter(client, table="market_events_test", batch_size=1, flush_interval=0.1)
+    writer = ClickHouseWriter(
+        client, table="market_events_test", batch_size=1, flush_interval=0.1
+    )
 
     ts = datetime.now().timestamp()
     item = {

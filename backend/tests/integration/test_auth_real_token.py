@@ -19,7 +19,9 @@ def get_real_auth0_token():
     domain = os.getenv("AUTH0_DOMAIN") or os.getenv("NEXT_PUBLIC_AUTH0_DOMAIN")
     client_id = os.getenv("AUTH0_CLIENT_ID") or os.getenv("NEXT_PUBLIC_AUTH0_CLIENT_ID")
     client_secret = os.getenv("AUTH0_CLIENT_SECRET")
-    audience = os.getenv("AUTH0_API_AUDIENCE") or os.getenv("NEXT_PUBLIC_AUTH0_AUDIENCE")
+    audience = os.getenv("AUTH0_API_AUDIENCE") or os.getenv(
+        "NEXT_PUBLIC_AUTH0_AUDIENCE"
+    )
 
     username = os.getenv("TEST_USER_EMAIL")
     password = os.getenv("TEST_USER_PASSWORD")
@@ -121,6 +123,8 @@ def test_live_happy_path_with_real_token():
     # 200 = Success (Authenticated & Authorized)
     # 403 = Authenticated but not Authorized (RLS or Scope issue) - Still passes AUTH verification
     if response.status_code not in [200, 403]:
-        pytest.fail(f"API Rejected Valid Token: {response.status_code} - {response.text}")
+        pytest.fail(
+            f"API Rejected Valid Token: {response.status_code} - {response.text}"
+        )
 
     assert response.status_code in [200, 403]

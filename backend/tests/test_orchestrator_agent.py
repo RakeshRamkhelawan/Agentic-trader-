@@ -126,7 +126,12 @@ class TestOrchestratorAgent:
 
     @pytest.mark.asyncio
     async def test_harmonize_rejected_returns_discord(
-        self, orchestrator, mock_observation, mock_orientation, mock_proposal, mock_risk_rejected
+        self,
+        orchestrator,
+        mock_observation,
+        mock_orientation,
+        mock_proposal,
+        mock_risk_rejected,
     ):
         """Test dat afwijzing DISCORD oplevert."""
         result = await orchestrator.harmonize(
@@ -165,7 +170,9 @@ class TestOrchestratorAgent:
         assert orchestrator.cycle_count == 2
 
     @pytest.mark.asyncio
-    async def test_cognitive_dissonance(self, orchestrator, mock_observation, mock_orientation):
+    async def test_cognitive_dissonance(
+        self, orchestrator, mock_observation, mock_orientation
+    ):
         """Test conflict between Bull and Bear."""
         high_bull = MagicMock(spec=ResearchHypothesis, confidence=0.9, stance="bullish")
         high_bear = MagicMock(spec=ResearchHypothesis, confidence=0.9, stance="bearish")

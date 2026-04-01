@@ -48,7 +48,9 @@ async def test_event_bus_connection_timeout():
     """Unhappy: Connection timeout should be handled."""
     bus = EventBus(redis_url="redis://192.0.2.1:6379")  # Non-routable IP
 
-    with patch("redis.asyncio.from_url", side_effect=redis.TimeoutError("Connection timeout")):
+    with patch(
+        "redis.asyncio.from_url", side_effect=redis.TimeoutError("Connection timeout")
+    ):
         with pytest.raises(redis.TimeoutError):
             await bus.connect()
 
@@ -140,7 +142,9 @@ async def test_event_bus_subscribe_redis_error():
     """Unhappy: Redis errors during subscribe should propagate."""
     bus = EventBus(redis_url="redis://localhost:6381")
     mock_client = AsyncMock()
-    mock_client.xreadgroup = AsyncMock(side_effect=redis.ConnectionError("Connection lost"))
+    mock_client.xreadgroup = AsyncMock(
+        side_effect=redis.ConnectionError("Connection lost")
+    )
     bus.client = mock_client
 
     with pytest.raises(redis.ConnectionError):
@@ -166,7 +170,9 @@ async def test_event_bus_create_group_invalid_stream():
     """Unhappy: Creating group on invalid stream name should fail."""
     bus = EventBus(redis_url="redis://localhost:6381")
     mock_client = AsyncMock()
-    mock_client.xgroup_create = AsyncMock(side_effect=redis.ResponseError("Invalid stream"))
+    mock_client.xgroup_create = AsyncMock(
+        side_effect=redis.ResponseError("Invalid stream")
+    )
     bus.client = mock_client
 
     with pytest.raises(redis.ResponseError):

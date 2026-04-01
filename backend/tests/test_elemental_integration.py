@@ -46,7 +46,13 @@ def elemental_system(mock_event_bus):
 
     return {
         "router": router,
-        "agents": {"ether": ether, "air": air, "fire": fire, "water": water, "earth": earth},
+        "agents": {
+            "ether": ether,
+            "air": air,
+            "fire": fire,
+            "water": water,
+            "earth": earth,
+        },
         "bus": mock_event_bus,
     }
 
@@ -88,7 +94,9 @@ async def test_full_ooda_flow(elemental_system):
         "context": {"global_state": "stable"},
     }
 
-    ether_result = await elemental_system["agents"]["ether"].process_signal(orient_input)
+    ether_result = await elemental_system["agents"]["ether"].process_signal(
+        orient_input
+    )
 
     assert ether_result["harmony_score"] > 0
     assert "synthesis" in ether_result
@@ -113,9 +121,15 @@ async def test_full_ooda_flow(elemental_system):
 
     # --- Step 4: Act (Earth) ---
     # Earth executes if Fire approves and Valuation aligns
-    execution_input = {"data": market_data, "strategy": strategy, "risk_approval": fire_result}
+    execution_input = {
+        "data": market_data,
+        "strategy": strategy,
+        "risk_approval": fire_result,
+    }
 
-    earth_result = await elemental_system["agents"]["earth"].process_signal(execution_input)
+    earth_result = await elemental_system["agents"]["earth"].process_signal(
+        execution_input
+    )
 
     assert earth_result["proposal"]["action"] == "buy"
     assert earth_result["proposal"]["size"] >= 1000

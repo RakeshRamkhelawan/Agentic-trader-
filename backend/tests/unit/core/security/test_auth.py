@@ -8,7 +8,12 @@ from backend.core.auth import context
 from backend.core.auth.jwt_validator import JWTValidator
 from backend.core.auth.middleware import AuthMiddleware
 from backend.core.auth.models import TokenPayload
-from backend.core.security.schemas import IdentityPayload, OIDCUserInfo, SecretMetadata, TokenClaims
+from backend.core.security.schemas import (
+    IdentityPayload,
+    OIDCUserInfo,
+    SecretMetadata,
+    TokenClaims,
+)
 from backend.core.security.secrets import EnvBackend, SecretManager, VaultBackend
 
 
@@ -16,7 +21,13 @@ from backend.core.security.secrets import EnvBackend, SecretManager, VaultBacken
 def mock_jwks_response():
     return {
         "keys": [
-            {"kid": "test-key-id", "kty": "RSA", "use": "sig", "n": "test-modulus", "e": "AQAB"}
+            {
+                "kid": "test-key-id",
+                "kty": "RSA",
+                "use": "sig",
+                "n": "test-modulus",
+                "e": "AQAB",
+            }
         ]
     }
 

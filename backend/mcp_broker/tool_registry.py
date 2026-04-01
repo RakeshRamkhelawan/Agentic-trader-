@@ -392,8 +392,14 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
         description="Calculate complete Vimshottari Dasha cycle for birth chart analysis",
         category="vedastro",
         parameters={
-            "birth_nakshatra": {"type": "string", "description": "Birth nakshatra name"},
-            "birth_nakshatra_pad": {"type": "integer", "description": "Nakshatra pad (1-4)"},
+            "birth_nakshatra": {
+                "type": "string",
+                "description": "Birth nakshatra name",
+            },
+            "birth_nakshatra_pad": {
+                "type": "integer",
+                "description": "Nakshatra pad (1-4)",
+            },
             "birth_date": {"type": "string", "description": "Birth date (YYYY-MM-DD)"},
         },
     )
@@ -464,10 +470,22 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
         description="Calculate final consensus from all four elements (Akasha) - integration and balance",
         category="elemental",
         parameters={
-            "fire_vote": {"type": "number", "description": "Fire element score (-1 to 1)"},
-            "earth_vote": {"type": "number", "description": "Earth element score (-1 to 1)"},
-            "water_vote": {"type": "number", "description": "Water element score (-1 to 1)"},
-            "air_vote": {"type": "number", "description": "Air element score (-1 to 1)"},
+            "fire_vote": {
+                "type": "number",
+                "description": "Fire element score (-1 to 1)",
+            },
+            "earth_vote": {
+                "type": "number",
+                "description": "Earth element score (-1 to 1)",
+            },
+            "water_vote": {
+                "type": "number",
+                "description": "Water element score (-1 to 1)",
+            },
+            "air_vote": {
+                "type": "number",
+                "description": "Air element score (-1 to 1)",
+            },
         },
     )
 
@@ -512,7 +530,10 @@ def register_default_tools(registry: ToolRegistry | None = None) -> ToolRegistry
             "symbol": {"type": "string"},
             "start_date": {"type": "string"},
             "end_date": {"type": "string"},
-            "timeframe": {"type": "string", "enum": ["1m", "5m", "15m", "1h", "4h", "1d"]},
+            "timeframe": {
+                "type": "string",
+                "enum": ["1m", "5m", "15m", "1h", "4h", "1d"],
+            },
         },
     )
 

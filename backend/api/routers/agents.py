@@ -218,7 +218,10 @@ async def run_agent_cycle() -> dict[str, Any]:
 
         return {
             "insights": f"REAL analysis complete. {len(agents)} agents analyzed. Consensus: {consensus} with {avg_confidence:.0f}% confidence.",
-            "market_data": {"gainers": [{"symbol": "BTC-EUR", "change_24h": 2.5}], "losers": []},
+            "market_data": {
+                "gainers": [{"symbol": "BTC-EUR", "change_24h": 2.5}],
+                "losers": [],
+            },
             "coherence": {"total": int(avg_confidence)},
             "decisions": decisions,
             "consensus": consensus,

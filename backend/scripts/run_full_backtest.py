@@ -490,11 +490,23 @@ class MockVedastroAgent:
 
             # Mondays (0): Bullish (Moon), Fridays (4): Bearish (Venus retrograde mock), else Neutral
             if dt.weekday() == 0:
-                return {"council": "vedastro", "perspective": "bullish", "confidence": 0.65}
+                return {
+                    "council": "vedastro",
+                    "perspective": "bullish",
+                    "confidence": 0.65,
+                }
             elif dt.weekday() == 4:
-                return {"council": "vedastro", "perspective": "bearish", "confidence": 0.65}
+                return {
+                    "council": "vedastro",
+                    "perspective": "bearish",
+                    "confidence": 0.65,
+                }
             else:
-                return {"council": "vedastro", "perspective": "neutral", "confidence": 0.50}
+                return {
+                    "council": "vedastro",
+                    "perspective": "neutral",
+                    "confidence": 0.50,
+                }
         except Exception:
             return {"council": "vedastro", "perspective": "neutral", "confidence": 0.50}
 
@@ -835,7 +847,11 @@ async def main_async():
     t_start = time.time()
 
     for i, (platform_sym, yf_ticker) in enumerate(dynamic_map.items(), 1):
-        print(f"\n[{i}/{len(dynamic_map)}] {platform_sym} ({yf_ticker})...", end=" ", flush=True)
+        print(
+            f"\n[{i}/{len(dynamic_map)}] {platform_sym} ({yf_ticker})...",
+            end=" ",
+            flush=True,
+        )
         bars = download_data(platform_sym, yf_ticker)
         if bars is None:
             print("SKIPPED")

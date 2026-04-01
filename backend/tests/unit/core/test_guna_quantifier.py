@@ -14,21 +14,23 @@ def test_quantify_sattvic_text():
 
     assert guna_vector.sattva > guna_vector.rajas
     assert guna_vector.sattva > guna_vector.tamas
-    assert pytest.approx(guna_vector.sattva + guna_vector.rajas + guna_vector.tamas) == 1.0
+    assert (
+        pytest.approx(guna_vector.sattva + guna_vector.rajas + guna_vector.tamas) == 1.0
+    )
 
 
 def test_quantify_rajasic_text():
     """Happy Path: Text die actie en verandering uitstraalt."""
     quantifier = GunaQuantifier()
-    text = (
-        "BREAKING NEWS: Bitcoin price surges 20% on massive trading volume. Urgent action required!"
-    )
+    text = "BREAKING NEWS: Bitcoin price surges 20% on massive trading volume. Urgent action required!"
 
     guna_vector = quantifier.quantify_text(text)
 
     assert guna_vector.rajas > guna_vector.sattva
     assert guna_vector.rajas > guna_vector.tamas
-    assert pytest.approx(guna_vector.sattva + guna_vector.rajas + guna_vector.tamas) == 1.0
+    assert (
+        pytest.approx(guna_vector.sattva + guna_vector.rajas + guna_vector.tamas) == 1.0
+    )
 
 
 def test_quantify_tamasic_text():
@@ -40,7 +42,9 @@ def test_quantify_tamasic_text():
 
     assert guna_vector.tamas > guna_vector.rajas
     assert guna_vector.tamas > guna_vector.sattva
-    assert pytest.approx(guna_vector.sattva + guna_vector.rajas + guna_vector.tamas) == 1.0
+    assert (
+        pytest.approx(guna_vector.sattva + guna_vector.rajas + guna_vector.tamas) == 1.0
+    )
 
 
 def test_quantify_empty_text():

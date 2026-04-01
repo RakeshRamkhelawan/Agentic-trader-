@@ -362,7 +362,9 @@ def _get_latest_decision(orchestrator: CognitiveOrchestrator) -> BuddhiDecision 
     return None
 
 
-def _get_deliberation_steps(orchestrator: CognitiveOrchestrator) -> list[DeliberationStep]:
+def _get_deliberation_steps(
+    orchestrator: CognitiveOrchestrator,
+) -> list[DeliberationStep]:
     """Get deliberation steps from last cycle."""
     steps = []
     if orchestrator.last_federated_decision:

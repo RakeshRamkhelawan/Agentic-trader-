@@ -13,7 +13,10 @@ logger = logging.getLogger(__name__)
 
 async def broadcast_trade(trade_data: dict[str, Any]):
     """Broadcast a trade to all connected WebSocket clients."""
-    message = {"type": "trade", "data": {**trade_data, "timestamp": datetime.utcnow().isoformat()}}
+    message = {
+        "type": "trade",
+        "data": {**trade_data, "timestamp": datetime.utcnow().isoformat()},
+    }
     await broadcast_to_clients(message)
     logger.debug(f"Broadcasted trade: {trade_data.get('symbol')}")
 

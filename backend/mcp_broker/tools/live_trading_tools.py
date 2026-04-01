@@ -49,7 +49,10 @@ async def live_trading_place_order(
         # Validate inputs
         side_lower = side.lower()
         if side_lower not in ["buy", "sell"]:
-            return {"success": False, "error": f"Invalid side: {side}. Must be 'buy' or 'sell'"}
+            return {
+                "success": False,
+                "error": f"Invalid side: {side}. Must be 'buy' or 'sell'",
+            }
 
         type_lower = order_type.lower()
         if type_lower not in ["market", "limit"]:

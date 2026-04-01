@@ -11,14 +11,14 @@ from backend.risk.kelly_criterion import KellyCriterion
 # Try to import stress_tester components, skip tests if not available
 try:
     from backend.risk.stress_tester import StressScenario, StressTestSuite
+
     STRESS_TEST_SUITE_AVAILABLE = True
 except ImportError:
     STRESS_TEST_SUITE_AVAILABLE = False
 
 
 pytestmark = pytest.mark.skipif(
-    not STRESS_TEST_SUITE_AVAILABLE,
-    reason="StressTestSuite not fully implemented"
+    not STRESS_TEST_SUITE_AVAILABLE, reason="StressTestSuite not fully implemented"
 )
 
 
@@ -47,7 +47,9 @@ class TestStressTester:
 
     def test_apply_scenario_2008_crisis(self, stress_suite, sample_portfolio):
         """Test 2008 crisis scenario."""
-        result = stress_suite.apply_scenario(sample_portfolio, StressScenario.CRISIS_2008)
+        result = stress_suite.apply_scenario(
+            sample_portfolio, StressScenario.CRISIS_2008
+        )
 
         assert result.scenario == StressScenario.CRISIS_2008
         assert result.portfolio_value_before == 100000.0
@@ -57,7 +59,9 @@ class TestStressTester:
 
     def test_apply_scenario_flash_crash(self, stress_suite, sample_portfolio):
         """Test flash crash scenario."""
-        result = stress_suite.apply_scenario(sample_portfolio, StressScenario.FLASH_CRASH)
+        result = stress_suite.apply_scenario(
+            sample_portfolio, StressScenario.FLASH_CRASH
+        )
 
         assert 0 < result.max_drawdown < 0.20
         assert result.recovery_days < 20
@@ -114,24 +118,32 @@ class TestKellyCriterion:
 
     def test_calculate_kelly_winning_strategy(self, kelly):
         """Test Kelly with profitable strategy (60% win, 1.5 ratio)."""
-        result = kelly.calculate(win_probability=0.60, win_loss_ratio=1.5, portfolio_value=100000.0)
+        result = kelly.calculate(
+            win_probability=0.60, win_loss_ratio=1.5, portfolio_value=100000.0
+        )
 
         assert result.optimal_fraction > 0
         assert result.kelly_percentage > 0
         assert result.recommended_size > 0
-        assert result.recommended_size < result.position_size  # Conservative < Full Kelly
+        assert (
+            result.recommended_size < result.position_size
+        )  # Conservative < Full Kelly
 
     def test_calculate_kelly_breakeven(self, kelly):
         """Test Kelly at breakeven (no edge)."""
         # Breakeven: (0.5 * 1.0) - 0.5 = 0
-        result = kelly.calculate(win_probability=0.50, win_loss_ratio=1.0, portfolio_value=100000.0)
+        result = kelly.calculate(
+            win_probability=0.50, win_loss_ratio=1.0, portfolio_value=100000.0
+        )
 
         assert result.optimal_fraction == 0.0
         assert result.position_size == 0.0
 
     def test_calculate_kelly_strong_edge(self, kelly):
         """Test Kelly with strong edge (70% win, 2.0 ratio)."""
-        result = kelly.calculate(win_probability=0.70, win_loss_ratio=2.0, portfolio_value=100000.0)
+        result = kelly.calculate(
+            win_probability=0.70, win_loss_ratio=2.0, portfolio_value=100000.0
+        )
 
         assert result.optimal_fraction > 0.20  # Should be significant
         assert result.kelly_percentage > 20
@@ -173,17 +185,23 @@ class TestKellyCriterion:
     def test_calculate_invalid_win_probability(self, kelly):
         """Test with invalid win probability (>1)."""
         with pytest.raises(ValueError, match="between 0 and 1"):
-            kelly.calculate(win_probability=1.5, win_loss_ratio=1.5, portfolio_value=100000.0)
+            kelly.calculate(
+                win_probability=1.5, win_loss_ratio=1.5, portfolio_value=100000.0
+            )
 
     def test_calculate_invalid_ratio(self, kelly):
         """Test with invalid ratio."""
         with pytest.raises(ValueError, match="positive"):
-            kelly.calculate(win_probability=0.60, win_loss_ratio=-1.5, portfolio_value=100000.0)
+            kelly.calculate(
+                win_probability=0.60, win_loss_ratio=-1.5, portfolio_value=100000.0
+            )
 
     def test_calculate_zero_portfolio(self, kelly):
         """Test with zero portfolio value."""
         with pytest.raises(ValueError, match="positive"):
-            kelly.calculate(win_probability=0.60, win_loss_ratio=1.5, portfolio_value=0.0)
+            kelly.calculate(
+                win_probability=0.60, win_loss_ratio=1.5, portfolio_value=0.0
+            )
 
     def test_breakeven_invalid_ratio(self, kelly):
         """Test breakeven with invalid ratio."""
@@ -362,13 +380,15 @@ class TestAPIGateway:
         response = client.post(
             "/orders",
             headers={"Authorization": f"Bearer {token}"},
-            json={{
-                "symbol": "BTC-EUR",
-                "side": "buy",
-                "quantity": 1.0,
-                "price": None,
-                "order_type": "limit",
-            }},
+            json={
+                {
+                    "symbol": "BTC-EUR",
+                    "side": "buy",
+                    "quantity": 1.0,
+                    "price": None,
+                    "order_type": "limit",
+                }
+            },
         )
 
         assert response.status_code == 400

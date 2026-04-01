@@ -245,7 +245,12 @@ class MCTSPlanner:
     def _extract_result(self, root: MCTSNode) -> Dict[str, Any]:
         """Extract best action from tree"""
         if not root.children:
-            return {"action": "Hold", "confidence": 0.5, "expected_sharpe": 0.0, "visits": 0}
+            return {
+                "action": "Hold",
+                "confidence": 0.5,
+                "expected_sharpe": 0.0,
+                "visits": 0,
+            }
 
         # Select most visited child (exploitation)
         best_child = max(root.children, key=lambda c: c.visits)
@@ -258,5 +263,5 @@ class MCTSPlanner:
             "confidence": best_child.visits / max(1, root.visits),
             "expected_sharpe": best_child.value / max(1, best_child.visits),
             "visits": best_child.visits,
-            "alternative": best_value_child.action if best_value_child != best_child else None,
+            "alternative": (best_value_child.action if best_value_child != best_child else None),
         }

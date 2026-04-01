@@ -31,8 +31,12 @@ async def test_factory_creates_gemini_provider():
     mock_client = MagicMock()
     mock_client.aclose = AsyncMock()
 
-    with patch.dict(os.environ, {"LLM_PROVIDER": "gemini", "GOOGLE_API_KEY": "test_key"}):
-        with patch("backend.llm.providers.gemini.genai.Client", return_value=mock_client):
+    with patch.dict(
+        os.environ, {"LLM_PROVIDER": "gemini", "GOOGLE_API_KEY": "test_key"}
+    ):
+        with patch(
+            "backend.llm.providers.gemini.genai.Client", return_value=mock_client
+        ):
             provider = create_llm_provider()
 
             assert provider is not None
@@ -110,7 +114,9 @@ async def test_factory_switches_providers_via_environment():
 
     # Test Ollama
     with patch.dict(os.environ, {"LLM_PROVIDER": "ollama"}):
-        with patch("backend.llm.providers.ollama.httpx.AsyncClient") as mock_client_class:
+        with patch(
+            "backend.llm.providers.ollama.httpx.AsyncClient"
+        ) as mock_client_class:
             mock_client = AsyncMock()
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock()
@@ -145,7 +151,9 @@ async def test_agent_analyzes_with_different_providers():
             mock_client_class.return_value = mock_client
 
             gemini_provider = GeminiProvider(api_key="test_key")
-            gemini_agent = SentimentAgent(agent_name="gemini_test", llm_provider=gemini_provider)
+            gemini_agent = SentimentAgent(
+                agent_name="gemini_test", llm_provider=gemini_provider
+            )
             gemini_result = await gemini_agent.analyze(features, context)
 
             assert gemini_result is not None
@@ -164,7 +172,9 @@ async def test_agent_analyzes_with_different_providers():
         mock_client_class.return_value = mock_client
 
         ollama_provider = OllamaProvider()
-        ollama_agent = SentimentAgent(agent_name="ollama_test", llm_provider=ollama_provider)
+        ollama_agent = SentimentAgent(
+            agent_name="ollama_test", llm_provider=ollama_provider
+        )
         ollama_result = await ollama_agent.analyze(features, context)
 
         assert ollama_result is not None

@@ -118,7 +118,8 @@ class AgentWithTools(BaseAgent):
     async def get_vedastro_signal(self, symbol: str, current_price: float) -> dict:
         """Get VedAstro trading signal."""
         return await self.call_tool(
-            "vedastro__generate_signal", {"symbol": symbol, "current_price": current_price}
+            "vedastro__generate_signal",
+            {"symbol": symbol, "current_price": current_price},
         )
 
     async def get_elemental_consensus(

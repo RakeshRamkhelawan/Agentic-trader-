@@ -131,8 +131,8 @@ class MarketEmotionCalibrator:
             spread_high=0.001,  # 10 bps default
             sample_size=len(combined),
             data_date_range=(
-                str(combined.index.min()) if hasattr(combined.index, "min") else "unknown",
-                str(combined.index.max()) if hasattr(combined.index, "max") else "unknown",
+                (str(combined.index.min()) if hasattr(combined.index, "min") else "unknown"),
+                (str(combined.index.max()) if hasattr(combined.index, "max") else "unknown"),
             ),
         )
 
@@ -145,7 +145,11 @@ class MarketEmotionCalibrator:
         return thresholds
 
     def detect_emotion(
-        self, volatility_1m: float, imbalance: float, spread_pct: float, use_calibrated: bool = True
+        self,
+        volatility_1m: float,
+        imbalance: float,
+        spread_pct: float,
+        use_calibrated: bool = True,
     ) -> tuple[str, float]:
         """
         Detecteer markt emotie met gekalibreerde drempels.

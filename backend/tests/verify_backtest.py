@@ -64,7 +64,9 @@ async def verify_backtest():
             print(f"⏱️  Tick {tick_count} @ {tick.last}. Placing BUY order...")
 
             # Place Order
-            req = OrderRequest(symbol=SYMBOL, side="buy", qty=1.0, client_order_id="test-order-1")
+            req = OrderRequest(
+                symbol=SYMBOL, side="buy", qty=1.0, client_order_id="test-order-1"
+            )
             result = await exchange.submit_order(req)
 
             print(f"📝 Order Result: {result.status} @ {result.avg_price}")

@@ -77,7 +77,11 @@ class TestPhase11AgentMocking:
         assert hasattr(mock_sentiment_agent, "analyze")
         assert mock_sentiment_agent.name == "SentimentAgent"
         decision = mock_sentiment_agent.analyze()
-        assert "action" in decision and "confidence" in decision and "reasoning" in decision
+        assert (
+            "action" in decision
+            and "confidence" in decision
+            and "reasoning" in decision
+        )
 
     @pytest.mark.unit
     def test_mock_market_regime_agent_structure(self, mock_market_regime_agent):
@@ -86,7 +90,11 @@ class TestPhase11AgentMocking:
         assert hasattr(mock_market_regime_agent, "analyze")
         assert mock_market_regime_agent.name == "MarketRegimeAgent"
         decision = mock_market_regime_agent.analyze()
-        assert "action" in decision and "confidence" in decision and "reasoning" in decision
+        assert (
+            "action" in decision
+            and "confidence" in decision
+            and "reasoning" in decision
+        )
 
     @pytest.mark.unit
     def test_mock_risk_governor_structure(self, mock_risk_governor):
@@ -95,7 +103,11 @@ class TestPhase11AgentMocking:
         assert hasattr(mock_risk_governor, "analyze")
         assert mock_risk_governor.name == "RiskGovernor"
         decision = mock_risk_governor.analyze()
-        assert "action" in decision and "confidence" in decision and "reasoning" in decision
+        assert (
+            "action" in decision
+            and "confidence" in decision
+            and "reasoning" in decision
+        )
 
     @pytest.mark.unit
     def test_multiple_mock_agents_callable(
@@ -109,7 +121,10 @@ class TestPhase11AgentMocking:
         ]:
             decision = agent.analyze()
             assert isinstance(decision["action"], int) and 0 <= decision["action"] <= 2
-            assert isinstance(decision["confidence"], float) and 0 <= decision["confidence"] <= 1
+            assert (
+                isinstance(decision["confidence"], float)
+                and 0 <= decision["confidence"] <= 1
+            )
 
 
 # ============================================================================
@@ -130,25 +145,33 @@ class TestPhase11SentimentAgentIntegration:
         assert coord.agents["SentimentAgent"].name == "SentimentAgent"
 
     @pytest.mark.unit
-    def test_sentiment_agent_influences_decision(self, temp_config_file, mock_sentiment_agent):
+    def test_sentiment_agent_influences_decision(
+        self, temp_config_file, mock_sentiment_agent
+    ):
         """SentimentAgent's decision influences coordinator decision."""
         coord = create_coordinator_with_custom_agents(
             temp_config_file, sentiment_agent=mock_sentiment_agent
         )
         decision = coord.make_decision()
-        assert decision["action"] == 1 and decision["confidence"] == pytest.approx(0.85, abs=0.01)
+        assert decision["action"] == 1 and decision["confidence"] == pytest.approx(
+            0.85, abs=0.01
+        )
 
     @pytest.mark.unit
     def test_sentiment_agent_failure_handled(self, temp_config_file):
         """Coordinator continues if SentimentAgent fails."""
         agent = MockSentimentAgent()
         agent.analyze = MagicMock(side_effect=Exception("Failed"))
-        coord = create_coordinator_with_custom_agents(temp_config_file, sentiment_agent=agent)
+        coord = create_coordinator_with_custom_agents(
+            temp_config_file, sentiment_agent=agent
+        )
         decision = coord.make_decision()
         assert decision is not None and decision["action"] == 0  # Fallback
 
     @pytest.mark.unit
-    def test_sentiment_agent_metrics_tracked(self, temp_config_file, mock_sentiment_agent):
+    def test_sentiment_agent_metrics_tracked(
+        self, temp_config_file, mock_sentiment_agent
+    ):
         """SentimentAgent metrics are properly tracked."""
         coord = create_coordinator_with_custom_agents(
             temp_config_file, sentiment_agent=mock_sentiment_agent
@@ -168,7 +191,9 @@ class TestPhase11MarketRegimeAgentIntegration:
     """Test MarketRegimeAgent integration with coordinator."""
 
     @pytest.mark.unit
-    def test_market_regime_agent_registered(self, temp_config_file, mock_market_regime_agent):
+    def test_market_regime_agent_registered(
+        self, temp_config_file, mock_market_regime_agent
+    ):
         """MarketRegimeAgent successfully registers."""
         coord = create_coordinator_with_custom_agents(
             temp_config_file, market_regime_agent=mock_market_regime_agent
@@ -176,7 +201,9 @@ class TestPhase11MarketRegimeAgentIntegration:
         assert "MarketRegimeAgent" in coord.agents
 
     @pytest.mark.unit
-    def test_market_regime_influences_decision(self, temp_config_file, mock_market_regime_agent):
+    def test_market_regime_influences_decision(
+        self, temp_config_file, mock_market_regime_agent
+    ):
         """MarketRegimeAgent influences final decision."""
         coord = create_coordinator_with_custom_agents(
             temp_config_file, market_regime_agent=mock_market_regime_agent
@@ -271,7 +298,9 @@ class TestPhase11FullE2EPipeline:
             temp_config_file, sentiment_agent=mock_sentiment_agent
         )
         decision = coord.make_decision()
-        assert all(k in decision for k in ["action", "confidence", "reasoning", "timestamp"])
+        assert all(
+            k in decision for k in ["action", "confidence", "reasoning", "timestamp"]
+        )
 
     @pytest.mark.unit
     def test_coordinator_e2e(self, coordinator):
@@ -479,7 +508,10 @@ class TestPhase11ConcurrentAgents:
             temp_config_file, sentiment_agent=mock_sentiment_agent
         )
         decisions = []
-        threads = [Thread(target=lambda: decisions.append(coord.make_decision())) for _ in range(5)]
+        threads = [
+            Thread(target=lambda: decisions.append(coord.make_decision()))
+            for _ in range(5)
+        ]
         for t in threads:
             t.start()
         for t in threads:
@@ -551,7 +583,9 @@ class TestPhase11ErrorScenarios:
     def test_agent_recovery(self, temp_config_file):
         """Agent recovers after temporary failure."""
         sent = MockSentimentAgent(default_confidence=0.85)
-        coord = create_coordinator_with_custom_agents(temp_config_file, sentiment_agent=sent)
+        coord = create_coordinator_with_custom_agents(
+            temp_config_file, sentiment_agent=sent
+        )
 
         # First: fail
         sent.analyze = MagicMock(side_effect=Exception("Temporary error"))

@@ -51,7 +51,9 @@ def run_tests(verbose: bool = True, fail_fast: bool = False):
     print()
 
     cmd = [
-        sys.executable, "-m", "pytest",
+        sys.executable,
+        "-m",
+        "pytest",
         *TEST_FILES,
         "-v" if verbose else "",
         "--tb=short",
@@ -80,7 +82,9 @@ def run_tests(verbose: bool = True, fail_fast: bool = False):
 def run_single_test(test_file: str, verbose: bool = True):
     """Run a single test file."""
     cmd = [
-        sys.executable, "-m", "pytest",
+        sys.executable,
+        "-m",
+        "pytest",
         test_file,
         "-v" if verbose else "",
         "--tb=short",
@@ -96,48 +100,60 @@ def run_single_test(test_file: str, verbose: bool = True):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run Frontend-Backend Wiring Integration Tests")
-    parser.add_argument(
-        "--fail-fast", "-x",
-        action="store_true",
-        help="Stop on first failure"
+    parser = argparse.ArgumentParser(
+        description="Run Frontend-Backend Wiring Integration Tests"
     )
     parser.add_argument(
-        "--quiet", "-q",
-        action="store_true",
-        help="Less verbose output"
+        "--fail-fast", "-x", action="store_true", help="Stop on first failure"
     )
     parser.add_argument(
-        "--auth-only",
-        action="store_true",
-        help="Run only Auth API tests"
+        "--quiet", "-q", action="store_true", help="Less verbose output"
     )
     parser.add_argument(
-        "--kyc-only",
-        action="store_true",
-        help="Run only KYC API tests"
+        "--auth-only", action="store_true", help="Run only Auth API tests"
     )
     parser.add_argument(
-        "--settings-only",
-        action="store_true",
-        help="Run only Settings API tests"
+        "--kyc-only", action="store_true", help="Run only KYC API tests"
+    )
+    parser.add_argument(
+        "--settings-only", action="store_true", help="Run only Settings API tests"
     )
     parser.add_argument(
         "--competitions-only",
         action="store_true",
-        help="Run only Competitions API tests"
+        help="Run only Competitions API tests",
     )
 
     args = parser.parse_args()
 
     # Determine which tests to run
     if args.auth_only:
-        sys.exit(run_single_test("backend/tests/integration/test_auth_api_integration.py", verbose=not args.quiet))
+        sys.exit(
+            run_single_test(
+                "backend/tests/integration/test_auth_api_integration.py",
+                verbose=not args.quiet,
+            )
+        )
     elif args.kyc_only:
-        sys.exit(run_single_test("backend/tests/integration/test_kyc_api_integration.py", verbose=not args.quiet))
+        sys.exit(
+            run_single_test(
+                "backend/tests/integration/test_kyc_api_integration.py",
+                verbose=not args.quiet,
+            )
+        )
     elif args.settings_only:
-        sys.exit(run_single_test("backend/tests/integration/test_settings_api_integration.py", verbose=not args.quiet))
+        sys.exit(
+            run_single_test(
+                "backend/tests/integration/test_settings_api_integration.py",
+                verbose=not args.quiet,
+            )
+        )
     elif args.competitions_only:
-        sys.exit(run_single_test("backend/tests/integration/test_competitions_api_integration.py", verbose=not args.quiet))
+        sys.exit(
+            run_single_test(
+                "backend/tests/integration/test_competitions_api_integration.py",
+                verbose=not args.quiet,
+            )
+        )
     else:
         sys.exit(run_tests(verbose=not args.quiet, fail_fast=args.fail_fast))

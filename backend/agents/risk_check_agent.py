@@ -243,7 +243,12 @@ class RiskCheckAgent(AgentWithTools):
         return metrics
 
     def _calculate_kelly_size(
-        self, win_rate: float, avg_win: float, avg_loss: float, portfolio_value: float, price: float
+        self,
+        win_rate: float,
+        avg_win: float,
+        avg_loss: float,
+        portfolio_value: float,
+        price: float,
     ) -> float:
         """
         Calculate Kelly criterion position size.

@@ -436,7 +436,10 @@ def run_v7_backtest():
                 if risk_manager.can_open(sym, sector):
                     p_hist = price_history[sym]
                     market_data = analyzer.analyze(
-                        p_hist["prices"], p_hist["vols"], p_hist["highs"], p_hist["lows"]
+                        p_hist["prices"],
+                        p_hist["vols"],
+                        p_hist["highs"],
+                        p_hist["lows"],
                     )
 
                     # ========== CONSCIOUSNESS ARCHITECTURE ==========
@@ -454,7 +457,7 @@ def run_v7_backtest():
                     regime_result = regime_agent.analyze(p_hist["prices"], market_data["close"])
 
                     # L2: Aggregate all agents
-                    collective = aggregate_agent_decisions(
+                    _collective = aggregate_agent_decisions(
                         sentiment_result, vedastro_result, regime_result, guna_result
                     )
 
@@ -514,7 +517,7 @@ def run_v7_backtest():
                             "perspective": (
                                 "bullish"
                                 if regime_result["action"] == 1
-                                else "bearish" if regime_result["action"] == 2 else "neutral"
+                                else ("bearish" if regime_result["action"] == 2 else "neutral")
                             ),
                             "confidence": regime_result["confidence"],
                         },
@@ -552,7 +555,10 @@ def run_v7_backtest():
 
                             if pos_usd >= 200:
                                 cost = tracker.open_position(
-                                    action, pos_usd, market_data["close"], market_data["atr"]
+                                    action,
+                                    pos_usd,
+                                    market_data["close"],
+                                    market_data["atr"],
                                 )
                                 capital -= cost
                                 risk_manager.add_trade(sym, sector, action, risk_usd)

@@ -71,8 +71,12 @@ class TestWebSocketManager:
         success = await ws_manager.subscribe("test-conn-1", "orderbook.BTC-EUR")
 
         assert success
-        assert "orderbook.BTC-EUR" in ws_manager.connections["test-conn-1"].subscriptions
-        assert "test-conn-1" in ws_manager.channel_subscribers.get("orderbook.BTC-EUR", set())
+        assert (
+            "orderbook.BTC-EUR" in ws_manager.connections["test-conn-1"].subscriptions
+        )
+        assert "test-conn-1" in ws_manager.channel_subscribers.get(
+            "orderbook.BTC-EUR", set()
+        )
 
         # Cleanup
         await ws_manager.disconnect("test-conn-1")

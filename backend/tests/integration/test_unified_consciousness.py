@@ -18,7 +18,12 @@ from backend.core.adapters.system_bridge import CognitiveBridge
 from backend.core.karma.karma_register import KarmaRegister
 from backend.core.navagraha.models import GunaDistribution, NavagrahaState, PlanetName
 from backend.core.navagraha.service import NavagrahaService
-from backend.core.schemas.ooda_types import MarketRegime, Observation, RiskDecision, TradeProposal
+from backend.core.schemas.ooda_types import (
+    MarketRegime,
+    Observation,
+    RiskDecision,
+    TradeProposal,
+)
 from backend.core.system_identity import SystemIdentity
 from backend.orchestration.ooda_coordinator import OODALoopCoordinator, TradingMode
 from backend.risk.risk_orchestrator import RiskOrchestrator
@@ -403,7 +408,9 @@ class TestUnifiedConsciousnessIntegration:
         stats = unified_coordinator.get_statistics()
 
         assert "unified_consciousness" in stats
-        assert stats["unified_consciousness"]["components"]["navagraha"]["enabled"] is True
+        assert (
+            stats["unified_consciousness"]["components"]["navagraha"]["enabled"] is True
+        )
 
 
 class TestStrategyIntegration:
@@ -411,7 +418,9 @@ class TestStrategyIntegration:
 
     def test_unified_strategy_registry_creation(self):
         """Test UnifiedStrategyRegistry can be created."""
-        from backend.core.strategy.unified_strategy_registry import UnifiedStrategyRegistry
+        from backend.core.strategy.unified_strategy_registry import (
+            UnifiedStrategyRegistry,
+        )
 
         registry = UnifiedStrategyRegistry()
 
@@ -424,7 +433,9 @@ class TestStrategyIntegration:
     async def test_strategy_selection_by_dasha(self):
         """Test strategy selection based on Dasha period."""
         from backend.core.navagraha.models import PlanetName
-        from backend.core.strategy.unified_strategy_registry import UnifiedStrategyRegistry
+        from backend.core.strategy.unified_strategy_registry import (
+            UnifiedStrategyRegistry,
+        )
 
         # Create mock NavagrahaService that returns Mars period
         navagraha_service = MagicMock()
@@ -437,7 +448,10 @@ class TestStrategyIntegration:
             return NavagrahaState(
                 planets={},
                 guna_distribution=GunaDistribution(
-                    sattva=0.4, rajas=0.4, tamas=0.2, calculated_at=datetime.now(timezone.utc)
+                    sattva=0.4,
+                    rajas=0.4,
+                    tamas=0.2,
+                    calculated_at=datetime.now(timezone.utc),
                 ),
                 aspects=[],
                 rahu_kala_active=False,

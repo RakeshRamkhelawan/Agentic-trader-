@@ -18,7 +18,10 @@ def mock_navagraha_service():
 def system_identity(mock_navagraha_service):
     # Patch NavagrahaService AND MemorySystem
     with (
-        patch("backend.core.system_identity.NavagrahaService", return_value=mock_navagraha_service),
+        patch(
+            "backend.core.system_identity.NavagrahaService",
+            return_value=mock_navagraha_service,
+        ),
         patch("backend.core.system_identity.MemorySystem") as mock_memory_cls,
     ):
 
@@ -79,7 +82,9 @@ def mock_state_rahu_kala(valid_planets):
     dt = datetime.now(timezone.utc)
     return NavagrahaState(
         planets=valid_planets,
-        guna_distribution=GunaDistribution(sattva=0.34, rajas=0.33, tamas=0.33, calculated_at=dt),
+        guna_distribution=GunaDistribution(
+            sattva=0.34, rajas=0.33, tamas=0.33, calculated_at=dt
+        ),
         aspects=[],
         rahu_kala_active=True,
         calculated_at=dt,
@@ -94,7 +99,9 @@ def mock_state_sattva(valid_planets):
     dt = datetime.now(timezone.utc)
     return NavagrahaState(
         planets=valid_planets,
-        guna_distribution=GunaDistribution(sattva=0.8, rajas=0.1, tamas=0.1, calculated_at=dt),
+        guna_distribution=GunaDistribution(
+            sattva=0.8, rajas=0.1, tamas=0.1, calculated_at=dt
+        ),
         aspects=[],
         rahu_kala_active=False,
         calculated_at=dt,

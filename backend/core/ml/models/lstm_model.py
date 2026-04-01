@@ -39,7 +39,10 @@ class ChittaLSTM(nn.Module):
 
         # Fully connected output layer
         self.fc = nn.Sequential(
-            nn.Linear(hidden_size, 64), nn.ReLU(), nn.Dropout(dropout), nn.Linear(64, output_size)
+            nn.Linear(hidden_size, 64),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(64, output_size),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

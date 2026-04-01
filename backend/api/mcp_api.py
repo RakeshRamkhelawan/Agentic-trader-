@@ -88,7 +88,9 @@ async def mcp_health_check(user: dict = Depends(require_auth)) -> dict[str, Any]
 
 
 @router.get("/circuit-breakers")
-async def get_circuit_breaker_states(user: dict = Depends(require_auth)) -> dict[str, Any]:
+async def get_circuit_breaker_states(
+    user: dict = Depends(require_auth),
+) -> dict[str, Any]:
     """
     Get detailed circuit breaker states.
 
@@ -130,7 +132,8 @@ async def execute_mcp_tool(
         tool_manager = mcp._tool_manager
         if tool_name not in tool_manager._tools:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=f"Tool '{tool_name}' not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Tool '{tool_name}' not found",
             )
 
         # Execute tool
@@ -226,5 +229,6 @@ async def run_backtest_v18_endpoint(
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Backtest failed: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Backtest failed: {str(e)}",
         )

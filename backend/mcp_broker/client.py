@@ -251,7 +251,9 @@ async def get_position_size(
 
 
 async def check_entry_allowed(
-    symbol: str, trade_history: list[dict[str, Any]], client: MCPClientWrapper | None = None
+    symbol: str,
+    trade_history: list[dict[str, Any]],
+    client: MCPClientWrapper | None = None,
 ) -> bool:
     """Check if entry is allowed (Earth element)."""
     params = {"symbol": symbol, "trade_history": trade_history}

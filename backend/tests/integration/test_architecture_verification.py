@@ -55,10 +55,14 @@ async def test_03_login_happy_path(async_client, system_db):
     tenant_id = f"tenant-{uuid4().hex[:12]}"
 
     # We use raw SQL for speed and independance from Model changes in this fixture setup
-    await system_db.execute(text(f"""  # nosec B608
+    await system_db.execute(
+        text(
+            f"""  # nosec B608
         INSERT INTO users (id, email, password_hash, tenant_id, role, is_active, created_at)
         VALUES ('{uuid4()}', '{email}', '{hash_password(password)}', '{tenant_id}', 'user', true, now())
-    """))
+    """
+        )
+    )
     await system_db.commit()
 
     # Test Login
@@ -106,14 +110,22 @@ async def test_06_rls_isolation_enforcement(system_db):
     email_a = f"user_a_{uuid4().hex[:8]}@test.com"
     email_b = f"user_b_{uuid4().hex[:8]}@test.com"
 
-    await system_db.execute(text(f"""
+    await system_db.execute(
+        text(
+            f"""
         INSERT INTO users (id, email, tenant_id, role, is_active)
         VALUES ('{uuid4()}', '{email_a}', '{tenant_a}', 'user', true)
-    """))
-    await system_db.execute(text(f"""
+    """
+        )
+    )
+    await system_db.execute(
+        text(
+            f"""
         INSERT INTO users (id, email, tenant_id, role, is_active)
         VALUES ('{uuid4()}', '{email_b}', '{tenant_b}', 'user', true)
-    """))
+    """
+        )
+    )
     await system_db.commit()
 
     # 2. Verify: Tenant A Session should ONLY see Tenant A users
@@ -130,20 +142,36 @@ async def test_06_rls_isolation_enforcement(system_db):
     email_pref_a = f"pref_a_{uuid4().hex[:8]}@test.com"
     email_pref_b = f"pref_b_{uuid4().hex[:8]}@test.com"
 
-    await system_db.execute(text(f"""
+    await system_db.execute(
+        text(
+            f"""
         INSERT INTO users (id, email, tenant_id) VALUES ('{user_a_id}', '{email_pref_a}', '{tenant_a}')
-    """))
-    await system_db.execute(text(f"""
+    """
+        )
+    )
+    await system_db.execute(
+        text(
+            f"""
         INSERT INTO users (id, email, tenant_id) VALUES ('{user_b_id}', '{email_pref_b}', '{tenant_b}')
-    """))
+    """
+        )
+    )
 
     # Create preferences
-    await system_db.execute(text(f"""
+    await system_db.execute(
+        text(
+            f"""
         INSERT INTO user_preferences (id, user_id, theme) VALUES ('{uuid4()}', '{user_a_id}', 'dark')
-    """))
-    await system_db.execute(text(f"""
+    """
+        )
+    )
+    await system_db.execute(
+        text(
+            f"""
         INSERT INTO user_preferences (id, user_id, theme) VALUES ('{uuid4()}', '{user_b_id}', 'light')
-    """))
+    """
+        )
+    )
     await system_db.commit()
 
     # TEST: Access as Tenant A
@@ -172,12 +200,20 @@ async def test_07_background_task_context_access(system_db):
     user_id = str(uuid4())
     email_bg = f"bg_task_{uuid4().hex[:8]}@test.com"
 
-    await system_db.execute(text(f"""
+    await system_db.execute(
+        text(
+            f"""
         INSERT INTO users (id, email, tenant_id) VALUES ('{user_id}', '{email_bg}', '{tenant_bg}')
-    """))
-    await system_db.execute(text(f"""
+    """
+        )
+    )
+    await system_db.execute(
+        text(
+            f"""
         INSERT INTO user_preferences (id, user_id, theme) VALUES ('{uuid4()}', '{user_id}', 'system')
-    """))
+    """
+        )
+    )
     await system_db.commit()
 
     # Verify System Admin can see it

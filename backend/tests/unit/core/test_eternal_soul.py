@@ -107,7 +107,9 @@ from datetime import datetime
 async def test_eternal_soul_start_stop():
     with (
         patch("backend.core.eternal_soul_service.redis.from_url") as mock_redis_cls,
-        patch("backend.core.eternal_soul_service.NavagrahaService") as mock_navagraha_cls,
+        patch(
+            "backend.core.eternal_soul_service.NavagrahaService"
+        ) as mock_navagraha_cls,
         patch("backend.core.eternal_soul_service.RegimeDetector") as mock_regime_cls,
     ):
 
@@ -118,7 +120,9 @@ async def test_eternal_soul_start_stop():
         mock_navagraha_instance = AsyncMock()
         mock_navagraha_cls.return_value = mock_navagraha_instance
         # Mocking async method get_current_state
-        mock_navagraha_instance.get_current_state.return_value = MagicMock(rahu_kala_active=False)
+        mock_navagraha_instance.get_current_state.return_value = MagicMock(
+            rahu_kala_active=False
+        )
 
         mock_regime_instance = MagicMock()
         mock_regime_cls.return_value = mock_regime_instance

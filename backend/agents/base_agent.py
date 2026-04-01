@@ -458,7 +458,11 @@ class BaseAgent(ABC):
         5. REFLECT: Self-improvement
         """
         if not self.llm_provider:
-            return {"action": "HOLD", "confidence": 0.3, "reasoning": "LLM not available"}
+            return {
+                "action": "HOLD",
+                "confidence": 0.3,
+                "reasoning": "LLM not available",
+            }
 
         try:
             # Import master prompts

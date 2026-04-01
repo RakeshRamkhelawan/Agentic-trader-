@@ -92,6 +92,11 @@ class TestBybitProvider:
 
     def test_parse_empty_data(self):
         """Test handling empty data list (heartbeats?)."""
-        msg = {"topic": "publicTrade.BTCUSDT", "ts": 123, "type": "snapshot", "data": []}
+        msg = {
+            "topic": "publicTrade.BTCUSDT",
+            "ts": 123,
+            "type": "snapshot",
+            "data": [],
+        }
         raw_events = self.provider._parse_raw(msg)
         assert len(raw_events) == 0

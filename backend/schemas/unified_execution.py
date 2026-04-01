@@ -315,7 +315,8 @@ class UnifiedOrderResponse(BaseModel):
 
     # Timing
     timestamp: float = Field(
-        default_factory=lambda: datetime.now(UTC).timestamp(), description="Response timestamp"
+        default_factory=lambda: datetime.now(UTC).timestamp(),
+        description="Response timestamp",
     )
 
     model_config = ConfigDict(frozen=True)

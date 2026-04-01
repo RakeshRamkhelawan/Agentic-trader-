@@ -22,7 +22,12 @@ from backend.core.telemetry.tracing import TraceCorrelation
 from backend.testing.chaos.monkey import ChaosMode, ChaosMonkey
 
 # All imports
-from backend.vedastro import FeatureEngine, TattvaOrchestrator, VedAstroConnector, XGBoostOracle
+from backend.vedastro import (
+    FeatureEngine,
+    TattvaOrchestrator,
+    VedAstroConnector,
+    XGBoostOracle,
+)
 
 
 class TestFullSystemE2E:
@@ -166,7 +171,10 @@ class TestFullSystemE2E:
                 "Jupiter": {"longitude": 120, "exalted": True, "retrograde": False}
             },
         }
-        tattva_state = {"coherence": 0.75, "gunas": {"sattva": 0.5, "rajas": 0.3, "tamas": 0.2}}
+        tattva_state = {
+            "coherence": 0.75,
+            "gunas": {"sattva": 0.5, "rajas": 0.3, "tamas": 0.2},
+        }
 
         # Extract features
         features = feature_engine.extract(kundli, transits, 50000.0, tattva_state)
@@ -201,7 +209,10 @@ class TestFullSystemE2E:
         ml_signal = {"direction": "UP", "confidence": 0.8}
 
         # But high Tamas (philosophical objection)
-        tattva_state = {"coherence": 0.7, "gunas": {"sattva": 0.1, "rajas": 0.2, "tamas": 0.7}}
+        tattva_state = {
+            "coherence": 0.7,
+            "gunas": {"sattva": 0.1, "rajas": 0.2, "tamas": 0.7},
+        }
         transits = {}
 
         decision = orchestrator._apply_tattva_filter(ml_signal, tattva_state, transits)
@@ -374,7 +385,10 @@ class TestPerformanceE2E:
 
         kundli = {"planets": {"Sun": {"longitude": 100}, "Moon": {"longitude": 200}}}
         transits = {"aspects": [], "retrograde_count": 1}
-        tattva_state = {"coherence": 0.6, "gunas": {"sattva": 0.4, "rajas": 0.4, "tamas": 0.2}}
+        tattva_state = {
+            "coherence": 0.6,
+            "gunas": {"sattva": 0.4, "rajas": 0.4, "tamas": 0.2},
+        }
 
         start = time.perf_counter()
         for _ in range(1000):

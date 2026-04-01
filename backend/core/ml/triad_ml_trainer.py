@@ -135,13 +135,20 @@ class TriadMLTrainer:
         # Prepare data
         X, y = self.prepare_training_data()
         if X is None:
-            return {"status": "insufficient_data", "episodes": len(self.memory.episodes)}
+            return {
+                "status": "insufficient_data",
+                "episodes": len(self.memory.episodes),
+            }
 
         logger.info(f"Training on {len(X)} episodes")
 
         # Split
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y if len(set(y)) > 1 else None
+            X,
+            y,
+            test_size=0.2,
+            random_state=42,
+            stratify=y if len(set(y)) > 1 else None,
         )
 
         # Datasets
@@ -189,7 +196,10 @@ class TriadMLTrainer:
             if acc > best_acc:
                 best_acc = acc
                 # Save best model
-                torch.save(self.model.state_dict(), self.model_path / "outcome_predictor_best.pt")
+                torch.save(
+                    self.model.state_dict(),
+                    self.model_path / "outcome_predictor_best.pt",
+                )
 
             history.append({"epoch": epoch + 1, "loss": avg_loss, "acc": acc})
 
@@ -210,7 +220,11 @@ class TriadMLTrainer:
         }
 
     def predict_outcome(
-        self, market_context: dict, council_views: list[dict], confidence: float, coherence: float
+        self,
+        market_context: dict,
+        council_views: list[dict],
+        confidence: float,
+        coherence: float,
     ) -> float:
         """
         Predict probability of success for a decision.
@@ -234,7 +248,7 @@ class TriadMLTrainer:
 
         feat = [
             market_context.get("volatility_1m", 0.02),
-            council_views[1].get("fear_greed_index", 50) / 100 if len(council_views) > 1 else 0.5,
+            (council_views[1].get("fear_greed_index", 50) / 100 if len(council_views) > 1 else 0.5),
             confidence,
             coherence,
             0.5,  # karma score (unknown for new trade)

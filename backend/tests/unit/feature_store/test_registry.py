@@ -74,7 +74,9 @@ def test_point_in_time_correctness():
     query_time = datetime(2024, 1, 1, 10, 0, 0)
 
     # Simuleer een call
-    service.get_features(symbols=["BTC-EUR"], feature_names=["rsi_14"], timestamp=query_time)
+    service.get_features(
+        symbols=["BTC-EUR"], feature_names=["rsi_14"], timestamp=query_time
+    )
 
     # Check de arguments die naar de DB gaan
     # De query moet een WHERE timestamp <= query_time bevatten

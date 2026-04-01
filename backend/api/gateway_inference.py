@@ -40,7 +40,10 @@ def load_agent():
 
         bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)
         base = AutoModelForCausalLM.from_pretrained(  # nosec B615 - Model revision pinned above
-            BASE_MODEL, revision=MODEL_REVISION, quantization_config=bnb_config, device_map="auto"
+            BASE_MODEL,
+            revision=MODEL_REVISION,
+            quantization_config=bnb_config,
+            device_map="auto",
         )
     else:
         base = AutoModelForCausalLM.from_pretrained(

@@ -91,14 +91,22 @@ class MultiLLMProvider:
             logger.warning(f"[MultiLLM] Ollama init failed: {e}")
 
         # Set primary
-        for provider in [LLMProviderType.DEEPSEEK, LLMProviderType.OPENAI, LLMProviderType.OLLAMA]:
+        for provider in [
+            LLMProviderType.DEEPSEEK,
+            LLMProviderType.OPENAI,
+            LLMProviderType.OLLAMA,
+        ]:
             if provider in self.providers:
                 self.current_provider = provider
                 logger.info(f"[MultiLLM] Primary LLM: {provider.value}")
                 break
 
     def generate(
-        self, prompt: str, system_prompt: str = "", temperature: float = 0.3, max_retries: int = 3
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.3,
+        max_retries: int = 3,
     ) -> LLMResponse:
         """
         Generate with automatic failover.

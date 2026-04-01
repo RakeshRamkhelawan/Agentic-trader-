@@ -11,7 +11,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from backend.market_data.providers.ccxt_ws_provider import CCXTWSProvider, ConnectionConfig
+from backend.market_data.providers.ccxt_ws_provider import (
+    CCXTWSProvider,
+    ConnectionConfig,
+)
 
 
 @pytest.mark.asyncio
@@ -92,7 +95,9 @@ async def test_multiple_subscriptions():
     """Verify multiple subscriptions on same connection."""
     with patch("ccxt.async_support.binance") as mock_exchange_class:
         mock_instance = AsyncMock()
-        mock_instance.fetch_symbols = AsyncMock(return_value=["BTC/USDT", "ETH/USDT", "SOL/USDT"])
+        mock_instance.fetch_symbols = AsyncMock(
+            return_value=["BTC/USDT", "ETH/USDT", "SOL/USDT"]
+        )
         mock_exchange_class.return_value = mock_instance
 
         provider = CCXTWSProvider(exchange_id="binance")
@@ -152,9 +157,12 @@ async def test_unsubscribe():
 @pytest.mark.asyncio
 async def test_max_retries_exceeded():
     """Verify max retries exceeded causes ConnectionError."""
-    with patch("ccxt.async_support.binance", side_effect=Exception("Connection refused")):
+    with patch(
+        "ccxt.async_support.binance", side_effect=Exception("Connection refused")
+    ):
         provider = CCXTWSProvider(
-            exchange_id="binance", config=ConnectionConfig(max_retries=2, initial_backoff_ms=10)
+            exchange_id="binance",
+            config=ConnectionConfig(max_retries=2, initial_backoff_ms=10),
         )
 
         with pytest.raises(ConnectionError, match="Failed to connect after"):

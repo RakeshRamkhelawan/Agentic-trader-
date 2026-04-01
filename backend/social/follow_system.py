@@ -184,7 +184,7 @@ class FollowSystem:
         return {
             "total_users": total_users,
             "total_following_relationships": total_following,
-            "avg_following_per_user": total_following / total_users if total_users > 0 else 0,
+            "avg_following_per_user": (total_following / total_users if total_users > 0 else 0),
         }
 
 

@@ -160,7 +160,11 @@ def _get_paper_trading_federated_state(engine):
                 "buddhi_clarity": 80,
             },
             "councils": councils,
-            "chitta": {"nodes": nodes, "total_nodes": len(nodes), "verified_nodes": len(nodes)},
+            "chitta": {
+                "nodes": nodes,
+                "total_nodes": len(nodes),
+                "verified_nodes": len(nodes),
+            },
             "latest_decision": {
                 "action": "buy" if len(open_positions) > 0 else "hold",
                 "confidence": 0.72,
@@ -168,7 +172,7 @@ def _get_paper_trading_federated_state(engine):
                 "supporting": (
                     ["VedAstro", "Earth", "Fire"] if len(open_positions) > 0 else ["Water"]
                 ),
-                "opposing": [] if len(open_positions) > 0 else ["VedAstro", "Earth", "Fire"],
+                "opposing": ([] if len(open_positions) > 0 else ["VedAstro", "Earth", "Fire"]),
                 "reasoning": f"V18 consensus with {len(open_positions)} open positions",
             },
             "deliberation_steps": [
@@ -324,13 +328,17 @@ async def get_state():
                 "coherence": {
                     "total": int(avg_confidence),
                     "harmony": int(avg_confidence),
-                    "performance": 100 if total_pnl >= 0 else int(100 + total_pnl / 100),
+                    "performance": (100 if total_pnl >= 0 else int(100 + total_pnl / 100)),
                     "chitta_health": 90 if len(nodes) > 0 else 70,
                     "deliberation_quality": int(avg_confidence),
                     "buddhi_clarity": int(avg_confidence),
                 },
                 "councils": councils,
-                "chitta": {"nodes": nodes, "total_nodes": len(nodes), "verified_nodes": len(nodes)},
+                "chitta": {
+                    "nodes": nodes,
+                    "total_nodes": len(nodes),
+                    "verified_nodes": len(nodes),
+                },
                 "latest_decision": {
                     "action": decision_action,
                     "confidence": avg_confidence / 100,

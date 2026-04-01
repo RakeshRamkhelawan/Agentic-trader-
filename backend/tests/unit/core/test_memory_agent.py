@@ -29,7 +29,9 @@ def test_memory_agent_init(memory_agent, mock_chroma_client):
 
 def test_get_collection_default_tenant(memory_agent, mock_chroma_client):
     # Test without tenant context (should default to "default")
-    with patch("backend.core.memory_agent.get_current_tenant_optional", return_value=None):
+    with patch(
+        "backend.core.memory_agent.get_current_tenant_optional", return_value=None
+    ):
         memory_agent._get_collection()
 
         mock_chroma_client.get_or_create_collection.assert_called_with(

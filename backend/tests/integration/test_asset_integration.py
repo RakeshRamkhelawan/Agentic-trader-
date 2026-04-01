@@ -1,16 +1,19 @@
-import pytest
-import pytest_asyncio
-import uuid
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import select
-from backend.assets.models import Asset, AssetStatus, Base
-from backend.assets.manager import AssetManager
 import os
 import time
+import uuid
+
+import pytest
+import pytest_asyncio
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from backend.assets.manager import AssetManager
+from backend.assets.models import Asset, AssetStatus, Base
 
 # Use the environment URL or a default for testing
 DATABASE_URL = os.getenv(
-    "POSTGRES_ASYNC_URL", "postgresql+asyncpg://trader:trading_secure@localhost:5456/trading_db"
+    "POSTGRES_ASYNC_URL",
+    "postgresql+asyncpg://trader:trading_secure@localhost:5456/trading_db",
 )
 
 
@@ -27,7 +30,9 @@ async def engine():
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session(engine):
-    async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+    async_session = async_sessionmaker(
+        engine, expire_on_commit=False, class_=AsyncSession
+    )
     async with async_session() as session:
         yield session
 
@@ -36,7 +41,12 @@ async def db_session(engine):
 async def test_asset_persistence_and_transitions(db_session):
     """Subtask 1: Validate database state persistence and basic transitions."""
     asset_id = uuid.uuid4()
-    asset = Asset(id=asset_id, symbol="BTC/USDT", exchange="BINANCE", status=AssetStatus.DISCOVERED)
+    asset = Asset(
+        id=asset_id,
+        symbol="BTC/USDT",
+        exchange="BINANCE",
+        status=AssetStatus.DISCOVERED,
+    )
     db_session.add(asset)
     await db_session.commit()
 
@@ -68,7 +78,10 @@ async def test_complex_state_transitions(db_session):
 
     # 1. POOLED -> INACTIVE
     asset_pooled = Asset(
-        id=uuid.uuid4(), symbol="ETH/USDT", exchange="BINANCE", status=AssetStatus.POOLED
+        id=uuid.uuid4(),
+        symbol="ETH/USDT",
+        exchange="BINANCE",
+        status=AssetStatus.POOLED,
     )
     db_session.add(asset_pooled)
     await db_session.commit()
@@ -79,7 +92,10 @@ async def test_complex_state_transitions(db_session):
 
     # 2. WATCHED -> ACTIVE
     asset_watched = Asset(
-        id=uuid.uuid4(), symbol="SOL/USDT", exchange="BINANCE", status=AssetStatus.WATCHED
+        id=uuid.uuid4(),
+        symbol="SOL/USDT",
+        exchange="BINANCE",
+        status=AssetStatus.WATCHED,
     )
     db_session.add(asset_watched)
     await db_session.commit()
@@ -94,7 +110,10 @@ async def test_invalid_transitions(db_session):
     """Verify enforcement of invalid transitions."""
     manager = AssetManager(db_session)
     asset = Asset(
-        id=uuid.uuid4(), symbol="ADA/USDT", exchange="BINANCE", status=AssetStatus.DISCOVERED
+        id=uuid.uuid4(),
+        symbol="ADA/USDT",
+        exchange="BINANCE",
+        status=AssetStatus.DISCOVERED,
     )
     db_session.add(asset)
     await db_session.commit()

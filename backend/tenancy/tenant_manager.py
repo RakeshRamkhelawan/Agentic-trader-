@@ -99,7 +99,7 @@ class Tenant:
                 "data_retention_days": self.limits.data_retention_days,
             },
             "created_at": self.created_at.isoformat(),
-            "activated_at": self.activated_at.isoformat() if self.activated_at else None,
+            "activated_at": (self.activated_at.isoformat() if self.activated_at else None),
         }
 
 

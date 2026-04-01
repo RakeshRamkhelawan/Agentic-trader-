@@ -87,7 +87,10 @@ class AuditedCollectiveConsciousness(CollectiveConsciousness):
 
         # Step 3: Log collective decision
         decision_id = self.audit.log_collective_decision(
-            agent_signals=signals, market_state=market, decision=decision, mcts_result=None
+            agent_signals=signals,
+            market_state=market,
+            decision=decision,
+            mcts_result=None,
         )
 
         # Update state

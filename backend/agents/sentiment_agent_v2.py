@@ -121,7 +121,10 @@ class SentimentAgentV2(BaseAgent):
         """
         if not headlines:
             return SentimentResult(
-                score=0.5, trend="neutral", confidence=0.0, rationale="No headlines provided"
+                score=0.5,
+                trend="neutral",
+                confidence=0.0,
+                rationale="No headlines provided",
             )
 
         # Check cache
@@ -241,7 +244,11 @@ Score: 0.0-0.4 bearish, 0.4-0.6 neutral, 0.6-1.0 bullish"""
             trend, score = "neutral", 0.5
 
         return SentimentResult(
-            score=score, trend=trend, confidence=0.5, rationale=text[:200], key_factors=[]
+            score=score,
+            trend=trend,
+            confidence=0.5,
+            rationale=text[:200],
+            key_factors=[],
         )
 
     def _fallback_analysis(self, headlines: list[str], coin: str) -> SentimentResult:

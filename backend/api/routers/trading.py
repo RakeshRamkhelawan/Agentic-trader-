@@ -104,7 +104,8 @@ async def get_bitvavo_adapter():
 def get_paper_trading_logs():
     """Get real paper trading logs if they exist."""
     log_file = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "paper_trading_session.log"
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+        "paper_trading_session.log",
     )
     if os.path.exists(log_file):
         try:
@@ -413,7 +414,10 @@ async def start_paper_trading(initial_capital: float = 10000.0, duration_hours: 
     global _paper_trading_engine
 
     if _paper_trading_engine is not None:
-        return {"status": "already_running", "message": "Paper trading is already active"}
+        return {
+            "status": "already_running",
+            "message": "Paper trading is already active",
+        }
 
     try:
         from backend.services.real_paper_trading_v18_direct import RealPaperTradingV18

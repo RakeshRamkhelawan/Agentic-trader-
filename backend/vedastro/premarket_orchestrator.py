@@ -262,7 +262,10 @@ class VedAstroPreMarketOrchestrator:
 
         # 5. Build trading plan
         plan = self._build_trading_plan(
-            date=date_str, asset_scores=asset_scores, muhurtha=muhurtha, time_windows=time_windows
+            date=date_str,
+            asset_scores=asset_scores,
+            muhurtha=muhurtha,
+            time_windows=time_windows,
         )
 
         # Cache the plan
@@ -305,7 +308,7 @@ class VedAstroPreMarketOrchestrator:
                 overall_score=analysis.overall_score,
                 signal_strength=analysis.trading_signal.strength_score,
                 confidence=analysis.trading_signal.confidence,
-                dasha_lord=analysis.dasha.mahadasha_lord if analysis.dasha else "Unknown",
+                dasha_lord=(analysis.dasha.mahadasha_lord if analysis.dasha else "Unknown"),
                 top_yoga=analysis.yogas[0].name if analysis.yogas else "None",
                 muhurtha_rating=analysis.muhurtha.rating if analysis.muhurtha else 5.0,
                 pancha_pakshi_strength=(
@@ -505,7 +508,10 @@ class VedAstroPreMarketOrchestrator:
         if symbol not in top_symbols:
             return False, f"{symbol} not in top assets today"
 
-        return True, f"OK: {window.recommended_action} (strength: {window.strength:.2f})"
+        return (
+            True,
+            f"OK: {window.recommended_action} (strength: {window.strength:.2f})",
+        )
 
     def get_position_size_multiplier(self) -> float:
         """Get risk multiplier for current day"""

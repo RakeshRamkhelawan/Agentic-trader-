@@ -1,4 +1,3 @@
-
 import pytest
 
 from backend.agents.fund_manager_agent import FundManagerAgent
@@ -72,12 +71,16 @@ async def test_kelly_calculation_logic(fund_manager):
 
 
 @pytest.mark.asyncio
-async def test_allocation_sizing(fund_manager, sample_proposal, sample_risk, sample_portfolio):
+async def test_allocation_sizing(
+    fund_manager, sample_proposal, sample_risk, sample_portfolio
+):
     """
     Test full allocation flow.
     Expect capping at 10% due to max_position_pct.
     """
-    alloc = await fund_manager.allocate_capital(sample_proposal, sample_risk, sample_portfolio)
+    alloc = await fund_manager.allocate_capital(
+        sample_proposal, sample_risk, sample_portfolio
+    )
 
     assert alloc.approved is True
     assert alloc.kelly_fraction == pytest.approx(0.40)
@@ -110,7 +113,9 @@ async def test_exposure_limit(fund_manager, sample_proposal, sample_risk):
 
 
 @pytest.mark.asyncio
-async def test_negative_kelly_rejection(fund_manager, sample_proposal, sample_portfolio):
+async def test_negative_kelly_rejection(
+    fund_manager, sample_proposal, sample_portfolio
+):
     """
     Test rejection when Kelly is negative (Expected Value negative).
     Win% = 0.3, Win=4%, Loss=2%
@@ -124,7 +129,9 @@ async def test_negative_kelly_rejection(fund_manager, sample_proposal, sample_po
         win_probability=0.3,
     )
 
-    alloc = await fund_manager.allocate_capital(sample_proposal, bad_risk, sample_portfolio)
+    alloc = await fund_manager.allocate_capital(
+        sample_proposal, bad_risk, sample_portfolio
+    )
 
     assert alloc.approved is False
     assert "Zero/Negative Kelly" in alloc.reasoning

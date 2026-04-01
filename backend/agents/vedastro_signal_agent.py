@@ -65,7 +65,11 @@ class VedAstroSignalAgent(AgentWithTools):
             if not signal_result.get("success", False):
                 error = signal_result.get("error", "Unknown error")
                 logger.error(f"VedAstro signal failed: {error}")
-                return {"action": "hold", "confidence": 0.0, "reason": f"VedAstro error: {error}"}
+                return {
+                    "action": "hold",
+                    "confidence": 0.0,
+                    "reason": f"VedAstro error: {error}",
+                }
 
             signal_data = signal_result.get("result", {})
             signal = signal_data.get("signal", "hold")
@@ -124,7 +128,11 @@ class VedAstroSignalAgent(AgentWithTools):
 
         except Exception as e:
             logger.exception(f"Error in VedAstro analysis: {e}")
-            return {"action": "hold", "confidence": 0.0, "reason": f"Analysis error: {str(e)}"}
+            return {
+                "action": "hold",
+                "confidence": 0.0,
+                "reason": f"Analysis error: {str(e)}",
+            }
 
     async def get_detailed_analysis(self, symbol: str, price: float) -> dict[str, Any]:
         """
@@ -137,7 +145,13 @@ class VedAstroSignalAgent(AgentWithTools):
         Returns:
             Comprehensive analysis with signal, dasha, and transits
         """
-        result = {"symbol": symbol, "price": price, "signal": None, "dasha": None, "transits": None}
+        result = {
+            "symbol": symbol,
+            "price": price,
+            "signal": None,
+            "dasha": None,
+            "transits": None,
+        }
 
         try:
             # Get main signal

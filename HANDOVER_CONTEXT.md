@@ -1,23 +1,21 @@
-# Handover Context - Grand Unification Phase
+# Handover Context - Go-Live Audit & Visie
 
-## Status: VOLTOOID (2026-03-05)
+## Status: VOLTOOID (2026-04-01) - Platform Audit & Agent Visie
 
-### Uitgevoerde Taken
-1.  **Agent Integratie**: `VedAstroSignalAgent`, `FundManagerAgent`, en `ElementalOrchestrator` zijn volledig opgenomen in de OODA loop pipeline.
-2.  **OODA Refinement**: `OODALoopCoordinator` heeft nu een fallback naar de `ElementalOrchestrator` wanneer de confidence van de trader laag is.
-3.  **Mind Council Upgrade**: NLP Sentiment is nu een gewogen component van de Fear/Greed index.
-4.  **Dynamic Edge Control**: `BuddhiMind` past gewichten van councils dynamisch aan op basis van markt-regimes en angst-levels.
-5.  **Backtest Validatie**: `run_full_backtest.py` is vernieuwd naar v4 met ondersteuning voor het dynamische universum van de `PortfolioManagerAgent` en exo-signaal logs.
+### Uitgevoerde Taken recent:
+1.  **Platform Audit:** Compleet review rapport (`go_live_audit_report.md` artifact) opgesteld over de staat van het project na Grand Unification en V13 Evoluties.
+2.  **Gap Analyse (Go-Live Blockers):** Vastgesteld dat (1) Database persistentie in Paper Trading (V18) ontbreekt, (2) Revolut X API stuk is, (3) RAG/Chitta memory niet gebruikt wordt bij live beslissingen, en (4) er geen hardcoded risk-circuit-breaker in executors zit.
+3.  **Visie op Trading Agents:** Een plan ontwikkeld om van zero-shot LLM scripts over te stappen via een gecontroleerde **Shadow Mode (Paper Trading)** met "RAG-backed" MetaOrchestrator feedback-loop (reinforcement). Echte executies leunen dan op wiskundige checks en parameters afgevuurd door de LLM.
+4.  **Vorige Fase (Grand Unification)**: VedAstro Integratie, OODA fallbacks en NLP Sentiment verwerking functioneel bevonden. BM25 / Async cache modules zijn recent ook voltooid.
 
-### Belangrijke Locaties
-- `backend/orchestration/ooda_coordinator.py`: Bevat de nieuwe `_decide` fallback logica.
-- `backend/councils/buddhi_mind.py`: Bevat de Dynamische Edge Control wegingen.
-- `backend/councils/mind_council.py`: Bevat de NLP Sentiment integratie.
-- `backend/tests/unit/test_portfolio_handover.py`: Unit tests voor de asset handover.
+### Belangrijke Locaties voor komende implementaties
+- `backend/services/real_paper_trading_v18_direct.py`: Moet voorzien worden van RAG en Postgres calls voor robuustheid.
+- `backend/agents/strategy_evolution.py` en `backend/agents/meta_orchestrator_v3.py`: Om de visie voor self-learning en parameter tuning bij live-gang mogelijk te maken.
 
-### Volgende Stappen voor de volgende agent
-- **Live Validatie**: Monitor de logs in de staging omgeving om te zien hoe de `ElementalOrchestrator` ingrijpt bij echte marktvolatiliteit.
-- **Refinement Vedastro**: Vervang de backtest mock door een robuuste historische caching laag voor planetaire data.
+### Volgende Stappen voor de volgende AI of ontwikkelaar
+- **Database Opschonen:** Maak PostgreSQL insert/update calls voor paper trades in V18.
+- **RAG & Chitta aanzetten in V18:** Zorg dat de LLM agents uit vorige trades kunnen leren.
+- **Revolut X Reparaties:** API Client herschrijven of uitsluitend op Bitvavo focussen voor lanceren.
 
 ---
 *Gewerkt door Antigravity (Advanced Agentic Coding team)*

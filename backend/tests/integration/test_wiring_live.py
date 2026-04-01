@@ -40,9 +40,11 @@ class TestWiringRoutesExist:
         """Test that all auth routes are registered."""
         from backend.api.main import app
 
-        routes = [(list(r.methods)[0] if r.methods else "GET", r.path)
-                  for r in app.routes
-                  if hasattr(r, 'path') and hasattr(r, 'methods')]
+        routes = [
+            (list(r.methods)[0] if r.methods else "GET", r.path)
+            for r in app.routes
+            if hasattr(r, "path") and hasattr(r, "methods")
+        ]
 
         assert ("POST", "/api/v1/auth/register") in routes
         assert ("POST", "/api/v1/auth/login") in routes
@@ -53,9 +55,11 @@ class TestWiringRoutesExist:
         """Test that all KYC routes are registered."""
         from backend.api.main import app
 
-        routes = [(list(r.methods)[0] if r.methods else "GET", r.path)
-                  for r in app.routes
-                  if hasattr(r, 'path') and hasattr(r, 'methods')]
+        routes = [
+            (list(r.methods)[0] if r.methods else "GET", r.path)
+            for r in app.routes
+            if hasattr(r, "path") and hasattr(r, "methods")
+        ]
 
         assert ("GET", "/api/v1/kyc/status") in routes
         assert ("GET", "/api/v1/kyc/required") in routes
@@ -66,9 +70,11 @@ class TestWiringRoutesExist:
         """Test that all settings routes are registered."""
         from backend.api.main import app
 
-        routes = [(list(r.methods)[0] if r.methods else "GET", r.path)
-                  for r in app.routes
-                  if hasattr(r, 'path') and hasattr(r, 'methods')]
+        routes = [
+            (list(r.methods)[0] if r.methods else "GET", r.path)
+            for r in app.routes
+            if hasattr(r, "path") and hasattr(r, "methods")
+        ]
 
         assert ("GET", "/api/v1/settings/all") in routes
         assert ("GET", "/api/v1/settings/profile") in routes
@@ -89,9 +95,11 @@ class TestWiringRoutesExist:
         """Test that all competitions routes are registered."""
         from backend.api.main import app
 
-        routes = [(list(r.methods)[0] if r.methods else "GET", r.path)
-                  for r in app.routes
-                  if hasattr(r, 'path') and hasattr(r, 'methods')]
+        routes = [
+            (list(r.methods)[0] if r.methods else "GET", r.path)
+            for r in app.routes
+            if hasattr(r, "path") and hasattr(r, "methods")
+        ]
 
         assert ("GET", "/api/v1/competitions/tournaments") in routes
         assert ("GET", "/api/v1/competitions/league-info") in routes
@@ -106,27 +114,32 @@ class TestWiringImports:
 
     def test_auth_api_imports(self):
         """Test auth_api module imports."""
-        from backend.api.auth_api import router, create_jwt_token
+        from backend.api.auth_api import create_jwt_token, router
+
         assert router is not None
 
     def test_kyc_api_imports(self):
         """Test kyc_api module imports."""
-        from backend.api.kyc_api import router, ENABLE_KYC
+        from backend.api.kyc_api import ENABLE_KYC, router
+
         assert router is not None
 
     def test_user_settings_api_imports(self):
         """Test user_settings_api module imports."""
         from backend.api.user_settings_api import router
+
         assert router is not None
 
     def test_competitions_api_imports(self):
         """Test competitions_api module imports."""
         from backend.api.competitions_api import router
+
         assert router is not None
 
     def test_user_settings_service_imports(self):
         """Test user_settings_service imports."""
         from backend.services.user_settings_service import UserSettingsService
+
         assert UserSettingsService is not None
 
 
@@ -136,14 +149,15 @@ class TestWiringSchemas:
     def test_auth_schemas(self):
         """Test auth request/response schemas."""
         from backend.api.auth_api import (
-            RegisterRequest, LoginRequest, AuthResponse, UserResponse
+            AuthResponse,
+            LoginRequest,
+            RegisterRequest,
+            UserResponse,
         )
 
         # Test RegisterRequest
         req = RegisterRequest(
-            email="test@example.com",
-            password="SecurePass123!",
-            full_name="Test User"
+            email="test@example.com", password="SecurePass123!", full_name="Test User"
         )
         assert req.email == "test@example.com"
         assert req.password == "SecurePass123!"
@@ -159,15 +173,16 @@ class TestWiringSchemas:
     def test_settings_schemas(self):
         """Test settings schemas."""
         from backend.schemas.user_settings import (
-            UserProfile, NotificationSettings, SecuritySettings,
-            AppearanceSettings, UserPreferences
+            AppearanceSettings,
+            NotificationSettings,
+            SecuritySettings,
+            UserPreferences,
+            UserProfile,
         )
 
         # Test UserProfile
         profile = UserProfile(
-            first_name="John",
-            last_name="Doe",
-            email="john@example.com"
+            first_name="John", last_name="Doe", email="john@example.com"
         )
         assert profile.first_name == "John"
         assert profile.last_name == "Doe"
@@ -180,7 +195,7 @@ class TestWiringFrontendAPI:
         """Test frontend auth API types are defined."""
         # This would require loading the TypeScript file
         # For now, we just verify the backend types exist
-        from backend.api.auth_api import RegisterRequest, LoginRequest
+        from backend.api.auth_api import LoginRequest, RegisterRequest
 
         # Verify fields match what frontend expects
         register_fields = RegisterRequest.model_fields.keys()
@@ -194,9 +209,7 @@ class TestWiringFrontendAPI:
 
     def test_frontend_settings_types(self):
         """Test frontend settings API types are defined."""
-        from backend.schemas.user_settings import (
-            NotificationSettings, UserPreferences
-        )
+        from backend.schemas.user_settings import NotificationSettings, UserPreferences
 
         # Verify notification settings fields
         notif_fields = NotificationSettings.model_fields.keys()

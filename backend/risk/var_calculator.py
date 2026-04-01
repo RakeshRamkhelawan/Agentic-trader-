@@ -250,7 +250,7 @@ class VaRCalculator:
             "total_observations": total_observations,
             "breaches": breaches,
             "breach_rate": breach_rate,
-            "expected_breach_rate": 1 - var_results[0].confidence_level if var_results else 0.05,
+            "expected_breach_rate": (1 - var_results[0].confidence_level if var_results else 0.05),
             "breach_details": breach_details[:10],  # Top 10 breaches
         }
 

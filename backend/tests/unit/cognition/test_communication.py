@@ -5,7 +5,9 @@ from backend.schemas.agent_messages import AgentMessage, AgentProtocol
 
 def test_create_valid_message():
     """Happy Path: Geldig bericht."""
-    msg = AgentMessage(source="agent_a", target="agent_b", type="SIGNAL", payload={"buy": True})
+    msg = AgentMessage(
+        source="agent_a", target="agent_b", type="SIGNAL", payload={"buy": True}
+    )
     assert msg.source == "agent_a"
 
 

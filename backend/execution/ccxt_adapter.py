@@ -141,7 +141,7 @@ class CCXTAdapter(ExecutionInterface):
             logger.error("   Gebruik ShadowPortfolioManager of PaperExchange voor paper trading.")
             return OrderResult(
                 order_id="",
-                client_order_id=str(order.client_order_id) if order.client_order_id else "",
+                client_order_id=(str(order.client_order_id) if order.client_order_id else ""),
                 status=OrderStatus.REJECTED,
                 error_message="Cannot place real orders in PAPER mode. Use paper trading components.",
             )
@@ -149,7 +149,9 @@ class CCXTAdapter(ExecutionInterface):
         if not self._exchange:
             return OrderResult(
                 order_id="mock-order-001",
-                client_order_id=str(order.client_order_id) if order.client_order_id else "mock-001",
+                client_order_id=(
+                    str(order.client_order_id) if order.client_order_id else "mock-001"
+                ),
                 status=OrderStatus.PENDING,
                 error_message="CCXT not available",
             )
@@ -177,7 +179,7 @@ class CCXTAdapter(ExecutionInterface):
             logger.error(f"Order submission failed: {e}")
             return OrderResult(
                 order_id="",
-                client_order_id=str(order.client_order_id) if order.client_order_id else "",
+                client_order_id=(str(order.client_order_id) if order.client_order_id else ""),
                 status=OrderStatus.REJECTED,
                 error_message=str(e),
             )

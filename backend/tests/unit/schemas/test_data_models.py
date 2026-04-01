@@ -27,13 +27,17 @@ def test_market_tick_valid():
 def test_market_tick_negative_price():
     """Unhappy Path: Price cannot be negative."""
     with pytest.raises(ValidationError):
-        MarketTick(symbol="BTC-EUR", price=-100.0, volume=1.0, timestamp=datetime.now())  # FOUT
+        MarketTick(
+            symbol="BTC-EUR", price=-100.0, volume=1.0, timestamp=datetime.now()
+        )  # FOUT
 
 
 def test_market_tick_invalid_timestamp():
     """Unhappy Path: Invalid timestamp string."""
     with pytest.raises(ValidationError):
-        MarketTick(symbol="BTC-EUR", price=100.0, volume=1.0, timestamp="niet-een-tijd")  # FOUT
+        MarketTick(
+            symbol="BTC-EUR", price=100.0, volume=1.0, timestamp="niet-een-tijd"
+        )  # FOUT
 
 
 # --- ORDER REQUEST TESTS ---

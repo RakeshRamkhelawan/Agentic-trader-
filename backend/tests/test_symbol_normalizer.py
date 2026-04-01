@@ -1,4 +1,5 @@
 import pytest
+
 from backend.core.symbol_normalizer import SymbolNormalizer
 
 

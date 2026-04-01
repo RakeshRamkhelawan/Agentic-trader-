@@ -31,23 +31,23 @@ class TestPreCommitConfig:
         """Bandit hook must be blocking (not wrapped in || echo)."""
         content = self._read_precommit()
         # Old pattern was: || echo "Bandit issues found"
-        assert '|| echo' not in content, (
-            "Bandit hook is non-blocking (uses || echo fallback)"
-        )
+        assert (
+            "|| echo" not in content
+        ), "Bandit hook is non-blocking (uses || echo fallback)"
 
     def test_detect_secrets_present(self):
         """detect-secrets hook must be configured."""
         content = self._read_precommit()
-        assert "detect-secrets" in content, (
-            "detect-secrets hook is missing from pre-commit config"
-        )
+        assert (
+            "detect-secrets" in content
+        ), "detect-secrets hook is missing from pre-commit config"
 
     def test_detect_private_key_present(self):
         """detect-private-key hook must be configured."""
         content = self._read_precommit()
-        assert "detect-private-key" in content, (
-            "detect-private-key hook is missing from pre-commit config"
-        )
+        assert (
+            "detect-private-key" in content
+        ), "detect-private-key hook is missing from pre-commit config"
 
 
 class TestMyPyEnabled:
@@ -64,23 +64,23 @@ class TestMyPyEnabled:
     def test_mypy_check_untyped_defs_enabled(self):
         """MyPy check_untyped_defs must be true."""
         content = self._read_pyproject()
-        assert "check_untyped_defs = true" in content, (
-            "MyPy check_untyped_defs is not enabled"
-        )
+        assert (
+            "check_untyped_defs = true" in content
+        ), "MyPy check_untyped_defs is not enabled"
 
     def test_mypy_warn_return_any_enabled(self):
         """MyPy warn_return_any must be true."""
         content = self._read_pyproject()
-        assert "warn_return_any = true" in content, (
-            "MyPy warn_return_any is not enabled"
-        )
+        assert (
+            "warn_return_any = true" in content
+        ), "MyPy warn_return_any is not enabled"
 
     def test_mypy_follow_imports_not_skip(self):
         """MyPy follow_imports must not be 'skip'."""
         content = self._read_pyproject()
-        assert 'follow_imports = "skip"' not in content, (
-            "MyPy follow_imports is set to 'skip' -- type checking is disabled"
-        )
+        assert (
+            'follow_imports = "skip"' not in content
+        ), "MyPy follow_imports is set to 'skip' -- type checking is disabled"
 
 
 class TestCoverageThreshold:
@@ -94,9 +94,9 @@ class TestCoverageThreshold:
         path = os.path.join(project_root, "pyproject.toml")
         with open(path, "r", encoding="utf-8") as f:
             content = f.read()
-        assert "fail_under" in content, (
-            "Coverage fail_under threshold is not set in pyproject.toml"
-        )
+        assert (
+            "fail_under" in content
+        ), "Coverage fail_under threshold is not set in pyproject.toml"
 
 
 class TestRuffSecurityRules:
@@ -110,9 +110,9 @@ class TestRuffSecurityRules:
         path = os.path.join(project_root, "pyproject.toml")
         with open(path, "r", encoding="utf-8") as f:
             content = f.read()
-        assert '"S"' in content, (
-            "Ruff does not include S (flake8-bandit) security rules"
-        )
+        assert (
+            '"S"' in content
+        ), "Ruff does not include S (flake8-bandit) security rules"
 
 
 class TestDeprecatedCodeFlagged:
@@ -123,17 +123,15 @@ class TestDeprecatedCodeFlagged:
         project_root = os.path.normpath(
             os.path.join(os.path.dirname(__file__), "..", "..", "..")
         )
-        path = os.path.join(
-            project_root, "backend", "exchange", "exchange_factory.py"
-        )
+        path = os.path.join(project_root, "backend", "exchange", "exchange_factory.py")
         if not os.path.exists(path):
             # Good - it's been removed
             return
         with open(path, "r", encoding="utf-8") as f:
             content = f.read()
-        assert "deprecated" in content.lower() or "DeprecationWarning" in content, (
-            "exchange_factory.py exists but is not marked as deprecated"
-        )
+        assert (
+            "deprecated" in content.lower() or "DeprecationWarning" in content
+        ), "exchange_factory.py exists but is not marked as deprecated"
 
 
 class TestProjectMetadata:

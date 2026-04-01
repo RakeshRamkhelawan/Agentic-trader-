@@ -96,7 +96,10 @@ class StrategicV8Adapter:
         }
 
     def deliberate_with_strategy(
-        self, market_state: Any, ctx: StrategicContext, strategic_plan: Optional[Dict] = None
+        self,
+        market_state: Any,
+        ctx: StrategicContext,
+        strategic_plan: Optional[Dict] = None,
     ) -> StrategicDecision:
         """
         Run v8 deliberation with v9 strategic overlay

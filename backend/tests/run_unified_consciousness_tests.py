@@ -119,7 +119,9 @@ def run_all_tests():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run Unified Consciousness Integration Tests")
+    parser = argparse.ArgumentParser(
+        description="Run Unified Consciousness Integration Tests"
+    )
     parser.add_argument(
         "--phase",
         type=str,
@@ -134,7 +136,9 @@ def main():
         default="all",
         help="Type of tests to run (default: all)",
     )
-    parser.add_argument("--verbose", "-v", action="store_true", default=True, help="Verbose output")
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", default=True, help="Verbose output"
+    )
 
     args = parser.parse_args()
 

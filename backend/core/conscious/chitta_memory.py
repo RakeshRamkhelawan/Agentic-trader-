@@ -162,7 +162,8 @@ class ChittaMemory:
         strategy_hash = self._hash_strategy(trade)
         if strategy_hash not in self.strategies:
             self.strategies[strategy_hash] = StrategyPerformance(
-                strategy_hash=strategy_hash, pattern_signature=self._extract_pattern(trade)
+                strategy_hash=strategy_hash,
+                pattern_signature=self._extract_pattern(trade),
             )
 
         self.strategies[strategy_hash].update(trade)
@@ -284,7 +285,10 @@ class ChittaMemory:
 
         # Check reflection
         reflection = self.reflect_recent(5)
-        if reflection["recommended_action"] in ["pause_and_reflect", "wait_for_clarity"]:
+        if reflection["recommended_action"] in [
+            "pause_and_reflect",
+            "wait_for_clarity",
+        ]:
             return True, f"Reflection: {reflection['insights']}"
 
         return False, ""
@@ -302,7 +306,7 @@ class ChittaMemory:
     def _hash_strategy(self, trade: TradeExperience) -> str:
         """Create hash for strategy pattern"""
         key = f"{trade.market_regime}_{trade.dominant_element}_{trade.guna_dominant}_{'maya' if trade.is_maya else 'clear'}"
-        return hashlib.md5(key.encode()).hexdigest()[:16]
+        return hashlib.md5(key.encode(), usedforsecurity=False).hexdigest()[:16]
 
     def _extract_pattern(self, trade: TradeExperience) -> Dict[str, Any]:
         """Extract pattern signature from trade"""

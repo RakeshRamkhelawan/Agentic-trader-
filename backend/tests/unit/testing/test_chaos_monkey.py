@@ -9,8 +9,8 @@ from unittest.mock import patch
 import pytest
 
 from backend.testing.chaos.monkey import (
-    ChaosMonkey,
     ChaosMode,
+    ChaosMonkey,
     get_chaos_monkey,
     reset_chaos_monkey,
 )

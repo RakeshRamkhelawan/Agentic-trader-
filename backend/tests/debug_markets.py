@@ -6,7 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from backend.services.trading_service import TradingService
 from backend.services.user_settings_service import UserSettingsService
@@ -14,7 +16,9 @@ from backend.services.user_settings_service import UserSettingsService
 
 async def test_get_markets():
     # Setup minimal DB engine (mocking)
-    DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/agentic_trader"
+    DATABASE_URL = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/agentic_trader"
+    )
     engine = create_async_engine(DATABASE_URL)
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

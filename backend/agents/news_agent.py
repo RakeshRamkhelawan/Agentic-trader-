@@ -43,7 +43,7 @@ class NewsItem:
             "title": self.title,
             "source": self.source,
             "url": self.url,
-            "published_at": self.published_at.isoformat() if self.published_at else None,
+            "published_at": (self.published_at.isoformat() if self.published_at else None),
             "sentiment_vote": self.sentiment_vote,
             "currency": self.currency,
         }
@@ -181,7 +181,8 @@ class NewsAgent:
 
         # Sort by recency (if available)
         unique_news.sort(
-            key=lambda x: x.published_at or datetime.min.replace(tzinfo=UTC), reverse=True
+            key=lambda x: x.published_at or datetime.min.replace(tzinfo=UTC),
+            reverse=True,
         )
 
         return unique_news[:20]  # Return top 20
@@ -513,7 +514,12 @@ class NewsAgent:
             Dict with score (0-1), trend (bullish/bearish/neutral), and metadata
         """
         if not news_items:
-            return {"score": 0.5, "trend": "neutral", "confidence": 0.0, "sample_size": 0}
+            return {
+                "score": 0.5,
+                "trend": "neutral",
+                "confidence": 0.0,
+                "sample_size": 0,
+            }
 
         # Calculate weighted sentiment
         total_votes = 0

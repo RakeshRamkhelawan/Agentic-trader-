@@ -387,7 +387,12 @@ class EventBus:
         logger.info(f"Message sent to DLQ: {dlq_stream}")
 
     async def _schedule_retry_and_ack(
-        self, original_stream: str, group: str, message_id: str, event_data: dict, error: str
+        self,
+        original_stream: str,
+        group: str,
+        message_id: str,
+        event_data: dict,
+        error: str,
     ) -> None:
         """
         Atomically schedule retry and ACK message to prevent message loss.
@@ -425,7 +430,12 @@ class EventBus:
         logger.debug(f"Atomically scheduled retry and ACKed message {message_id}")
 
     async def _send_to_dlq_and_ack(
-        self, original_stream: str, group: str, message_id: str, event_data: dict, error: str
+        self,
+        original_stream: str,
+        group: str,
+        message_id: str,
+        event_data: dict,
+        error: str,
     ) -> None:
         """
         Atomically send to DLQ and ACK message to prevent message loss.
@@ -548,7 +558,7 @@ class EventBus:
 
             result.append(
                 {
-                    "id": message_id.decode() if isinstance(message_id, bytes) else message_id,
+                    "id": (message_id.decode() if isinstance(message_id, bytes) else message_id),
                     "data": parsed,
                 }
             )

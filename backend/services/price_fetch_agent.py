@@ -335,7 +335,13 @@ class PriceFetchAgent:
                 "channels": [
                     {
                         "name": "ticker",
-                        "markets": ["BTC-EUR", "ETH-EUR", "SOL-EUR", "ADA-EUR", "DOT-EUR"],
+                        "markets": [
+                            "BTC-EUR",
+                            "ETH-EUR",
+                            "SOL-EUR",
+                            "ADA-EUR",
+                            "DOT-EUR",
+                        ],
                     }
                 ],
             }

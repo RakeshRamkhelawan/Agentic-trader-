@@ -68,7 +68,9 @@ class ShadowPortfolioManager:
             cash = self.balances.get(self.cash_asset, 0)
             if cash < cost:
                 return OrderResult(
-                    str(uuid.uuid4()), OrderStatus.REJECTED, error_message="Insufficient EUR"
+                    str(uuid.uuid4()),
+                    OrderStatus.REJECTED,
+                    error_message="Insufficient EUR",
                 )
 
             self.balances[self.cash_asset] = cash - cost
@@ -77,7 +79,9 @@ class ShadowPortfolioManager:
             pos = self.balances.get(symbol, 0)
             if pos < qty:
                 return OrderResult(
-                    str(uuid.uuid4()), OrderStatus.REJECTED, error_message=f"Insufficient {symbol}"
+                    str(uuid.uuid4()),
+                    OrderStatus.REJECTED,
+                    error_message=f"Insufficient {symbol}",
                 )
 
             self.balances[symbol] = pos - qty

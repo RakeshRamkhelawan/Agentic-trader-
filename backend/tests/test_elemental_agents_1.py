@@ -30,7 +30,10 @@ async def test_ether_harmony_calculation(orchestrator):
     assert result["prana_remaining"] < 100.0  # Consumed prana
 
     # Scenario 2: Conflict (Risk Block)
-    inputs_conflict = {"fire": {"approved": False}, "earth": {"valuation_gap": 10}}  # Blocker
+    inputs_conflict = {
+        "fire": {"approved": False},
+        "earth": {"valuation_gap": 10},
+    }  # Blocker
     result = await orchestrator.process_signal({"inputs": inputs_conflict})
     assert result["harmony_score"] < 0.6
 

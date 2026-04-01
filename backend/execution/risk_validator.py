@@ -225,7 +225,10 @@ class OrderRiskValidator:
             overall_message = "Order approved"
 
         return ValidationResult(
-            order_id=order_id, status=status, checks=checks, overall_message=overall_message
+            order_id=order_id,
+            status=status,
+            checks=checks,
+            overall_message=overall_message,
         )
 
     def _validate_order_size(
@@ -309,7 +312,10 @@ class OrderRiskValidator:
                     passed=False,
                     status=ValidationStatus.REJECTED,
                     message=f"Insufficient balance: need ${required:.2f}, have ${available:.2f}",
-                    details={"required": float(required), "available": float(available)},
+                    details={
+                        "required": float(required),
+                        "available": float(available),
+                    },
                 )
         else:  # SELL
             required = request.quantity
@@ -320,7 +326,10 @@ class OrderRiskValidator:
                     passed=False,
                     status=ValidationStatus.REJECTED,
                     message=f"Insufficient position: need {required}, have {available}",
-                    details={"required": float(required), "available": float(available)},
+                    details={
+                        "required": float(required),
+                        "available": float(available),
+                    },
                 )
 
         return ValidationCheck(

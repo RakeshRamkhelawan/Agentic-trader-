@@ -7,11 +7,11 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from backend.strategies.arbitrage import (
-    ArbitrageOpportunity,
-    PriceDisparityDetector,
-    LatencyArbitrageDetector,
     ArbitrageExecutor,
+    ArbitrageOpportunity,
     ArbitrageStrategy,
+    LatencyArbitrageDetector,
+    PriceDisparityDetector,
 )
 
 
@@ -138,12 +138,16 @@ class TestArbitrageExecutor:
         mock_result_binance = MagicMock()
         mock_result_binance.filled_qty = 1.0
         mock_result_binance.avg_price = 49950.0
-        mock_adapters["binance"].submit_order = AsyncMock(return_value=mock_result_binance)
+        mock_adapters["binance"].submit_order = AsyncMock(
+            return_value=mock_result_binance
+        )
 
         mock_result_kraken = MagicMock()
         mock_result_kraken.filled_qty = 1.0
         mock_result_kraken.avg_price = 50100.0
-        mock_adapters["kraken"].submit_order = AsyncMock(return_value=mock_result_kraken)
+        mock_adapters["kraken"].submit_order = AsyncMock(
+            return_value=mock_result_kraken
+        )
 
         success, profit = await executor.execute_opportunity(opportunity)
 

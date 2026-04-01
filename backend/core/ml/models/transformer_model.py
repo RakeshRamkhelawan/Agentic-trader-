@@ -169,7 +169,10 @@ class TemporalFusionTransformer(nn.Module):
 
         # Multi-head attention
         self.attention = nn.MultiheadAttention(
-            embed_dim=hidden_size, num_heads=num_heads, dropout=dropout, batch_first=True
+            embed_dim=hidden_size,
+            num_heads=num_heads,
+            dropout=dropout,
+            batch_first=True,
         )
 
         # Output layers

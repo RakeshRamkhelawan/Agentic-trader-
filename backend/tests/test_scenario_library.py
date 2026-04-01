@@ -4,7 +4,6 @@ Tests voor Scenario Library.
 Test pre-built scenarios en dataset creation.
 """
 
-
 from backend.core.schemas.ooda_types import MarketRegime
 from backend.testing.scenario_library import ScenarioLibrary
 

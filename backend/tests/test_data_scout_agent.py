@@ -21,7 +21,10 @@ class TestDataScoutAgent:
         agent = DataScoutAgent(data_source=mock_data_source, event_bus=mock_event_bus)
 
         observation = await agent.observe(
-            symbol="BTC/USDT", trace_id="trace-123", include_orderbook=True, include_funding=True
+            symbol="BTC/USDT",
+            trace_id="trace-123",
+            include_orderbook=True,
+            include_funding=True,
         )
 
         # Verify Observation is valid
@@ -86,7 +89,9 @@ class TestDataScoutAgent:
         agent = DataScoutAgent(data_source=mock_data_source)
 
         # Make ticker fail
-        mock_data_source.fetch_ticker = AsyncMock(side_effect=Exception("Exchange API down"))
+        mock_data_source.fetch_ticker = AsyncMock(
+            side_effect=Exception("Exchange API down")
+        )
 
         with pytest.raises(ValueError, match="Failed to fetch ticker"):
             await agent.observe("BTC/USDT", "trace-fail")
@@ -100,7 +105,9 @@ class TestDataScoutAgent:
         agent = DataScoutAgent(data_source=mock_data_source)
 
         # Make orderbook fail
-        mock_data_source.fetch_orderbook = AsyncMock(side_effect=Exception("Orderbook error"))
+        mock_data_source.fetch_orderbook = AsyncMock(
+            side_effect=Exception("Orderbook error")
+        )
 
         # Should still succeed with empty orderbook
         observation = await agent.observe(
@@ -114,7 +121,9 @@ class TestDataScoutAgent:
         """Funding rate kan None zijn als niet beschikbaar."""
         agent = DataScoutAgent(data_source=mock_data_source)
 
-        mock_data_source.fetch_funding_rate = AsyncMock(side_effect=Exception("Not a perpetual"))
+        mock_data_source.fetch_funding_rate = AsyncMock(
+            side_effect=Exception("Not a perpetual")
+        )
 
         observation = await agent.observe(
             symbol="BTC/USDT", trace_id="trace-spot", include_funding=True

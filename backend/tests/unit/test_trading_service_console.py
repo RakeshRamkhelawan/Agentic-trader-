@@ -45,7 +45,9 @@ async def test_cancel_all_orders():
 
     # Mock settings and adapter
     service.settings_service = AsyncMock()
-    service.settings_service.get_user_preferences.return_value.default_exchange = "binance"
+    service.settings_service.get_user_preferences.return_value.default_exchange = (
+        "binance"
+    )
 
     mock_adapter = AsyncMock()
     mock_adapter.cancel_order = AsyncMock()  # Ensure method is async

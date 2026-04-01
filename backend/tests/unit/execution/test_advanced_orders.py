@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from backend.execution.advanced_orders import (
+    AdvancedOrderManager,
     AdvancedOrderStatus,
     IcebergConfig,
     IcebergExecutor,
@@ -15,7 +16,6 @@ from backend.execution.advanced_orders import (
     StopLimitExecutor,
     TWAPConfig,
     TWAPExecutor,
-    AdvancedOrderManager,
 )
 from backend.schemas.orders import OrderSide
 
@@ -92,7 +92,9 @@ class TestIcebergExecutor:
             callbacks.append(result)
 
         config = IcebergConfig(total_quantity=4.0, visible_quantity=2.0)
-        executor = IcebergExecutor("BTC-EUR", OrderSide.BUY, config, mock_adapter, callback)
+        executor = IcebergExecutor(
+            "BTC-EUR", OrderSide.BUY, config, mock_adapter, callback
+        )
 
         await executor.execute()
 
@@ -252,7 +254,9 @@ class TestAdvancedOrderManager:
         """Test submitting iceberg order."""
         config = IcebergConfig(total_quantity=10.0, visible_quantity=2.0)
 
-        order_id = await manager.submit_iceberg("BTC-EUR", OrderSide.BUY, config, mock_adapter)
+        order_id = await manager.submit_iceberg(
+            "BTC-EUR", OrderSide.BUY, config, mock_adapter
+        )
 
         assert order_id.startswith("adv_")
         assert order_id in manager._active_orders
@@ -262,7 +266,9 @@ class TestAdvancedOrderManager:
         """Test submitting TWAP order."""
         config = TWAPConfig(total_quantity=5.0, num_slices=5, duration_seconds=1)
 
-        order_id = await manager.submit_twap("BTC-EUR", OrderSide.SELL, config, mock_adapter)
+        order_id = await manager.submit_twap(
+            "BTC-EUR", OrderSide.SELL, config, mock_adapter
+        )
 
         assert order_id.startswith("adv_")
         assert order_id in manager._active_orders
@@ -272,7 +278,9 @@ class TestAdvancedOrderManager:
         """Test submitting stop-limit order."""
         config = StopLimitConfig(stop_price=49000.0, limit_price=48000.0, quantity=1.0)
 
-        order_id = await manager.submit_stop_limit("BTC-EUR", OrderSide.SELL, config, mock_adapter)
+        order_id = await manager.submit_stop_limit(
+            "BTC-EUR", OrderSide.SELL, config, mock_adapter
+        )
 
         assert order_id.startswith("adv_")
         assert order_id in manager._active_orders
@@ -281,7 +289,9 @@ class TestAdvancedOrderManager:
     async def test_cancel_order(self, manager, mock_adapter):
         """Test cancelling order."""
         config = IcebergConfig(total_quantity=100.0, visible_quantity=1.0)
-        order_id = await manager.submit_iceberg("BTC-EUR", OrderSide.BUY, config, mock_adapter)
+        order_id = await manager.submit_iceberg(
+            "BTC-EUR", OrderSide.BUY, config, mock_adapter
+        )
 
         result = await manager.cancel_order(order_id)
 
@@ -291,7 +301,9 @@ class TestAdvancedOrderManager:
     async def test_get_order_status(self, manager, mock_adapter):
         """Test getting order status."""
         config = IcebergConfig(total_quantity=4.0, visible_quantity=2.0)
-        order_id = await manager.submit_iceberg("BTC-EUR", OrderSide.BUY, config, mock_adapter)
+        order_id = await manager.submit_iceberg(
+            "BTC-EUR", OrderSide.BUY, config, mock_adapter
+        )
 
         status = manager.get_order_status(order_id)
 

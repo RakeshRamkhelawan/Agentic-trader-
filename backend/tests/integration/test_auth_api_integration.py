@@ -14,15 +14,17 @@ pytestmark = [pytest.mark.asyncio, pytest.mark.integration]
 class TestAuthAPIIntegration:
     """Full integration tests for Authentication API with real backend."""
 
-    async def test_register_new_user_success(self, async_client: AsyncClient, unique_email: str):
+    async def test_register_new_user_success(
+        self, async_client: AsyncClient, unique_email: str
+    ):
         """Test successful user registration with real database insert."""
         response = await async_client.post(
             "/api/v1/auth/register",
             json={
                 "email": unique_email,
                 "password": "SecurePass123!",
-                "full_name": "Test User"
-            }
+                "full_name": "Test User",
+            },
         )
 
         assert response.status_code == 201
@@ -41,7 +43,9 @@ class TestAuthAPIIntegration:
         token_parts = data["access_token"].split(".")
         assert len(token_parts) == 3
 
-    async def test_register_duplicate_email_fails(self, async_client: AsyncClient, unique_email: str):
+    async def test_register_duplicate_email_fails(
+        self, async_client: AsyncClient, unique_email: str
+    ):
         """Test that registering with duplicate email returns proper error."""
         # First registration
         response1 = await async_client.post(
@@ -49,8 +53,8 @@ class TestAuthAPIIntegration:
             json={
                 "email": unique_email,
                 "password": "SecurePass123!",
-                "full_name": "First User"
-            }
+                "full_name": "First User",
+            },
         )
         assert response1.status_code == 201
 
@@ -60,8 +64,8 @@ class TestAuthAPIIntegration:
             json={
                 "email": unique_email,
                 "password": "DifferentPass456!",
-                "full_name": "Second User"
-            }
+                "full_name": "Second User",
+            },
         )
 
         assert response2.status_code == 400
@@ -79,17 +83,13 @@ class TestAuthAPIIntegration:
             json={
                 "email": unique_email,
                 "password": password,
-                "full_name": "Test User"
-            }
+                "full_name": "Test User",
+            },
         )
 
         # Login
         response = await async_client.post(
-            "/api/v1/auth/login",
-            json={
-                "email": unique_email,
-                "password": password
-            }
+            "/api/v1/auth/login", json={"email": unique_email, "password": password}
         )
 
         assert response.status_code == 200
@@ -99,7 +99,9 @@ class TestAuthAPIIntegration:
         assert data["token_type"] == "bearer"
         assert data["user"]["email"] == unique_email
 
-    async def test_login_wrong_password_fails(self, async_client: AsyncClient, unique_email: str):
+    async def test_login_wrong_password_fails(
+        self, async_client: AsyncClient, unique_email: str
+    ):
         """Test login with wrong password returns 401."""
         # Register first
         await async_client.post(
@@ -107,17 +109,14 @@ class TestAuthAPIIntegration:
             json={
                 "email": unique_email,
                 "password": "CorrectPass123!",
-                "full_name": "Test User"
-            }
+                "full_name": "Test User",
+            },
         )
 
         # Login with wrong password
         response = await async_client.post(
             "/api/v1/auth/login",
-            json={
-                "email": unique_email,
-                "password": "WrongPass456!"
-            }
+            json={"email": unique_email, "password": "WrongPass456!"},
         )
 
         assert response.status_code == 401
@@ -130,13 +129,15 @@ class TestAuthAPIIntegration:
             "/api/v1/auth/login",
             json={
                 "email": "nonexistent_user_12345@test.com",
-                "password": "SomePass123!"
-            }
+                "password": "SomePass123!",
+            },
         )
 
         assert response.status_code == 401
 
-    async def test_get_me_with_valid_token(self, async_client: AsyncClient, unique_email: str):
+    async def test_get_me_with_valid_token(
+        self, async_client: AsyncClient, unique_email: str
+    ):
         """Test /me endpoint with valid JWT token."""
         # Register and get token
         register_response = await async_client.post(
@@ -144,16 +145,15 @@ class TestAuthAPIIntegration:
             json={
                 "email": unique_email,
                 "password": "SecurePass123!",
-                "full_name": "Test User"
-            }
+                "full_name": "Test User",
+            },
         )
 
         token = register_response.json()["access_token"]
 
         # Get current user
         response = await async_client.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
         )
 
         assert response.status_code == 200
@@ -173,8 +173,7 @@ class TestAuthAPIIntegration:
     async def test_get_me_with_invalid_token_fails(self, async_client: AsyncClient):
         """Test /me endpoint with invalid token returns 401."""
         response = await async_client.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": "Bearer invalid_token_here"}
+            "/api/v1/auth/me", headers={"Authorization": "Bearer invalid_token_here"}
         )
 
         assert response.status_code == 401
@@ -183,10 +182,7 @@ class TestAuthAPIIntegration:
         """Test legacy token endpoint for backward compatibility."""
         response = await async_client.post(
             "/api/v1/auth/token",
-            json={
-                "tenant_id": "test-tenant-123",
-                "account_id": "test-account-456"
-            }
+            json={"tenant_id": "test-tenant-123", "account_id": "test-account-456"},
         )
 
         assert response.status_code == 200
@@ -202,8 +198,8 @@ class TestAuthAPIIntegration:
             json={
                 "email": f"test_{__import__('uuid').uuid4().hex[:8]}@example.com",
                 "password": "123",  # Too short
-                "full_name": "Test User"
-            }
+                "full_name": "Test User",
+            },
         )
 
         assert response.status_code == 422  # Validation error
@@ -215,13 +211,15 @@ class TestAuthAPIIntegration:
             json={
                 "email": "not-an-email",
                 "password": "SecurePass123!",
-                "full_name": "Test User"
-            }
+                "full_name": "Test User",
+            },
         )
 
         assert response.status_code == 422  # Validation error
 
-    async def test_complete_auth_flow(self, async_client: AsyncClient, unique_email: str):
+    async def test_complete_auth_flow(
+        self, async_client: AsyncClient, unique_email: str
+    ):
         """Test complete authentication flow: register -> login -> me -> token reuse."""
         password = "SecurePass123!"
 
@@ -231,8 +229,8 @@ class TestAuthAPIIntegration:
             json={
                 "email": unique_email,
                 "password": password,
-                "full_name": "Integration Test User"
-            }
+                "full_name": "Integration Test User",
+            },
         )
         assert register_response.status_code == 201
         register_data = register_response.json()
@@ -241,11 +239,7 @@ class TestAuthAPIIntegration:
 
         # Step 2: Login
         login_response = await async_client.post(
-            "/api/v1/auth/login",
-            json={
-                "email": unique_email,
-                "password": password
-            }
+            "/api/v1/auth/login", json={"email": unique_email, "password": password}
         )
         assert login_response.status_code == 200
         login_data = login_response.json()
@@ -253,8 +247,7 @@ class TestAuthAPIIntegration:
 
         # Step 3: Get current user with token
         me_response = await async_client.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
         )
         assert me_response.status_code == 200
         me_data = me_response.json()
@@ -267,7 +260,6 @@ class TestAuthAPIIntegration:
         # Step 4: Verify token works multiple times
         for _ in range(3):
             check_response = await async_client.get(
-                "/api/v1/auth/me",
-                headers={"Authorization": f"Bearer {token}"}
+                "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
             )
             assert check_response.status_code == 200

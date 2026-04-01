@@ -247,7 +247,9 @@ class TestKellyCriterion:
         # Kelly = (0.6 * 2 - 0.4) / 2 = 0.4
         # Conservative = 0.4 * 0.25 = 0.1
         assert result.optimal_fraction == pytest.approx(0.4, rel=0.01)
-        assert result.recommended_size == pytest.approx(10000.0, rel=0.01)  # 10% of portfolio
+        assert result.recommended_size == pytest.approx(
+            10000.0, rel=0.01
+        )  # 10% of portfolio
 
     def test_kelly_recommends_zero_for_unfavorable_odds(self):
         """Test dat Kelly 0 adviseert bij ongunstige odds."""

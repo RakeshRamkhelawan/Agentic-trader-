@@ -61,7 +61,10 @@ class UnifiedStrategyRegistry:
             "Ketu": "defensive",  # Detachment - use defensive
         }
 
-        logger.info("UnifiedStrategyRegistry initialized with %d strategies", len(self._strategies))
+        logger.info(
+            "UnifiedStrategyRegistry initialized with %d strategies",
+            len(self._strategies),
+        )
 
     def register_strategy(self, strategy_id: str, strategy: TradingStrategy) -> None:
         """Register a new strategy."""

@@ -310,7 +310,11 @@ async def elemental_water_regime_check(
 
 @circuit_breaker(failure_threshold=3, timeout_seconds=5)
 async def elemental_ether_consensus(
-    fire_vote: float, earth_vote: float, water_vote: float, air_vote: float, ctx: Context = None
+    fire_vote: float,
+    earth_vote: float,
+    water_vote: float,
+    air_vote: float,
+    ctx: Context = None,
 ) -> dict[str, Any]:
     """
     Synthesize elemental consensus.
@@ -341,7 +345,12 @@ async def elemental_ether_consensus(
     approved = harmony > 0.45
 
     # Determine dominant element
-    votes = {"fire": fire_vote, "earth": earth_vote, "water": water_vote, "air": air_vote}
+    votes = {
+        "fire": fire_vote,
+        "earth": earth_vote,
+        "water": water_vote,
+        "air": air_vote,
+    }
     dominant = max(votes, key=votes.get)
 
     if ctx:

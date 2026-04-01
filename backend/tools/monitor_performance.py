@@ -75,7 +75,9 @@ def show_dashboard():
             data, "api_server_routing_request_latency_seconds_sum", {"exchange_id": ex}
         )
         count_lat = parse_metric(
-            data, "api_server_routing_request_latency_seconds_count", {"exchange_id": ex}
+            data,
+            "api_server_routing_request_latency_seconds_count",
+            {"exchange_id": ex},
         )
 
         avg_lat = (sum_lat / count_lat * 1000) if count_lat > 0 else 0.0

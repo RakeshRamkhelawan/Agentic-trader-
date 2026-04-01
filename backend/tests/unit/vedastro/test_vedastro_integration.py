@@ -8,7 +8,12 @@ import pytest
 # Skip all tests if VedAstro dependencies not available
 vedastro_deps_available = False
 try:
-    from backend.vedastro import FeatureEngine, TattvaOrchestrator, VedAstroConnector, XGBoostOracle
+    from backend.vedastro import (
+        FeatureEngine,
+        TattvaOrchestrator,
+        VedAstroConnector,
+        XGBoostOracle,
+    )
 
     vedastro_deps_available = True
 except ImportError:
@@ -68,7 +73,10 @@ class TestFeatureEngine:
 
         kundli = {"planets": {"Sun": {"longitude": 100}, "Moon": {"longitude": 200}}}
         transits = {"aspects": [], "retrograde_count": 0}
-        tattva_state = {"coherence": 0.7, "gunas": {"sattva": 0.5, "rajas": 0.3, "tamas": 0.2}}
+        tattva_state = {
+            "coherence": 0.7,
+            "gunas": {"sattva": 0.5, "rajas": 0.3, "tamas": 0.2},
+        }
 
         features = engine.extract(kundli, transits, 50000, tattva_state)
 
@@ -105,7 +113,9 @@ class TestFeatureEngine:
         features.malefic_aspects = 0
         features.tattva_coherence = 0.8
 
-        score = engine._calculate_bullish_score(features, {"exalted_planets": ["Jupiter"]})
+        score = engine._calculate_bullish_score(
+            features, {"exalted_planets": ["Jupiter"]}
+        )
 
         assert score > 0.5  # Should be bullish
 
@@ -249,7 +259,10 @@ class TestTattvaOrchestrator:
 
         # Aligned case
         ml_signal = {"direction": "UP", "confidence": 0.7}
-        tattva_state = {"coherence": 0.8, "gunas": {"sattva": 0.6, "rajas": 0.3, "tamas": 0.1}}
+        tattva_state = {
+            "coherence": 0.8,
+            "gunas": {"sattva": 0.6, "rajas": 0.3, "tamas": 0.1},
+        }
 
         alignment = orchestrator._calculate_alignment(ml_signal, tattva_state)
         assert alignment > 0.5

@@ -55,10 +55,18 @@ class TradingAgent:
         if self.strategy == "momentum":
             # Strong uptrend
             if price > price_history[-2] > price_history[-3] > price_history[-4]:
-                return {"side": OrderSide.BUY, "confidence": 0.75, "reason": "strong_uptrend"}
+                return {
+                    "side": OrderSide.BUY,
+                    "confidence": 0.75,
+                    "reason": "strong_uptrend",
+                }
             # Strong downtrend
             elif price < price_history[-2] < price_history[-3] < price_history[-4]:
-                return {"side": OrderSide.SELL, "confidence": 0.75, "reason": "strong_downtrend"}
+                return {
+                    "side": OrderSide.SELL,
+                    "confidence": 0.75,
+                    "reason": "strong_downtrend",
+                }
 
         elif self.strategy == "mean_reversion":
             avg_20 = sum(price_history[-20:]) / min(20, len(price_history))
@@ -83,9 +91,17 @@ class TradingAgent:
                 low_20 = min(price_history[-20:])
 
                 if price > high_20 * 0.995:  # Breakout
-                    return {"side": OrderSide.BUY, "confidence": 0.8, "reason": "breakout_high"}
+                    return {
+                        "side": OrderSide.BUY,
+                        "confidence": 0.8,
+                        "reason": "breakout_high",
+                    }
                 elif price < low_20 * 1.005:  # Breakdown
-                    return {"side": OrderSide.SELL, "confidence": 0.8, "reason": "breakdown_low"}
+                    return {
+                        "side": OrderSide.SELL,
+                        "confidence": 0.8,
+                        "reason": "breakdown_low",
+                    }
 
         elif self.strategy == "scalping":
             # Quick small moves
@@ -94,7 +110,11 @@ class TradingAgent:
                 side = (
                     OrderSide.BUY if recent_change < 0 else OrderSide.SELL
                 )  # Counter-trend scalping
-                return {"side": side, "confidence": 0.6, "reason": f"scalp_{recent_change:.2%}"}
+                return {
+                    "side": side,
+                    "confidence": 0.6,
+                    "reason": f"scalp_{recent_change:.2%}",
+                }
 
         return None
 

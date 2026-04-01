@@ -571,14 +571,18 @@ class SystemIdentityOptimized:
         sparse_latencies = [
             lat
             for lat, trav in zip(
-                latencies, self.performance_history.get("tattva_traversals", []), strict=False
+                latencies,
+                self.performance_history.get("tattva_traversals", []),
+                strict=False,
             )
             if trav.get("mode") == "sparse"
         ]
         full_latencies = [
             lat
             for lat, trav in zip(
-                latencies, self.performance_history.get("tattva_traversals", []), strict=False
+                latencies,
+                self.performance_history.get("tattva_traversals", []),
+                strict=False,
             )
             if trav.get("mode") == "full"
         ]
@@ -595,7 +599,7 @@ class SystemIdentityOptimized:
             "sparse_mode": {
                 "count": len(sparse_latencies),
                 "mean_us": float(np.mean(sparse_latencies)) if sparse_latencies else 0,
-                "p99_us": float(np.percentile(sparse_latencies, 99)) if sparse_latencies else 0,
+                "p99_us": (float(np.percentile(sparse_latencies, 99)) if sparse_latencies else 0),
                 "target_met": (
                     all(lat < 80 for lat in sparse_latencies) if sparse_latencies else True
                 ),
@@ -603,8 +607,10 @@ class SystemIdentityOptimized:
             "full_mode": {
                 "count": len(full_latencies),
                 "mean_us": float(np.mean(full_latencies)) if full_latencies else 0,
-                "p99_us": float(np.percentile(full_latencies, 99)) if full_latencies else 0,
-                "target_met": all(lat < 200 for lat in full_latencies) if full_latencies else True,
+                "p99_us": (float(np.percentile(full_latencies, 99)) if full_latencies else 0),
+                "target_met": (
+                    all(lat < 200 for lat in full_latencies) if full_latencies else True
+                ),
             },
             "configuration": {
                 "coherence_threshold": self.coherence_threshold,

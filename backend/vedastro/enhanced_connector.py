@@ -565,7 +565,7 @@ class EnhancedVedAstroConnector(VedAstroConnector):
                 "house_from_moon": house_from_moon,
                 "is_favorable": is_favorable,
                 "bindu": bindu,
-                "strength": "strong" if bindu >= 4 else "medium" if bindu >= 2 else "weak",
+                "strength": ("strong" if bindu >= 4 else "medium" if bindu >= 2 else "weak"),
             }
 
             if is_favorable and bindu >= 3:

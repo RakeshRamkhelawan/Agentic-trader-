@@ -164,7 +164,9 @@ class TestPhaseAIntegration:
             # For now, we just verify it exists and can be created
             try:
 
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".json", delete=False
+                ) as f:
                     config_path = f.name
                 ColdPathCoordinator(
                     config_path=config_path,
@@ -203,7 +205,10 @@ class TestPhaseAIntegration:
             return NavagrahaState(
                 planets={},
                 guna_distribution=GunaDistribution(
-                    sattva=0.4, rajas=0.3, tamas=0.3, calculated_at=datetime.now(timezone.utc)
+                    sattva=0.4,
+                    rajas=0.3,
+                    tamas=0.3,
+                    calculated_at=datetime.now(timezone.utc),
                 ),
                 aspects=[],
                 rahu_kala_active=False,

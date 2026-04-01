@@ -134,7 +134,12 @@ class MetaOrchestratorV2:
         logger.info(f"Registered: {agent.agent_name}")
 
     def update_trade_outcome(
-        self, symbol: str, exit_price: float, exit_time: datetime, pnl: float, exit_reason: str
+        self,
+        symbol: str,
+        exit_price: float,
+        exit_time: datetime,
+        pnl: float,
+        exit_reason: str,
     ):
         """
         Update pending signals with actual trade outcome.
@@ -165,8 +170,6 @@ class MetaOrchestratorV2:
 
     def _update_agent_performance(self, signal: AgentSignalV2):
         """Update performance database."""
-        key = f"{signal.agent_name}_{signal.symbol}_{signal.regime or 'unknown'}"
-
         record = {
             "timestamp": signal.timestamp,
             "agent_name": signal.agent_name,

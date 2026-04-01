@@ -177,7 +177,7 @@ class TriadService:
         """Get status of all exchanges."""
         return {
             exchange_id: {
-                "connected": exchange.connected if hasattr(exchange, "connected") else False,
+                "connected": (exchange.connected if hasattr(exchange, "connected") else False),
                 "capabilities": (
                     exchange.get_capabilities().name
                     if hasattr(exchange, "get_capabilities")
@@ -256,8 +256,8 @@ class TriadService:
                     if market_data.get("trend", 0) > 0
                     else "down" if market_data.get("trend", 0) < 0 else "neutral"
                 ),
-                volume_profile="high" if market_data.get("volume_ratio", 1.0) > 1.5 else "normal",
-                guna_vector=council_views[0].get("guna_vector", {}) if council_views else {},
+                volume_profile=("high" if market_data.get("volume_ratio", 1.0) > 1.5 else "normal"),
+                guna_vector=(council_views[0].get("guna_vector", {}) if council_views else {}),
                 fear_greed_index=(
                     council_views[1].get("fear_greed_index", 50) if len(council_views) > 1 else 50
                 ),
@@ -413,10 +413,16 @@ class TriadService:
         elif self.trading_mode == "live":
             return await self.execute_live_trade(decision, symbol, quantity, exchange_id)
         else:
-            return {"status": "rejected", "reason": f"Unknown trading mode: {self.trading_mode}"}
+            return {
+                "status": "rejected",
+                "reason": f"Unknown trading mode: {self.trading_mode}",
+            }
 
     async def execute_paper_trade(
-        self, decision: BuddhiDecision, symbol: str = "BTC/EUR", quantity: Decimal | None = None
+        self,
+        decision: BuddhiDecision,
+        symbol: str = "BTC/EUR",
+        quantity: Decimal | None = None,
     ) -> dict[str, Any]:
         """
         Execute paper trade based on Buddhi decision.
@@ -494,7 +500,10 @@ class TriadService:
         elif decision.action == "bearish":
             side = OrderSide.SELL
         else:
-            return {"status": "rejected", "reason": f"No trade action for: {decision.action}"}
+            return {
+                "status": "rejected",
+                "reason": f"No trade action for: {decision.action}",
+            }
 
         # Default quantity
         if quantity is None:
@@ -527,7 +536,7 @@ class TriadService:
 
             validation = await self.risk_validator.validate_order(
                 order_request,
-                portfolio_value=portfolio.total_value_usd if portfolio else Decimal("10000"),
+                portfolio_value=(portfolio.total_value_usd if portfolio else Decimal("10000")),
                 current_positions=positions,
                 exchange=self._exchanges.get(exchange_id) if exchange_id else None,
                 balance=balance,

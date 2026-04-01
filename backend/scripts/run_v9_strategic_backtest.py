@@ -96,7 +96,10 @@ class StrategicCollectiveConsciousness:
     def get_stats(self) -> Dict[str, Any]:
         """Get collective stats"""
         if isinstance(self.ether, StrategicEtherAgent):
-            return {"decisions": self.decision_count, "mcts_stats": self.ether.get_stats()}
+            return {
+                "decisions": self.decision_count,
+                "mcts_stats": self.ether.get_stats(),
+            }
         return {"decisions": self.decision_count}
 
 

@@ -5,8 +5,9 @@ End-to-end tests verifying agents can successfully call MCP tools
 and process the results.
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from backend.agents.elemental_consensus_agent import ElementalConsensusAgent
 from backend.agents.risk_check_agent import RiskCheckAgent
@@ -27,8 +28,7 @@ class TestAgentMCPFlow:
     def vedastro_agent(self, mock_tool_client):
         """Create VedAstroSignalAgent with mock client."""
         agent = VedAstroSignalAgent(
-            agent_name="test_vedastro",
-            tool_broker_url="http://localhost:8001"
+            agent_name="test_vedastro", tool_broker_url="http://localhost:8001"
         )
         agent.tool_broker = mock_tool_client
         return agent
@@ -37,8 +37,7 @@ class TestAgentMCPFlow:
     def elemental_agent(self, mock_tool_client):
         """Create ElementalConsensusAgent with mock client."""
         agent = ElementalConsensusAgent(
-            agent_name="test_elemental",
-            tool_broker_url="http://localhost:8001"
+            agent_name="test_elemental", tool_broker_url="http://localhost:8001"
         )
         agent.tool_broker = mock_tool_client
         return agent
@@ -47,8 +46,7 @@ class TestAgentMCPFlow:
     def risk_agent(self, mock_tool_client):
         """Create RiskCheckAgent with mock client."""
         agent = RiskCheckAgent(
-            agent_name="test_risk",
-            tool_broker_url="http://localhost:8001"
+            agent_name="test_risk", tool_broker_url="http://localhost:8001"
         )
         agent.tool_broker = mock_tool_client
         return agent
@@ -66,14 +64,11 @@ class TestAgentMCPFlow:
                 "strength_score": 65,
                 "primary_factors": ["strong_jupiter", "positive_transit"],
                 "supporting_factors": ["moon_in_favorable_house"],
-                "warning_factors": []
-            }
+                "warning_factors": [],
+            },
         }
 
-        features = {
-            "symbol": "BTC",
-            "price": 45000.0
-        }
+        features = {"symbol": "BTC", "price": 45000.0}
 
         result = await vedastro_agent.analyze(features, {})
 
@@ -92,7 +87,9 @@ class TestAgentMCPFlow:
         assert "strong_jupiter" in result["vedastro_data"]["primary_factors"]
 
     @pytest.mark.asyncio
-    async def test_vedastro_agent_low_confidence(self, vedastro_agent, mock_tool_client):
+    async def test_vedastro_agent_low_confidence(
+        self, vedastro_agent, mock_tool_client
+    ):
         """Test VedAstro agent holds when confidence is too low."""
         mock_tool_client.call_tool.return_value = {
             "success": True,
@@ -103,14 +100,11 @@ class TestAgentMCPFlow:
                 "strength_score": 45,
                 "primary_factors": [],
                 "supporting_factors": [],
-                "warning_factors": []
-            }
+                "warning_factors": [],
+            },
         }
 
-        features = {
-            "symbol": "ETH",
-            "price": 3000.0
-        }
+        features = {"symbol": "ETH", "price": 3000.0}
 
         result = await vedastro_agent.analyze(features, {})
 
@@ -130,14 +124,11 @@ class TestAgentMCPFlow:
                 "strength_score": 70,
                 "primary_factors": [],
                 "supporting_factors": [],
-                "warning_factors": ["mars_retrograde"]
-            }
+                "warning_factors": ["mars_retrograde"],
+            },
         }
 
-        features = {
-            "symbol": "BTC",
-            "price": 45000.0
-        }
+        features = {"symbol": "BTC", "price": 45000.0}
 
         result = await vedastro_agent.analyze(features, {})
 
@@ -149,13 +140,10 @@ class TestAgentMCPFlow:
         """Test VedAstro agent handles MCP tool failure gracefully."""
         mock_tool_client.call_tool.return_value = {
             "success": False,
-            "error": "VedAstro service unavailable"
+            "error": "VedAstro service unavailable",
         }
 
-        features = {
-            "symbol": "BTC",
-            "price": 45000.0
-        }
+        features = {"symbol": "BTC", "price": 45000.0}
 
         result = await vedastro_agent.analyze(features, {})
 
@@ -177,9 +165,9 @@ class TestAgentMCPFlow:
                     "fire": 0.8,
                     "earth": 0.6,
                     "water": 0.4,
-                    "air": -0.2
-                }
-            }
+                    "air": -0.2,
+                },
+            },
         }
 
         features = {
@@ -188,7 +176,7 @@ class TestAgentMCPFlow:
             "fire_vote": 0.8,
             "earth_vote": 0.6,
             "water_vote": 0.4,
-            "air_vote": -0.2
+            "air_vote": -0.2,
         }
 
         result = await elemental_agent.analyze(features, {})
@@ -214,8 +202,8 @@ class TestAgentMCPFlow:
                 "consensus_signal": "hold",
                 "dominant_element": None,
                 "suppressed_element": None,
-                "element_weights": {}
-            }
+                "element_weights": {},
+            },
         }
 
         features = {
@@ -224,7 +212,7 @@ class TestAgentMCPFlow:
             "fire_vote": 0.2,
             "earth_vote": 0.1,
             "water_vote": -0.1,
-            "air_vote": 0.0
+            "air_vote": 0.0,
         }
 
         result = await elemental_agent.analyze(features, {})
@@ -240,7 +228,7 @@ class TestAgentMCPFlow:
             "price": 45000.0,
             "side": "buy",
             "proposed_quantity": 0.1,
-            "portfolio_value": 100000.0
+            "portfolio_value": 100000.0,
         }
 
         result = await risk_agent.analyze(features, {})
@@ -258,7 +246,7 @@ class TestAgentMCPFlow:
             "price": 45000.0,
             "side": "buy",
             "proposed_quantity": 0.5,  # 22.5k, too large
-            "portfolio_value": 100000.0
+            "portfolio_value": 100000.0,
         }
 
         result = await risk_agent.analyze(features, {})
@@ -266,7 +254,10 @@ class TestAgentMCPFlow:
         # Should modify (reduce to ~10% max)
         assert result["action"] == "modify"
         assert result["approved_quantity"] < 0.5
-        assert "reduced" in result["reason"].lower() or "capped" in result["reason"].lower()
+        assert (
+            "reduced" in result["reason"].lower()
+            or "capped" in result["reason"].lower()
+        )
 
     @pytest.mark.asyncio
     async def test_risk_agent_reject_invalid_price(self, risk_agent, mock_tool_client):
@@ -276,7 +267,7 @@ class TestAgentMCPFlow:
             "price": 0.0,  # Invalid
             "side": "buy",
             "proposed_quantity": 0.1,
-            "portfolio_value": 100000.0
+            "portfolio_value": 100000.0,
         }
 
         result = await risk_agent.analyze(features, {})
@@ -295,15 +286,15 @@ class TestAgentMCPFlow:
                 "consensus_signal": "buy",
                 "dominant_element": "fire",
                 "suppressed_element": "air",
-                "element_weights": {}
-            }
+                "element_weights": {},
+            },
         }
 
         indicators = {
             "rsi": 65.0,  # Slightly bullish
             "macd": 0.5,  # Bullish
             "volatility": 0.3,  # Low volatility
-            "trend": 0.6  # Uptrend
+            "trend": 0.6,  # Uptrend
         }
 
         result = await elemental_agent.analyze_with_indicators(
@@ -333,12 +324,12 @@ class TestAgentIntegration:
         agents = {
             "vedastro": VedAstroSignalAgent,
             "elemental": ElementalConsensusAgent,
-            "risk": RiskCheckAgent
+            "risk": RiskCheckAgent,
         }
 
         for name, agent_class in agents.items():
             assert agent_class is not None
-            assert hasattr(agent_class, 'analyze')
+            assert hasattr(agent_class, "analyze")
 
         # Verify all inherit from AgentWithTools
         from backend.agents.agent_with_tools import AgentWithTools

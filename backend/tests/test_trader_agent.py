@@ -21,7 +21,9 @@ class TestTraderAgent:
         agent = TraderAgent()
 
         proposal = await agent.propose_trade(
-            orientation=bullish_orientation, current_price=50000.0, strategy_id="momentum_v1"
+            orientation=bullish_orientation,
+            current_price=50000.0,
+            strategy_id="momentum_v1",
         )
 
         assert isinstance(proposal, TradeProposal)
@@ -39,7 +41,9 @@ class TestTraderAgent:
         """Sell proposal voor bearish orientation."""
         agent = TraderAgent()
 
-        proposal = await agent.propose_trade(orientation=bearish_orientation, current_price=50000.0)
+        proposal = await agent.propose_trade(
+            orientation=bearish_orientation, current_price=50000.0
+        )
 
         assert proposal.side == "sell"
         assert proposal.stop_loss > 50000.0  # Above entry (voor short)
@@ -58,7 +62,9 @@ class TestTraderAgent:
             confidence=0.6,
         )
 
-        proposal = await agent.propose_trade(orientation=ranging_orientation, current_price=50000.0)
+        proposal = await agent.propose_trade(
+            orientation=ranging_orientation, current_price=50000.0
+        )
 
         assert proposal is None
 

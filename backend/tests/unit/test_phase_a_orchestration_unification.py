@@ -258,7 +258,10 @@ class TestMarketTickDelegation:
             return NavagrahaState(
                 planets={},
                 guna_distribution=GunaDistribution(
-                    sattva=0.4, rajas=0.3, tamas=0.3, calculated_at=datetime.now(timezone.utc)
+                    sattva=0.4,
+                    rajas=0.3,
+                    tamas=0.3,
+                    calculated_at=datetime.now(timezone.utc),
                 ),
                 aspects=[],
                 rahu_kala_active=False,
@@ -283,9 +286,7 @@ class TestMarketTickDelegation:
         )
 
         # Act
-        with patch.object(
-            coordinator, "_execute_ooda_loop", new_callable=AsyncMock
-        ):
+        with patch.object(coordinator, "_execute_ooda_loop", new_callable=AsyncMock):
             await coordinator.run_cycle("BTC/USD", 50000.0)
 
         # Assert

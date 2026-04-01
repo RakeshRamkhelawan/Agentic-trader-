@@ -229,8 +229,8 @@ class TriadService:
             side="buy" if is_buy else "sell",
             size=float(quantity),
             entry_price=None,  # Market order
-            stop_loss=default_entry * 0.9 if is_buy else default_entry * 1.1,  # 10% stop
-            take_profit=default_entry * 1.1 if is_buy else default_entry * 0.9,  # 10% target
+            stop_loss=(default_entry * 0.9 if is_buy else default_entry * 1.1),  # 10% stop
+            take_profit=(default_entry * 1.1 if is_buy else default_entry * 0.9),  # 10% target
             rationale=decision.rationale,
             strategy_id="triad",
             confidence=decision.confidence,
@@ -241,7 +241,9 @@ class TriadService:
             from backend.core.schemas.ooda_types import MarketRegime
 
             risk_assessment = await self.risk_manager.assess_risk(
-                proposal=proposal, current_regime=MarketRegime.UNKNOWN, current_position_size=0.0
+                proposal=proposal,
+                current_regime=MarketRegime.UNKNOWN,
+                current_position_size=0.0,
             )
 
             if risk_assessment.decision == RiskDecision.REJECT:
@@ -255,7 +257,10 @@ class TriadService:
                     action="risk_rejection",
                     resource="risk_manager",
                     output_status="REJECTED",
-                    details={"reason": risk_assessment.rationale, "proposal": str(proposal)},
+                    details={
+                        "reason": risk_assessment.rationale,
+                        "proposal": str(proposal),
+                    },
                 )
                 return {
                     "status": "rejected",

@@ -18,10 +18,14 @@ async def test_13_create_order(async_client, system_db):
     # Create user manually
     from backend.api.auth_api import hash_password
 
-    await system_db.execute(text(f"""
+    await system_db.execute(
+        text(
+            f"""
         INSERT INTO users (id, email, password_hash, tenant_id, role, is_active, created_at)
         VALUES ('{uuid4()}', '{email}', '{hash_password(password)}', '{tenant_id}', 'user', true, now())
-    """))
+    """
+        )
+    )
     await system_db.commit()
 
     # Login
@@ -66,18 +70,26 @@ async def test_14_rls_orders_isolation(system_db):
 
     # Tenant A creates order
     async with SessionManager.tenant_session(tenant_a) as session_a:
-        await session_a.execute(text(f"""
+        await session_a.execute(
+            text(
+                f"""
             INSERT INTO orders (id, tenant_id, symbol, side, quantity, status, created_at, updated_at)
             VALUES ('{order_a_id}', '{tenant_a}', 'AAPL', 'buy', 10, 'PENDING_APPROVAL', now(), now())
-        """))
+        """
+            )
+        )
         await session_a.commit()
 
     # Tenant B creates order
     async with SessionManager.tenant_session(tenant_b) as session_b:
-        await session_b.execute(text(f"""
+        await session_b.execute(
+            text(
+                f"""
             INSERT INTO orders (id, tenant_id, symbol, side, quantity, status, created_at, updated_at)
             VALUES ('{order_b_id}', '{tenant_b}', 'GOOGL', 'sell', 5, 'PENDING_APPROVAL', now(), now())
-        """))
+        """
+            )
+        )
         await session_b.commit()
 
     # 3. Verify: Tenant A Session should ONLY see Tenant A order
@@ -106,10 +118,14 @@ async def test_15_system_admin_orders_access(system_db):
     tenant_c = f"tenant-C-{uuid4().hex[:8]}"
     order_c_id = str(uuid4())
 
-    await system_db.execute(text(f"""
+    await system_db.execute(
+        text(
+            f"""
         INSERT INTO orders (id, tenant_id, symbol, side, quantity, status, created_at, updated_at)
         VALUES ('{order_c_id}', '{tenant_c}', 'MSFT', 'buy', 100, 'FILLED', now(), now())
-    """))
+    """
+        )
+    )
     await system_db.commit()
 
     # Verify System Admin Access
@@ -136,14 +152,20 @@ async def test_16_order_status_validation(system_db):
         # Let's just test happy path for now as DB might not have hard enum constraint yet.
 
         valid_status = OrderStatus.SUBMITTED.value
-        await system_db.execute(text(f"""
+        await system_db.execute(
+            text(
+                f"""
             INSERT INTO orders (id, tenant_id, symbol, side, quantity, status, created_at, updated_at)
             VALUES ('{order_d_id}', '{tenant_d}', 'TSLA', 'buy', 1, '{valid_status}', now(), now())
-        """))
+        """
+            )
+        )
         await system_db.commit()
 
         # Read back
-        res = await system_db.execute(text(f"SELECT status FROM orders WHERE id = '{order_d_id}'"))  # nosec B608 - Test with controlled UUID
+        res = await system_db.execute(
+            text(f"SELECT status FROM orders WHERE id = '{order_d_id}'")
+        )  # nosec B608 - Test with controlled UUID
         assert res.scalar() == valid_status
 
     except Exception as e:

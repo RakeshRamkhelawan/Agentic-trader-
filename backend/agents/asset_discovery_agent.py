@@ -271,7 +271,7 @@ class AssetDiscoveryAgent(BaseAgent):
                         "name": market.get(
                             "base", ""
                         ),  # Bitvavo doesn't provide full names in markets
-                        "status": "active" if market.get("active", True) else "inactive",
+                        "status": ("active" if market.get("active", True) else "inactive"),
                         "type": market.get("type", "spot"),
                         "exchange": "bitvavo",
                         "precision_price": market.get("precision", {}).get("price", 8),
@@ -315,7 +315,7 @@ class AssetDiscoveryAgent(BaseAgent):
                                         "symbol": symbol,
                                         "baseAsset": item.get(
                                             "baseAsset",
-                                            symbol.split("-")[0] if "-" in symbol else "",
+                                            (symbol.split("-")[0] if "-" in symbol else ""),
                                         ),
                                         "quoteAsset": item.get("quoteAsset", ""),
                                         "name": item.get("name", ""),

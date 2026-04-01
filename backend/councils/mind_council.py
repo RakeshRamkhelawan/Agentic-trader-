@@ -200,18 +200,25 @@ class MindCouncil:
         Enhanced for daily data with lower thresholds.
         """
         momentum = data.get("momentum_1d", 0)
-        sentiment_score = data.get("sentiment_score", 0.5)  # From Sprint 1-4
 
         # === CONTRARIAN at extremes ===
         if fear_greed < 20:  # Extreme fear (was 15)
             if momentum < -0.02:  # Capitulation (was -0.05)
-                return "bullish", 0.75, "Extreme fear with capitulation - potential bottom"
+                return (
+                    "bullish",
+                    0.75,
+                    "Extreme fear with capitulation - potential bottom",
+                )
             else:
                 return "bullish", 0.60, "Extreme fear - contrarian buying opportunity"
 
         elif fear_greed < 30:  # Fear zone (was no signal)
             if momentum < -0.01:
-                return "bullish", 0.55, "Fear present with decline - watching for bottom"
+                return (
+                    "bullish",
+                    0.55,
+                    "Fear present with decline - watching for bottom",
+                )
             else:
                 return "neutral", 0.50, "Fear present - cautious"
 

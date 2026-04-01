@@ -97,7 +97,9 @@ class TestMetricsProvider:
     """Test MetricsProvider abstract class and RealMetricsProvider implementation."""
 
     @pytest.mark.asyncio
-    async def test_get_current_metrics_returns_dict_with_required_keys(self, metrics_provider):
+    async def test_get_current_metrics_returns_dict_with_required_keys(
+        self, metrics_provider
+    ):
         """Verify current metrics contain all required keys."""
         metrics = await metrics_provider.get_current_metrics()
 

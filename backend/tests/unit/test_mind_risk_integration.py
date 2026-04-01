@@ -63,7 +63,9 @@ class TestMindRiskIntegration:
 
         # Service must have portfolio_risk_calculator attribute
         assert hasattr(mind_service, "portfolio_risk_calculator")
-        assert isinstance(mind_service.portfolio_risk_calculator, PortfolioRiskCalculator)
+        assert isinstance(
+            mind_service.portfolio_risk_calculator, PortfolioRiskCalculator
+        )
 
         with patch.object(
             mind_service.portfolio_risk_calculator,
@@ -79,7 +81,9 @@ class TestMindRiskIntegration:
             mock_evaluate.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_mind_skips_strategy_when_capacity_below_threshold(self, mind_service):
+    async def test_mind_skips_strategy_when_capacity_below_threshold(
+        self, mind_service
+    ):
         """capacity=0.1 → intent.action=0, strategy.analyze NOT called."""
         mind_service.redis_client.get = AsyncMock(return_value=_make_soul_context())
 
@@ -105,7 +109,9 @@ class TestMindRiskIntegration:
     @pytest.mark.asyncio
     async def test_mind_applies_kelly_adjusted_size(self, mind_service):
         """Kelly gives size, guna gives multiplier, capacity modulates → final size."""
-        mind_service.redis_client.get = AsyncMock(return_value=_make_soul_context(guna="rajas"))
+        mind_service.redis_client.get = AsyncMock(
+            return_value=_make_soul_context(guna="rajas")
+        )
 
         with patch.object(
             mind_service.portfolio_risk_calculator,
@@ -152,7 +158,9 @@ class TestMindRiskIntegrationUnhappy:
     """Unhappy path: error handling and graceful degradation."""
 
     @pytest.mark.asyncio
-    async def test_mind_handles_risk_calculator_exception_gracefully(self, mind_service):
+    async def test_mind_handles_risk_calculator_exception_gracefully(
+        self, mind_service
+    ):
         """PortfolioRiskCalculator raises → fallback to HOLD, no crash."""
         mind_service.redis_client.get = AsyncMock(return_value=_make_soul_context())
 

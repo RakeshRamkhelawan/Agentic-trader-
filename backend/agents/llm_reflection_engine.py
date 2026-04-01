@@ -84,7 +84,11 @@ OUTPUT JSON:
             self.backend = None
 
     def generate_reflection(
-        self, agent_name: str, symbol: str, recent_trades: List[Dict], market_state: Dict
+        self,
+        agent_name: str,
+        symbol: str,
+        recent_trades: List[Dict],
+        market_state: Dict,
     ) -> Optional[LLMReflection]:
         """
         Generate LLM reflection voor een agent.

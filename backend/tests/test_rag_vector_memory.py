@@ -17,7 +17,9 @@ async def mock_vector_memory():
     """Fixture for in-memory vector store (using SQLite for tests)."""
     # Note: SQLite doesn't support pgvector, so we'll use mocks for actual tests
     # This is a placeholder showing the interface
-    vm = VectorMemory(connection_string="sqlite+aiosqlite:///:memory:", embedding_dim=384)
+    vm = VectorMemory(
+        connection_string="sqlite+aiosqlite:///:memory:", embedding_dim=384
+    )
     yield vm
     await vm.close()
 
@@ -28,7 +30,8 @@ class TestVectorMemoryInit:
     def test_valid_initialization(self):
         """Happy path: Valid initialization."""
         vm = VectorMemory(
-            connection_string="postgresql+asyncpg://user:pass@localhost/db", embedding_dim=384
+            connection_string="postgresql+asyncpg://user:pass@localhost/db",
+            embedding_dim=384,
         )
         assert vm.embedding_dim == 384
         assert vm.connection_string is not None
@@ -36,7 +39,9 @@ class TestVectorMemoryInit:
     @pytest.mark.asyncio
     async def test_database_down_resilience(self):
         """Systemic Unhappy Path: Database unreachable."""
-        vm = VectorMemory(connection_string="postgresql+asyncpg://bad:port@nonexistent:9999/db")
+        vm = VectorMemory(
+            connection_string="postgresql+asyncpg://bad:port@nonexistent:9999/db"
+        )
 
         # Attempting operations should raise VectorStoreError
         with pytest.raises(VectorStoreError):
@@ -119,7 +124,10 @@ class TestSimilaritySearch:
             mock_session_instance.execute = mock_execute
 
             results = await vm.search_similar(
-                query_embedding=query_embedding, limit=5, category="playbook", asset="BTC/USDT"
+                query_embedding=query_embedding,
+                limit=5,
+                category="playbook",
+                asset="BTC/USDT",
             )
 
             assert len(results) == 1

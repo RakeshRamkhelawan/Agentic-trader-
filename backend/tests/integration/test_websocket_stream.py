@@ -27,7 +27,6 @@ async def test_websocket_navagraha_stream():
         # For this integration test, we'll try to trigger a broadcast manually
         # to avoid waiting for the background task loop.
 
-
         # We need to run the broadcast in the event loop.
         # Since TestClient runs synchronously, we might need a different approach
         # or rely on the background task if we can sleep.

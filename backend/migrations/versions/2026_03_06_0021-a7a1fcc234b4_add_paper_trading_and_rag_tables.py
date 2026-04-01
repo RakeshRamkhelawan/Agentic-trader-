@@ -46,7 +46,10 @@ def upgrade() -> None:
         sa.Column("max_drawdown_pct", sa.Float(), nullable=True),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
         sa.Column(
-            "updated_at", sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now()
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("session_id"),
@@ -148,7 +151,9 @@ def upgrade() -> None:
         ),
     )
     op.create_index(
-        "idx_analytics_session_cycle", "paper_trading_analytics", ["session_id", "cycle"]
+        "idx_analytics_session_cycle",
+        "paper_trading_analytics",
+        ["session_id", "cycle"],
     )
     op.create_index(
         "idx_analytics_symbol_decision", "paper_trading_analytics", ["symbol", "action"]
@@ -171,13 +176,18 @@ def upgrade() -> None:
         sa.Column("max_loss", sa.Float(), nullable=True),
         sa.Column("performance_score", sa.Float(), server_default="1.0"),
         sa.Column(
-            "updated_at", sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now()
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("agent", "symbol", "regime", name="uq_agent_performance"),
     )
     op.create_index(
-        "idx_performance_agent_symbol", "agent_performance", ["agent", "symbol", "regime"]
+        "idx_performance_agent_symbol",
+        "agent_performance",
+        ["agent", "symbol", "regime"],
     )
 
     # Chitta Experiences
@@ -206,7 +216,9 @@ def upgrade() -> None:
     )
     op.create_index("idx_experience_symbol_regime", "chitta_experiences", ["symbol", "regime"])
     op.create_index(
-        "idx_experience_agent_outcome", "chitta_experiences", ["agent", "was_profitable"]
+        "idx_experience_agent_outcome",
+        "chitta_experiences",
+        ["agent", "was_profitable"],
     )
 
     # Note: trading_knowledge table skipped - using ChromaDB for RAG instead

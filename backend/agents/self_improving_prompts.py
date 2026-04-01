@@ -93,11 +93,9 @@ OUTPUT FORMAT:
 
         if actions and action_counts:
             most_common = max(action_counts.items(), key=lambda x: x[1])
-            bias_type = ""
             bias_warning = "Geen significante bias gedetecteerd."
 
             if most_common[1] / len(actions) > 0.6:
-                bias_type = f"te vaak {most_common[0]}"
                 bias_warning = f"⚠️ WAARSCHUWING: Je geeft {most_common[0]} in {most_common[1]/len(actions)*100:.0f}% van gevallen. Is dit gerechtvaardigd?"
 
             common_action = most_common[0]
@@ -165,13 +163,10 @@ OUTPUT FORMAT:
         current_regime_perf = regime_performance.get(current_regime, {"winrate": 0.5})
         if current_regime_perf["winrate"] > 0.6:
             adjustment = f"Je presteert UITSTEKEND in {current_regime} regime. Wees zelfverzekerd."
-            conf_mult = 1.1
         elif current_regime_perf["winrate"] < 0.4:
             adjustment = f"Je hebt MOEITE met {current_regime} regime. Wees extra voorzichtig."
-            conf_mult = 0.8
         else:
             adjustment = f"Gemiddelde performance in {current_regime}. Blijf objectief."
-            conf_mult = 1.0
 
         # Lessons based on RSI/ADX performance
         lessons = []

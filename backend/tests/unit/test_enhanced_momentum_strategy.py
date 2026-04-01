@@ -12,7 +12,9 @@ from backend.core.market_data.models import EventType, UnifiedMarketEvent
 from backend.strategies.enhanced_momentum import EnhancedMomentumStrategy
 
 
-def _make_tick(price: float, symbol: str = "BTC/USD", volume: float = 100.0) -> UnifiedMarketEvent:
+def _make_tick(
+    price: float, symbol: str = "BTC/USD", volume: float = 100.0
+) -> UnifiedMarketEvent:
     """Helper to create a UnifiedMarketEvent."""
     return UnifiedMarketEvent(
         event_type=EventType.TICKER,

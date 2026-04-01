@@ -34,7 +34,9 @@ def test_token_counter_fallback():
 
 @pytest.mark.asyncio
 async def test_usage_tracker_buffering(mock_clickhouse):
-    tracker = UsageTracker(clickhouse_client=mock_clickhouse, batch_size=2, flush_interval=10)
+    tracker = UsageTracker(
+        clickhouse_client=mock_clickhouse, batch_size=2, flush_interval=10
+    )
     await tracker.start()
 
     # Log 1st item - should be buffered
@@ -60,7 +62,9 @@ async def test_usage_tracker_buffering(mock_clickhouse):
 
 @pytest.mark.asyncio
 async def test_usage_tracker_periodic_flush(mock_clickhouse):
-    tracker = UsageTracker(clickhouse_client=mock_clickhouse, batch_size=10, flush_interval=0.1)
+    tracker = UsageTracker(
+        clickhouse_client=mock_clickhouse, batch_size=10, flush_interval=0.1
+    )
     await tracker.start()
 
     await tracker.log_usage("tenant-1", "gpt-4", 10, 20, 0.001)

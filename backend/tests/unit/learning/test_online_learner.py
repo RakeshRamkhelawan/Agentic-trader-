@@ -6,11 +6,11 @@ from unittest.mock import patch
 
 import pytest
 
-from backend.core.learning.online_learner import OnlineLearner
 from backend.core.learning.drift_detector import (
     ADWINDriftDetector,
     MultiMetricDriftDetector,
 )
+from backend.core.learning.online_learner import OnlineLearner
 from backend.core.learning.strategy_adapter import StrategyWeightAdapter
 
 

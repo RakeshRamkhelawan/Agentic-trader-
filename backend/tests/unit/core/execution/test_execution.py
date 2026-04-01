@@ -14,7 +14,11 @@ class TestExecutionModule:
 
         # Mock time: Monday 8:00 AM (Within 7:30-9:00 Rahu Kala)
         monday_rahu = datetime(2024, 1, 1, 8, 0, 0)  # Jan 1 2024 was a Monday
-        assert gate.weekday() == 0 if hasattr(gate, "weekday") else monday_rahu.weekday() == 0
+        assert (
+            gate.weekday() == 0
+            if hasattr(gate, "weekday")
+            else monday_rahu.weekday() == 0
+        )
 
         is_blocked = gate.is_in_rahu_kala(monday_rahu)
         assert is_blocked is True

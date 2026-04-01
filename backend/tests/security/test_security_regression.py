@@ -9,14 +9,15 @@ Tests cover:
 - Authentication bypass prevention
 """
 
-import pytest
-import jwt
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import jwt
+import pytest
+
+from backend.agents.sentiment_agent import SentimentAgent
 from backend.core.auth.jwt_validator import JWTValidator
 from backend.core.context import set_tenant_context
-from backend.agents.sentiment_agent import SentimentAgent
 
 
 class TestSQLInjectionPrevention:
@@ -94,9 +95,10 @@ class TestJWTSecurity:
         # Should raise error when no signing key available
         with pytest.raises(Exception):
             # Simulate missing signing key
-            with patch.object(validator, '_get_signing_key', return_value=None):
+            with patch.object(validator, "_get_signing_key", return_value=None):
                 # Import the async validation logic
                 import asyncio
+
                 asyncio.run(validator.validate_token(token))
 
     def test_jwt_expiration_enforced(self):
@@ -111,7 +113,9 @@ class TestJWTSecurity:
             "exp": datetime.now(timezone.utc) - timedelta(hours=1),
             "iat": datetime.now(timezone.utc) - timedelta(hours=2),
         }
-        expired_token = jwt.encode(expired_payload, "test_secret_key_for_unit_tests_only", algorithm="HS256")
+        expired_token = jwt.encode(
+            expired_payload, "test_secret_key_for_unit_tests_only", algorithm="HS256"
+        )
 
         # Should return None for expired token
         result = handler.decode_token(expired_token)
@@ -205,6 +209,7 @@ class TestAuthenticationBypassPrevention:
     def test_dev_mode_requires_explicit_flag(self):
         """Test dev auth mode requires explicit environment flag."""
         import os
+
         from backend.core.auth.middleware import AuthMiddleware
 
         # Clear the env var
@@ -251,17 +256,23 @@ class TestSecretManagement:
                 ["grep", "-r", "-n", "-E", pattern, "backend/"],
                 capture_output=True,
                 text=True,
-                cwd="/app"
+                cwd="/app",
             )
             # Should find no matches (or only placeholder/parameterized values)
             output = result.stdout
             # Filter out allowed patterns
-            forbidden = [line for line in output.split('\n')
-                        if line and 'env' not in line.lower()
-                        and 'os.getenv' not in line
-                        and 'config' not in line.lower()]
+            forbidden = [
+                line
+                for line in output.split("\n")
+                if line
+                and "env" not in line.lower()
+                and "os.getenv" not in line
+                and "config" not in line.lower()
+            ]
 
-            assert len(forbidden) == 0, f"Found potential hardcoded secrets: {forbidden}"
+            assert (
+                len(forbidden) == 0
+            ), f"Found potential hardcoded secrets: {forbidden}"
 
 
 class TestRateLimiting:

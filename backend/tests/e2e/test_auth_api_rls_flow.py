@@ -15,7 +15,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-
 # ============================================================================
 # E2E Test: Complete Auth -> Tenant -> RLS pipeline
 # ============================================================================
@@ -202,8 +201,13 @@ class TestFrontendBackendConfigAlignment:
         """Frontend throws in production without Auth0."""
         config_path = os.path.join(
             os.path.dirname(__file__),
-            "..", "..", "..",
-            "frontend", "src", "lib", "config.ts"
+            "..",
+            "..",
+            "..",
+            "frontend",
+            "src",
+            "lib",
+            "config.ts",
         )
         with open(config_path) as f:
             content = f.read()
@@ -214,8 +218,7 @@ class TestFrontendBackendConfigAlignment:
     def test_backend_auth_disabled_check_exists(self):
         """Backend validates AUTH_DISABLED in its settings."""
         settings_path = os.path.join(
-            os.path.dirname(__file__),
-            "..", "..", "core", "config", "settings.py"
+            os.path.dirname(__file__), "..", "..", "core", "config", "settings.py"
         )
         with open(settings_path) as f:
             content = f.read()

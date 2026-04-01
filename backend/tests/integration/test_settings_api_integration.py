@@ -14,15 +14,17 @@ pytestmark = [pytest.mark.asyncio, pytest.mark.integration]
 class TestSettingsAPIIntegration:
     """Full integration tests for User Settings API with real backend."""
 
-    async def _get_auth_token(self, async_client: AsyncClient, unique_email: str) -> str:
+    async def _get_auth_token(
+        self, async_client: AsyncClient, unique_email: str
+    ) -> str:
         """Helper to register and get auth token."""
         response = await async_client.post(
             "/api/v1/auth/register",
             json={
                 "email": unique_email,
                 "password": "SecurePass123!",
-                "full_name": "Test User"
-            }
+                "full_name": "Test User",
+            },
         )
         return response.json()["access_token"]
 
@@ -31,8 +33,7 @@ class TestSettingsAPIIntegration:
         token = await self._get_auth_token(async_client, unique_email)
 
         response = await async_client.get(
-            "/api/v1/settings/all",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/settings/all", headers={"Authorization": f"Bearer {token}"}
         )
 
         assert response.status_code == 200
@@ -52,8 +53,7 @@ class TestSettingsAPIIntegration:
 
         # Get initial profile
         get_response = await async_client.get(
-            "/api/v1/settings/profile",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/settings/profile", headers={"Authorization": f"Bearer {token}"}
         )
         assert get_response.status_code == 200
         _ = get_response.json()  # Verify response parses as JSON
@@ -62,13 +62,13 @@ class TestSettingsAPIIntegration:
         update_data = {
             "first_name": "Updated",
             "last_name": "Name",
-            "email": unique_email
+            "email": unique_email,
         }
 
         put_response = await async_client.put(
             "/api/v1/settings/profile",
             headers={"Authorization": f"Bearer {token}"},
-            json=update_data
+            json=update_data,
         )
         assert put_response.status_code == 200
         updated_profile = put_response.json()
@@ -78,8 +78,7 @@ class TestSettingsAPIIntegration:
 
         # Verify persistence by getting again
         get_response2 = await async_client.get(
-            "/api/v1/settings/profile",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/settings/profile", headers={"Authorization": f"Bearer {token}"}
         )
         assert get_response2.status_code == 200
         persisted_profile = get_response2.json()
@@ -87,14 +86,16 @@ class TestSettingsAPIIntegration:
         assert persisted_profile["first_name"] == "Updated"
         assert persisted_profile["last_name"] == "Name"
 
-    async def test_notifications_crud(self, async_client: AsyncClient, unique_email: str):
+    async def test_notifications_crud(
+        self, async_client: AsyncClient, unique_email: str
+    ):
         """Test notification settings get and update."""
         token = await self._get_auth_token(async_client, unique_email)
 
         # Get initial notifications
         get_response = await async_client.get(
             "/api/v1/settings/notifications",
-            headers={"Authorization": f"Bearer {token}"}
+            headers={"Authorization": f"Bearer {token}"},
         )
         assert get_response.status_code == 200
         initial_notifications = get_response.json()
@@ -110,31 +111,37 @@ class TestSettingsAPIIntegration:
         put_response = await async_client.put(
             "/api/v1/settings/notifications",
             headers={"Authorization": f"Bearer {token}"},
-            json=update_data
+            json=update_data,
         )
         assert put_response.status_code == 200
         updated_notifications = put_response.json()
 
-        assert updated_notifications["order_executions"] == update_data["order_executions"]
+        assert (
+            updated_notifications["order_executions"] == update_data["order_executions"]
+        )
         assert updated_notifications["price_alerts"] == update_data["price_alerts"]
 
         # Verify persistence
         get_response2 = await async_client.get(
             "/api/v1/settings/notifications",
-            headers={"Authorization": f"Bearer {token}"}
+            headers={"Authorization": f"Bearer {token}"},
         )
         assert get_response2.status_code == 200
         persisted_notifications = get_response2.json()
 
-        assert persisted_notifications["order_executions"] == update_data["order_executions"]
+        assert (
+            persisted_notifications["order_executions"]
+            == update_data["order_executions"]
+        )
 
-    async def test_security_settings(self, async_client: AsyncClient, unique_email: str):
+    async def test_security_settings(
+        self, async_client: AsyncClient, unique_email: str
+    ):
         """Test security settings get."""
         token = await self._get_auth_token(async_client, unique_email)
 
         response = await async_client.get(
-            "/api/v1/settings/security",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/settings/security", headers={"Authorization": f"Bearer {token}"}
         )
 
         assert response.status_code == 200
@@ -151,7 +158,7 @@ class TestSettingsAPIIntegration:
         enable_response = await async_client.post(
             "/api/v1/settings/security/2fa",
             headers={"Authorization": f"Bearer {token}"},
-            params={"enabled": True}
+            params={"enabled": True},
         )
 
         # Note: The actual implementation may vary
@@ -171,8 +178,8 @@ class TestSettingsAPIIntegration:
             headers={"Authorization": f"Bearer {token}"},
             params={
                 "current_password": "SecurePass123!",
-                "new_password": "NewSecurePass456!"
-            }
+                "new_password": "NewSecurePass456!",
+            },
         )
 
         # Endpoint should return success (actual validation may vary in test env)
@@ -188,8 +195,7 @@ class TestSettingsAPIIntegration:
 
         # Get initial appearance
         get_response = await async_client.get(
-            "/api/v1/settings/appearance",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/settings/appearance", headers={"Authorization": f"Bearer {token}"}
         )
         assert get_response.status_code == 200
         initial_appearance = get_response.json()
@@ -204,7 +210,7 @@ class TestSettingsAPIIntegration:
         put_response = await async_client.put(
             "/api/v1/settings/appearance",
             headers={"Authorization": f"Bearer {token}"},
-            json=update_data
+            json=update_data,
         )
         assert put_response.status_code == 200
         updated_appearance = put_response.json()
@@ -217,22 +223,18 @@ class TestSettingsAPIIntegration:
 
         # Get initial preferences
         get_response = await async_client.get(
-            "/api/v1/settings/preferences",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/settings/preferences", headers={"Authorization": f"Bearer {token}"}
         )
         assert get_response.status_code == 200
         _ = get_response.json()  # Verify response parses as JSON
 
         # Update preferences
-        update_data = {
-            "default_currency": "USD",
-            "default_exchange": "kraken"
-        }
+        update_data = {"default_currency": "USD", "default_exchange": "kraken"}
 
         put_response = await async_client.put(
             "/api/v1/settings/preferences",
             headers={"Authorization": f"Bearer {token}"},
-            json=update_data
+            json=update_data,
         )
         assert put_response.status_code == 200
         updated_preferences = put_response.json()
@@ -242,8 +244,7 @@ class TestSettingsAPIIntegration:
 
         # Verify persistence
         get_response2 = await async_client.get(
-            "/api/v1/settings/preferences",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/settings/preferences", headers={"Authorization": f"Bearer {token}"}
         )
         assert get_response2.status_code == 200
         persisted_preferences = get_response2.json()
@@ -255,8 +256,7 @@ class TestSettingsAPIIntegration:
         token = await self._get_auth_token(async_client, unique_email)
 
         response = await async_client.get(
-            "/api/v1/settings/api-keys",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/settings/api-keys", headers={"Authorization": f"Bearer {token}"}
         )
 
         # Should succeed (may be empty list)
@@ -287,16 +287,20 @@ class TestSettingsAPIIntegration:
             else:
                 response = await async_client.put(endpoint, json={})
 
-            assert response.status_code in [401, 403], f"{method} {endpoint} should require auth"
+            assert response.status_code in [
+                401,
+                403,
+            ], f"{method} {endpoint} should require auth"
 
-    async def test_complete_settings_flow(self, async_client: AsyncClient, unique_email: str):
+    async def test_complete_settings_flow(
+        self, async_client: AsyncClient, unique_email: str
+    ):
         """Test complete settings flow with all operations."""
         token = await self._get_auth_token(async_client, unique_email)
 
         # 1. Get all settings
         all_response = await async_client.get(
-            "/api/v1/settings/all",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/settings/all", headers={"Authorization": f"Bearer {token}"}
         )
         assert all_response.status_code == 200
         _ = all_response.json()  # Verify response parses as JSON
@@ -305,12 +309,12 @@ class TestSettingsAPIIntegration:
         profile_update = {
             "first_name": "Integration",
             "last_name": "Test",
-            "email": unique_email
+            "email": unique_email,
         }
         profile_response = await async_client.put(
             "/api/v1/settings/profile",
             headers={"Authorization": f"Bearer {token}"},
-            json=profile_update
+            json=profile_update,
         )
         assert profile_response.status_code == 200
 
@@ -324,7 +328,7 @@ class TestSettingsAPIIntegration:
         notifications_response = await async_client.put(
             "/api/v1/settings/notifications",
             headers={"Authorization": f"Bearer {token}"},
-            json=notifications_update
+            json=notifications_update,
         )
         assert notifications_response.status_code == 200
 
@@ -333,26 +337,22 @@ class TestSettingsAPIIntegration:
         appearance_response = await async_client.put(
             "/api/v1/settings/appearance",
             headers={"Authorization": f"Bearer {token}"},
-            json=appearance_update
+            json=appearance_update,
         )
         assert appearance_response.status_code == 200
 
         # 5. Update preferences
-        preferences_update = {
-            "default_currency": "EUR",
-            "default_exchange": "bitvavo"
-        }
+        preferences_update = {"default_currency": "EUR", "default_exchange": "bitvavo"}
         preferences_response = await async_client.put(
             "/api/v1/settings/preferences",
             headers={"Authorization": f"Bearer {token}"},
-            json=preferences_update
+            json=preferences_update,
         )
         assert preferences_response.status_code == 200
 
         # 6. Verify all changes persisted
         final_all_response = await async_client.get(
-            "/api/v1/settings/all",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/settings/all", headers={"Authorization": f"Bearer {token}"}
         )
         assert final_all_response.status_code == 200
         final_data = final_all_response.json()

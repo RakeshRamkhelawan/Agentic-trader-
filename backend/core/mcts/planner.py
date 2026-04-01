@@ -56,7 +56,10 @@ class StrategicMCTSPlanner:
     """
 
     def __init__(
-        self, lookahead_steps: int = 10, simulations: int = 100, exploration_constant: float = 1.414
+        self,
+        lookahead_steps: int = 10,
+        simulations: int = 100,
+        exploration_constant: float = 1.414,
     ):
         self.lookahead_steps = lookahead_steps
         self.simulations = simulations
@@ -67,7 +70,10 @@ class StrategicMCTSPlanner:
         self.atr_tp_mult = 4.5
 
     def plan(
-        self, current_portfolio: Dict[str, Any], market_states: Dict[str, Any], symbols: List[str]
+        self,
+        current_portfolio: Dict[str, Any],
+        market_states: Dict[str, Any],
+        symbols: List[str],
     ) -> Dict[str, Any]:
         """
         Generate strategic plan using MCTS

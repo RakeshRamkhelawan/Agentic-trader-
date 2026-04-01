@@ -78,7 +78,8 @@ class EnhancedSentimentAgent(AgentWithTools):
 
         # 1.1 Sentiment Analysis
         sentiment_result = await self.call_tool(
-            "tool__external_sentiment_analysis", {"symbol": symbol, "source": "combined"}
+            "tool__external_sentiment_analysis",
+            {"symbol": symbol, "source": "combined"},
         )
         sentiment_score = sentiment_result.get("sentiment_score", 0.0)
         sentiment_result.get("confidence", 0.5)
@@ -97,7 +98,8 @@ class EnhancedSentimentAgent(AgentWithTools):
 
         # 1.3 Market News
         news_result = await self.call_tool(
-            "tool__external_market_news", {"symbol": symbol, "category": "crypto", "limit": 3}
+            "tool__external_market_news",
+            {"symbol": symbol, "category": "crypto", "limit": 3},
         )
         articles = news_result.get("articles", [])
         news_sentiment = self._aggregate_news_sentiment(articles)

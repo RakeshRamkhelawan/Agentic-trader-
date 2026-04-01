@@ -6,7 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # Import the (yet to be created) SessionManager and context managers
 # This import will fail initially, which is part of the Red phase
 try:
-    from backend.core.database import SessionManager, system_admin_session, tenant_session
+    from backend.core.database import (
+        SessionManager,
+        system_admin_session,
+        tenant_session,
+    )
 except ImportError:
     SessionManager = None
     system_admin_session = None
@@ -16,7 +20,9 @@ except ImportError:
 @pytest.mark.asyncio
 async def test_session_manager_exists():
     """Test that SessionManager class exists."""
-    assert SessionManager is not None, "SessionManager class should exist in backend.core.database"
+    assert (
+        SessionManager is not None
+    ), "SessionManager class should exist in backend.core.database"
 
 
 @pytest.mark.asyncio

@@ -43,7 +43,9 @@ def mock_middleware_validator():
 
     from backend.core.auth.jwt_validator import JWTValidator
 
-    with patch.object(JWTValidator, "validate_token", new_callable=AsyncMock) as mock_method:
+    with patch.object(
+        JWTValidator, "validate_token", new_callable=AsyncMock
+    ) as mock_method:
         yield mock_method
 
 

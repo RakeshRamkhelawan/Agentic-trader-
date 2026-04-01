@@ -67,7 +67,11 @@ class LiveOrder:
     @property
     def is_complete(self) -> bool:
         """Check if order is complete (filled or cancelled)."""
-        return self.status in [OrderStatus.FILLED, OrderStatus.CANCELLED, OrderStatus.REJECTED]
+        return self.status in [
+            OrderStatus.FILLED,
+            OrderStatus.CANCELLED,
+            OrderStatus.REJECTED,
+        ]
 
     @property
     def fill_pct(self) -> float:

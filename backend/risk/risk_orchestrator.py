@@ -135,7 +135,9 @@ class RiskOrchestrator:
         try:
             # This would normally use historical returns; using simplified check here
             portfolio_var_pct = self._estimate_portfolio_var(
-                portfolio_value=portfolio_value, new_position_size=quantity, signal=signal
+                portfolio_value=portfolio_value,
+                new_position_size=quantity,
+                signal=signal,
             )
             if portfolio_var_pct > self.max_daily_var_pct:
                 return RiskDecision(

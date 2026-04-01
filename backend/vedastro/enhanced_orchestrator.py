@@ -255,7 +255,7 @@ class EnhancedAstroOrchestrator:
                         "dasha_lord": (
                             analysis.dasha.mahadasha_lord if analysis.dasha else "Unknown"
                         ),
-                        "top_yoga": analysis.yogas[0].name if analysis.yogas else "None",
+                        "top_yoga": (analysis.yogas[0].name if analysis.yogas else "None"),
                     }
                 )
 
@@ -284,8 +284,10 @@ class EnhancedAstroOrchestrator:
             "symbol": symbol,
             "current_dasha": {
                 "mahadasha": analysis.dasha.mahadasha_lord if analysis.dasha else None,
-                "antardasha": analysis.dasha.antardasha_lord if analysis.dasha else None,
-                "pratyantardasha": analysis.dasha.pratyantardasha_lord if analysis.dasha else None,
+                "antardasha": (analysis.dasha.antardasha_lord if analysis.dasha else None),
+                "pratyantardasha": (
+                    analysis.dasha.pratyantardasha_lord if analysis.dasha else None
+                ),
             },
             "favorable_periods": {
                 "pancha_pakshi": {
@@ -301,7 +303,9 @@ class EnhancedAstroOrchestrator:
                 "muhurtha": {
                     "tithi": analysis.muhurtha.tithi if analysis.muhurtha else None,
                     "rating": analysis.muhurtha.rating if analysis.muhurtha else 0,
-                    "is_favorable": analysis.muhurtha.is_favorable if analysis.muhurtha else False,
+                    "is_favorable": (
+                        analysis.muhurtha.is_favorable if analysis.muhurtha else False
+                    ),
                 },
             },
             "ashtakavarga": {

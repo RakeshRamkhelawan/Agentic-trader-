@@ -324,7 +324,7 @@ class LLMGateway:
             async with session.post(
                 f"{self.ollama_url}/api/generate",
                 json=payload,
-                timeout=300 if request.latency_requirement == LatencyRequirement.BATCH else 60,
+                timeout=(300 if request.latency_requirement == LatencyRequirement.BATCH else 60),
             ) as resp:
                 if resp.status != 200:
                     raise Exception(f"Ollama error: {resp.status}")

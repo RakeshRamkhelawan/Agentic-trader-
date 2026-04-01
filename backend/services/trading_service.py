@@ -932,8 +932,8 @@ class TradingService:
             params = {f"sym_{i}": sym for i, sym in enumerate(symbols)}
             params["target_time"] = target_time
 
-            sql = text(  # nosec B608
-                f"""
+            sql = text(
+                f"""  # nosec B608
                 SELECT DISTINCT ON (symbol) symbol, price
                 FROM market_ticks
                 WHERE symbol IN ({placeholders})

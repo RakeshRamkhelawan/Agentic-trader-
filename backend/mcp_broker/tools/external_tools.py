@@ -567,7 +567,9 @@ def _calculate_bollinger_bands(
         "middle": round(sma, 2),
         "lower": round(lower, 2),
         "position": round(position, 2),
-        "signal": "upper_band" if position > 0.8 else "lower_band" if position < 0.2 else "middle",
+        "signal": (
+            "upper_band" if position > 0.8 else "lower_band" if position < 0.2 else "middle"
+        ),
     }
 
 

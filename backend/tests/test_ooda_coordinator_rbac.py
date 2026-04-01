@@ -73,7 +73,9 @@ class TestOODACoordinatorRBAC:
     @pytest.mark.asyncio
     async def test_set_mode_without_permission_service(self, coordinator):
         """set_trading_mode works zonder PermissionService (bypass)."""
-        result = await coordinator.set_trading_mode(new_mode=TradingMode.AUTO, user_id="test_user")
+        result = await coordinator.set_trading_mode(
+            new_mode=TradingMode.AUTO, user_id="test_user"
+        )
 
         assert result is True
         assert coordinator.get_trading_mode() == TradingMode.AUTO
@@ -107,7 +109,9 @@ class TestOODACoordinatorRBAC:
 
         with pytest.raises(PermissionDeniedError) as exc_info:
             await coordinator.set_trading_mode(
-                new_mode=TradingMode.AUTO, user_id="operator", permission_service=perm_service
+                new_mode=TradingMode.AUTO,
+                user_id="operator",
+                permission_service=perm_service,
             )
 
         error = exc_info.value
@@ -149,7 +153,9 @@ class TestOODACoordinatorRBAC:
 
         with pytest.raises(PermissionDeniedError):
             await coordinator.set_trading_mode(
-                new_mode=TradingMode.NOTIFY_ONLY, user_id="viewer", permission_service=perm_service
+                new_mode=TradingMode.NOTIFY_ONLY,
+                user_id="viewer",
+                permission_service=perm_service,
             )
 
         # Mode unchanged
@@ -162,12 +168,18 @@ class TestOODACoordinatorRBAC:
 
         # Change 1: admin sets AUTO
         await coordinator.set_trading_mode(
-            TradingMode.AUTO, "admin", "Enable automation", permission_service=perm_service
+            TradingMode.AUTO,
+            "admin",
+            "Enable automation",
+            permission_service=perm_service,
         )
 
         # Change 2: operator rolls back
         await coordinator.set_trading_mode(
-            TradingMode.NOTIFY_ONLY, "operator", "Safety rollback", permission_service=perm_service
+            TradingMode.NOTIFY_ONLY,
+            "operator",
+            "Safety rollback",
+            permission_service=perm_service,
         )
 
         # Verify audit trail

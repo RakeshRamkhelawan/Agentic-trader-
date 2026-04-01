@@ -71,7 +71,11 @@ class BuddhiMind:
         }
 
     def decide(
-        self, council_views: list[dict], market_data: dict, session_id: str, timestamp: str
+        self,
+        council_views: list[dict],
+        market_data: dict,
+        session_id: str,
+        timestamp: str,
     ) -> BuddhiDecision:
         """
         Make final trading decision based on council inputs.
@@ -327,7 +331,6 @@ class BuddhiMind:
 
         interactions = guna_view.get("interactions", {})
         t_rajas = interactions.get("tamasic_rajas", 0)
-        s_rajas = interactions.get("sattvic_rajas", 0)
         purity = interactions.get("purity_index", 0)
 
         # Criterion 1: If Tamasic Rajas (Noise) is too high, it's Maya
@@ -400,7 +403,11 @@ if __name__ == "__main__":
             [
                 {"council_type": "guna", "perspective": "bullish", "confidence": 0.85},
                 {"council_type": "mind", "perspective": "bullish", "confidence": 0.75},
-                {"council_type": "body", "perspective": "favorable", "confidence": 0.90},
+                {
+                    "council_type": "body",
+                    "perspective": "favorable",
+                    "confidence": 0.90,
+                },
             ],
             {"volatility_1m": 0.025},
         ),

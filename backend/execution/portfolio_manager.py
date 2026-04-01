@@ -266,7 +266,11 @@ class PortfolioManager:
                     # Simple balance format
                     total = self._to_decimal(data)
                     if total > 0:
-                        balances[asset] = {"total": total, "free": total, "used": Decimal("0")}
+                        balances[asset] = {
+                            "total": total,
+                            "free": total,
+                            "used": Decimal("0"),
+                        }
 
         except Exception as e:
             logger.error(f"[PortfolioManager] Error fetching balances: {e}")
@@ -484,7 +488,9 @@ class PortfolioManager:
 
         # Sort by allocation
         sorted_assets = sorted(
-            latest.assets.items(), key=lambda x: x[1].allocation_pct or Decimal("0"), reverse=True
+            latest.assets.items(),
+            key=lambda x: x[1].allocation_pct or Decimal("0"),
+            reverse=True,
         )
 
         for asset, alloc in sorted_assets:

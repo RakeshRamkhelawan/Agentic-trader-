@@ -37,7 +37,13 @@ class GlobalChitta:
 
         # Per-agent performance tracking
         self.agent_winrates: Dict[str, Dict] = defaultdict(
-            lambda: {"wins": 0, "losses": 0, "total_pnl": 0.0, "avg_harmony": 0.0, "trades": []}
+            lambda: {
+                "wins": 0,
+                "losses": 0,
+                "total_pnl": 0.0,
+                "avg_harmony": 0.0,
+                "trades": [],
+            }
         )
 
         # Collective insights
@@ -210,7 +216,6 @@ class GlobalChitta:
 
             # Analyze patterns
             winning = [t for t in recent if t["pnl"] > 0]
-            losing = [t for t in recent if t["pnl"] <= 0]
 
             winrate = len(winning) / len(recent)
             avg_pnl = sum(t["pnl"] for t in recent) / len(recent)

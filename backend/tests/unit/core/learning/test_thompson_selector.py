@@ -3,6 +3,7 @@ Tests for ThompsonSamplingSelector.
 """
 
 import random
+
 from backend.core.learning.thompson_selector import ThompsonSamplingSelector
 
 

@@ -90,7 +90,6 @@ class TestSoulKarmaIntegration:
         ):
             with patch.object(soul.navagraha, "get_current_state") as mock_nav:
 
-
                 # Create minimal NavagrahaState mock
                 mock_nav.return_value = MagicMock(
                     rahu_kala_active=False,
@@ -146,12 +145,18 @@ class TestSoulKarmaIntegrationUnhappy:
         soul.redis_client = AsyncMock()
 
         with patch.object(
-            soul.episode_memory, "get_causality_threshold", side_effect=Exception("Memory corrupt")
+            soul.episode_memory,
+            "get_causality_threshold",
+            side_effect=Exception("Memory corrupt"),
         ):
             with patch.object(
                 soul,
                 "_fetch_market_context",
-                return_value={"symbol": "BTC/USD", "price": 42000.0, "volatility": 0.02},
+                return_value={
+                    "symbol": "BTC/USD",
+                    "price": 42000.0,
+                    "volatility": 0.02,
+                },
             ):
                 with patch.object(soul.navagraha, "get_current_state") as mock_nav:
                     mock_nav.return_value = MagicMock(

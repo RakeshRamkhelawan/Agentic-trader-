@@ -10,8 +10,8 @@ import pytest
 
 from backend.core.system_identity_optimized import (
     SystemIdentityOptimized,
-    TraversalMode,
     TattvaMetrics,
+    TraversalMode,
 )
 
 
@@ -21,7 +21,9 @@ def system_identity():
     with patch("backend.core.system_identity_optimized.NavagrahaService"):
         with patch("backend.core.system_identity_optimized.SensoryProcessor"):
             with patch("backend.core.system_identity_optimized.MemorySystem"):
-                with patch("backend.core.system_identity_optimized.DecisionDiscriminator"):
+                with patch(
+                    "backend.core.system_identity_optimized.DecisionDiscriminator"
+                ):
                     si = SystemIdentityOptimized(
                         coherence_threshold=0.8,
                         enable_metrics=False,  # Disable for tests
@@ -69,7 +71,16 @@ class TestLayerMasks:
     def test_sparse_layers_array(self, system_identity):
         """Test that sparse layers array has 8 elements."""
         assert len(SystemIdentityOptimized.SPARSE_LAYERS) == 8
-        assert list(SystemIdentityOptimized.SPARSE_LAYERS) == [1, 2, 3, 14, 15, 16, 17, 36]
+        assert list(SystemIdentityOptimized.SPARSE_LAYERS) == [
+            1,
+            2,
+            3,
+            14,
+            15,
+            16,
+            17,
+            36,
+        ]
 
     def test_full_layers_array(self, system_identity):
         """Test that full layers array has 36 elements."""
@@ -211,7 +222,9 @@ class TestPhilosophicalIntegrity:
         """Test that all 36 layers are represented in the system."""
         assert len(system_identity.tattva_config.layers) == 36
 
-        layer_numbers = [layer.layer_number for layer in system_identity.tattva_config.layers]
+        layer_numbers = [
+            layer.layer_number for layer in system_identity.tattva_config.layers
+        ]
         assert set(layer_numbers) == set(range(1, 37))
 
     def test_sparse_mode_preserves_philosophy(self, system_identity):

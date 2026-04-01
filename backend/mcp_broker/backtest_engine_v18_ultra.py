@@ -213,7 +213,9 @@ async def run_ultra_backtest(
         )
     """
     config = UltraBacktestConfig(
-        initial_capital=initial_capital, enable_parallel=enable_parallel, max_workers=max_workers
+        initial_capital=initial_capital,
+        enable_parallel=enable_parallel,
+        max_workers=max_workers,
     )
 
     engine = BacktestEngineV18Ultra(config)
@@ -252,7 +254,10 @@ async def benchmark_ultra_mode():
     print("SUMMARY", file=sys.stderr)
     print("=" * 60, file=sys.stderr)
     print(f"Sequential: {seq_time:.2f}s", file=sys.stderr)
-    print(f"Parallel:   {par_time:.2f}s (speedup: {seq_time/par_time:.2f}x)", file=sys.stderr)
+    print(
+        f"Parallel:   {par_time:.2f}s (speedup: {seq_time/par_time:.2f}x)",
+        file=sys.stderr,
+    )
     print("=" * 60, file=sys.stderr)
 
 

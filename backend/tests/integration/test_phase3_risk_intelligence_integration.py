@@ -100,7 +100,9 @@ def test_low_capacity_returns_hold(risk_calculator, exhausted_risk_state):
 
 def test_guna_modulates_position_size(risk_calculator, normal_risk_state):
     """Different Gunas should produce different size multipliers."""
-    kelly_size = risk_calculator.calculate_kelly_size(win_rate=0.55, avg_win=1.5, avg_loss=1.0)
+    kelly_size = risk_calculator.calculate_kelly_size(
+        win_rate=0.55, avg_win=1.5, avg_loss=1.0
+    )
     capacity = risk_calculator.get_risk_capacity(normal_risk_state)
 
     _, sattva_mult = risk_calculator.get_guna_risk_params(GunaType.SATTVA)
@@ -118,7 +120,9 @@ def test_guna_modulates_position_size(risk_calculator, normal_risk_state):
 
 def test_kelly_sizing_integrated_with_risk(risk_calculator, normal_risk_state):
     """Kelly size * guna_mult * risk_capacity = final modulated size."""
-    kelly = risk_calculator.calculate_kelly_size(win_rate=0.55, avg_win=1.5, avg_loss=1.0)
+    kelly = risk_calculator.calculate_kelly_size(
+        win_rate=0.55, avg_win=1.5, avg_loss=1.0
+    )
     assert kelly > 0
 
     capacity = risk_calculator.get_risk_capacity(normal_risk_state)

@@ -19,7 +19,9 @@ from backend.llm.provider_interface import LLMProvider
 async def test_sentiment_agent_llm_timeout():
     """Unhappy: LLM timeout should return fallback result."""
     mock_provider = AsyncMock(spec=LLMProvider)
-    mock_provider.generate_structured = AsyncMock(side_effect=TimeoutError("LLM request timeout"))
+    mock_provider.generate_structured = AsyncMock(
+        side_effect=TimeoutError("LLM request timeout")
+    )
 
     agent = SentimentAgent(llm_provider=mock_provider)
 
@@ -28,7 +30,10 @@ async def test_sentiment_agent_llm_timeout():
     # Should return fallback with low confidence
     assert result["sentiment"] == "neutral"
     assert result["confidence"] < 0.5
-    assert "error" in result["reasoning"].lower() or "timeout" in result["reasoning"].lower()
+    assert (
+        "error" in result["reasoning"].lower()
+        or "timeout" in result["reasoning"].lower()
+    )
 
 
 @pytest.mark.unit
@@ -36,7 +41,9 @@ async def test_sentiment_agent_llm_timeout():
 async def test_sentiment_agent_llm_api_error():
     """Unhappy: LLM API error should be handled gracefully."""
     mock_provider = AsyncMock(spec=LLMProvider)
-    mock_provider.generate_structured = AsyncMock(side_effect=Exception("API rate limit exceeded"))
+    mock_provider.generate_structured = AsyncMock(
+        side_effect=Exception("API rate limit exceeded")
+    )
 
     agent = SentimentAgent(llm_provider=mock_provider)
 
@@ -143,7 +150,9 @@ async def test_sentiment_agent_malformed_news():
 
     agent = SentimentAgent(llm_provider=mock_provider)
 
-    result = await agent.analyze(features={}, context={"news": None})  # None instead of string
+    result = await agent.analyze(
+        features={}, context={"news": None}
+    )  # None instead of string
 
     assert result is not None
 
@@ -369,7 +378,9 @@ async def test_sentiment_agent_none_provider_empty_result():
     """Unhappy: None provider should return fallback immediately."""
     agent = SentimentAgent()  # No provider
 
-    result = await agent.analyze(features={"price": 50000}, context={"news": "Test news"})
+    result = await agent.analyze(
+        features={"price": 50000}, context={"news": "Test news"}
+    )
 
     assert result["sentiment"] == "neutral"
     assert result["action"] == "hold"

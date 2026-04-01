@@ -3,7 +3,9 @@ Tests for KellyPositionSizer.
 """
 
 import pytest
+
 from backend.core.risk.kelly import KellyPositionSizer
+
 
 class TestKellyPositionSizer:
 
@@ -22,11 +24,7 @@ class TestKellyPositionSizer:
         => Quarter Kelly (25%) = 0.4 * 0.25 = 0.1
         Max Cap is 10%, so it should return exactly 0.1
         """
-        size = self.sizer.calculate_size(
-            win_rate=0.6,
-            avg_win=0.10,
-            avg_loss=0.05
-        )
+        size = self.sizer.calculate_size(win_rate=0.6, avg_win=0.10, avg_loss=0.05)
         assert abs(size - 0.10) < 0.0001
 
     def test_capped_position(self):
@@ -39,11 +37,7 @@ class TestKellyPositionSizer:
         Quarter Kelly = 0.21875
         Since max cap = 0.1, it should clamp to 0.1
         """
-        size = self.sizer.calculate_size(
-            win_rate=0.9,
-            avg_win=0.20,
-            avg_loss=0.05
-        )
+        size = self.sizer.calculate_size(win_rate=0.9, avg_win=0.20, avg_loss=0.05)
         assert size == 0.10
 
     def test_negative_edge(self):
@@ -55,20 +49,12 @@ class TestKellyPositionSizer:
         Kelly = (0.4 * 0.5 - 0.6) / 0.5 = (0.2 - 0.6) / 0.5 = -0.8
         Should return 0.0
         """
-        size = self.sizer.calculate_size(
-            win_rate=0.4,
-            avg_win=0.05,
-            avg_loss=0.10
-        )
+        size = self.sizer.calculate_size(win_rate=0.4, avg_win=0.05, avg_loss=0.10)
         assert size == 0.0
 
     def test_zero_loss(self):
         """If average loss is zero, we cannot compute b, return 0.0."""
-        size = self.sizer.calculate_size(
-            win_rate=1.0,
-            avg_win=0.10,
-            avg_loss=0.0
-        )
+        size = self.sizer.calculate_size(win_rate=1.0, avg_win=0.10, avg_loss=0.0)
         assert size == 0.0
 
     def test_custom_fraction_override(self):
@@ -81,6 +67,6 @@ class TestKellyPositionSizer:
             avg_win=0.10,
             avg_loss=0.05,
             kelly_fraction=0.5,
-            max_position=0.5  # Allow up to 50%
+            max_position=0.5,  # Allow up to 50%
         )
         assert abs(size - 0.20) < 0.0001

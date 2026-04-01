@@ -33,7 +33,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change_me_in_env}
       - POSTGRES_DB=${POSTGRES_DB:-trading_db}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5440:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -46,7 +46,7 @@ services:
     image: redis:7-alpine
     container_name: agentic_trader_redis
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:6385:6379"
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-change_me_in_env}
     volumes:
       - redis_data:/data

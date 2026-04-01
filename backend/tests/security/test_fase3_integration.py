@@ -13,8 +13,6 @@ Run with: pytest backend/tests/security/test_fase3_integration.py -v
 
 import os
 
-
-
 # ============================================================================
 # Taak 3.1: RLS Pool Lifecycle Tests (database.py)
 # ============================================================================
@@ -32,10 +30,16 @@ class TestRLSPoolLifecycle:
             content = f.read()
 
         # Check for the actual event listener registration, not comments about it
-        assert '@event.listens_for' not in content or 'before_cursor_execute' not in content.split('@event.listens_for')[-1].split('\n')[0] if '@event.listens_for' in content else True
-        assert 'listens_for(Engine, "before_cursor_execute")' not in content, (
-            "database.py still registers a before_cursor_execute event listener."
+        assert (
+            "@event.listens_for" not in content
+            or "before_cursor_execute"
+            not in content.split("@event.listens_for")[-1].split("\n")[0]
+            if "@event.listens_for" in content
+            else True
         )
+        assert (
+            'listens_for(Engine, "before_cursor_execute")' not in content
+        ), "database.py still registers a before_cursor_execute event listener."
 
     def test_pool_checkin_event_exists(self):
         """database.py must have a pool checkin event listener."""
@@ -59,9 +63,7 @@ class TestTradingModeConfiguration:
 
     def test_main_supports_multiple_modes(self):
         """main.py must validate against paper/live/backtest modes."""
-        main_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "main.py"
-        )
+        main_path = os.path.join(os.path.dirname(__file__), "..", "..", "main.py")
         with open(main_path) as f:
             content = f.read()
 
@@ -71,27 +73,23 @@ class TestTradingModeConfiguration:
 
     def test_live_mode_requires_double_opt_in(self):
         """Live trading requires ENABLE_LIVE_TRADING=true."""
-        main_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "main.py"
-        )
+        main_path = os.path.join(os.path.dirname(__file__), "..", "..", "main.py")
         with open(main_path) as f:
             content = f.read()
 
-        assert "ENABLE_LIVE_TRADING" in content, (
-            "Missing ENABLE_LIVE_TRADING double opt-in for live mode"
-        )
+        assert (
+            "ENABLE_LIVE_TRADING" in content
+        ), "Missing ENABLE_LIVE_TRADING double opt-in for live mode"
 
     def test_no_hardcoded_paper_only_check(self):
         """main.py must NOT have hardcoded 'paper only' check."""
-        main_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "main.py"
-        )
+        main_path = os.path.join(os.path.dirname(__file__), "..", "..", "main.py")
         with open(main_path) as f:
             content = f.read()
 
-        assert 'ONLY configured for paper trading' not in content, (
-            "Still has hardcoded paper-only message. Should support multiple modes."
-        )
+        assert (
+            "ONLY configured for paper trading" not in content
+        ), "Still has hardcoded paper-only message. Should support multiple modes."
 
 
 # ============================================================================
@@ -104,9 +102,7 @@ class TestPytestIniHardening:
 
     def test_strict_markers_enabled(self):
         """pytest.ini must have --strict-markers."""
-        ini_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "pytest.ini"
-        )
+        ini_path = os.path.join(os.path.dirname(__file__), "..", "..", "pytest.ini")
         with open(ini_path) as f:
             content = f.read()
 
@@ -114,9 +110,7 @@ class TestPytestIniHardening:
 
     def test_deprecation_warnings_filtered(self):
         """pytest.ini must handle DeprecationWarnings."""
-        ini_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "pytest.ini"
-        )
+        ini_path = os.path.join(os.path.dirname(__file__), "..", "..", "pytest.ini")
         with open(ini_path) as f:
             content = f.read()
 
@@ -124,9 +118,7 @@ class TestPytestIniHardening:
 
     def test_security_marker_defined(self):
         """pytest.ini must define 'security' marker."""
-        ini_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "pytest.ini"
-        )
+        ini_path = os.path.join(os.path.dirname(__file__), "..", "..", "pytest.ini")
         with open(ini_path) as f:
             content = f.read()
 
@@ -144,8 +136,12 @@ class TestNginxSecurityHeaders:
     def _read_nginx_conf(self):
         nginx_path = os.path.join(
             os.path.dirname(__file__),
-            "..", "..", "..",
-            "infrastructure", "docker", "nginx.conf"
+            "..",
+            "..",
+            "..",
+            "infrastructure",
+            "docker",
+            "nginx.conf",
         )
         with open(nginx_path) as f:
             return f.read()
@@ -180,8 +176,12 @@ class TestK8sImmutableImageTags:
     def _read_deployment(self):
         k8s_path = os.path.join(
             os.path.dirname(__file__),
-            "..", "..", "..",
-            "infrastructure", "k8s", "deployment.yaml"
+            "..",
+            "..",
+            "..",
+            "infrastructure",
+            "k8s",
+            "deployment.yaml",
         )
         with open(k8s_path) as f:
             return f.read()
@@ -189,13 +189,13 @@ class TestK8sImmutableImageTags:
     def test_no_latest_tag(self):
         """K8s deployment must NOT use :latest tag."""
         content = self._read_deployment()
-        assert ":latest" not in content, (
-            "K8s deployment still uses :latest tag. Use immutable tags."
-        )
+        assert (
+            ":latest" not in content
+        ), "K8s deployment still uses :latest tag. Use immutable tags."
 
     def test_image_pull_policy_not_always(self):
         """imagePullPolicy should be IfNotPresent for immutable tags."""
         content = self._read_deployment()
-        assert "imagePullPolicy: Always" not in content, (
-            "imagePullPolicy should be IfNotPresent for immutable tags"
-        )
+        assert (
+            "imagePullPolicy: Always" not in content
+        ), "imagePullPolicy should be IfNotPresent for immutable tags"

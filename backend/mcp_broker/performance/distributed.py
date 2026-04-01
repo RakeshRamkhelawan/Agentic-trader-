@@ -147,7 +147,7 @@ class SimpleBacktestRunner:
             "errors": errors,
             "performance": {
                 "total_time_seconds": total_time,
-                "symbols_per_second": len(symbols) / total_time if total_time > 0 else 0,
+                "symbols_per_second": (len(symbols) / total_time if total_time > 0 else 0),
             },
         }
 

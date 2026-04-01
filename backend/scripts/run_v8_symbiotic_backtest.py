@@ -410,7 +410,9 @@ class TechnicalAnalyzer:
             minus_dm = max(low_diff, 0) if low_diff > high_diff else 0
 
             tr = max(
-                highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])
+                highs[i] - lows[i],
+                abs(highs[i] - closes[i - 1]),
+                abs(lows[i] - closes[i - 1]),
             )
 
             plus_dms.append(plus_dm)
@@ -646,9 +648,9 @@ class EtherAgent(ElementalAgent):
             )
 
         # Calculate signal coherence (agreement)
-        bullish_signals = [s for s in signals if s.strength > 0.3]
-        bearish_signals = [s for s in signals if s.strength < -0.3]
-        neutral_signals = [s for s in signals if abs(s.strength) <= 0.3]
+        _bullish_signals = [s for s in signals if s.strength > 0.3]
+        _bearish_signals = [s for s in signals if s.strength < -0.3]
+        _neutral_signals = [s for s in signals if abs(s.strength) <= 0.3]
 
         total_confidence = sum(s.confidence for s in signals)
 
@@ -745,7 +747,11 @@ class EtherAgent(ElementalAgent):
         )
 
     def _detect_maya(
-        self, signals: List[AgentSignal], market: MarketState, coherence: float, guna: GunaVector
+        self,
+        signals: List[AgentSignal],
+        market: MarketState,
+        coherence: float,
+        guna: GunaVector,
     ) -> bool:
         """
         Viveka (Discrimination): Detect if signal is Maya (illusion/noise)
@@ -1163,7 +1169,12 @@ class CollectiveConsciousness:
         self.water = WaterAgent()
         self.earth = EarthAgent()
 
-        self.agents = [self.air, self.fire, self.water, self.earth]  # Ether is orchestrator
+        self.agents = [
+            self.air,
+            self.fire,
+            self.water,
+            self.earth,
+        ]  # Ether is orchestrator
 
         # Consciousness state
         self.collective_guna = GunaVector()
@@ -1319,7 +1330,12 @@ class SymbioticRiskManager:
 
     def add_position(self, symbol: str, sector: str, side: str, size: float, risk: float):
         """Track new position"""
-        self.active_positions[symbol] = {"sector": sector, "side": side, "size": size, "risk": risk}
+        self.active_positions[symbol] = {
+            "sector": sector,
+            "side": side,
+            "size": size,
+            "risk": risk,
+        }
         self.sector_exposure[sector] = self.sector_exposure.get(sector, 0) + 1
         self.total_exposure += size
 
@@ -1359,7 +1375,12 @@ class Position:
         self.decision_metadata = {}
 
     def open(
-        self, side: str, size_usd: float, price: float, atr: float, decision: CollectiveDecision
+        self,
+        side: str,
+        size_usd: float,
+        price: float,
+        atr: float,
+        decision: CollectiveDecision,
     ):
         """Open new position with symbiotic context"""
         cost_pct = TRANSACTION_FEE + SLIPPAGE
@@ -1662,7 +1683,11 @@ def run_v8_symbiotic_backtest():
                     if pos_size >= 200:
                         side = "buy" if decision.action == ActionType.BUY else "sell"
                         cost = position.open(
-                            side, pos_size, market_state.price, market_state.atr, decision
+                            side,
+                            pos_size,
+                            market_state.price,
+                            market_state.atr,
+                            decision,
                         )
                         capital -= cost
 

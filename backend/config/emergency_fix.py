@@ -54,7 +54,10 @@ def apply_emergency_fix(meta_orchestrator):
     print(f"[EMERGENCY] Weights reset: {FIXED_WEIGHTS}")
 
     # Reset thresholds
-    meta_orchestrator.config = {**getattr(meta_orchestrator, "config", {}), **EMERGENCY_THRESHOLDS}
+    meta_orchestrator.config = {
+        **getattr(meta_orchestrator, "config", {}),
+        **EMERGENCY_THRESHOLDS,
+    }
     print(f"[EMERGENCY] Thresholds lowered: {EMERGENCY_THRESHOLDS}")
 
     # Reset agent Chitta biases

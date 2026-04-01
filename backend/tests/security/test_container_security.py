@@ -75,25 +75,21 @@ class TestDockerfileSecurity:
     def test_path_uses_appuser(self):
         """PATH must reference /home/appuser/.local/bin, not /root/.local/bin."""
         content = self._read_dockerfile()
-        assert "/home/appuser/.local/bin" in content, (
-            "Dockerfile PATH does not reference appuser home directory"
-        )
-        assert "/root/.local/bin" not in content, (
-            "Dockerfile PATH still references /root/.local/bin"
-        )
+        assert (
+            "/home/appuser/.local/bin" in content
+        ), "Dockerfile PATH does not reference appuser home directory"
+        assert (
+            "/root/.local/bin" not in content
+        ), "Dockerfile PATH still references /root/.local/bin"
 
     def test_runs_as_non_root(self):
         """Dockerfile must switch to non-root user before CMD."""
         content = self._read_dockerfile()
-        assert "USER appuser" in content, (
-            "Dockerfile does not switch to non-root user"
-        )
+        assert "USER appuser" in content, "Dockerfile does not switch to non-root user"
         # USER must come before CMD
         user_pos = content.index("USER appuser")
         cmd_pos = content.index("CMD")
-        assert user_pos < cmd_pos, (
-            "USER appuser must come before CMD in Dockerfile"
-        )
+        assert user_pos < cmd_pos, "USER appuser must come before CMD in Dockerfile"
 
     def test_healthcheck_defined(self):
         """Dockerfile must define a HEALTHCHECK."""
@@ -116,9 +112,9 @@ class TestDockerComposePortBindings:
             content = f.read()
         # Find postgres port binding
         if "5432:5432" in content:
-            assert "127.0.0.1:5432:5432" in content, (
-                "PostgreSQL port is exposed on all interfaces (0.0.0.0)"
-            )
+            assert (
+                "127.0.0.1:5432:5432" in content
+            ), "PostgreSQL port is exposed on all interfaces (0.0.0.0)"
 
     def test_postgres_bound_to_localhost_in_base(self):
         """PostgreSQL port must be bound to 127.0.0.1 in docker-compose.yml."""
@@ -131,9 +127,9 @@ class TestDockerComposePortBindings:
         with open(path, "r", encoding="utf-8") as f:
             content = f.read()
         if "5432:5432" in content:
-            assert "127.0.0.1:5432:5432" in content, (
-                "PostgreSQL port is exposed on all interfaces in docker-compose.yml"
-            )
+            assert (
+                "127.0.0.1:5432:5432" in content
+            ), "PostgreSQL port is exposed on all interfaces in docker-compose.yml"
 
     def test_no_hardcoded_db_password_in_compose(self):
         """Docker Compose must not have hardcoded DB passwords."""
@@ -146,6 +142,6 @@ class TestDockerComposePortBindings:
                 continue
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
-            assert "trading_secure" not in content, (
-                f"Hardcoded password 'trading_secure' found in {filename}"
-            )
+            assert (
+                "trading_secure" not in content
+            ), f"Hardcoded password 'trading_secure' found in {filename}"

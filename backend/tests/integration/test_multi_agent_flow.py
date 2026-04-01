@@ -69,7 +69,9 @@ async def test_news_triggers_trade_flow():
     orchestrator = MockOrchestrator(risk, portfolio)
 
     # 2. Research Agent (Injecteer de message bus)
-    research_agent = ResearchAgent(memory_agent=memory, message_bus=orchestrator.handle_message)
+    research_agent = ResearchAgent(
+        memory_agent=memory, message_bus=orchestrator.handle_message
+    )
 
     # Simulatie van analyse resultaat
     analysis = {
@@ -106,7 +108,9 @@ async def test_risk_blocks_news_trade():
     risk = RiskValidator(max_order_size=10.0, max_daily_loss=500.0)
     orchestrator = MockOrchestrator(risk, portfolio)
 
-    research_agent = ResearchAgent(memory_agent=memory, message_bus=orchestrator.handle_message)
+    research_agent = ResearchAgent(
+        memory_agent=memory, message_bus=orchestrator.handle_message
+    )
 
     analysis = {"summary": "Super Bullish News", "sentiment": 0.9, "impact": 10}
 

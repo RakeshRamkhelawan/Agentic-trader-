@@ -35,8 +35,7 @@ from dataclasses import dataclass as _dataclass
 from backend.core.mcts.planner import StrategicMCTSPlanner
 
 # v8 Imports (existing, unmodified)
-from backend.scripts.run_v8_symbiotic_backtest import run_v8_symbiotic_backtest  # Baseline
-from backend.scripts.run_v8_symbiotic_backtest import (
+from backend.scripts.run_v8_symbiotic_backtest import (  # Baseline
     INITIAL_CAPITAL,
     SYMBOL_MAP,
     UNIVERSE_GROUPS,
@@ -47,6 +46,7 @@ from backend.scripts.run_v8_symbiotic_backtest import (
     SymbioticRiskManager,
     TechnicalAnalyzer,
     download_data,
+    run_v8_symbiotic_backtest,
 )
 
 
@@ -70,7 +70,12 @@ class StrategicPositionSizer:
         self.base_risk = base_risk
 
     def calculate_size(
-        self, capital: float, decision: dict, atr: float, price: float, size_mult: float = 1.0
+        self,
+        capital: float,
+        decision: dict,
+        atr: float,
+        price: float,
+        size_mult: float = 1.0,
     ) -> float:
         """Calculate position size with strategic multiplier"""
         base_risk = capital * self.base_risk
@@ -388,7 +393,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     results = run_v9_integrated_backtest(
-        use_strategic=(args.mode == "strategic"), mcts_sims=args.mcts_sims, lookahead=args.lookahead
+        use_strategic=(args.mode == "strategic"),
+        mcts_sims=args.mcts_sims,
+        lookahead=args.lookahead,
     )
 
     # Save results

@@ -117,6 +117,6 @@ class TestDockerComposeRequiresSecrets:
         with open(compose_path, "r", encoding="utf-8") as f:
             content = f.read()
         # Must use required env var syntax
-        assert "POSTGRES_PASSWORD:?" in content or "POSTGRES_PASSWORD:-}" not in content, (
-            "docker-compose.full.yml does not enforce POSTGRES_PASSWORD as required"
-        )
+        assert (
+            "POSTGRES_PASSWORD:?" in content or "POSTGRES_PASSWORD:-}" not in content
+        ), "docker-compose.full.yml does not enforce POSTGRES_PASSWORD as required"

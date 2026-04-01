@@ -173,7 +173,12 @@ class EpisodicMemory:
         recent = [ep for ep in self.episodes if ep.timestamp > cutoff and ep.outcome is not None]
 
         if not recent:
-            return {"total_trades": 0, "win_rate": 0.0, "avg_pnl": 0.0, "total_pnl": 0.0}
+            return {
+                "total_trades": 0,
+                "win_rate": 0.0,
+                "avg_pnl": 0.0,
+                "total_pnl": 0.0,
+            }
 
         wins = sum(1 for ep in recent if ep.outcome == "success")
         total_pnl = sum(ep.pnl for ep in recent if ep.pnl is not None)

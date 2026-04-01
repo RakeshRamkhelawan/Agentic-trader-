@@ -142,7 +142,10 @@ class RiskManagerAgent(BaseAgent):
             )
 
     async def _assess_with_validator(
-        self, proposal: TradeProposal, current_regime: MarketRegime, current_position_size: float
+        self,
+        proposal: TradeProposal,
+        current_regime: MarketRegime,
+        current_position_size: float,
     ) -> RiskAssessment:
         """
         Assess risk using OrderRiskValidator.
@@ -283,7 +286,10 @@ class RiskManagerAgent(BaseAgent):
         return max(0.0, min(1.0, win_prob))
 
     async def _legacy_assess_risk(
-        self, proposal: TradeProposal, current_regime: MarketRegime, current_position_size: float
+        self,
+        proposal: TradeProposal,
+        current_regime: MarketRegime,
+        current_position_size: float,
     ) -> RiskAssessment:
         """Legacy risk assessment (without OrderRiskValidator)."""
         violations = []

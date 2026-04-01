@@ -4,7 +4,6 @@ Unit tests for OODA type definitions.
 Tests validation, immutability, and field constraints.
 """
 
-
 import pytest
 from pydantic import ValidationError
 
@@ -60,7 +59,10 @@ class TestObservation:
         """Sentiment must be in [-1, 1]."""
         with pytest.raises(ValidationError):
             Observation(
-                symbol="BTC/USDT", price=50000, volume=100, social_sentiment=1.5  # Out of bounds
+                symbol="BTC/USDT",
+                price=50000,
+                volume=100,
+                social_sentiment=1.5,  # Out of bounds
             )
 
 

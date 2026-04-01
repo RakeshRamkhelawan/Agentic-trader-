@@ -117,5 +117,8 @@ def vedastro_retry(func: Callable[..., T]) -> Callable[..., T]:
 def elemental_retry(func: Callable[..., T]) -> Callable[..., T]:
     """Retry decorator optimized for Elemental calculations."""
     return retry(
-        max_attempts=2, initial_delay_ms=50, backoff_factor=1.5, retryable_exceptions=(Exception,)
+        max_attempts=2,
+        initial_delay_ms=50,
+        backoff_factor=1.5,
+        retryable_exceptions=(Exception,),
     )(func)

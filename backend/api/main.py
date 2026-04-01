@@ -200,7 +200,7 @@ async def get_config():
         "auth": {
             "enabled": not settings.AUTH_DISABLED,
             "domain": settings.AUTH0_DOMAIN if settings.AUTH0_DOMAIN else None,
-            "audience": settings.AUTH0_API_AUDIENCE if settings.AUTH0_API_AUDIENCE else None,
+            "audience": (settings.AUTH0_API_AUDIENCE if settings.AUTH0_API_AUDIENCE else None),
         },
         "features": {
             "websocket_public": True,

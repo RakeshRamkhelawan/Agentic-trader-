@@ -147,7 +147,8 @@ class EternalSoulService:
         # Prepare data for SystemIdentity cycle
         price_array = np.array(self.price_history, dtype=np.float32)
         volume_array = np.array(
-            [market_ctx.get("volume_ratio", 1.0)] * len(self.price_history), dtype=np.float32
+            [market_ctx.get("volume_ratio", 1.0)] * len(self.price_history),
+            dtype=np.float32,
         )
 
         system_cycle = await self.system_identity.process_market_cycle(

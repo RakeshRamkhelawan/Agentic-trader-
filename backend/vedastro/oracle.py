@@ -327,7 +327,7 @@ class XGBoostOracle:
             "initialized": self.model is not None,
             "confidence_threshold": self.confidence_threshold,
             "min_samples": self.min_samples,
-            "feature_count": len(self.feature_importance) if self.feature_importance else 0,
+            "feature_count": (len(self.feature_importance) if self.feature_importance else 0),
             "training_runs": len(self.training_history),
             "best_val_accuracy": max(
                 (h.get("val_accuracy", 0) for h in self.training_history), default=0

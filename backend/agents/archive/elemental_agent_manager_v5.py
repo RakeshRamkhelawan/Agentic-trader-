@@ -528,7 +528,7 @@ class ElementalAgentManagerV5:
             "ema_20": round(ema_20, 2),
             "ema_50": round(ema_50, 2),
             "volatility_pct": round(volatility, 2),
-            "trend": "bullish" if trend_bullish else "bearish" if trend_bearish else "neutral",
+            "trend": ("bullish" if trend_bullish else "bearish" if trend_bearish else "neutral"),
         }
 
         return AirSignal(

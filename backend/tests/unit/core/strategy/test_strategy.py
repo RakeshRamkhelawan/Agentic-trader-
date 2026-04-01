@@ -3,7 +3,11 @@ import pandas as pd
 import pytest
 
 from backend.core.strategy.llm_analyst import LLMAnalyst
-from backend.core.strategy.pattern_detector import PatternDetector, PatternName, SignalType
+from backend.core.strategy.pattern_detector import (
+    PatternDetector,
+    PatternName,
+    SignalType,
+)
 
 # Try to import dasha_strategy_map components, skip tests if not available
 try:
@@ -12,6 +16,7 @@ try:
         RiskProfile,
         TimeHorizon,
     )
+
     DASHA_STRATEGY_AVAILABLE = True
 except ImportError:
     DASHA_STRATEGY_AVAILABLE = False
@@ -19,7 +24,7 @@ except ImportError:
 
 pytestmark = pytest.mark.skipif(
     not DASHA_STRATEGY_AVAILABLE,
-    reason="DashaStrategyMap not fully implemented (AssetPreference missing)"
+    reason="DashaStrategyMap not fully implemented (AssetPreference missing)",
 )
 
 
@@ -77,11 +82,25 @@ class TestPatternDetector:
 
     def test_detect_head_and_shoulders(self):
         # Create H&S pattern data
-        data = pd.Series([
-            100, 105, 110, 105, 100,  # Left shoulder
-            100, 115, 120, 115, 100,  # Head
-            100, 105, 110, 105, 95,   # Right shoulder + breakdown
-        ])
+        data = pd.Series(
+            [
+                100,
+                105,
+                110,
+                105,
+                100,  # Left shoulder
+                100,
+                115,
+                120,
+                115,
+                100,  # Head
+                100,
+                105,
+                110,
+                105,
+                95,  # Right shoulder + breakdown
+            ]
+        )
 
         detector = PatternDetector(lookback=15)
         result = detector.detect(data, symbol="TEST")
@@ -91,11 +110,25 @@ class TestPatternDetector:
         assert result.confidence > 0.7
 
     def test_detect_double_top(self):
-        data = pd.Series([
-            100, 110, 120, 115, 110,  # First peak
-            112, 108, 112, 118, 120,  # Second peak (similar height)
-            115, 110, 105, 100, 95,   # Breakdown
-        ])
+        data = pd.Series(
+            [
+                100,
+                110,
+                120,
+                115,
+                110,  # First peak
+                112,
+                108,
+                112,
+                118,
+                120,  # Second peak (similar height)
+                115,
+                110,
+                105,
+                100,
+                95,  # Breakdown
+            ]
+        )
 
         detector = PatternDetector(lookback=15)
         result = detector.detect(data, symbol="TEST")
@@ -104,11 +137,25 @@ class TestPatternDetector:
         assert result.signal == SignalType.SELL
 
     def test_detect_double_bottom(self):
-        data = pd.Series([
-            100, 90, 80, 85, 90,   # First bottom
-            88, 92, 88, 82, 80,    # Second bottom (similar height)
-            85, 90, 95, 100, 105,  # Breakup
-        ])
+        data = pd.Series(
+            [
+                100,
+                90,
+                80,
+                85,
+                90,  # First bottom
+                88,
+                92,
+                88,
+                82,
+                80,  # Second bottom (similar height)
+                85,
+                90,
+                95,
+                100,
+                105,  # Breakup
+            ]
+        )
 
         detector = PatternDetector(lookback=15)
         result = detector.detect(data, symbol="TEST")
@@ -150,6 +197,7 @@ class TestLLMAnalyst:
                 Confidence: 85%
                 Risk Level: Medium
                 """
+
         return MockLLM()
 
     def test_analyze_market_conditions(self, mock_llm):

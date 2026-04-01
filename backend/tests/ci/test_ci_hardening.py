@@ -38,25 +38,25 @@ class TestCIConfigIntegrity:
         """backend-tests job must NOT use continue-on-error at job level."""
         config = self._load_ci_yml()
         job = config["jobs"].get("backend-tests", {})
-        assert job.get("continue-on-error") is not True, (
-            "backend-tests job has continue-on-error: true -- tests are non-blocking"
-        )
+        assert (
+            job.get("continue-on-error") is not True
+        ), "backend-tests job has continue-on-error: true -- tests are non-blocking"
 
     def test_security_scan_not_continue_on_error(self):
         """security-scan job must NOT use continue-on-error at job level."""
         config = self._load_ci_yml()
         job = config["jobs"].get("security-scan", {})
-        assert job.get("continue-on-error") is not True, (
-            "security-scan job has continue-on-error: true -- security is non-blocking"
-        )
+        assert (
+            job.get("continue-on-error") is not True
+        ), "security-scan job has continue-on-error: true -- security is non-blocking"
 
     def test_code_quality_not_continue_on_error(self):
         """code-quality job must NOT use continue-on-error at job level."""
         config = self._load_ci_yml()
         job = config["jobs"].get("code-quality", {})
-        assert job.get("continue-on-error") is not True, (
-            "code-quality job has continue-on-error: true -- quality is non-blocking"
-        )
+        assert (
+            job.get("continue-on-error") is not True
+        ), "code-quality job has continue-on-error: true -- quality is non-blocking"
 
     def test_deploy_requires_all_checks(self):
         """deploy job must depend on all test/security/quality jobs."""
@@ -65,18 +65,16 @@ class TestCIConfigIntegrity:
         needs = deploy.get("needs", [])
         required = {"backend-tests", "docker-build", "security-scan"}
         missing = required - set(needs)
-        assert len(missing) == 0, (
-            f"deploy job does not require: {missing}"
-        )
+        assert len(missing) == 0, f"deploy job does not require: {missing}"
 
     def test_deploy_requires_manual_trigger(self):
         """deploy job must require manual workflow_dispatch."""
         config = self._load_ci_yml()
         deploy = config["jobs"].get("deploy", {})
         if_condition = deploy.get("if", "")
-        assert "workflow_dispatch" in if_condition, (
-            "deploy job does not require manual trigger"
-        )
+        assert (
+            "workflow_dispatch" in if_condition
+        ), "deploy job does not require manual trigger"
 
     def test_coverage_threshold_set(self):
         """Backend tests must enforce a minimum coverage threshold."""
@@ -86,9 +84,9 @@ class TestCIConfigIntegrity:
         ci_path = os.path.join(project_root, ".github", "workflows", "ci.yml")
         with open(ci_path, "r", encoding="utf-8") as f:
             content = f.read()
-        assert "cov-fail-under" in content, (
-            "CI does not enforce a minimum coverage threshold"
-        )
+        assert (
+            "cov-fail-under" in content
+        ), "CI does not enforce a minimum coverage threshold"
 
     def test_no_emoji_in_ci_scripts(self):
         """CI scripts must not contain emoji (Windows compatibility)."""

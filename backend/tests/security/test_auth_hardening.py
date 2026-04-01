@@ -10,7 +10,6 @@ Verifies:
 Run with: pytest backend/tests/security/test_auth_hardening.py -v
 """
 
-
 import pytest
 
 
@@ -40,8 +39,7 @@ class TestSecurityHeadersPresent:
         """Referrer-Policy must be strict-origin-when-cross-origin."""
         response = await async_client.get("/api/v1/health")
         assert (
-            response.headers.get("referrer-policy")
-            == "strict-origin-when-cross-origin"
+            response.headers.get("referrer-policy") == "strict-origin-when-cross-origin"
         )
 
     @pytest.mark.asyncio
@@ -72,9 +70,7 @@ class TestConfigEndpointSecurity:
             pytest.skip("/api/v1/config not found")
         data = response.json()
         auth_section = data.get("auth", {})
-        assert "domain" not in auth_section, (
-            "/api/v1/config leaks Auth0 domain"
-        )
+        assert "domain" not in auth_section, "/api/v1/config leaks Auth0 domain"
 
     @pytest.mark.asyncio
     async def test_config_no_auth0_audience(self, async_client):
@@ -84,9 +80,7 @@ class TestConfigEndpointSecurity:
             pytest.skip("/api/v1/config not found")
         data = response.json()
         auth_section = data.get("auth", {})
-        assert "audience" not in auth_section, (
-            "/api/v1/config leaks Auth0 audience"
-        )
+        assert "audience" not in auth_section, "/api/v1/config leaks Auth0 audience"
 
     @pytest.mark.asyncio
     async def test_config_no_client_secret(self, async_client):
