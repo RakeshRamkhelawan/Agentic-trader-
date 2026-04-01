@@ -155,6 +155,12 @@ class Settings(BaseSettings):
     BITVAVO_API_SECRET: str | None = None
     BITVAVO_SANDBOX: bool = False
 
+    # --- VEDASTRO CLOUD ---
+    VEDASTRO_API_KEY: str | None = Field(default=None, validation_alias="VEDASTRO_API_KEY")
+    VEDASTRO_MCP_URL: str = Field(
+        default="https://mcp.vedastro.org/api/mcp", validation_alias="VEDASTRO_MCP_URL"
+    )
+
     # Pydantic Settings Config
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore", case_sensitive=True

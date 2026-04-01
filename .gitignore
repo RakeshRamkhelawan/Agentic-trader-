@@ -246,3 +246,6 @@ logs/*.log.*
 # ============================================================================
 installed_packages.txt
 project_files_list.txt
+
+# DATA
+data/historical/

@@ -39,8 +39,8 @@ class TenantAwareChromaClient:
     def __init__(
         self,
         tenant_id: str,
-        host: str = "localhost",
-        port: int = 8000,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
         persist_directory: Optional[str] = None,
     ):
         """
@@ -55,9 +55,11 @@ class TenantAwareChromaClient:
         if not tenant_id:
             raise TenantIsolationError("tenant_id is required")
 
+        from backend.core.config.settings import settings
+
         self.tenant_id = tenant_id
-        self.host = host
-        self.port = port
+        self.host = host or settings.CHROMA_HOST
+        self.port = port or settings.CHROMA_PORT
         self.persist_directory = persist_directory
         self._client = None
 
@@ -180,6 +182,24 @@ class MockCollection:
         self._documents = []
         self._metadatas = []
         self._ids = []
+
+    def upsert(
+        self,
+        documents: List[str],
+        metadatas: Optional[List[Dict]] = None,
+        ids: Optional[List[str]] = None,
+    ) -> None:
+        """Upsert documents to mock collection."""
+        self.add(documents, metadatas, ids)
+
+    def update(
+        self,
+        ids: List[str],
+        documents: Optional[List[str]] = None,
+        metadatas: Optional[List[Dict]] = None,
+    ) -> None:
+        """Update documents in mock collection."""
+        pass
 
     def add(
         self,

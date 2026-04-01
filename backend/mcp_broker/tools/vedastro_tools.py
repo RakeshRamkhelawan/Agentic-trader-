@@ -182,25 +182,37 @@ async def vedastro_get_dasha(symbol: str, ctx: Context = None) -> dict[str, Any]
             }
 
         # Calculate current Dasha
-        kundli = await orchestrator.vedastro.calculate_kundli(symbol, birth_date)
-        dasha = kundli.get("dasha", {})
+        # Check if Cloud API is available for better accuracy
+        from backend.vedastro.cloud_connector import VedAstroCloudConnector
+
+        cloud = VedAstroCloudConnector()
+
+        if cloud.api_key:
+            logger.info("Using VedAstro Cloud API for Dasha calculation")
+            dasha = await cloud.get_dasha(
+                birth_date, {"lat": settings.LATITUDE, "lon": settings.LONGITUDE}
+            )
+            # Map cloud format to local format
+            mahadasha = dasha.get("Mahadasha", "Unknown")
+            antardasha = dasha.get("Antardasha", "Unknown")
+            pratyantardasha = dasha.get("Pratyantardasha", "Unknown")
+            interpretation = dasha.get("Interpretation", _get_dasha_interpretation(mahadasha))
+        else:
+            logger.info("Using local Swiss Ephemeris for Dasha calculation")
+            kundli = await orchestrator.vedastro.calculate_kundli(symbol, birth_date)
+            dasha = kundli.get("dasha", {})
+            mahadasha = dasha.get("mahadasha_lord", "Unknown")
+            antardasha = dasha.get("antardasha_lord", "Unknown")
+            pratyantardasha = dasha.get("pratyantardasha_lord", "Unknown")
+            interpretation = _get_dasha_interpretation(mahadasha)
 
         return {
             "symbol": symbol,
-            "mahadasha": dasha.get("mahadasha_lord", "Unknown"),
-            "antardasha": dasha.get("antardasha_lord", "Unknown"),
-            "pratyantardasha": dasha.get("pratyantardasha_lord", "Unknown"),
-            "mahadasha_start": (
-                dasha.get("mahadasha_start", "").isoformat()
-                if hasattr(dasha.get("mahadasha_start"), "isoformat")
-                else str(dasha.get("mahadasha_start", ""))
-            ),
-            "mahadasha_end": (
-                dasha.get("mahadasha_end", "").isoformat()
-                if hasattr(dasha.get("mahadasha_end"), "isoformat")
-                else str(dasha.get("mahadasha_end", ""))
-            ),
-            "interpretation": _get_dasha_interpretation(dasha.get("mahadasha_lord", "")),
+            "mahadasha": mahadasha,
+            "antardasha": antardasha,
+            "pratyantardasha": pratyantardasha,
+            "interpretation": interpretation,
+            "mode": "cloud" if cloud.api_key else "local",
         }
 
     except Exception as e:
