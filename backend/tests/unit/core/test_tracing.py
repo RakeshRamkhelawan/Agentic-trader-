@@ -170,9 +170,7 @@ class TestTracingIntegration:
             mock_tracer.start_as_current_span.return_value.__enter__ = MagicMock(
                 return_value=mock_span
             )
-            mock_tracer.start_as_current_span.return_value.__exit__ = MagicMock(
-                return_value=False
-            )
+            mock_tracer.start_as_current_span.return_value.__exit__ = MagicMock(return_value=False)
             mock_get.return_value = mock_tracer
 
             # Simulate hot path operation

@@ -44,9 +44,7 @@ class TestAgentMessageTypes:
         from backend.schemas.agent_messages import AgentMessage
 
         with pytest.raises(ValueError, match="Invalid message type"):
-            AgentMessage(
-                source="test", target="all", type="TOTALLY_FAKE_TYPE", payload={}
-            )
+            AgentMessage(source="test", target="all", type="TOTALLY_FAKE_TYPE", payload={})
 
 
 # --- Test 2: UnifiedMarketEvent Validation ---
@@ -193,10 +191,7 @@ class TestResearchAgentTickProcessing:
     async def test_missing_price_is_ignored(self, agent):
         """Ticks without price data are gracefully ignored."""
         await agent.process_tick({"symbol": "BTC/USDT"})
-        assert (
-            not hasattr(agent, "_price_history")
-            or "BTC/USDT" not in agent._price_history
-        )
+        assert not hasattr(agent, "_price_history") or "BTC/USDT" not in agent._price_history
 
     @pytest.mark.asyncio
     async def test_multiple_symbols_tracked_independently(self, agent):

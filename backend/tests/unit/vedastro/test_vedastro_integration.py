@@ -113,9 +113,7 @@ class TestFeatureEngine:
         features.malefic_aspects = 0
         features.tattva_coherence = 0.8
 
-        score = engine._calculate_bullish_score(
-            features, {"exalted_planets": ["Jupiter"]}
-        )
+        score = engine._calculate_bullish_score(features, {"exalted_planets": ["Jupiter"]})
 
         assert score > 0.5  # Should be bullish
 

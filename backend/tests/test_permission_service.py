@@ -129,9 +129,7 @@ class TestPermissionService:
 
         # Log 3 changes
         await service.log_mode_change("admin", "auto", "notify_only", "Test 1")
-        await service.log_mode_change(
-            "operator", "notify_only", "notify_only", "Test 2"
-        )
+        await service.log_mode_change("operator", "notify_only", "notify_only", "Test 2")
         await service.log_mode_change("admin", "notify_only", "auto", "Test 3")
 
         # Get all

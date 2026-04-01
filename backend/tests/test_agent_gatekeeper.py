@@ -12,15 +12,11 @@ def test_agent_gatekeeper_authorize_success():
 
     # Trader should have TRADE_EXECUTION
     assert (
-        gatekeeper.authorize(
-            "Trader", AgentRole.STRATEGIST, ToolPermission.GENERATE_STRATEGY
-        )
+        gatekeeper.authorize("Trader", AgentRole.STRATEGIST, ToolPermission.GENERATE_STRATEGY)
         is True
     )
     assert (
-        gatekeeper.authorize(
-            "Trader", AgentRole.STRATEGIST, ToolPermission.READ_MARKET_DATA
-        )
+        gatekeeper.authorize("Trader", AgentRole.STRATEGIST, ToolPermission.READ_MARKET_DATA)
         is True
     )
 
@@ -30,17 +26,13 @@ def test_agent_gatekeeper_authorize_denied():
 
     # DataScout should NOT have TRADE_EXECUTION
     assert (
-        gatekeeper.authorize(
-            "DataScout", AgentRole.OBSERVER, ToolPermission.TRADE_EXECUTION
-        )
+        gatekeeper.authorize("DataScout", AgentRole.OBSERVER, ToolPermission.TRADE_EXECUTION)
         is False
     )
 
     # Untrusted should have nothing
     assert (
-        gatekeeper.authorize(
-            "MaliciousAgent", AgentRole.UNTRUSTED, ToolPermission.READ_MARKET_DATA
-        )
+        gatekeeper.authorize("MaliciousAgent", AgentRole.UNTRUSTED, ToolPermission.READ_MARKET_DATA)
         is False
     )
 

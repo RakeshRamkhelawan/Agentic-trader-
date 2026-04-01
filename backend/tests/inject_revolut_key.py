@@ -18,9 +18,7 @@ async def inject():
 
         # Check if already exists
         res = await db.execute(
-            select(APIKey).where(
-                APIKey.user_id == user.id, APIKey.exchange == ExchangeType.REVOLUT
-            )
+            select(APIKey).where(APIKey.user_id == user.id, APIKey.exchange == ExchangeType.REVOLUT)
         )
         if res.scalars().first():
             print("Revolut key already exists for demo-tenant")

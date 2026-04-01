@@ -108,9 +108,7 @@ class TestDockerComposeRequiresSecrets:
 
     def test_full_compose_requires_postgres_password(self):
         """docker-compose.full.yml must use ${POSTGRES_PASSWORD:?...} syntax."""
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         compose_path = os.path.join(project_root, "docker-compose.full.yml")
         if not os.path.exists(compose_path):
             pytest.skip("docker-compose.full.yml not found")

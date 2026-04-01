@@ -45,9 +45,7 @@ class TestAgentMCPFlow:
     @pytest.fixture
     def risk_agent(self, mock_tool_client):
         """Create RiskCheckAgent with mock client."""
-        agent = RiskCheckAgent(
-            agent_name="test_risk", tool_broker_url="http://localhost:8001"
-        )
+        agent = RiskCheckAgent(agent_name="test_risk", tool_broker_url="http://localhost:8001")
         agent.tool_broker = mock_tool_client
         return agent
 
@@ -87,9 +85,7 @@ class TestAgentMCPFlow:
         assert "strong_jupiter" in result["vedastro_data"]["primary_factors"]
 
     @pytest.mark.asyncio
-    async def test_vedastro_agent_low_confidence(
-        self, vedastro_agent, mock_tool_client
-    ):
+    async def test_vedastro_agent_low_confidence(self, vedastro_agent, mock_tool_client):
         """Test VedAstro agent holds when confidence is too low."""
         mock_tool_client.call_tool.return_value = {
             "success": True,
@@ -254,10 +250,7 @@ class TestAgentMCPFlow:
         # Should modify (reduce to ~10% max)
         assert result["action"] == "modify"
         assert result["approved_quantity"] < 0.5
-        assert (
-            "reduced" in result["reason"].lower()
-            or "capped" in result["reason"].lower()
-        )
+        assert "reduced" in result["reason"].lower() or "capped" in result["reason"].lower()
 
     @pytest.mark.asyncio
     async def test_risk_agent_reject_invalid_price(self, risk_agent, mock_tool_client):
@@ -297,9 +290,7 @@ class TestAgentMCPFlow:
             "trend": 0.6,  # Uptrend
         }
 
-        result = await elemental_agent.analyze_with_indicators(
-            "BTC", 45000.0, indicators
-        )
+        result = await elemental_agent.analyze_with_indicators("BTC", 45000.0, indicators)
 
         assert result["action"] == "buy"
         assert result["confidence"] > 0.5

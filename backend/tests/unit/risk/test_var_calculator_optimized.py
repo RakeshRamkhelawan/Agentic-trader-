@@ -179,9 +179,7 @@ class TestSharpeRatioCalculation:
 
     def test_sharpe_calculation(self, var_calculator, sample_returns):
         """Test Sharpe ratio calculation."""
-        sharpe = var_calculator.calculate_sharpe_ratio(
-            sample_returns, risk_free_rate=0.0
-        )
+        sharpe = var_calculator.calculate_sharpe_ratio(sample_returns, risk_free_rate=0.0)
 
         # For random returns centered at 0, Sharpe should be near 0
         assert abs(sharpe) < 1.0
@@ -337,9 +335,7 @@ class TestInputValidation:
 
     def test_validate_returns_invalid_type(self, var_calculator):
         """Test that invalid type raises error."""
-        with pytest.raises(
-            VaRCalculationError, match="must be pd.Series or np.ndarray"
-        ):
+        with pytest.raises(VaRCalculationError, match="must be pd.Series or np.ndarray"):
             var_calculator._validate_returns([0.01, -0.02, 0.015])
 
     def test_validate_returns_none(self, var_calculator):

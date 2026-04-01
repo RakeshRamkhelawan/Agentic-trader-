@@ -91,9 +91,7 @@ class TestEndToEndFlow:
         Scenario: Strong Bull Market -> Buy Signal -> Risk Approved -> Executed.
         """
         # 1. Setup Agents
-        data_scout = DataScoutAgent(
-            data_source=mock_data_source, event_bus=mock_event_bus
-        )
+        data_scout = DataScoutAgent(data_source=mock_data_source, event_bus=mock_event_bus)
         analyst = AnalystAgent()
         trader = TraderAgent()
         # Fixed init arguments
@@ -162,9 +160,7 @@ class TestEndToEndFlow:
         """
         Scenario: Bear Market -> Sell Signal -> Risk Approved -> Notify Only (No Execution).
         """
-        data_scout = DataScoutAgent(
-            data_source=mock_data_source, event_bus=mock_event_bus
-        )
+        data_scout = DataScoutAgent(data_source=mock_data_source, event_bus=mock_event_bus)
         analyst = AnalystAgent()
         trader = TraderAgent()
         risk_manager = RiskManagerAgent()
@@ -210,10 +206,7 @@ class TestEndToEndFlow:
             assert result["risk_assessment"].decision == RiskDecision.APPROVE
 
             # Execution should be None or skipped
-            assert (
-                result["execution"] is None
-                or result["execution"].get("status") == "skipped"
-            )
+            assert result["execution"] is None or result["execution"].get("status") == "skipped"
             mock_order_executor.execute_trade.assert_not_called()
 
     @pytest.mark.asyncio
@@ -227,9 +220,7 @@ class TestEndToEndFlow:
         """
         Scenario: Bull Market -> Buy Signal -> Risk Rejected (Too Risky).
         """
-        data_scout = DataScoutAgent(
-            data_source=mock_data_source, event_bus=mock_event_bus
-        )
+        data_scout = DataScoutAgent(data_source=mock_data_source, event_bus=mock_event_bus)
         analyst = AnalystAgent()
         trader = TraderAgent()
         risk_manager = RiskManagerAgent(min_confidence=0.99, max_position_size=0.1)

@@ -109,9 +109,7 @@ class TestDataScoutPredictionEnrichment:
     async def test_happy_path_observe_includes_prediction_signals(self, data_scout):
         """Happy path: observe() method includes prediction signals."""
         # Mock ticker fetch
-        with patch.object(
-            data_scout, "_fetch_ticker", new_callable=AsyncMock
-        ) as mock_ticker:
+        with patch.object(data_scout, "_fetch_ticker", new_callable=AsyncMock) as mock_ticker:
             mock_ticker.return_value = {
                 "last": 50000.0,
                 "volume": 100.0,
@@ -185,9 +183,7 @@ class TestDataScoutPredictionEnrichment:
         """Unhappy path: Service failure returns empty list."""
         with patch("backend.agents.data_scout_agent.get_prediction_client") as mock_get:
             mock_client = AsyncMock()
-            mock_client.get_signals = AsyncMock(
-                side_effect=Exception("Connection failed")
-            )
+            mock_client.get_signals = AsyncMock(side_effect=Exception("Connection failed"))
             mock_get.return_value = mock_client
 
             signals = await data_scout._fetch_prediction_signals("BTC")
@@ -201,9 +197,7 @@ class TestDataScoutPredictionEnrichment:
 
         with patch("backend.agents.data_scout_agent.get_prediction_client") as mock_get:
             mock_client = AsyncMock()
-            mock_client.get_signals = AsyncMock(
-                side_effect=asyncio.TimeoutError("Request timeout")
-            )
+            mock_client.get_signals = AsyncMock(side_effect=asyncio.TimeoutError("Request timeout"))
             mock_get.return_value = mock_client
 
             signals = await data_scout._fetch_prediction_signals("BTC")
@@ -234,14 +228,10 @@ class TestDataScoutPredictionEnrichment:
             assert signals == []
 
     @pytest.mark.asyncio
-    async def test_unhappy_path_prediction_failure_does_not_break_observe(
-        self, data_scout
-    ):
+    async def test_unhappy_path_prediction_failure_does_not_break_observe(self, data_scout):
         """Unhappy path: Prediction service failure doesn't break observe."""
         # Mock ticker fetch (success)
-        with patch.object(
-            data_scout, "_fetch_ticker", new_callable=AsyncMock
-        ) as mock_ticker:
+        with patch.object(data_scout, "_fetch_ticker", new_callable=AsyncMock) as mock_ticker:
             mock_ticker.return_value = {
                 "last": 50000.0,
                 "volume": 100.0,

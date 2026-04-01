@@ -74,9 +74,7 @@ async def test_redis_bridge_e2e(redis_client, mock_ws_manager):
         assert call_args["symbol"] == "BTC/USDT"
         assert call_args["last"] == 50100.0
 
-        print(
-            "\n[SUCCESS] Event published to Redis and received by WebSocketManager mock!"
-        )
+        print("\n[SUCCESS] Event published to Redis and received by WebSocketManager mock!")
 
     finally:
         # Cleanup

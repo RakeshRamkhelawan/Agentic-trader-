@@ -149,9 +149,7 @@ class TestCognitiveBridge:
         bridge = CognitiveBridge(mock_system_identity)
 
         # Make SystemIdentity raise exception
-        mock_system_identity.process_market_cycle = AsyncMock(
-            side_effect=Exception("Core failure")
-        )
+        mock_system_identity.process_market_cycle = AsyncMock(side_effect=Exception("Core failure"))
 
         obs = Observation(symbol="BTC/USDT", price=50000, volume=100)
 

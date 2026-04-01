@@ -164,9 +164,7 @@ class TestPhaseAIntegration:
             # For now, we just verify it exists and can be created
             try:
 
-                with tempfile.NamedTemporaryFile(
-                    mode="w", suffix=".json", delete=False
-                ) as f:
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
                     config_path = f.name
                 ColdPathCoordinator(
                     config_path=config_path,

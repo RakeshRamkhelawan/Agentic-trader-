@@ -33,9 +33,7 @@ class TestSoulObserverHappy:
     @pytest.mark.asyncio
     async def test_observer_returns_all_layer_health(self, observer):
         """get_health() returns {soul: {status, last_update}, mind: {...}, body: {...}}."""
-        observer.redis_client.get = AsyncMock(
-            return_value=f'{{"timestamp": "{time.time()}"}}'
-        )
+        observer.redis_client.get = AsyncMock(return_value=f'{{"timestamp": "{time.time()}"}}')
 
         health = await observer.get_health()
         assert "soul" in health
@@ -91,9 +89,7 @@ class TestSoulObserverUnhappy:
 
         now = datetime.now(timezone.utc)
         two_min_ago = (now - timedelta(seconds=120)).isoformat()
-        observer.redis_client.get = AsyncMock(
-            return_value=json.dumps({"timestamp": two_min_ago})
-        )
+        observer.redis_client.get = AsyncMock(return_value=json.dumps({"timestamp": two_min_ago}))
 
         health = await observer.get_health()
         assert health["soul"]["status"] == "stale"
@@ -101,9 +97,7 @@ class TestSoulObserverUnhappy:
     @pytest.mark.asyncio
     async def test_observer_redis_unavailable_returns_unknown(self, observer):
         """Redis connection fails → status='unknown', no crash."""
-        observer.redis_client.get = AsyncMock(
-            side_effect=Exception("Connection refused")
-        )
+        observer.redis_client.get = AsyncMock(side_effect=Exception("Connection refused"))
 
         health = await observer.get_health()
         assert health["soul"]["status"] == "unknown"

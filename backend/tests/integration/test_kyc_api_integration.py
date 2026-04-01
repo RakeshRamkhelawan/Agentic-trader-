@@ -67,9 +67,7 @@ class TestKYCAPIIntegration:
 
         # When disabled, should accept but indicate it's disabled
         assert data["success"] is True
-        assert (
-            "disabled" in data["message"].lower() or "KYC submitted" in data["message"]
-        )
+        assert "disabled" in data["message"].lower() or "KYC submitted" in data["message"]
         assert data["status"] == "verified"
 
     async def test_kyc_submit_validation_error(self, async_client: AsyncClient):
@@ -110,9 +108,7 @@ class TestKYCAPIIntegration:
         assert data["success"] is True
         assert "disabled" in data["message"].lower()
 
-    async def test_kyc_document_upload_invalid_file_type(
-        self, async_client: AsyncClient
-    ):
+    async def test_kyc_document_upload_invalid_file_type(self, async_client: AsyncClient):
         """Test document upload with invalid file type."""
         files = {"id_front": ("test.txt", b"not an image", "text/plain")}
 
@@ -170,9 +166,7 @@ class TestKYCAPIIntegration:
         os.getenv("ENABLE_KYC", "false").lower() != "true",
         reason="KYC is disabled - set ENABLE_KYC=true to run this test",
     )
-    async def test_kyc_status_when_enabled(
-        self, async_client: AsyncClient, unique_email: str
-    ):
+    async def test_kyc_status_when_enabled(self, async_client: AsyncClient, unique_email: str):
         """Test KYC status when KYC is enabled (requires ENABLE_KYC=true)."""
         # This test only runs when KYC is explicitly enabled
         response = await async_client.get("/api/v1/kyc/status")
@@ -195,9 +189,7 @@ class TestKYCAPIIntegration:
         os.getenv("ENABLE_KYC", "false").lower() != "true",
         reason="KYC is disabled - set ENABLE_KYC=true to run this test",
     )
-    async def test_kyc_submit_when_enabled(
-        self, async_client: AsyncClient, unique_email: str
-    ):
+    async def test_kyc_submit_when_enabled(self, async_client: AsyncClient, unique_email: str):
         """Test KYC submission when KYC is enabled (requires ENABLE_KYC=true)."""
         kyc_data = {
             "first_name": "John",

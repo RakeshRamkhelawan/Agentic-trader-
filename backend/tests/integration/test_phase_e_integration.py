@@ -52,8 +52,7 @@ class TestPhaseEKarmaIntegration:
         # Trader agent should have different karma than risk agent
         # due to different outcomes
         assert (
-            karma_register.agent_karma["trader_agent"]
-            != karma_register.agent_karma["risk_agent"]
+            karma_register.agent_karma["trader_agent"] != karma_register.agent_karma["risk_agent"]
         )
 
     def test_karma_moving_average_convergence(self, karma_register):

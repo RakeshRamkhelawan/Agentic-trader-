@@ -21,21 +21,15 @@ class TestGitignoreIntegrity:
 
     def test_no_null_bytes(self):
         """Gitignore must not contain null bytes (corruption indicator)."""
-        gitignore_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", ".gitignore"
-        )
+        gitignore_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".gitignore")
         gitignore_path = os.path.normpath(gitignore_path)
         with open(gitignore_path, "rb") as f:
             content = f.read()
-        assert (
-            b"\x00" not in content
-        ), ".gitignore contains null bytes -- file is corrupt"
+        assert b"\x00" not in content, ".gitignore contains null bytes -- file is corrupt"
 
     def test_no_duplicate_lines(self):
         """Gitignore must not have fully duplicated blocks."""
-        gitignore_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", ".gitignore"
-        )
+        gitignore_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".gitignore")
         gitignore_path = os.path.normpath(gitignore_path)
         with open(gitignore_path, "r", encoding="utf-8") as f:
             lines = [
@@ -48,9 +42,7 @@ class TestGitignoreIntegrity:
 
     def test_env_files_ignored(self):
         """Gitignore must block .env files but allow .env.example."""
-        gitignore_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", ".gitignore"
-        )
+        gitignore_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".gitignore")
         gitignore_path = os.path.normpath(gitignore_path)
         with open(gitignore_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -60,9 +52,7 @@ class TestGitignoreIntegrity:
 
     def test_pem_key_crt_ignored(self):
         """Gitignore must block .pem, .key, and .crt files."""
-        gitignore_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", ".gitignore"
-        )
+        gitignore_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".gitignore")
         gitignore_path = os.path.normpath(gitignore_path)
         with open(gitignore_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -114,9 +104,7 @@ class TestNoHardcodedSecrets:
 
     def test_env_example_no_real_secrets(self):
         """env.example must not contain real API keys or passwords."""
-        env_example_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", ".env.example"
-        )
+        env_example_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env.example")
         env_example_path = os.path.normpath(env_example_path)
         with open(env_example_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -134,9 +122,7 @@ class TestNoHardcodedSecrets:
 
     def test_docker_compose_no_hardcoded_passwords(self):
         """Docker Compose files must not have hardcoded passwords."""
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         forbidden_passwords = ["trading_secure", "admin123"]
         compose_files = [
             "docker-compose.yml",
@@ -160,9 +146,7 @@ class TestNoSecretsInRoot:
 
     def test_no_pem_in_root(self):
         """No .pem files should exist in the project root directory."""
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         pem_files = glob.glob(os.path.join(project_root, "*.pem"))
         assert (
             len(pem_files) == 0
@@ -170,9 +154,7 @@ class TestNoSecretsInRoot:
 
     def test_no_key_in_root(self):
         """No .key files should exist in the project root directory."""
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         key_files = glob.glob(os.path.join(project_root, "*.key"))
         assert (
             len(key_files) == 0

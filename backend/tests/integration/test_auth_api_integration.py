@@ -14,9 +14,7 @@ pytestmark = [pytest.mark.asyncio, pytest.mark.integration]
 class TestAuthAPIIntegration:
     """Full integration tests for Authentication API with real backend."""
 
-    async def test_register_new_user_success(
-        self, async_client: AsyncClient, unique_email: str
-    ):
+    async def test_register_new_user_success(self, async_client: AsyncClient, unique_email: str):
         """Test successful user registration with real database insert."""
         response = await async_client.post(
             "/api/v1/auth/register",
@@ -99,9 +97,7 @@ class TestAuthAPIIntegration:
         assert data["token_type"] == "bearer"
         assert data["user"]["email"] == unique_email
 
-    async def test_login_wrong_password_fails(
-        self, async_client: AsyncClient, unique_email: str
-    ):
+    async def test_login_wrong_password_fails(self, async_client: AsyncClient, unique_email: str):
         """Test login with wrong password returns 401."""
         # Register first
         await async_client.post(
@@ -135,9 +131,7 @@ class TestAuthAPIIntegration:
 
         assert response.status_code == 401
 
-    async def test_get_me_with_valid_token(
-        self, async_client: AsyncClient, unique_email: str
-    ):
+    async def test_get_me_with_valid_token(self, async_client: AsyncClient, unique_email: str):
         """Test /me endpoint with valid JWT token."""
         # Register and get token
         register_response = await async_client.post(
@@ -217,9 +211,7 @@ class TestAuthAPIIntegration:
 
         assert response.status_code == 422  # Validation error
 
-    async def test_complete_auth_flow(
-        self, async_client: AsyncClient, unique_email: str
-    ):
+    async def test_complete_auth_flow(self, async_client: AsyncClient, unique_email: str):
         """Test complete authentication flow: register -> login -> me -> token reuse."""
         password = "SecurePass123!"
 

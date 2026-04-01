@@ -299,9 +299,7 @@ class TestConfigSchemaValidation:
     def test_required_fields_enforced(self):
         """Config must have all required fields."""
         with pytest.raises(KeyError):
-            ConfigValidator.validate(
-                {"action": 1}
-            )  # Missing confidence, exploration_rate
+            ConfigValidator.validate({"action": 1})  # Missing confidence, exploration_rate
 
     def test_field_types_validated(self):
         """Config fields must have correct types."""
@@ -477,9 +475,7 @@ class TestFastConfigPerformance:
 
             # Float precision should be within 1%
             assert abs(restored["confidence"] - original["confidence"]) < 0.001
-            assert (
-                abs(restored["exploration_rate"] - original["exploration_rate"]) < 0.001
-            )
+            assert abs(restored["exploration_rate"] - original["exploration_rate"]) < 0.001
 
 
 if __name__ == "__main__":

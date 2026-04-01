@@ -679,10 +679,69 @@ async def inject_test_trades(count: int = 5):
             "injected": injected,
             "total_trades_now": _paper_trading_engine.stats["total_trades"],
         }
-
     except Exception as e:
         logger.error(f"Error injecting test trades: {e}")
         import traceback
 
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to inject: {str(e)}")
+
+
+# ============================================================================
+# EXECUTION GUARD - SAFETY ENDPOINTS (Taak 2.3)
+# ============================================================================
+
+
+class GuardStatus(BaseModel):
+    emergency_stop: bool
+    consecutive_losses: int
+    cooldown_active: bool
+    cooldown_until: str | None
+    daily_drawdown_pct: float
+
+
+@router.get("/paper-trading/guard/status", response_model=GuardStatus)
+async def get_guard_status():
+    """Get current safety status from ExecutionGuard."""
+    global _paper_trading_engine
+
+    if _paper_trading_engine is None or not hasattr(_paper_trading_engine, "guard"):
+        return GuardStatus(
+            emergency_stop=False,
+            consecutive_losses=0,
+            cooldown_active=False,
+            cooldown_until=None,
+            daily_drawdown_pct=0.0,
+        )
+
+    status = _paper_trading_engine.guard.get_status()
+    return GuardStatus(**status)
+
+
+@router.post("/paper-trading/guard/emergency-stop")
+async def trigger_emergency_stop(reason: str = "Manual trigger from API"):
+    """Manually trigger emergency stop."""
+    global _paper_trading_engine
+
+    if _paper_trading_engine is None or not hasattr(_paper_trading_engine, "guard"):
+        raise HTTPException(status_code=400, detail="Paper trading engine or guard not active")
+
+    _paper_trading_engine.guard.trigger_emergency_stop(reason)
+    logger.critical(f"🛑 EMERGENCY STOP triggered via API: {reason}")
+    return {"status": "success", "message": "Emergency stop triggered"}
+
+
+@router.post("/paper-trading/guard/reset")
+async def reset_guard():
+    """Reset ExecutionGuard state (admin only)."""
+    global _paper_trading_engine
+
+    if _paper_trading_engine is None or not hasattr(_paper_trading_engine, "guard"):
+        raise HTTPException(status_code=400, detail="Paper trading engine or guard not active")
+
+    _paper_trading_engine.guard._emergency_stop = False
+    _paper_trading_engine.guard.current_consecutive_losses = 0
+    _paper_trading_engine.guard._cooldown_until = None
+
+    logger.info("✅ ExecutionGuard RESET via API")
+    return {"status": "success", "message": "Guard reset"}

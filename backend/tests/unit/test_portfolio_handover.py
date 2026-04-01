@@ -10,9 +10,7 @@ from backend.agents.portfolio_manager_agent import PortfolioManagerAgent
 def mock_portfolio_manager():
     # Setup mock capabilities for PortfolioManagerAgent
     pm = PortfolioManagerAgent()
-    pm.get_tradable_universe = AsyncMock(
-        return_value=["BTC/EUR", "ETH/EUR", "UNKNOWN_COIN/EUR"]
-    )
+    pm.get_tradable_universe = AsyncMock(return_value=["BTC/EUR", "ETH/EUR", "UNKNOWN_COIN/EUR"])
     return pm
 
 

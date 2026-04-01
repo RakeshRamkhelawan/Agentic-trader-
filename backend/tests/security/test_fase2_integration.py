@@ -237,12 +237,6 @@ class TestFrontendConfigHardening:
             stripped = line.strip()
             if stripped.startswith("console.log(") and not stripped.startswith("//"):
                 # Check the preceding non-empty line is an if block
-                prev_lines = [
-                    ln.strip() for ln in lines[max(0, i - 5) : i - 1] if ln.strip()
-                ]
-                has_guard = any(
-                    "import.meta.env.DEV" in ln or "if (" in ln for ln in prev_lines
-                )
-                assert (
-                    has_guard
-                ), f"Line {i}: console.log not guarded by DEV check: {stripped}"
+                prev_lines = [ln.strip() for ln in lines[max(0, i - 5) : i - 1] if ln.strip()]
+                has_guard = any("import.meta.env.DEV" in ln or "if (" in ln for ln in prev_lines)
+                assert has_guard, f"Line {i}: console.log not guarded by DEV check: {stripped}"

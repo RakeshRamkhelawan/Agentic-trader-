@@ -212,9 +212,7 @@ class TestKYCAsync:
         """Happy path: Get status async"""
         from httpx import ASGITransport
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as ac:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             response = await ac.get("/api/v1/kyc/status")
 
         assert response.status_code == 200

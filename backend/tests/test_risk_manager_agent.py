@@ -21,9 +21,7 @@ class TestRiskManagerAgent:
     @pytest.mark.asyncio
     async def test_approve_valid_proposal(self, sample_proposal):
         """Happy path: Valid proposal approved."""
-        agent = RiskManagerAgent(
-            max_position_size=1.0, max_leverage=3.0, min_confidence=0.6
-        )
+        agent = RiskManagerAgent(max_position_size=1.0, max_leverage=3.0, min_confidence=0.6)
 
         assessment = await agent.assess_risk(
             proposal=sample_proposal,

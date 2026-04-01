@@ -86,9 +86,7 @@ class LiveBinanceDataTest:
         logger.info("")
 
         # Phase 1: OBSERVE - DataScout with LIVE Binance data
-        self.data_scout = DataScoutAgent(
-            data_source=self.ccxt_data_adapter
-        )  # <- LIVE DATA SOURCE
+        self.data_scout = DataScoutAgent(data_source=self.ccxt_data_adapter)  # <- LIVE DATA SOURCE
         logger.info("[SUCCESS] DataScout initialized (LIVE BINANCE DATA)")
 
         # Phase 2: ORIENT - Analyst
@@ -324,14 +322,10 @@ class LiveBinanceDataTest:
             self.orientation = await self.run_orient_phase(self.observation)
 
             # Phase 3: DECIDE
-            self.proposal = await self.run_decide_phase(
-                self.orientation, self.observation.price
-            )
+            self.proposal = await self.run_decide_phase(self.orientation, self.observation.price)
 
             # Phase 4: HARMONIZE
-            self.assessment = await self.run_harmonize_phase(
-                self.proposal, self.orientation.regime
-            )
+            self.assessment = await self.run_harmonize_phase(self.proposal, self.orientation.regime)
 
             # Phase 5: ACT (PAPER TRADING)
             self.outcome = await self.run_act_phase(self.proposal, self.assessment)
@@ -352,11 +346,7 @@ class LiveBinanceDataTest:
             logger.info("   Risk Decision: %s", self.assessment.decision.value)
             logger.info(
                 "   Paper Trade: %s",
-                (
-                    "Success"
-                    if self.outcome and self.outcome.success
-                    else "Skipped/Failed"
-                ),
+                ("Success" if self.outcome and self.outcome.success else "Skipped/Failed"),
             )
             logger.info("")
 

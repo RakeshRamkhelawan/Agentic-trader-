@@ -234,9 +234,7 @@ async def test_stale_intent_rejected_by_body():
         bridge.data_array[idx]["timestamp_ns"] = time.time_ns() - 10_000_000_000
 
         executor = ReflexExecutor(shm_name=name)
-        executor.bridge = ZeroCopyBridge(
-            create=False, shm_name=name, dtype_name="intent"
-        )
+        executor.bridge = ZeroCopyBridge(create=False, shm_name=name, dtype_name="intent")
 
         # Body should reject stale intent (> 500ms old)
         result = executor.read_intent("BTC/USD")

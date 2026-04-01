@@ -277,6 +277,16 @@ class PaperTradingDB:
         await self.session.commit()
         return analysis
 
+    async def save_analytics_batch(self, analytics_list: List[Dict[str, Any]]) -> None:
+        """Save multiple analytics records in a single transaction."""
+        if not analytics_list:
+            return
+
+        objects = [PaperTradingAnalytics(**data) for data in analytics_list if data]
+        self.session.add_all(objects)
+        await self.session.commit()
+        logger.debug(f"[DB] Saved {len(objects)} analytics records in batch")
+
     # ========================================================================
     # Agent Performance
     # ========================================================================

@@ -110,9 +110,7 @@ class TestIntegrationPipeline:
             decision.adjusted_size == 1.0
         ), "Pipeline Validation Failed: Guna Sizer (Sattva) should not reduce size."
 
-        print(
-            f"[DECIDE] Risk Approved: {decision.reason} | Size: {decision.adjusted_size}"
-        )
+        print(f"[DECIDE] Risk Approved: {decision.reason} | Size: {decision.adjusted_size}")
 
         # ============================================================================
         # 4. ACT (Execution)

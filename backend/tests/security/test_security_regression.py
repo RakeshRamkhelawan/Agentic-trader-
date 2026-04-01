@@ -270,9 +270,7 @@ class TestSecretManagement:
                 and "config" not in line.lower()
             ]
 
-            assert (
-                len(forbidden) == 0
-            ), f"Found potential hardcoded secrets: {forbidden}"
+            assert len(forbidden) == 0, f"Found potential hardcoded secrets: {forbidden}"
 
 
 class TestRateLimiting:

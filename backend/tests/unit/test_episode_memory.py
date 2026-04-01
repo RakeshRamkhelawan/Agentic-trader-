@@ -78,9 +78,7 @@ class TestCausalWeight:
             duration_ms=500,
             karma_score=0.8,
         )
-        weight = memory.get_causal_weight(
-            episode, current_regime="BULL", current_time=now
-        )
+        weight = memory.get_causal_weight(episode, current_regime="BULL", current_time=now)
         assert weight > 0.8
 
     def test_causal_weight_different_regime_low(self):
@@ -97,9 +95,7 @@ class TestCausalWeight:
             duration_ms=500,
             karma_score=0.8,
         )
-        weight = memory.get_causal_weight(
-            episode, current_regime="VOLATILE", current_time=now
-        )
+        weight = memory.get_causal_weight(episode, current_regime="VOLATILE", current_time=now)
         assert weight < 0.3
 
     def test_causal_weight_recent_higher_than_old(self):
@@ -126,9 +122,7 @@ class TestCausalWeight:
             duration_ms=500,
             karma_score=0.8,
         )
-        w_recent = memory.get_causal_weight(
-            recent, current_regime="BULL", current_time=now
-        )
+        w_recent = memory.get_causal_weight(recent, current_regime="BULL", current_time=now)
         w_old = memory.get_causal_weight(old, current_regime="BULL", current_time=now)
         assert w_recent > w_old
 

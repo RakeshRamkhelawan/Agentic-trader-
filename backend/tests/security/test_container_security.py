@@ -18,9 +18,7 @@ class TestDockerignoreCompleteness:
     """Verify .dockerignore blocks secrets and unnecessary files."""
 
     def _read_dockerignore(self):
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         path = os.path.join(project_root, ".dockerignore")
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
@@ -65,9 +63,7 @@ class TestDockerfileSecurity:
     """Verify Dockerfile follows security best practices."""
 
     def _read_dockerfile(self):
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         path = os.path.join(project_root, "Dockerfile")
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
@@ -102,9 +98,7 @@ class TestDockerComposePortBindings:
 
     def test_postgres_bound_to_localhost_in_full(self):
         """PostgreSQL port must be bound to 127.0.0.1 in docker-compose.full.yml."""
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         path = os.path.join(project_root, "docker-compose.full.yml")
         if not os.path.exists(path):
             pytest.skip("docker-compose.full.yml not found")
@@ -118,9 +112,7 @@ class TestDockerComposePortBindings:
 
     def test_postgres_bound_to_localhost_in_base(self):
         """PostgreSQL port must be bound to 127.0.0.1 in docker-compose.yml."""
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         path = os.path.join(project_root, "docker-compose.yml")
         if not os.path.exists(path):
             pytest.skip("docker-compose.yml not found")
@@ -133,9 +125,7 @@ class TestDockerComposePortBindings:
 
     def test_no_hardcoded_db_password_in_compose(self):
         """Docker Compose must not have hardcoded DB passwords."""
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         for filename in ["docker-compose.yml", "docker-compose.full.yml"]:
             path = os.path.join(project_root, filename)
             if not os.path.exists(path):

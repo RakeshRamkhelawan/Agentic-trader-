@@ -181,9 +181,7 @@ class TestWiringSchemas:
         )
 
         # Test UserProfile
-        profile = UserProfile(
-            first_name="John", last_name="Doe", email="john@example.com"
-        )
+        profile = UserProfile(first_name="John", last_name="Doe", email="john@example.com")
         assert profile.first_name == "John"
         assert profile.last_name == "Doe"
 

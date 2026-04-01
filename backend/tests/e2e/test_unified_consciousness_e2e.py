@@ -312,9 +312,7 @@ class TestUnifiedConsciousnessE2E:
             UnifiedStrategyRegistry,
         )
 
-        registry = UnifiedStrategyRegistry(
-            navagraha_service=unified_system["navagraha_service"]
-        )
+        registry = UnifiedStrategyRegistry(navagraha_service=unified_system["navagraha_service"])
 
         # Act
         strategy_id, strategy = await registry.get_strategy_for_current_dasha()
@@ -349,9 +347,7 @@ class TestUnifiedConsciousnessE2E:
 
         # Assert
         assert "trader_agent" in karma.agent_karma
-        assert (
-            karma.agent_karma["trader_agent"] > 0
-        )  # Positive karma for positive trade
+        assert karma.agent_karma["trader_agent"] > 0  # Positive karma for positive trade
 
     @pytest.mark.asyncio
     async def test_e2e_system_identity_updates(self, unified_system):

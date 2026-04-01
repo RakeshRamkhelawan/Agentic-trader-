@@ -134,15 +134,11 @@ class TestKarmaRegister:
         karma = KarmaRegister()
 
         # First positive outcome
-        outcome1 = TradeOutcome(
-            pnl_percent=0.10, drawdown_percent=0.01, execution_speed_ms=100.0
-        )
+        outcome1 = TradeOutcome(pnl_percent=0.10, drawdown_percent=0.01, execution_speed_ms=100.0)
         karma.register_feedback("test_agent", outcome1)
 
         # Then negative outcome
-        outcome2 = TradeOutcome(
-            pnl_percent=-0.05, drawdown_percent=0.01, execution_speed_ms=100.0
-        )
+        outcome2 = TradeOutcome(pnl_percent=-0.05, drawdown_percent=0.01, execution_speed_ms=100.0)
         new_karma = karma.register_feedback("test_agent", outcome2)
 
         # Assert - karma should be between the two outcomes
@@ -172,9 +168,7 @@ class TestParameterTuner:
 
         # Assert - params should stay stable with high karma
         assert new_params["risk_pct"] == current_params["risk_pct"]
-        assert (
-            new_params["confidence_threshold"] == current_params["confidence_threshold"]
-        )
+        assert new_params["confidence_threshold"] == current_params["confidence_threshold"]
 
     def test_tune_with_low_karma(self):
         """Test tuning met lage karma (exploratie)."""
@@ -187,9 +181,7 @@ class TestParameterTuner:
 
         # Assert - params should change with low karma
         assert new_params["risk_pct"] != current_params["risk_pct"]
-        assert (
-            new_params["confidence_threshold"] != current_params["confidence_threshold"]
-        )
+        assert new_params["confidence_threshold"] != current_params["confidence_threshold"]
 
 
 class TestSystemIdentityOutcomeUpdate:

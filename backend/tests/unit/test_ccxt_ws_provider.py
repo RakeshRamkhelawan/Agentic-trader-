@@ -204,9 +204,7 @@ class TestCCXTWSProvider:
 
             # Send data for all symbols
             for symbol in symbols:
-                await provider.inject_simulated_data(
-                    "ticker", symbol, {"last": 50000.0}
-                )
+                await provider.inject_simulated_data("ticker", symbol, {"last": 50000.0})
 
             await asyncio.sleep(0.1)
 
@@ -229,9 +227,7 @@ class TestCCXTWSProvider:
         When: 5 retries attempted and all fail
         Then: Raise ConnectionError with descriptive message
         """
-        with patch(
-            "ccxt.async_support.binance", side_effect=Exception("Connection refused")
-        ):
+        with patch("ccxt.async_support.binance", side_effect=Exception("Connection refused")):
             provider = CCXTWSProvider(
                 exchange_id="binance",
                 config=ConnectionConfig(max_retries=2, initial_backoff_ms=10),

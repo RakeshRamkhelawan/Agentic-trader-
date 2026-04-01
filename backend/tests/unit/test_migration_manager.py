@@ -13,9 +13,7 @@ from backend.storage.migrations.migration_manager import (
 def test_migration_fails_on_missing_directory():
     """Test dat de manager faalt als de migratie-map niet bestaat."""
     with pytest.raises(MigrationError, match="Migration directory not found"):
-        MigrationManager(
-            migration_dir="/path/that/does/not/exist", db_client=MagicMock()
-        )
+        MigrationManager(migration_dir="/path/that/does/not/exist", db_client=MagicMock())
 
 
 def test_migration_fails_on_invalid_sql_file():
@@ -27,12 +25,8 @@ def test_migration_fails_on_invalid_sql_file():
         with patch("os.path.isdir", return_value=True):
             with patch("os.listdir", return_value=["001_invalid.sql"]):
                 with patch("builtins.open", side_effect=OSError("Disk error")):
-                    manager = MigrationManager(
-                        migration_dir="/dummy/path", db_client=mock_db
-                    )
-                    with pytest.raises(
-                        MigrationError, match="Failed to read migration file"
-                    ):
+                    manager = MigrationManager(migration_dir="/dummy/path", db_client=mock_db)
+                    with pytest.raises(MigrationError, match="Failed to read migration file"):
                         manager.apply_migrations()
 
 
@@ -50,12 +44,8 @@ def test_migration_stops_on_db_error():
                         "CREATE TABLE test"
                     )
 
-                    manager = MigrationManager(
-                        migration_dir="/dummy/path", db_client=mock_db
-                    )
-                    with pytest.raises(
-                        MigrationError, match="Database error during migration"
-                    ):
+                    manager = MigrationManager(migration_dir="/dummy/path", db_client=mock_db)
+                    with pytest.raises(MigrationError, match="Database error during migration"):
                         manager.apply_migrations()
 
 
@@ -91,9 +81,7 @@ def test_apply_migrations_success():
                         "ALTER TABLE users ADD email;",
                     ]
 
-                    manager = MigrationManager(
-                        migration_dir="/dummy/path", db_client=mock_db
-                    )
+                    manager = MigrationManager(migration_dir="/dummy/path", db_client=mock_db)
                     applied_count = manager.apply_migrations()
 
                     assert applied_count == 2

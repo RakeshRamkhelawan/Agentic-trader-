@@ -47,9 +47,7 @@ def large_csv(tmp_path):
         dt = datetime(2023, 1, 1) + __import__("datetime").timedelta(hours=i)
         # Uptrend with noise
         price = base_price + i * 0.1 + np.random.randn() * 0.5
-        lines.append(
-            f"{dt.isoformat()},{price:.2f},{price+1:.2f},{price-1:.2f},{price:.2f},1000"
-        )
+        lines.append(f"{dt.isoformat()},{price:.2f},{price+1:.2f},{price-1:.2f},{price:.2f},1000")
 
     csv_file = tmp_path / "large_test.csv"
     csv_file.write_text("\n".join(lines))

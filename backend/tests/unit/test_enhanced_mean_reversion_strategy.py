@@ -12,9 +12,7 @@ from backend.core.market_data.models import EventType, UnifiedMarketEvent
 from backend.strategies.enhanced_mean_reversion import EnhancedMeanReversionStrategy
 
 
-def _make_tick(
-    price: float, symbol: str = "BTC/USD", volume: float = 100.0
-) -> UnifiedMarketEvent:
+def _make_tick(price: float, symbol: str = "BTC/USD", volume: float = 100.0) -> UnifiedMarketEvent:
     """Helper to create a UnifiedMarketEvent."""
     return UnifiedMarketEvent(
         event_type=EventType.TICKER,
@@ -151,9 +149,7 @@ class TestEnhancedMeanReversionSignals:
     @pytest.mark.asyncio
     async def test_no_signal_flat_market(self):
         """Geen signaal bij constante prijs (prijs binnen bands)."""
-        strategy = EnhancedMeanReversionStrategy(
-            {"cooldown_ticks": 0, "squeeze_threshold": 0.0}
-        )
+        strategy = EnhancedMeanReversionStrategy({"cooldown_ticks": 0, "squeeze_threshold": 0.0})
 
         for _ in range(50):
             tick = _make_tick(100.0)

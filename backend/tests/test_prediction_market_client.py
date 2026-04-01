@@ -23,9 +23,7 @@ class TestPredictionMarketClient:
     @pytest.fixture
     def client(self):
         """Create test client."""
-        return PredictionMarketClient(
-            base_url="http://test:8002", timeout=5.0, max_retries=2
-        )
+        return PredictionMarketClient(base_url="http://test:8002", timeout=5.0, max_retries=2)
 
     # =========================================================================
     # HAPPY PATH TESTS
@@ -101,9 +99,7 @@ class TestPredictionMarketClient:
             ]
         }
 
-        with patch.object(
-            client, "_request_with_retry", new_callable=AsyncMock
-        ) as mock:
+        with patch.object(client, "_request_with_retry", new_callable=AsyncMock) as mock:
             mock.return_value = MagicMock(json=lambda: mock_response_data)
 
             signals = await client.get_signals(limit=10, min_confidence=0.5)
@@ -116,12 +112,8 @@ class TestPredictionMarketClient:
     @pytest.mark.asyncio
     async def test_happy_path_run_analysis(self, client):
         """Happy path: run_analysis triggers job."""
-        with patch.object(
-            client, "_request_with_retry", new_callable=AsyncMock
-        ) as mock:
-            mock.return_value = MagicMock(
-                json=lambda: {"job_id": "job_456", "status": "queued"}
-            )
+        with patch.object(client, "_request_with_retry", new_callable=AsyncMock) as mock:
+            mock.return_value = MagicMock(json=lambda: {"job_id": "job_456", "status": "queued"})
 
             result = await client.run_analysis("maker_taker", market="kalshi")
 
@@ -131,9 +123,7 @@ class TestPredictionMarketClient:
     @pytest.mark.asyncio
     async def test_happy_path_get_analysis_status(self, client):
         """Happy path: get_analysis_status returns job status."""
-        with patch.object(
-            client, "_request_with_retry", new_callable=AsyncMock
-        ) as mock:
+        with patch.object(client, "_request_with_retry", new_callable=AsyncMock) as mock:
             mock.return_value = MagicMock(
                 json=lambda: {"job_id": "job_456", "status": "completed", "results": {}}
             )
@@ -146,9 +136,7 @@ class TestPredictionMarketClient:
     @pytest.mark.asyncio
     async def test_happy_path_get_market_summary(self, client):
         """Happy path: get_market_summary returns market data."""
-        with patch.object(
-            client, "_request_with_retry", new_callable=AsyncMock
-        ) as mock:
+        with patch.object(client, "_request_with_retry", new_callable=AsyncMock) as mock:
             mock.return_value = MagicMock(
                 json=lambda: {"market": "kalshi", "total_volume": 1000000}
             )
@@ -236,9 +224,7 @@ class TestPredictionMarketClient:
     @pytest.mark.asyncio
     async def test_unhappy_path_get_signals_api_error(self, client):
         """Unhappy path: get_signals handles API error."""
-        with patch.object(
-            client, "_request_with_retry", new_callable=AsyncMock
-        ) as mock:
+        with patch.object(client, "_request_with_retry", new_callable=AsyncMock) as mock:
             mock.side_effect = httpx.HTTPStatusError(
                 "500 Server Error", request=None, response=None
             )
@@ -281,9 +267,7 @@ class TestPredictionMarketClient:
             call_count += 1
             if call_count == 1:
                 raise httpx.TimeoutException("Timeout")
-            return MagicMock(
-                json=lambda: {"signals": []}, raise_for_status=lambda: None
-            )
+            return MagicMock(json=lambda: {"signals": []}, raise_for_status=lambda: None)
 
         with patch.object(client, "_get_client", new_callable=AsyncMock) as mock:
             mock_client = AsyncMock()

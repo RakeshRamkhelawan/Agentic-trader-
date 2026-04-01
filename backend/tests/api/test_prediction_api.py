@@ -142,9 +142,7 @@ class TestPredictionSignalsAPI:
         with patch("backend.api.prediction_api.get_prediction_client") as mock_get:
             mock_http_client = AsyncMock()
             mock_http_client.enabled = True
-            mock_http_client.get_signals = AsyncMock(
-                side_effect=Exception("Connection failed")
-            )
+            mock_http_client.get_signals = AsyncMock(side_effect=Exception("Connection failed"))
             mock_get.return_value = mock_http_client
 
             response = client.get("/api/v1/prediction/signals")
@@ -266,9 +264,7 @@ class TestPredictionHealthAPI:
             mock_http_client.enabled = True
             mock_http_client.base_url = "http://prediction:8002"
             mock_http_client._circuit_state = MagicMock(value="closed")
-            mock_http_client.health_check = AsyncMock(
-                return_value={"status": "healthy"}
-            )
+            mock_http_client.health_check = AsyncMock(return_value={"status": "healthy"})
             mock_get.return_value = mock_http_client
 
             response = client.get("/api/v1/prediction/health")
@@ -287,9 +283,7 @@ class TestPredictionHealthAPI:
             mock_http_client.enabled = True
             mock_http_client.base_url = "http://prediction:8002"
             mock_http_client._circuit_state = MagicMock(value="open")
-            mock_http_client.health_check = AsyncMock(
-                return_value={"status": "unhealthy"}
-            )
+            mock_http_client.health_check = AsyncMock(return_value={"status": "unhealthy"})
             mock_get.return_value = mock_http_client
 
             response = client.get("/api/v1/prediction/health")
@@ -307,9 +301,7 @@ class TestPredictionHealthAPI:
             mock_http_client.enabled = True
             mock_http_client.base_url = "http://prediction:8002"
             mock_http_client._circuit_state = MagicMock(value="half_open")
-            mock_http_client.health_check = AsyncMock(
-                side_effect=Exception("Connection refused")
-            )
+            mock_http_client.health_check = AsyncMock(side_effect=Exception("Connection refused"))
             mock_get.return_value = mock_http_client
 
             response = client.get("/api/v1/prediction/health")
@@ -384,7 +376,4 @@ class TestPredictionAPIDocumentation:
         """Happy path: Swagger docs are available."""
         response = client.get("/docs")
         assert response.status_code == 200
-        assert (
-            b"swagger" in response.content.lower()
-            or b"openapi" in response.content.lower()
-        )
+        assert b"swagger" in response.content.lower() or b"openapi" in response.content.lower()

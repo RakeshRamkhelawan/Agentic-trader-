@@ -43,9 +43,7 @@ class TestSecretsIntegration:
             "private_key",
         ]
         for keyword in secret_keywords:
-            assert (
-                keyword not in data_str
-            ), f"/api/v1/config leaks '{keyword}' in response"
+            assert keyword not in data_str, f"/api/v1/config leaks '{keyword}' in response"
 
     @pytest.mark.asyncio
     async def test_jwt_token_full_lifecycle(self):
@@ -89,9 +87,7 @@ class TestSecretsIntegration:
             tampered = token[:-1] + "A"
 
         result = handler.verify_access_token(tampered)
-        assert (
-            result is None
-        ), "Tampered token was accepted -- signature validation broken"
+        assert result is None, "Tampered token was accepted -- signature validation broken"
 
     @pytest.mark.asyncio
     async def test_settings_loads_without_insecure_defaults(self):
@@ -102,9 +98,7 @@ class TestSecretsIntegration:
         assert (
             jwt_key not in _INSECURE_DEFAULTS
         ), f"Settings loaded with insecure JWT default: {jwt_key[:10]}..."
-        assert (
-            len(jwt_key) >= 32
-        ), f"JWT_SECRET_KEY is only {len(jwt_key)} chars (minimum 32)"
+        assert len(jwt_key) >= 32, f"JWT_SECRET_KEY is only {len(jwt_key)} chars (minimum 32)"
 
     @pytest.mark.asyncio
     async def test_get_jwt_secret_returns_same_as_field(self):

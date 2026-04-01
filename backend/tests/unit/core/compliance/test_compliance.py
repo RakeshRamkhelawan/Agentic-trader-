@@ -31,9 +31,7 @@ class TestComplianceModule:
         metrics = PrometheusMetrics("test_service_compliance")
 
         # Increment business metric
-        metrics.trades_executed_total.labels(
-            strategy="dasha", agent="agni", status="filled"
-        ).inc()
+        metrics.trades_executed_total.labels(strategy="dasha", agent="agni", status="filled").inc()
 
         # Verify it updated (using private registry access for test)
         sample = metrics.trades_executed_total.collect()[0].samples[0]
@@ -77,9 +75,7 @@ class TestComplianceModule:
 
         # 2. No context
         mock_conn.reset_mock()
-        with patch(
-            "backend.core.database.get_current_tenant_optional", return_value=None
-        ):
+        with patch("backend.core.database.get_current_tenant_optional", return_value=None):
             receive_before_cursor_execute(mock_conn, None, None, None, None, None)
 
             # Should NOT have called execute (or handled gracefully)

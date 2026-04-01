@@ -26,6 +26,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from backend.execution.execution_guard import ExecutionGuard
+
 # Direct imports van tools (sneller dan MCP)
 from backend.execution.shadow_portfolio import ShadowPortfolioManager
 from backend.mcp_broker.tools.elemental_tools import (
@@ -125,6 +127,7 @@ class RealPaperTradingV18:
         self.use_database = use_database
         self.db: Optional[Any] = None
         self.db_session_id: Optional[int] = None
+        self._cycle_analytics = []  # Batch analytics storage
 
         # Chitta Memory integration
         self.use_chitta = use_database  # Use same flag for now
@@ -147,6 +150,10 @@ class RealPaperTradingV18:
         print(f"VedAstro Min Score: {self.config.min_vedastro_score}")
         print(f"Cycle Interval: {self.config.cycle_interval_seconds}s")
         print(f"Database: {'ENABLED' if use_database else 'DISABLED'}")
+
+        # Initialize Execution Guard (Taak 2.1)
+        self.guard = ExecutionGuard(initial_capital=initial_capital)
+        print("Execution Guard: READY (Daily Limit: 5%)")
         print()
 
     async def initialize(self):
@@ -309,7 +316,13 @@ class RealPaperTradingV18:
 
         try:
             while datetime.utcnow() < self.end_time and self.running:
-                # Check circuit breaker
+                # Check Execution Guard (Taak 2.2)
+                if self.guard.is_emergency():
+                    logger.critical("[GUARD] Emergency Stop detected! Shutting down loop.")
+                    self.running = False
+                    break
+
+                # Check internal manual circuit breaker
                 if self._circuit_breaker_active:
                     if datetime.utcnow() < self._circuit_breaker_until:
                         logger.info(f"[CIRCUIT BREAKER] Paused until {self._circuit_breaker_until}")
@@ -462,7 +475,25 @@ class RealPaperTradingV18:
         if trades_this_cycle > 0:
             logger.info(f"Cycle {self._cycle_count}: {trades_this_cycle} trades executed")
 
+        # Persist buffered analytics (Taak 1.2)
+        await self._persist_cycle_analytics()
+
         await self._broadcast_stats()
+
+    async def _persist_cycle_analytics(self):
+        """Batch save all analytics from the current cycle to the database."""
+        if not self.use_database or not self.db or not self._cycle_analytics:
+            return
+
+        try:
+            async with self.db:
+                await self.db.save_analytics_batch(self._cycle_analytics)
+            logger.debug(
+                f"[DB-BATCH] Cycle {self._cycle_count}: Persisted {len(self._cycle_analytics)} records"
+            )
+            self._cycle_analytics = []  # Clear for next cycle
+        except Exception as e:
+            logger.error(f"[DB-BATCH] Failed to persist analytics: {e}")
 
     async def _evaluate_entry(
         self, symbol: str, current_price: float, price_history: list[float]
@@ -868,6 +899,8 @@ class RealPaperTradingV18:
             # 7b. CHITTA EXPERIENCE ADJUSTMENT (Learning from past)
             # ============================================================
             chitta_adjustment = 0.0
+            chitta_threshold_adj = 0.0
+
             if self.use_chitta and self.chitta:
                 try:
                     # Get similar past experiences
@@ -880,27 +913,63 @@ class RealPaperTradingV18:
 
                     if similar_experiences:
                         # Calculate win rate from similar experiences
-                        wins = sum(1 for exp in similar_experiences if exp.is_win())
+                        wins = sum(
+                            1
+                            for exp in similar_experiences
+                            if hasattr(exp, "is_win") and exp.is_win()
+                        )
                         total = len(similar_experiences)
                         win_rate = wins / total if total > 0 else 0.5
+
+                        # Taak 3.1: Dynamic threshold adjustment
+                        if total >= 3:
+                            if win_rate < 0.40:
+                                chitta_threshold_adj = 0.05  # Raise threshold (be more cautious)
+                                logger.info(
+                                    f"[CHITTA] {symbol}: Raising threshold by 0.05 due to low win-rate ({win_rate:.1%})"
+                                )
+                            elif win_rate > 0.60:
+                                chitta_threshold_adj = -0.03  # Lower threshold (be more confident)
+                                logger.debug(
+                                    f"[CHITTA] {symbol}: Lowering threshold by 0.03 due to high win-rate ({win_rate:.1%})"
+                                )
 
                         # Adjust consensus based on past performance
                         # More wins = boost confidence, more losses = reduce confidence
                         confidence_factor = 0.8 + (win_rate * 0.4)  # 0.8 to 1.2
 
-                        # Scale adjustment based on number of samples
-                        confidence = min(1.0, total / 5)  # Max confidence at 5+ samples
-                        chitta_adjustment = (confidence_factor - 1.0) * confidence * 0.1
+                        # Scale adjustment based on samples
+                        sample_impact = min(1.0, total / 5)
+                        chitta_adjustment = (confidence_factor - 1.0) * sample_impact * 0.1
 
                         logger.debug(
-                            f"[CHITTA] {symbol}: Adjusted by {chitta_adjustment:+.3f} "
-                            f"(win rate: {win_rate:.1%}, samples: {total})"
+                            f"[CHITTA] {symbol}: Vote adj {chitta_adjustment:+.3f}, Threshold adj {chitta_threshold_adj:+.3f} "
+                            f"(WR: {win_rate:.1%}, n={total})"
                         )
                 except Exception as e:
-                    logger.warning(f"[CHITTA] Failed to get experiences: {e}")
+                    logger.warning(f"[CHITTA] Failed to adjust based on experiences: {e}")
 
-            # Apply Chitta adjustment
+            # Apply Chitta adjustments
             total_vote += chitta_adjustment
+            effective_threshold += chitta_threshold_adj
+
+            # ============================================================
+            # 7c. RAG PLAYBOOK INJECTION (Taak 3.2)
+            # ============================================================
+            rag_adjustment = 0.0
+            rag_context = ""
+
+            if self.use_rag and self.chroma_collection:
+                try:
+                    rag_adjustment, rag_context = await self._query_rag_playbook(symbol, regime)
+                    total_vote += rag_adjustment
+
+                    if abs(rag_adjustment) > 0.01:
+                        logger.info(
+                            f"[RAG] {symbol}: Adjusted by {rag_adjustment:+.3f} based on playbook: {rag_context[:50]}..."
+                        )
+                except Exception as e:
+                    logger.warning(f"[RAG] Failed to inject playbook context: {e}")
 
             # Bereken dominant agent (hoogste gewogen bijdrage)
             weighted_votes = {
@@ -1002,6 +1071,24 @@ class RealPaperTradingV18:
             # ============================================================
             # 8. EXECUTE TRADE - DIRECT CALL
             # ============================================================
+            # Check Execution Guard (Taak 2.2)
+            allowed, reason = self.guard.check_order(
+                symbol=symbol,
+                side="BUY",
+                size_eur=position_size,
+                current_portfolio_value=self.state.total_value,
+                open_positions_count=len(self.state.open_positions),
+            )
+
+            if not allowed:
+                analysis["decision"] = {
+                    "action": "GUARD_BLOCK",
+                    "reason": f"Execution Guard rejected: {reason}",
+                }
+                await self._log_analysis(analysis)
+                logger.warning(f"[GUARD] {symbol}: ORDER REJECTED - {reason}")
+                return False
+
             quantity = position_size / current_price
 
             result = await execution_execute_paper_trade(
@@ -1243,6 +1330,17 @@ class RealPaperTradingV18:
             # ============================================================
             # 5. EXIT CONSENSUS BEREKENEN
             # ============================================================
+            # Get regime for analytics and performance tracking
+            regime = "unknown"
+            if len(price_history) >= 20:
+                try:
+                    water_result = await elemental_water_regime_check(
+                        symbol=symbol, prices=price_history
+                    )
+                    regime = water_result.get("regime", "unknown")
+                except Exception as e:
+                    logger.warning(f"[EXIT-regime] {symbol}: Failed ({e})")
+
             # Earth heeft meer gewicht bij exits (40%) - kapitaalbescherming!
             # VedAstro heeft minder (25%) - mag adviseren maar niet blokkeren
             exit_consensus = (
@@ -1250,7 +1348,7 @@ class RealPaperTradingV18:
             )
 
             logger.info(
-                f"[EXIT-CONSENSUS] {symbol}: {exit_consensus:.2f} (E:{earth_exit_vote:.2f}|V:{vedastro_exit_vote:.2f}|F:{fire_exit_vote:.2f})"
+                f"[EXIT-CONSENSUS] {symbol}: {exit_consensus:.2f} (E:{earth_exit_vote:.2f}|V:{vedastro_exit_vote:.2f}|F:{fire_exit_vote:.2f}) | Regime: {regime}"
             )
 
             if exit_consensus < 0.4:  # Hogere drempel voor exit dan entry
@@ -1264,6 +1362,7 @@ class RealPaperTradingV18:
                 position_size,
                 reason_str,
                 is_hard_exit=False,
+                regime=regime,
             )
 
         except Exception as e:
@@ -1278,6 +1377,7 @@ class RealPaperTradingV18:
         position_size: float,
         reason: str,
         is_hard_exit: bool = False,
+        regime: str = "unknown",
     ) -> bool:
         """Execute exit trade and update state."""
         try:
@@ -1324,11 +1424,49 @@ class RealPaperTradingV18:
                 "reason": reason,
                 "type": "exit",
                 "hard_exit": is_hard_exit,
+                "regime": regime,
             }
 
             self.state.trades.append(trade)
             self.state.total_trades += 1
             self.state.total_pnl += pnl
+
+            # Update Execution Guard with result (Taak 2.2)
+            self.guard.record_trade_result(pnl)
+
+            # Record Experience in Chitta (Taak 3.3)
+            if self.use_chitta and self.chitta:
+                try:
+                    from backend.core.conscious.chitta_memory import TradeExperience
+
+                    experience = TradeExperience(
+                        trade_id=str(result.get("order_id", datetime.utcnow().timestamp())),
+                        timestamp=datetime.utcnow().isoformat(),
+                        symbol=symbol,
+                        side="sell",
+                        entry_price=cost_basis / quantity if quantity > 0 else 0,
+                        exit_price=current_price,
+                        size=quantity,
+                        net_pnl=pnl,
+                        return_pct=pnl_pct,
+                        bars_held=0,  # Simplified
+                        market_regime=regime,
+                        trend_1d=0.0,  # Placeholder
+                        adx=0.0,
+                        rsi=0.0,
+                        volatility=0.0,
+                        harmony_score=0.0,
+                        confidence=0.0,
+                        coherence=0.0,
+                        dominant_element="unknown",
+                        guna_dominant="unknown",
+                        is_maya=False,
+                        exit_reason=reason,
+                    )
+                    await self.chitta.record_experience(experience)
+                    logger.info(f"[CHITTA] {symbol}: Experience recorded (PnL: {pnl:+.2f})")
+                except Exception as e:
+                    logger.warning(f"[CHITTA] Failed to record experience: {e}")
 
             # Record for Earth element
             win = pnl > 0
@@ -1359,6 +1497,7 @@ class RealPaperTradingV18:
                             "exit_reason": reason,
                             "is_hard_exit": is_hard_exit,
                             "exchange": "Bitvavo",
+                            "regime": regime,
                         }
                         await self.db.save_trade(db_trade)
 
@@ -1366,7 +1505,7 @@ class RealPaperTradingV18:
                         await self.db.update_agent_performance(
                             agent="V18_Elemental",
                             symbol=symbol,
-                            regime="unknown",  # Could get this from analysis
+                            regime=regime,
                             pnl=pnl,
                             was_win=win,
                         )
@@ -1543,6 +1682,59 @@ class RealPaperTradingV18:
         except Exception as e:
             logger.debug(f"Broadcast error: {e}")
 
+    async def _query_rag_playbook(self, symbol: str, regime: str) -> tuple[float, str]:
+        """
+        Query ChromaDB for strategic playbooks and return adjustment factor.
+        Taak 3.2: RAG Playbook Injection
+        """
+        if not self.chroma_collection:
+            return 0.0, ""
+
+        try:
+            query_text = f"Trading playbook and strategy for {symbol} in {regime} market regime"
+
+            # Generate embedding
+            if self.rag_embedding_model:
+                query_embeddings = [self.rag_embedding_model.encode(query_text).tolist()]
+                results = self.chroma_collection.query(
+                    query_embeddings=query_embeddings, n_results=2
+                )
+            else:
+                # Fallback to simple query if no model
+                results = self.chroma_collection.query(query_texts=[query_text], n_results=2)
+
+            if not results or not results["documents"] or not results["documents"][0]:
+                return 0.0, ""
+
+            adjustment = 0.0
+            contexts = []
+
+            for doc in results["documents"][0]:
+                doc_upper = doc.upper()
+                contexts.append(doc[:100])  # Store snippet
+
+                # Simple sentiment/instruction check
+                if any(
+                    k in doc_upper for k in ["BULLISH", "BUY", "STRONG", "GROWTH", "ACCUMULATE"]
+                ):
+                    adjustment += 0.03
+                if any(
+                    k in doc_upper
+                    for k in ["BEARISH", "SELL", "AVOID", "RISK", "DANGER", "DOWNTREND"]
+                ):
+                    adjustment -= 0.03
+                if "DO NOT TRADE" in doc_upper or "STAY AWAY" in doc_upper:
+                    adjustment -= 0.1
+
+            # Cap the RAG adjustment to ±0.06 (two strong signals)
+            adjustment = max(-0.1, min(0.1, adjustment))
+
+            return adjustment, " | ".join(contexts)
+
+        except Exception as e:
+            logger.error(f"[RAG-QUERY] Failed for {symbol}: {e}")
+            return 0.0, ""
+
     async def _log_analysis(self, analysis: dict[str, Any]):
         """Log detailed analysis for post-session analytics.
 
@@ -1573,57 +1765,70 @@ class RealPaperTradingV18:
             # Also save to database if enabled
             if self.use_database and self.db:
                 try:
-                    # Prepare analytics data for database
-                    db_analysis = {
-                        "session_id": self.session_id,
-                        "cycle": analysis.get("cycle", self._cycle_count),
-                        "symbol": analysis.get("symbol", "UNKNOWN"),
-                        "analysis_type": (
-                            "entry"
-                            if analysis.get("decision", {}).get("action") == "BUY"
-                            else "exit"
-                        ),
-                        "current_price": analysis.get("current_price", 0),
-                        "vedastro_signal": analysis.get("vedastro", {}).get("signal"),
-                        "vedastro_confidence": analysis.get("vedastro", {}).get("confidence"),
-                        "vedastro_score": analysis.get("vedastro", {}).get("strength_score"),
-                        "vedastro_vote": analysis.get("vedastro", {}).get("vote"),
-                        "dominant_planet": analysis.get("vedastro", {}).get("dominant_planet"),
-                        "earth_vote": analysis.get("elemental", {}).get("earth", {}).get("vote"),
-                        "earth_can_enter": analysis.get("elemental", {})
-                        .get("earth", {})
-                        .get("can_enter"),
-                        "fire_vote": analysis.get("elemental", {}).get("fire", {}).get("vote"),
-                        "fire_position_size": analysis.get("elemental", {})
-                        .get("fire", {})
-                        .get("position_size_raw"),
-                        "water_vote": analysis.get("elemental", {}).get("water", {}).get("vote"),
-                        "water_regime": analysis.get("elemental", {})
-                        .get("water", {})
-                        .get("regime"),
-                        "sattva": analysis.get("gunas", {}).get("sattva"),
-                        "rajas": analysis.get("gunas", {}).get("rajas"),
-                        "tamas": analysis.get("gunas", {}).get("tamas"),
-                        "guna_multiplier": analysis.get("gunas", {}).get("multiplier"),
-                        "vayu_dampener": analysis.get("vayu", {}).get("dampener"),
-                        "vayu_sentiment": analysis.get("vayu", {}).get("sentiment"),
-                        "total_vote": analysis.get("consensus", {}).get("total_vote"),
-                        "raw_consensus": analysis.get("consensus", {}).get("raw_consensus"),
-                        "threshold": analysis.get("consensus", {}).get("threshold"),
-                        "passed": analysis.get("consensus", {}).get("passed"),
-                        "dominant_agent": analysis.get("consensus", {}).get("dominant_agent"),
-                        "portfolio_value": self.state.total_value,
-                        "cash": self.state.cash,
-                        "open_positions_count": len(self.state.open_positions),
-                        "action": analysis.get("decision", {}).get("action"),
-                        "decision_reason": analysis.get("decision", {}).get("reason"),
-                        "full_analysis": analysis,
-                    }
+                    # Filter: only save relevant signals to database (Taak 1.2)
+                    # 1. Any trade execution (entry/exit)
+                    # 2. Consensus > 0
+                    # 3. "Almost-pass" (threshold - 0.1)
+                    total_vote = analysis.get("consensus", {}).get("total_vote", 0)
+                    threshold = analysis.get("consensus", {}).get("threshold", 0.35)
+                    action = analysis.get("decision", {}).get("action")
+                    is_trade = action in ["BUY", "SELL", "EXIT"]
+                    is_relevant = total_vote > 0 or total_vote >= (threshold - 0.1)
 
-                    async with self.db:
-                        await self.db.save_analytics(db_analysis)
+                    if is_trade or is_relevant:
+                        # Prepare analytics data for database
+                        db_analysis = {
+                            "session_id": self.session_id,
+                            "cycle": analysis.get("cycle", self._cycle_count),
+                            "symbol": analysis.get("symbol", "UNKNOWN"),
+                            "analysis_type": (
+                                "entry" if action == "BUY" else "exit" if is_trade else "analysis"
+                            ),
+                            "current_price": analysis.get("current_price", 0),
+                            "vedastro_signal": analysis.get("vedastro", {}).get("signal"),
+                            "vedastro_confidence": analysis.get("vedastro", {}).get("confidence"),
+                            "vedastro_score": analysis.get("vedastro", {}).get("strength_score"),
+                            "vedastro_vote": analysis.get("vedastro", {}).get("vote"),
+                            "dominant_planet": analysis.get("vedastro", {}).get("dominant_planet"),
+                            "earth_vote": analysis.get("elemental", {})
+                            .get("earth", {})
+                            .get("vote"),
+                            "earth_can_enter": analysis.get("elemental", {})
+                            .get("earth", {})
+                            .get("can_enter"),
+                            "fire_vote": analysis.get("elemental", {}).get("fire", {}).get("vote"),
+                            "fire_position_size": analysis.get("elemental", {})
+                            .get("fire", {})
+                            .get("position_size_raw"),
+                            "water_vote": analysis.get("elemental", {})
+                            .get("water", {})
+                            .get("vote"),
+                            "water_regime": analysis.get("elemental", {})
+                            .get("water", {})
+                            .get("regime"),
+                            "sattva": analysis.get("gunas", {}).get("sattva"),
+                            "rajas": analysis.get("gunas", {}).get("rajas"),
+                            "tamas": analysis.get("gunas", {}).get("tamas"),
+                            "guna_multiplier": analysis.get("gunas", {}).get("multiplier"),
+                            "vayu_dampener": analysis.get("vayu", {}).get("dampener"),
+                            "vayu_sentiment": analysis.get("vayu", {}).get("sentiment"),
+                            "total_vote": total_vote,
+                            "raw_consensus": analysis.get("consensus", {}).get("raw_consensus"),
+                            "threshold": threshold,
+                            "passed": analysis.get("consensus", {}).get("passed", False),
+                            "dominant_agent": analysis.get("consensus", {}).get("dominant_agent"),
+                            "portfolio_value": self.state.total_value,
+                            "cash": self.state.cash,
+                            "open_positions_count": len(self.state.open_positions),
+                            "action": action,
+                            "decision_reason": analysis.get("decision", {}).get("reason"),
+                            "full_analysis": analysis,
+                        }
+                        # Add to batch list for Taak 1.2
+                        self._cycle_analytics.append(db_analysis)
+
                 except Exception as e:
-                    logger.error(f"[DB] Failed to save analytics: {e}")
+                    logger.error(f"[DB-BUFFER] Failed to buffer analytics: {e}")
 
             # Update summary stats
             summary = {}

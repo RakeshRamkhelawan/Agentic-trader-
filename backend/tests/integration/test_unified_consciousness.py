@@ -408,9 +408,7 @@ class TestUnifiedConsciousnessIntegration:
         stats = unified_coordinator.get_statistics()
 
         assert "unified_consciousness" in stats
-        assert (
-            stats["unified_consciousness"]["components"]["navagraha"]["enabled"] is True
-        )
+        assert stats["unified_consciousness"]["components"]["navagraha"]["enabled"] is True
 
 
 class TestStrategyIntegration:

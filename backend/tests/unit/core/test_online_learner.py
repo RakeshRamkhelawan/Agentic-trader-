@@ -6,9 +6,7 @@ import asyncio
 
 import pytest
 
-from backend.core.learning.online_learner import (
-    AdaptiveLearner,  # Backward compatibility
-)
+from backend.core.learning.online_learner import AdaptiveLearner  # Backward compatibility
 from backend.core.learning.online_learner import (
     LearningMetrics,
     OnlineLearner,

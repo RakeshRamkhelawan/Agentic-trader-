@@ -19,9 +19,7 @@ class TestCIConfigIntegrity:
     """Verify CI/CD configuration enforces quality gates."""
 
     def _load_ci_yml(self):
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         ci_path = os.path.join(project_root, ".github", "workflows", "ci.yml")
         if not os.path.exists(ci_path):
             pytest.skip("ci.yml not found")
@@ -72,27 +70,19 @@ class TestCIConfigIntegrity:
         config = self._load_ci_yml()
         deploy = config["jobs"].get("deploy", {})
         if_condition = deploy.get("if", "")
-        assert (
-            "workflow_dispatch" in if_condition
-        ), "deploy job does not require manual trigger"
+        assert "workflow_dispatch" in if_condition, "deploy job does not require manual trigger"
 
     def test_coverage_threshold_set(self):
         """Backend tests must enforce a minimum coverage threshold."""
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         ci_path = os.path.join(project_root, ".github", "workflows", "ci.yml")
         with open(ci_path, "r", encoding="utf-8") as f:
             content = f.read()
-        assert (
-            "cov-fail-under" in content
-        ), "CI does not enforce a minimum coverage threshold"
+        assert "cov-fail-under" in content, "CI does not enforce a minimum coverage threshold"
 
     def test_no_emoji_in_ci_scripts(self):
         """CI scripts must not contain emoji (Windows compatibility)."""
-        project_root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        )
+        project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         ci_path = os.path.join(project_root, ".github", "workflows", "ci.yml")
         with open(ci_path, "r", encoding="utf-8") as f:
             content = f.read()

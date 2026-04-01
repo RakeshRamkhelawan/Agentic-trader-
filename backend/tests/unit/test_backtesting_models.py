@@ -63,9 +63,7 @@ class TestSlippageModels:
         quantity = 100.0  # Large order
         avg_volume = 1000.0
 
-        adjusted_price, slippage_amount = model.apply(
-            price, quantity, OrderSide.BUY, avg_volume
-        )
+        adjusted_price, slippage_amount = model.apply(price, quantity, OrderSide.BUY, avg_volume)
 
         # Should have more slippage than fixed model
         assert adjusted_price > 100.0 * 1.0005
@@ -108,9 +106,7 @@ class TestFillModels:
     def test_realistic_fill_small_order(self):
         """Test realistic fill with small order."""
         model = RealisticFillModel(max_participation_rate=0.1)
-        filled, unfilled = model.compute_fill(
-            order_quantity=1.0, available_volume=100.0
-        )
+        filled, unfilled = model.compute_fill(order_quantity=1.0, available_volume=100.0)
 
         # Max fillable = 100 * 0.1 = 10.0, so 1.0 fills completely
         assert filled == 1.0
@@ -119,9 +115,7 @@ class TestFillModels:
     def test_realistic_fill_large_order(self):
         """Test realistic fill with large order (partial)."""
         model = RealisticFillModel(max_participation_rate=0.1)
-        filled, unfilled = model.compute_fill(
-            order_quantity=20.0, available_volume=100.0
-        )
+        filled, unfilled = model.compute_fill(order_quantity=20.0, available_volume=100.0)
 
         # Max fillable = 100 * 0.1 = 10.0
         assert filled == 10.0
@@ -130,9 +124,7 @@ class TestFillModels:
     def test_proportional_fill(self):
         """Test proportional fill model."""
         model = ProportionalFillModel(max_participation_rate=0.5)
-        filled, unfilled = model.compute_fill(
-            order_quantity=50.0, available_volume=100.0
-        )
+        filled, unfilled = model.compute_fill(order_quantity=50.0, available_volume=100.0)
 
         # Fill ratio = min(50/100, 0.5) = 0.5
         # Filled = 50 * 0.5 = 25.0
@@ -198,9 +190,7 @@ class TestPositionSizers:
 
     def test_kelly_criterion_basic(self):
         """Test Kelly Criterion sizer (should be non-zero for positive expectancy)."""
-        sizer = KellyCriterionSizer(
-            win_rate=0.55, avg_win=1.0, avg_loss=1.0, fractional_kelly=0.25
-        )
+        sizer = KellyCriterionSizer(win_rate=0.55, avg_win=1.0, avg_loss=1.0, fractional_kelly=0.25)
         quantity = sizer.calculate_quantity(
             signal_strength=1.0, price=100.0, portfolio_value=10000.0
         )

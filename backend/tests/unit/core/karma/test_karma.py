@@ -9,9 +9,7 @@ class TestKarmaModule:
         register = KarmaRegister()
 
         # Profitable trade
-        outcome_win = TradeOutcome(
-            pnl_percent=0.05, drawdown_percent=0.01, execution_speed_ms=100
-        )
+        outcome_win = TradeOutcome(pnl_percent=0.05, drawdown_percent=0.01, execution_speed_ms=100)
         score = register.calculate_karma(outcome_win)
         assert score > 0.0
 

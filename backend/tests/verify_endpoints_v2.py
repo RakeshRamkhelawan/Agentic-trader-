@@ -103,9 +103,7 @@ def verify_system():
             if r.status_code == 200:
                 print_result("Create Profile", True)
                 # Verify it exists now
-                r = requests.get(
-                    f"{BASE_URL}/settings/profile", headers=headers, timeout=10
-                )
+                r = requests.get(f"{BASE_URL}/settings/profile", headers=headers, timeout=10)
                 if r.status_code == 200:
                     print_result("Get Profile (After Create)", True)
                 else:

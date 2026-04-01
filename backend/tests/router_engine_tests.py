@@ -91,9 +91,7 @@ class TestRouterEngine:
         assert result.price == 55000
 
     @pytest.mark.asyncio
-    async def test_symbol_normalization_per_exchange(
-        self, mock_broker_a, mock_broker_b
-    ):
+    async def test_symbol_normalization_per_exchange(self, mock_broker_a, mock_broker_b):
         """Should use correctly normalized symbols for each exchange query."""
         router = RouterEngine([mock_broker_a, mock_broker_b])
         await router.get_best_route("BTC/EUR")

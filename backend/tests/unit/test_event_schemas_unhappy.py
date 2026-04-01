@@ -226,9 +226,7 @@ def test_trade_proposal_case_sensitive_action():
 def test_market_tick_invalid_timestamp_type():
     """Unhappy: Invalid timestamp type should fail."""
     with pytest.raises(ValidationError):
-        MarketTick(
-            symbol="BTC/USD", price=50000.0, volume=1.0, timestamp="not a datetime"
-        )
+        MarketTick(symbol="BTC/USD", price=50000.0, volume=1.0, timestamp="not a datetime")
 
 
 @pytest.mark.unit

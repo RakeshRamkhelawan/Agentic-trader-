@@ -342,14 +342,10 @@ class LiveDataPaperTradingTest:
             self.orientation = await self.run_orient_phase(self.observation)
 
             # Phase 3: DECIDE
-            self.proposal = await self.run_decide_phase(
-                self.orientation, self.observation.price
-            )
+            self.proposal = await self.run_decide_phase(self.orientation, self.observation.price)
 
             # Phase 4: HARMONIZE
-            self.assessment = await self.run_harmonize_phase(
-                self.proposal, self.orientation.regime
-            )
+            self.assessment = await self.run_harmonize_phase(self.proposal, self.orientation.regime)
 
             # Phase 5: ACT (PAPER TRADING)
             self.outcome = await self.run_act_phase(self.proposal, self.assessment)
@@ -371,11 +367,7 @@ class LiveDataPaperTradingTest:
             logger.info("   Risk Decision: %s", self.assessment.decision.value)
             logger.info(
                 "   Paper Trade: %s",
-                (
-                    "Success"
-                    if self.outcome and self.outcome.success
-                    else "Skipped/Failed"
-                ),
+                ("Success" if self.outcome and self.outcome.success else "Skipped/Failed"),
             )
             logger.info("")
             logger.info("[SUCCESS] LIVE DATA + PAPER TRADING TEST COMPLETED!")

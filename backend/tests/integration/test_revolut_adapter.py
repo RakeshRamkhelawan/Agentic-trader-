@@ -48,9 +48,7 @@ async def test_get_instruments_success(mock_adapter):
     # Mock the response
     mock_response = MagicMock()
     mock_response.status_code = 200
-    mock_response.json.return_value = (
-        mock_data  # Note: Actual API returns top level list/dict?
-    )
+    mock_response.json.return_value = mock_data  # Note: Actual API returns top level list/dict?
     # Based on user doc: "Response: Trading pair configuraties" (likely list or dict with key)
     # Adjusting to likely structure or list directly if that's what user implied.
     # For now assuming list or wrapped list. The adapter logic will handle "isinstance(list)" check.
@@ -71,9 +69,7 @@ async def test_get_instruments_success(mock_adapter):
 @pytest.mark.asyncio
 async def test_get_ticker_success(mock_adapter):
     """Happy Path: Successfully fetch ticker"""
-    mock_data = [
-        {"symbol": "BTC-EUR", "last_price": 50000.0, "bid": 49990.0, "ask": 50010.0}
-    ]
+    mock_data = [{"symbol": "BTC-EUR", "last_price": 50000.0, "bid": 49990.0, "ask": 50010.0}]
 
     # Allow adapter to handle list response
     mock_response = MagicMock()
@@ -94,9 +90,7 @@ async def test_get_candles_success(mock_adapter):
     # [timestamp, open, high, low, close, volume] ? or dicts?
     # User doc says: OHLCV candlestick data
     # Assuming standard list of lists or list of dicts.
-    mock_data = {
-        "data": [{"t": 1600000000, "o": 100, "h": 110, "l": 90, "c": 105, "v": 1000}]
-    }
+    mock_data = {"data": [{"t": 1600000000, "o": 100, "h": 110, "l": 90, "c": 105, "v": 1000}]}
 
     mock_response = MagicMock()
     mock_response.status_code = 200

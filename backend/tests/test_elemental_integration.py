@@ -94,9 +94,7 @@ async def test_full_ooda_flow(elemental_system):
         "context": {"global_state": "stable"},
     }
 
-    ether_result = await elemental_system["agents"]["ether"].process_signal(
-        orient_input
-    )
+    ether_result = await elemental_system["agents"]["ether"].process_signal(orient_input)
 
     assert ether_result["harmony_score"] > 0
     assert "synthesis" in ether_result
@@ -127,9 +125,7 @@ async def test_full_ooda_flow(elemental_system):
         "risk_approval": fire_result,
     }
 
-    earth_result = await elemental_system["agents"]["earth"].process_signal(
-        execution_input
-    )
+    earth_result = await elemental_system["agents"]["earth"].process_signal(execution_input)
 
     assert earth_result["proposal"]["action"] == "buy"
     assert earth_result["proposal"]["size"] >= 1000

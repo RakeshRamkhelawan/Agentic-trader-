@@ -75,9 +75,7 @@ class TestGenerateRangingMarket:
         """Prices oscillate within range."""
         center = 50000.0
         range_pct = 0.05
-        candles = generate_ranging_market(
-            center_price=center, range_pct=range_pct, num_days=30
-        )
+        candles = generate_ranging_market(center_price=center, range_pct=range_pct, num_days=30)
 
         range_low = center * (1 - range_pct)
         range_high = center * (1 + range_pct)
@@ -130,9 +128,7 @@ class TestGenerateFlashCrash:
 
     def test_includes_crash_candle(self):
         """Scenario includes crash candle."""
-        candles = generate_flash_crash(
-            start_price=50000.0, crash_depth=0.20, recovery_hours=6
-        )
+        candles = generate_flash_crash(start_price=50000.0, crash_depth=0.20, recovery_hours=6)
 
         # Find crash candle (highest volume)
         crash_candle = max(candles, key=lambda c: c.volume)
@@ -147,9 +143,7 @@ class TestGenerateFlashCrash:
     def test_recovers_after_crash(self):
         """Price recovers after crash."""
         start_price = 50000.0
-        candles = generate_flash_crash(
-            start_price=start_price, crash_depth=0.20, recovery_hours=6
-        )
+        candles = generate_flash_crash(start_price=start_price, crash_depth=0.20, recovery_hours=6)
 
         # Last candle should be near start price
         final_price = candles[-1].close

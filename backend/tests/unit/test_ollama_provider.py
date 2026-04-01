@@ -122,9 +122,7 @@ async def test_ollama_generate_structured_returns_pydantic():
 
     with patch("httpx.AsyncClient") as MockClient:
         mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "response": '{"sentiment": "positive", "score": 0.9}'
-        }
+        mock_response.json.return_value = {"response": '{"sentiment": "positive", "score": 0.9}'}
 
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=mock_response)
@@ -133,9 +131,7 @@ async def test_ollama_generate_structured_returns_pydantic():
         MockClient.return_value = mock_client
 
         provider = OllamaProvider()
-        result = await provider.generate_structured(
-            "Analyze sentiment", SentimentOutput
-        )
+        result = await provider.generate_structured("Analyze sentiment", SentimentOutput)
 
         assert isinstance(result, SentimentOutput)
         assert result.sentiment == "positive"

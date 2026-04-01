@@ -20,9 +20,7 @@ except ImportError:
 @pytest.mark.asyncio
 async def test_session_manager_exists():
     """Test that SessionManager class exists."""
-    assert (
-        SessionManager is not None
-    ), "SessionManager class should exist in backend.core.database"
+    assert SessionManager is not None, "SessionManager class should exist in backend.core.database"
 
 
 @pytest.mark.asyncio

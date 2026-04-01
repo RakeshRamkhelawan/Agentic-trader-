@@ -23,17 +23,14 @@ class TestRLSPoolLifecycle:
 
     def test_no_before_cursor_execute_listener(self):
         """database.py must NOT register a before_cursor_execute event listener."""
-        db_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "core", "database.py"
-        )
+        db_path = os.path.join(os.path.dirname(__file__), "..", "..", "core", "database.py")
         with open(db_path) as f:
             content = f.read()
 
         # Check for the actual event listener registration, not comments about it
         assert (
             "@event.listens_for" not in content
-            or "before_cursor_execute"
-            not in content.split("@event.listens_for")[-1].split("\n")[0]
+            or "before_cursor_execute" not in content.split("@event.listens_for")[-1].split("\n")[0]
             if "@event.listens_for" in content
             else True
         )
@@ -43,9 +40,7 @@ class TestRLSPoolLifecycle:
 
     def test_pool_checkin_event_exists(self):
         """database.py must have a pool checkin event listener."""
-        db_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "core", "database.py"
-        )
+        db_path = os.path.join(os.path.dirname(__file__), "..", "..", "core", "database.py")
         with open(db_path) as f:
             content = f.read()
 

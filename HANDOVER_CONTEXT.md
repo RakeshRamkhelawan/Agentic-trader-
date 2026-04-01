@@ -1,21 +1,31 @@
-# Handover Context - Go-Live Audit & Visie
+# Handover Context - Go-Live Implementation (Phases 1-4 COMPLETED)
 
-## Status: VOLTOOID (2026-04-01) - Platform Audit & Agent Visie
+## Status: VOLTOOID (2026-04-01) - Platform Go-Live Ready
 
-### Uitgevoerde Taken recent:
-1.  **Platform Audit:** Compleet review rapport (`go_live_audit_report.md` artifact) opgesteld over de staat van het project na Grand Unification en V13 Evoluties.
-2.  **Gap Analyse (Go-Live Blockers):** Vastgesteld dat (1) Database persistentie in Paper Trading (V18) ontbreekt, (2) Revolut X API stuk is, (3) RAG/Chitta memory niet gebruikt wordt bij live beslissingen, en (4) er geen hardcoded risk-circuit-breaker in executors zit.
-3.  **Visie op Trading Agents:** Een plan ontwikkeld om van zero-shot LLM scripts over te stappen via een gecontroleerde **Shadow Mode (Paper Trading)** met "RAG-backed" MetaOrchestrator feedback-loop (reinforcement). Echte executies leunen dan op wiskundige checks en parameters afgevuurd door de LLM.
-4.  **Vorige Fase (Grand Unification)**: VedAstro Integratie, OODA fallbacks en NLP Sentiment verwerking functioneel bevonden. BM25 / Async cache modules zijn recent ook voltooid.
+### ✅ Uitgevoerde Taken (Fase 1-4):
+1.  **Fase 1: Database Persistence:**
+    - Volledige persistentie van trades in `paper_trades`.
+    - Batching van analytics per cycle om I/O-onderdrukking te voorkomen.
+    - Agent performance tracking per marktregime.
+2.  **Fase 2: ExecutionGuard (Safety Switch):**
+    - Deterministische regels (PnL limits, consecutive losses, cooldowns).
+    - API endpoints toegevoegd voor frontend monitoring en noodstop.
+3.  **Fase 3: RAG & Chitta (Self-Learning):**
+    - Dynamische drempels op basis van historische win-rates (Chitta).
+    - Strategische playbook-injectie vanuit ChromaDB (RAG).
+    - Automatische opslag van trade-ervaringen na elke exit.
+4.  **Fase 4: E2E Verificatie:**
+    - Systeem geverifieerd op de live backend (Postgres, Redis, ChromaDB).
+    - Integratiescript bevestigt correcte werking van alle safeguards.
 
-### Belangrijke Locaties voor komende implementaties
-- `backend/services/real_paper_trading_v18_direct.py`: Moet voorzien worden van RAG en Postgres calls voor robuustheid.
-- `backend/agents/strategy_evolution.py` en `backend/agents/meta_orchestrator_v3.py`: Om de visie voor self-learning en parameter tuning bij live-gang mogelijk te maken.
+### 🧠 Reflectie & Lering:
+- **Wat werkte goed:** De TDD-aanpak en batch-processing in de analytics-loop zorgen voor een stabiele engine zonder prestatieverlies, zelfs bij hoge frequentie.
+- **Uitdagingen:** De afstemming tussen AI-consensus en de deterministische `ExecutionGuard` vereiste zorgvuldige tests om onnodige blokkades ("Skip") te voorkomen.
+- **Kritiek punt:** De engine is nu klaar voor de **Shadow Mode**. Dit is essentieel om de Chitta-database te vullen met echte marktreacties.
 
-### Volgende Stappen voor de volgende AI of ontwikkelaar
-- **Database Opschonen:** Maak PostgreSQL insert/update calls voor paper trades in V18.
-- **RAG & Chitta aanzetten in V18:** Zorg dat de LLM agents uit vorige trades kunnen leren.
-- **Revolut X Reparaties:** API Client herschrijven of uitsluitend op Bitvavo focussen voor lanceren.
+### ⏭️ Volgende Stappen:
+- **Fase 5: Revolut X API:** De API-integratie voor Revolut moet nog hersteld/geactiveerd worden voor live trading of migratie naar Bitvavo.
+- **Shadow Mode Start:** Monitor het dashboard voor de eerste 2-4 weken van data-aggregatie.
 
 ---
-*Gewerkt door Antigravity (Advanced Agentic Coding team)*
+*Gerealiseerd door Antigravity (Advanced Agentic Coding team)*

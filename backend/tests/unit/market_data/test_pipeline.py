@@ -50,9 +50,7 @@ class MockSink(EventSink):
         self.events.append(event)
 
 
-@pytest.mark.skipif(
-    MarketDataPipeline is None, reason="MarketDataPipeline not implemented"
-)
+@pytest.mark.skipif(MarketDataPipeline is None, reason="MarketDataPipeline not implemented")
 class TestMarketDataPipeline:
     """Test suite for MarketDataPipeline."""
 
@@ -82,12 +80,8 @@ class TestMarketDataPipeline:
     async def test_pipeline_multiple_providers(self):
         """Multiple providers feeding one sink."""
         out_queue = asyncio.Queue()
-        provider1 = MockProvider(
-            "bybit", out_queue, events=[{"type": "trade", "price": 50000.0}]
-        )
-        provider2 = MockProvider(
-            "kraken", out_queue, events=[{"type": "ticker", "bid": 49990.0}]
-        )
+        provider1 = MockProvider("bybit", out_queue, events=[{"type": "trade", "price": 50000.0}])
+        provider2 = MockProvider("kraken", out_queue, events=[{"type": "ticker", "bid": 49990.0}])
 
         sink = MockSink()
         pipeline = MarketDataPipeline([provider1, provider2], [sink], out_queue)
@@ -104,9 +98,7 @@ class TestMarketDataPipeline:
     async def test_pipeline_multiple_sinks(self):
         """One provider feeding multiple sinks."""
         out_queue = asyncio.Queue()
-        provider = MockProvider(
-            "bybit", out_queue, events=[{"type": "trade", "price": 50000.0}]
-        )
+        provider = MockProvider("bybit", out_queue, events=[{"type": "trade", "price": 50000.0}])
 
         sink1 = MockSink()
         sink2 = MockSink()

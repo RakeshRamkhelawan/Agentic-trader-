@@ -42,9 +42,7 @@ def sample_orientation():
 
 
 @pytest.mark.asyncio
-async def test_bull_researcher_contrarian_logic(
-    bull_agent, sample_observation, sample_orientation
-):
+async def test_bull_researcher_contrarian_logic(bull_agent, sample_observation, sample_orientation):
     """
     Test BullResearcher generating bullish hypothesis in a Bear market.
     Should be highly contrarian.
@@ -105,9 +103,7 @@ async def test_bear_researcher_contrarian_logic(bear_agent, sample_observation):
 @pytest.mark.asyncio
 async def test_parsing_fallback(bull_agent, sample_observation, sample_orientation):
     """Test resilience against malformed LLM output."""
-    bull_agent.ask_llm.return_value = (
-        "Just some text without confidence or numbered list."
-    )
+    bull_agent.ask_llm.return_value = "Just some text without confidence or numbered list."
 
     hypothesis = await bull_agent.generate_hypothesis(
         "BTC/USDT", sample_observation, sample_orientation

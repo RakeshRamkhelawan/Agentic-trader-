@@ -27,9 +27,7 @@ def mock_audit_logger():
 
 @pytest.fixture
 def trading_service():
-    with patch(
-        "backend.services.trading_service.get_settings_service"
-    ) as mock_get_settings:
+    with patch("backend.services.trading_service.get_settings_service") as mock_get_settings:
         mock_settings_service = MagicMock()
         mock_get_settings.return_value = mock_settings_service
 
@@ -142,9 +140,7 @@ async def test_execute_order_audit_failure(trading_service, mock_audit_logger):
         mock_adapter.submit_order = AsyncMock(side_effect=ValueError("API Error"))
         mock_get_adapter.return_value = mock_adapter
 
-        trading_service.settings_service.get_user_preferences = AsyncMock(
-            return_value={}
-        )
+        trading_service.settings_service.get_user_preferences = AsyncMock(return_value={})
 
         result = await trading_service.execute_order(
             db=mock_db,

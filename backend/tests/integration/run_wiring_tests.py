@@ -100,24 +100,12 @@ def run_single_test(test_file: str, verbose: bool = True):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Run Frontend-Backend Wiring Integration Tests"
-    )
-    parser.add_argument(
-        "--fail-fast", "-x", action="store_true", help="Stop on first failure"
-    )
-    parser.add_argument(
-        "--quiet", "-q", action="store_true", help="Less verbose output"
-    )
-    parser.add_argument(
-        "--auth-only", action="store_true", help="Run only Auth API tests"
-    )
-    parser.add_argument(
-        "--kyc-only", action="store_true", help="Run only KYC API tests"
-    )
-    parser.add_argument(
-        "--settings-only", action="store_true", help="Run only Settings API tests"
-    )
+    parser = argparse.ArgumentParser(description="Run Frontend-Backend Wiring Integration Tests")
+    parser.add_argument("--fail-fast", "-x", action="store_true", help="Stop on first failure")
+    parser.add_argument("--quiet", "-q", action="store_true", help="Less verbose output")
+    parser.add_argument("--auth-only", action="store_true", help="Run only Auth API tests")
+    parser.add_argument("--kyc-only", action="store_true", help="Run only KYC API tests")
+    parser.add_argument("--settings-only", action="store_true", help="Run only Settings API tests")
     parser.add_argument(
         "--competitions-only",
         action="store_true",

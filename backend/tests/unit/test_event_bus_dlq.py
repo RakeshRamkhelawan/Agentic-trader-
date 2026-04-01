@@ -366,9 +366,7 @@ class TestEventBusDLQ:
         # Should have published to original stream
         call_args_list = mock_redis.xadd.call_args_list
         original_calls = [
-            c
-            for c in call_args_list
-            if "events.orders" in str(c) and "dlq" not in str(c)
+            c for c in call_args_list if "events.orders" in str(c) and "dlq" not in str(c)
         ]
         assert len(original_calls) > 0
 

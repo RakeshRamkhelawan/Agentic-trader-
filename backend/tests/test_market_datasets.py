@@ -83,9 +83,7 @@ class TestOHLCV:
     def test_to_dict(self):
         """Convert OHLCV to dict."""
         ts = datetime.now(UTC)
-        candle = OHLCV(
-            timestamp=ts, open=100.0, high=105.0, low=98.0, close=103.0, volume=1000.0
-        )
+        candle = OHLCV(timestamp=ts, open=100.0, high=105.0, low=98.0, close=103.0, volume=1000.0)
 
         d = candle.to_dict()
 

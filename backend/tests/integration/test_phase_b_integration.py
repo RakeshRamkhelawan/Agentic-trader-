@@ -102,9 +102,7 @@ class TestPhaseBNavagrahaIntegration:
         mock_execute.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_trade_blocked_when_rahu_kala_active(
-        self, mock_navagraha_closed_gate
-    ):
+    async def test_trade_blocked_when_rahu_kala_active(self, mock_navagraha_closed_gate):
         """Test dat trade wordt geblokkeerd tijdens Rahu Kala."""
         # Arrange
         coordinator = OODALoopCoordinator(
@@ -128,9 +126,7 @@ class TestPhaseBNavagrahaIntegration:
         assert result["rahu_kala_active"] is True
 
     @pytest.mark.asyncio
-    async def test_guna_distribution_preserved_in_result(
-        self, mock_navagraha_open_gate
-    ):
+    async def test_guna_distribution_preserved_in_result(self, mock_navagraha_open_gate):
         """Test dat guna distribution wordt bewaard in resultaat."""
         # Arrange
         coordinator = OODALoopCoordinator(
@@ -208,9 +204,7 @@ class TestPhaseBTattvaIntegration:
         identity.update_outcome = MagicMock()
         return identity
 
-    def test_kanchuka_gate_open_with_high_coherence(
-        self, system_identity_high_coherence
-    ):
+    def test_kanchuka_gate_open_with_high_coherence(self, system_identity_high_coherence):
         """Test dat Kanchuka gate open is bij hoge coherence."""
         # Arrange
         coordinator = OODALoopCoordinator(
@@ -232,9 +226,7 @@ class TestPhaseBTattvaIntegration:
         assert risk_state["risk_gate_blocked"] is False
         assert risk_state["avg_kanchuka_coherence"] > 0.7
 
-    def test_kanchuka_gate_blocked_with_low_coherence(
-        self, system_identity_low_kanchuka
-    ):
+    def test_kanchuka_gate_blocked_with_low_coherence(self, system_identity_low_kanchuka):
         """Test dat Kanchuka gate geblokkeerd is bij lage coherence."""
         # Arrange
         coordinator = OODALoopCoordinator(

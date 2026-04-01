@@ -52,9 +52,7 @@ class TestZeroCopyBridge:
 
     def test_reader_access(self, bridge):
         # Create a second bridge instance attached to same memory
-        reader_bridge = ZeroCopyBridge(
-            max_symbols=10, create=False, shm_name=bridge.shm_name
-        )
+        reader_bridge = ZeroCopyBridge(max_symbols=10, create=False, shm_name=bridge.shm_name)
 
         symbol = "ETH/USD"
         intent = TradingIntent(

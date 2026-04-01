@@ -14,9 +14,7 @@ pytestmark = [pytest.mark.asyncio, pytest.mark.integration]
 class TestSettingsAPIIntegration:
     """Full integration tests for User Settings API with real backend."""
 
-    async def _get_auth_token(
-        self, async_client: AsyncClient, unique_email: str
-    ) -> str:
+    async def _get_auth_token(self, async_client: AsyncClient, unique_email: str) -> str:
         """Helper to register and get auth token."""
         response = await async_client.post(
             "/api/v1/auth/register",
@@ -86,9 +84,7 @@ class TestSettingsAPIIntegration:
         assert persisted_profile["first_name"] == "Updated"
         assert persisted_profile["last_name"] == "Name"
 
-    async def test_notifications_crud(
-        self, async_client: AsyncClient, unique_email: str
-    ):
+    async def test_notifications_crud(self, async_client: AsyncClient, unique_email: str):
         """Test notification settings get and update."""
         token = await self._get_auth_token(async_client, unique_email)
 
@@ -116,9 +112,7 @@ class TestSettingsAPIIntegration:
         assert put_response.status_code == 200
         updated_notifications = put_response.json()
 
-        assert (
-            updated_notifications["order_executions"] == update_data["order_executions"]
-        )
+        assert updated_notifications["order_executions"] == update_data["order_executions"]
         assert updated_notifications["price_alerts"] == update_data["price_alerts"]
 
         # Verify persistence
@@ -129,14 +123,9 @@ class TestSettingsAPIIntegration:
         assert get_response2.status_code == 200
         persisted_notifications = get_response2.json()
 
-        assert (
-            persisted_notifications["order_executions"]
-            == update_data["order_executions"]
-        )
+        assert persisted_notifications["order_executions"] == update_data["order_executions"]
 
-    async def test_security_settings(
-        self, async_client: AsyncClient, unique_email: str
-    ):
+    async def test_security_settings(self, async_client: AsyncClient, unique_email: str):
         """Test security settings get."""
         token = await self._get_auth_token(async_client, unique_email)
 
@@ -292,9 +281,7 @@ class TestSettingsAPIIntegration:
                 403,
             ], f"{method} {endpoint} should require auth"
 
-    async def test_complete_settings_flow(
-        self, async_client: AsyncClient, unique_email: str
-    ):
+    async def test_complete_settings_flow(self, async_client: AsyncClient, unique_email: str):
         """Test complete settings flow with all operations."""
         token = await self._get_auth_token(async_client, unique_email)
 

@@ -249,9 +249,7 @@ async def test_base_agent_publish_thought_complex_data():
         "mixed": {"a": [{"b": "c"}]},
     }
 
-    result = await agent.publish_thought(
-        reasoning="Test", confidence=0.8, data=complex_data
-    )
+    result = await agent.publish_thought(reasoning="Test", confidence=0.8, data=complex_data)
 
     assert result == "msg-123"
     # Verify data was stringified in publish call

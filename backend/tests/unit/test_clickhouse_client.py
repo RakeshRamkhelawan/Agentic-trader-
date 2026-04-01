@@ -240,9 +240,7 @@ def test_clickhouse_from_env():
     """RED: Should read connection settings from environment."""
     from backend.storage.clickhouse_client import ClickHouseClient
 
-    with patch.dict(
-        "os.environ", {"CLICKHOUSE_HOST": "custom-host", "CLICKHOUSE_PORT": "9000"}
-    ):
+    with patch.dict("os.environ", {"CLICKHOUSE_HOST": "custom-host", "CLICKHOUSE_PORT": "9000"}):
         with patch("clickhouse_connect.get_async_client"):
             client = ClickHouseClient()
             assert client.host == "custom-host" or "custom-host" in client.url
@@ -293,9 +291,7 @@ async def test_clickhouse_execute_injects_tenant_id_parameter():
             client = ClickHouseClient()
             await client.connect()
 
-            await client.execute(
-                "SELECT * FROM table WHERE tenant_id = {tenant_id:String}"
-            )
+            await client.execute("SELECT * FROM table WHERE tenant_id = {tenant_id:String}")
 
             # Check parameters
             mock_client.query.assert_called_with(

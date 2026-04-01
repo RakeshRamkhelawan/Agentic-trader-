@@ -38,9 +38,7 @@ class TestSecurityHeadersPresent:
     async def test_referrer_policy(self, async_client):
         """Referrer-Policy must be strict-origin-when-cross-origin."""
         response = await async_client.get("/api/v1/health")
-        assert (
-            response.headers.get("referrer-policy") == "strict-origin-when-cross-origin"
-        )
+        assert response.headers.get("referrer-policy") == "strict-origin-when-cross-origin"
 
     @pytest.mark.asyncio
     async def test_permissions_policy_present(self, async_client):

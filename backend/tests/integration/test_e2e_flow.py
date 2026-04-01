@@ -19,9 +19,7 @@ async def test_e2e_market_data_flow():
     we will just inject and report success of injection.
     The USER/Assistant must verify logs.
     """
-    print(
-        f"Connecting to Redis at {settings.REDIS_URL} (Override to 16379 for Host Test)"
-    )
+    print(f"Connecting to Redis at {settings.REDIS_URL} (Override to 16379 for Host Test)")
     # Force 16379 for this test running on Host
     r = redis.from_url("redis://localhost:16379/0", decode_responses=False)
 
@@ -64,7 +62,9 @@ async def test_e2e_market_data_flow():
     try:
         start_time = asyncio.get_event_loop().time()
         found_signal = False
-        last_read_id = "$"  # Start reading new messages (or should we read from 0-0 if we missed it?)
+        last_read_id = (
+            "$"  # Start reading new messages (or should we read from 0-0 if we missed it?)
+        )
         # Actually, if Orchestrator is fast, it might have published already.
         # Let's read from the beginning of time just in case, or a known ID.
         # Better: create a consumer group? Too complex for script.

@@ -73,9 +73,7 @@ class TestOODACoordinatorRBAC:
     @pytest.mark.asyncio
     async def test_set_mode_without_permission_service(self, coordinator):
         """set_trading_mode works zonder PermissionService (bypass)."""
-        result = await coordinator.set_trading_mode(
-            new_mode=TradingMode.AUTO, user_id="test_user"
-        )
+        result = await coordinator.set_trading_mode(new_mode=TradingMode.AUTO, user_id="test_user")
 
         assert result is True
         assert coordinator.get_trading_mode() == TradingMode.AUTO

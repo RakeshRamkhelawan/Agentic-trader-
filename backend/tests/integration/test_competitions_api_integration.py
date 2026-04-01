@@ -16,9 +16,7 @@ class TestCompetitionsAPIIntegration:
 
     async def test_get_tournaments_active(self, async_client: AsyncClient):
         """Test getting active tournaments from real tournament engine."""
-        response = await async_client.get(
-            "/api/v1/competitions/tournaments?status=active"
-        )
+        response = await async_client.get("/api/v1/competitions/tournaments?status=active")
 
         assert response.status_code == 200
         data = response.json()
@@ -36,9 +34,7 @@ class TestCompetitionsAPIIntegration:
 
     async def test_get_tournaments_upcoming(self, async_client: AsyncClient):
         """Test getting upcoming tournaments."""
-        response = await async_client.get(
-            "/api/v1/competitions/tournaments?status=upcoming"
-        )
+        response = await async_client.get("/api/v1/competitions/tournaments?status=upcoming")
 
         assert response.status_code == 200
         data = response.json()
@@ -48,9 +44,7 @@ class TestCompetitionsAPIIntegration:
 
     async def test_get_tournaments_invalid_status(self, async_client: AsyncClient):
         """Test tournaments endpoint with invalid status."""
-        response = await async_client.get(
-            "/api/v1/competitions/tournaments?status=invalid"
-        )
+        response = await async_client.get("/api/v1/competitions/tournaments?status=invalid")
 
         assert response.status_code == 400
         data = response.json()
@@ -101,9 +95,7 @@ class TestCompetitionsAPIIntegration:
         tiers = ["bronze", "silver", "gold", "platinum", "diamond"]
 
         for tier in tiers:
-            response = await async_client.get(
-                f"/api/v1/competitions/leaderboard?tier={tier}"
-            )
+            response = await async_client.get(f"/api/v1/competitions/leaderboard?tier={tier}")
 
             assert response.status_code == 200
             data = response.json()
@@ -113,9 +105,7 @@ class TestCompetitionsAPIIntegration:
 
     async def test_get_leaderboard_invalid_tier(self, async_client: AsyncClient):
         """Test leaderboard with invalid tier."""
-        response = await async_client.get(
-            "/api/v1/competitions/leaderboard?tier=invalid_tier"
-        )
+        response = await async_client.get("/api/v1/competitions/leaderboard?tier=invalid_tier")
 
         assert response.status_code == 400
         data = response.json()
@@ -137,9 +127,7 @@ class TestCompetitionsAPIIntegration:
         """Test getting badges for a specific competitor."""
         competitor_id = "test-competitor-123"
 
-        response = await async_client.get(
-            f"/api/v1/competitions/badges/{competitor_id}"
-        )
+        response = await async_client.get(f"/api/v1/competitions/badges/{competitor_id}")
 
         assert response.status_code == 200
         data = response.json()
@@ -196,16 +184,12 @@ class TestCompetitionsAPIIntegration:
         tournaments_data = tournaments_response.json()
 
         # 3. Get leaderboard
-        leaderboard_response = await async_client.get(
-            "/api/v1/competitions/leaderboard"
-        )
+        leaderboard_response = await async_client.get("/api/v1/competitions/leaderboard")
         assert leaderboard_response.status_code == 200
         leaderboard_data = leaderboard_response.json()
 
         # 4. Get available badges
-        badges_response = await async_client.get(
-            "/api/v1/competitions/available-badges"
-        )
+        badges_response = await async_client.get("/api/v1/competitions/available-badges")
         assert badges_response.status_code == 200
         badges_data = badges_response.json()
 
@@ -240,9 +224,7 @@ class TestCompetitionsAPIIntegration:
 
     async def test_tournament_structure(self, async_client: AsyncClient):
         """Test that tournament data has correct structure."""
-        response = await async_client.get(
-            "/api/v1/competitions/tournaments?status=active"
-        )
+        response = await async_client.get("/api/v1/competitions/tournaments?status=active")
 
         assert response.status_code == 200
         data = response.json()
@@ -259,9 +241,7 @@ class TestCompetitionsAPIIntegration:
             assert "entry_fee" in tournament
             assert "prize_pool" in tournament
 
-    async def test_competitions_endpoints_no_auth_required(
-        self, async_client: AsyncClient
-    ):
+    async def test_competitions_endpoints_no_auth_required(self, async_client: AsyncClient):
         """Test that competitions endpoints are publicly accessible (no auth required)."""
         endpoints = [
             ("GET", "/api/v1/competitions/tournaments"),

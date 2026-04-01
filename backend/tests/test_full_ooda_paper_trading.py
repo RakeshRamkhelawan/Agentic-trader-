@@ -201,9 +201,7 @@ class PaperTradingTest:
             if orientation.indicators:
                 logger.info("   Indicators: %s", list(orientation.indicators.keys()))
             if orientation.rag_context:
-                logger.info(
-                    "   RAG Context: %s scenarios", len(orientation.rag_context)
-                )
+                logger.info("   RAG Context: %s scenarios", len(orientation.rag_context))
 
             return orientation
 
@@ -244,9 +242,7 @@ class PaperTradingTest:
 
             # Handle case where no trade signal
             if proposal is None:
-                logger.info(
-                    "No trade signal generated - creating fallback proposal for demo"
-                )
+                logger.info("No trade signal generated - creating fallback proposal for demo")
                 proposal = self._create_fallback_proposal(orientation)
 
             logger.info("Trade Proposal:")
@@ -318,9 +314,7 @@ class PaperTradingTest:
             logger.info("   Rationale: %s", assessment.rationale)
 
             if assessment.modified_size:
-                logger.warning(
-                    "   [WARNING] Size Reduced: %s", assessment.modified_size
-                )
+                logger.warning("   [WARNING] Size Reduced: %s", assessment.modified_size)
 
             return assessment
 
@@ -408,9 +402,7 @@ class PaperTradingTest:
         print("\n" + "=" * 70)
         print("     COMPLETE OODA LOOP TEST - PAPER TRADING MODE")
         print("=" * 70)
-        print(
-            "\n[WARNING] NOTE: This test uses PAPER TRADING - NO real money involved!"
-        )
+        print("\n[WARNING] NOTE: This test uses PAPER TRADING - NO real money involved!")
         print("[WARNING] All trades are simulated with mock exchange adapter\n")
 
         # Initialize agents
@@ -456,9 +448,7 @@ class PaperTradingTest:
                 print(f"   Decision: {proposal.side.upper()}")
                 print(f"   Size: {proposal.size} {observation.symbol.split('/')[0]}")
                 print(f"   Risk Decision: {assessment.decision}")
-                print(
-                    f"   Paper Trade: {'Success' if outcome.get('success') else 'Failed'}"
-                )
+                print(f"   Paper Trade: {'Success' if outcome.get('success') else 'Failed'}")
                 print(f"   Order ID: {outcome.get('order_id', 'N/A')}")
                 print("\n[SUCCESS] Full OODA cycle test completed!\n")
 

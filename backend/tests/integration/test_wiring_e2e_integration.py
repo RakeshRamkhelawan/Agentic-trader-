@@ -18,9 +18,7 @@ pytestmark = [pytest.mark.asyncio, pytest.mark.integration]
 class TestWiringEndToEndIntegration:
     """Complete end-to-end test of all wired APIs."""
 
-    async def test_complete_user_journey(
-        self, async_client: AsyncClient, unique_email: str
-    ):
+    async def test_complete_user_journey(self, async_client: AsyncClient, unique_email: str):
         """
         Test complete user journey through all newly wired APIs.
 
@@ -49,9 +47,7 @@ class TestWiringEndToEndIntegration:
                 "full_name": "E2E Test User",
             },
         )
-        assert (
-            register_response.status_code == 201
-        ), f"Register failed: {register_response.text}"
+        assert register_response.status_code == 201, f"Register failed: {register_response.text}"
         register_data = register_response.json()
 
         assert "access_token" in register_data
@@ -102,9 +98,7 @@ class TestWiringEndToEndIntegration:
         # ========================================
         print("  Step 4: Checking KYC status...")
         kyc_response = await async_client.get("/api/v1/kyc/status")
-        assert (
-            kyc_response.status_code == 200
-        ), f"KYC status failed: {kyc_response.text}"
+        assert kyc_response.status_code == 200, f"KYC status failed: {kyc_response.text}"
         kyc_data = kyc_response.json()
 
         # KYC is disabled by default, so should be auto-verified
@@ -112,9 +106,7 @@ class TestWiringEndToEndIntegration:
         assert "required" in kyc_data
         assert "enabled" in kyc_data
 
-        print(
-            f"    ✅ KYC status: {kyc_data['status']} (required: {kyc_data['required']})"
-        )
+        print(f"    ✅ KYC status: {kyc_data['status']} (required: {kyc_data['required']})")
 
         # Also check KYC required endpoint
         kyc_required_response = await async_client.get("/api/v1/kyc/required")
@@ -229,16 +221,12 @@ class TestWiringEndToEndIntegration:
 
         # Get league info
         league_response = await async_client.get("/api/v1/competitions/league-info")
-        assert (
-            league_response.status_code == 200
-        ), f"Get league info failed: {league_response.text}"
+        assert league_response.status_code == 200, f"Get league info failed: {league_response.text}"
         league_data = league_response.json()
         assert isinstance(league_data, dict)
 
         # Get leaderboard
-        leaderboard_response = await async_client.get(
-            "/api/v1/competitions/leaderboard"
-        )
+        leaderboard_response = await async_client.get("/api/v1/competitions/leaderboard")
         assert (
             leaderboard_response.status_code == 200
         ), f"Get leaderboard failed: {leaderboard_response.text}"
@@ -247,12 +235,8 @@ class TestWiringEndToEndIntegration:
         assert "total" in leaderboard_data
 
         # Get available badges
-        badges_response = await async_client.get(
-            "/api/v1/competitions/available-badges"
-        )
-        assert (
-            badges_response.status_code == 200
-        ), f"Get badges failed: {badges_response.text}"
+        badges_response = await async_client.get("/api/v1/competitions/available-badges")
+        assert badges_response.status_code == 200, f"Get badges failed: {badges_response.text}"
         badges_data = badges_response.json()
         assert "badges" in badges_data
 

@@ -184,9 +184,7 @@ class TestVasanaCachePerformance:
         avg_latency_us = avg_latency_ns / 1000
 
         # Should be < 50μs (realistic for Python with hash lookup)
-        assert (
-            avg_latency_us < 50
-        ), f"Cache hit latency {avg_latency_us:.2f}μs exceeds 50μs limit"
+        assert avg_latency_us < 50, f"Cache hit latency {avg_latency_us:.2f}μs exceeds 50μs limit"
 
 
 class TestMemorySystemWithCache:

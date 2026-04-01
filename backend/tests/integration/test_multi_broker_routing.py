@@ -16,7 +16,9 @@ async def test_multi_broker_routing():
     """
     # 1. Setup ExecutionGateway with mocked exchanges
     gateway = ExecutionGateway(default_exchange_id="kraken")
-    gateway.dry_run = True  # Force dry run to avoid real keys check in execute_order (though we mock exchanges)
+    gateway.dry_run = (
+        True  # Force dry run to avoid real keys check in execute_order (though we mock exchanges)
+    )
 
     # Mock exchanges in the registry
     mock_bybit = AsyncMock()

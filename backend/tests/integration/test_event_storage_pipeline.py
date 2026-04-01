@@ -160,9 +160,7 @@ async def test_agent_thought_to_storage_pipeline():
             await ch_client.connect()
 
             llm = MockLLMProvider()
-            agent = SentimentAgent(
-                agent_name="test_agent", llm_provider=llm, event_bus=bus
-            )
+            agent = SentimentAgent(agent_name="test_agent", llm_provider=llm, event_bus=bus)
 
             # Agent analyzes and publishes
             features = {"price": 52000.0, "volume": 2.0}
@@ -311,8 +309,7 @@ async def test_concurrent_event_storage():
 
         # Concurrent inserts
         events_batch = [
-            [{"symbol": f"PAIR{i}", "price": 1000.0 * i} for _ in range(10)]
-            for i in range(5)
+            [{"symbol": f"PAIR{i}", "price": 1000.0 * i} for _ in range(10)] for i in range(5)
         ]
 
         tasks = [ch_client.insert("market_ticks", batch) for batch in events_batch]

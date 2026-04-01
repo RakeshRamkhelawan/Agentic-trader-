@@ -38,18 +38,14 @@ class TestEphemerisCalculator:
         rahu_state = calculator.calculate_planet_state(PlanetName.RAHU, dt)
 
         assert rahu_state.is_retrograde is True, "Rahu must always be retrograde"
-        assert (
-            rahu_state.speed < 0
-        ), f"Rahu speed must be negative, got {rahu_state.speed}"
+        assert rahu_state.speed < 0, f"Rahu speed must be negative, got {rahu_state.speed}"
 
     def test_ketu_always_retrograde(self, calculator):
         dt = datetime(2026, 2, 14, 12, 0, 0, tzinfo=timezone.utc)
         ketu_state = calculator.calculate_planet_state(PlanetName.KETU, dt)
 
         assert ketu_state.is_retrograde is True, "Ketu must always be retrograde"
-        assert (
-            ketu_state.speed < 0
-        ), f"Ketu speed must be negative, got {ketu_state.speed}"
+        assert ketu_state.speed < 0, f"Ketu speed must be negative, got {ketu_state.speed}"
 
     def test_rahu_ketu_180_degree_opposition(self, calculator):
         dt = datetime(2026, 2, 14, 12, 0, 0, tzinfo=timezone.utc)
@@ -105,9 +101,7 @@ class TestEphemerisCalculator:
         guna = calculator.calculate_guna_distribution(planets, dt)
 
         total = guna.sattva + guna.rajas + guna.tamas
-        assert (
-            0.9999 <= total <= 1.0001
-        ), f"Guna distribution must sum to 1.0, got {total}"
+        assert 0.9999 <= total <= 1.0001, f"Guna distribution must sum to 1.0, got {total}"
 
     def test_guna_distribution_non_negative(self, calculator):
         dt = datetime(2026, 2, 14, 12, 0, 0, tzinfo=timezone.utc)
@@ -152,9 +146,7 @@ class TestEphemerisCalculator:
         location_lat = 51.5074
         location_lon = -0.1278
 
-        rahu_kala_active = calculator.calculate_rahu_kala(
-            dt, location_lat, location_lon
-        )
+        rahu_kala_active = calculator.calculate_rahu_kala(dt, location_lat, location_lon)
 
         assert isinstance(rahu_kala_active, bool)
 
@@ -194,9 +186,7 @@ class TestEphemerisCalculator:
         state = calculator.calculate_navagraha_state(dt, location_lat, location_lon)
 
         if state.rahu_kala_active:
-            assert (
-                state.trading_gate_open is False
-            ), "Trading gate must be closed during Rahu Kala"
+            assert state.trading_gate_open is False, "Trading gate must be closed during Rahu Kala"
 
     def test_trading_gate_closed_high_tamas(self, calculator):
         dt = datetime(2026, 2, 14, 12, 0, 0, tzinfo=timezone.utc)
@@ -206,9 +196,7 @@ class TestEphemerisCalculator:
         state = calculator.calculate_navagraha_state(dt, location_lat, location_lon)
 
         if state.guna_distribution.tamas > 0.6:
-            assert (
-                state.trading_gate_open is False
-            ), "Trading gate must be closed when tamas > 0.6"
+            assert state.trading_gate_open is False, "Trading gate must be closed when tamas > 0.6"
 
     def test_immutability_planet_state(self, calculator):
         dt = datetime(2026, 2, 14, 12, 0, 0, tzinfo=timezone.utc)
@@ -281,9 +269,7 @@ class TestEphemerisCalculator:
             "Revati",
         ]
 
-        assert (
-            moon_state.nakshatra in nakshatras
-        ), f"Invalid nakshatra: {moon_state.nakshatra}"
+        assert moon_state.nakshatra in nakshatras, f"Invalid nakshatra: {moon_state.nakshatra}"
 
 
 class TestEphemerisInvariants:
@@ -325,9 +311,7 @@ class TestEphemerisInvariants:
             (2026, 12, 31),
         ],
     )
-    def test_guna_distribution_invariant_multiple_dates(
-        self, calculator, year, month, day
-    ):
+    def test_guna_distribution_invariant_multiple_dates(self, calculator, year, month, day):
         dt = datetime(year, month, day, 12, 0, 0, tzinfo=timezone.utc)
         planets = calculator.calculate_all_planets(dt)
         guna = calculator.calculate_guna_distribution(planets, dt)

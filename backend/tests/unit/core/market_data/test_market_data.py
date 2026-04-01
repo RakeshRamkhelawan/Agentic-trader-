@@ -32,9 +32,7 @@ class TestMarketData:
 
     @pytest.mark.asyncio
     async def test_circuit_breaker_recovery(self):
-        breaker = CircuitBreaker(
-            name="test_recovery", fail_threshold=1, recovery_timeout=0.1
-        )
+        breaker = CircuitBreaker(name="test_recovery", fail_threshold=1, recovery_timeout=0.1)
 
         await breaker.record_failure()
         assert breaker.state == CircuitState.OPEN

@@ -50,9 +50,7 @@ class TestUnitOfWork:
     ):
         """Test successful two-phase commit."""
         # Add a ClickHouse operation
-        unit_of_work.add_clickhouse_operation(
-            "trades", {"symbol": "BTC-EUR", "price": 50000}
-        )
+        unit_of_work.add_clickhouse_operation("trades", {"symbol": "BTC-EUR", "price": 50000})
 
         # Commit
         async with unit_of_work:
@@ -87,9 +85,7 @@ class TestUnitOfWork:
         assert len(unit_of_work._clickhouse_buffer) == 0
 
     @pytest.mark.asyncio
-    async def test_clickhouse_disabled(
-        self, mock_postgres_session, mock_clickhouse_client
-    ):
+    async def test_clickhouse_disabled(self, mock_postgres_session, mock_clickhouse_client):
         """Test that ClickHouse operations are skipped when disabled."""
         uow = UnitOfWork(
             postgres_session=mock_postgres_session,
@@ -170,13 +166,9 @@ class TestUnitOfWork:
             await unit_of_work.commit()
 
     @pytest.mark.asyncio
-    async def test_factory_context_manager(
-        self, mock_postgres_session, mock_clickhouse_client
-    ):
+    async def test_factory_context_manager(self, mock_postgres_session, mock_clickhouse_client):
         """Test the factory context manager."""
-        async with create_unit_of_work(
-            mock_postgres_session, mock_clickhouse_client
-        ) as uow:
+        async with create_unit_of_work(mock_postgres_session, mock_clickhouse_client) as uow:
             uow.add_clickhouse_operation("trades", {"symbol": "BTC-EUR"})
 
         mock_postgres_session.commit.assert_called_once()

@@ -154,12 +154,7 @@ class TestADX:
     def test_insufficient_data_returns_none(self):
         """Te weinig data geeft None."""
         n = 10
-        assert (
-            TechnicalIndicators.calculate_adx(
-                [1.0] * n, [1.0] * n, [1.0] * n, period=14
-            )
-            is None
-        )
+        assert TechnicalIndicators.calculate_adx([1.0] * n, [1.0] * n, [1.0] * n, period=14) is None
 
     def test_strong_trend_high_adx(self):
         """Sterke trend geeft hoge ADX (>25)."""

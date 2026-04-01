@@ -62,9 +62,7 @@ async def run_stress_test():
     end_time = time.time()
 
     print(f"Routing completed in {end_time - start_time:.2f}s")
-    if (
-        result and result.exchange_id == "bitvavo"
-    ):  # SlowBroker should yield but bitvavo is faster?
+    if result and result.exchange_id == "bitvavo":  # SlowBroker should yield but bitvavo is faster?
         # Actually gather waits for all. So binance (50000) is best.
         if result.exchange_id == "binance":
             print(f"Result: PASSED @ {result.price} (Exchange: {result.exchange_id})")

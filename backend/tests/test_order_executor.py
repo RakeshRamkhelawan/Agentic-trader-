@@ -126,9 +126,7 @@ class TestSlippageCalculation:
 class TestOrderTimeout:
     """Test order timeout handling."""
 
-    async def test_order_timeout_cancellation(
-        self, order_executor, sample_execution_plan
-    ):
+    async def test_order_timeout_cancellation(self, order_executor, sample_execution_plan):
         """Test order cancellation on timeout."""
 
         # Mock exchange to never fill order

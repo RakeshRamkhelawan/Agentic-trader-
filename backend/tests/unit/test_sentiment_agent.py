@@ -92,9 +92,7 @@ async def test_sentiment_agent_publishes_thought():
 
     agent = SentimentAgent(llm_provider=mock_provider, event_bus=mock_bus)
 
-    await agent.analyze(
-        features={"price": 45000}, context={"news": "Regulatory crackdown"}
-    )
+    await agent.analyze(features={"price": 45000}, context={"news": "Regulatory crackdown"})
 
     # Verify thought was published
     mock_bus.publish.assert_called()
@@ -108,9 +106,7 @@ async def test_sentiment_agent_handles_missing_llm():
     """RED: SentimentAgent should handle missing LLM gracefully."""
     agent = SentimentAgent()  # No LLM provider
 
-    result = await agent.analyze(
-        features={"price": 50000}, context={"news": "Test news"}
-    )
+    result = await agent.analyze(features={"price": 50000}, context={"news": "Test news"})
 
     # Should return fallback result
     assert "error" in result or "sentiment" in result

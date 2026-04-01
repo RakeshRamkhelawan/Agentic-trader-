@@ -13,9 +13,7 @@ class TestMultiLevelCache:
         l2_mock = AsyncMock()
         l3_mock = AsyncMock()
 
-        return MultiLevelCache(
-            adapters=[l1, l2_mock, l3_mock], default_ttls=[300, 900, 86400]
-        )
+        return MultiLevelCache(adapters=[l1, l2_mock, l3_mock], default_ttls=[300, 900, 86400])
 
     @pytest.mark.asyncio
     async def test_get_from_l1(self, cache):
