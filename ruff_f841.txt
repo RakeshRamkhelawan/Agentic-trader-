@@ -1,2 +1,0 @@
-C:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\scripts\run_v11_conscious_backtest.py:190:13 - Local variable `pause_reason` is assigned to but never used
-C:\Users\rsram\Downloads\agentic_trader_platform_1734_20260109_210621\backend\scripts\run_v11_conscious_backtest.py:316:17 - Local variable `similar_performance` is assigned to but never used
