@@ -56,6 +56,10 @@ import { FederatedTriad } from '@/components/dashboard/FederatedTriad';
 import { TradingChart } from '@/components/dashboard/TradingChart';
 import { AIAdvisor } from '@/components/dashboard/AIAdvisor';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { 
+  CognitiveInsightsPanel,
+  EvolutionaryTuningPanel
+} from '@/components/paper-trading';
 
 // Types
 interface MarketAsset {
@@ -659,15 +663,27 @@ export function PaperTrading() {
         </div>
         <div className='flex items-center gap-3'>
           {isRunning && (
-            <Badge 
-              variant={isConnected ? 'default' : 'secondary'}
-              className={cn(
-                'gap-1',
-                isConnected ? 'bg-green-500 text-black' : 'bg-yellow-500 text-black'
+            <>
+              {usePaperTradingStore.getState().liveMode && (
+                <Badge className="bg-orange-500 text-black gap-1 animate-pulse border-none">
+                  <Zap className="h-3 w-3 fill-black" />
+                  LIVE BITVAVO
+                </Badge>
               )}
-            >
-              {isConnected ? '● Live' : '◌ Verbinden...'}
-            </Badge>
+              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 gap-1">
+                <RefreshCw className="h-3 w-3" />
+                SLIPPAGE AWARE
+              </Badge>
+              <Badge 
+                variant={isConnected ? 'default' : 'secondary'}
+                className={cn(
+                  'gap-1',
+                  isConnected ? 'bg-green-500 text-black' : 'bg-yellow-500 text-black'
+                )}
+              >
+                {isConnected ? '● Connected' : '◌ Connecting...'}
+              </Badge>
+            </>
           )}
           <Button
             variant='outline'
@@ -702,6 +718,13 @@ export function PaperTrading() {
           <OrderPanel />
           
           <FederatedTriad />
+          
+          {isRunning && (
+            <>
+              <EvolutionaryTuningPanel />
+              <CognitiveInsightsPanel />
+            </>
+          )}
           
           <AIAdvisor />
           

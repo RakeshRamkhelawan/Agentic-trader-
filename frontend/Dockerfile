@@ -6,16 +6,26 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Build
 # -----------------------------------------------------------------------------
-FROM node:20-alpine AS builder
+# Use Debian-based slim image for better compatibility with native modules
+FROM node:20-slim AS builder
 
 WORKDIR /app
+
+# Install build essentials for native modules
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies using npm ci for deterministic builds
-# Requires package-lock.json to be present and in sync
-RUN npm ci
+# Install dependencies with high memory limit and legacy-peer-deps for stability
+# This resolves recorded ERESOLVE conflicts between React 19 and Storybook.
+ENV NODE_OPTIONS=--max-old-space-size=4096
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy source code
 COPY . .
@@ -52,14 +62,14 @@ ENV VITE_AUTH0_AUDIENCE=
 
 # Create a script to generate runtime config and start nginx
 RUN echo '#!/bin/sh' > /start.sh && \
-    echo 'echo "Creating runtime config..."' >> /start.sh && \
+    echo 'echo "Creating runtime config from environment..."' >> /start.sh && \
     echo 'cat > /usr/share/nginx/html/config.js << EOF' >> /start.sh && \
     echo 'window.RUNTIME_CONFIG = {' >> /start.sh && \
-    echo '  VITE_API_URL: "'"$VITE_API_URL"'",' >> /start.sh && \
-    echo '  VITE_WS_URL: "'"$VITE_WS_URL"'",' >> /start.sh && \
-    echo '  VITE_AUTH0_DOMAIN: "'"$VITE_AUTH0_DOMAIN"'",' >> /start.sh && \
-    echo '  VITE_AUTH0_CLIENT_ID: "'"$VITE_AUTH0_CLIENT_ID"'",' >> /start.sh && \
-    echo '  VITE_AUTH0_AUDIENCE: "'"$VITE_AUTH0_AUDIENCE"'"' >> /start.sh && \
+    echo '  VITE_API_URL: "$VITE_API_URL",' >> /start.sh && \
+    echo '  VITE_WS_URL: "$VITE_WS_URL",' >> /start.sh && \
+    echo '  VITE_AUTH0_DOMAIN: "$VITE_AUTH0_DOMAIN",' >> /start.sh && \
+    echo '  VITE_AUTH0_CLIENT_ID: "$VITE_AUTH0_CLIENT_ID",' >> /start.sh && \
+    echo '  VITE_AUTH0_AUDIENCE: "$VITE_AUTH0_AUDIENCE"' >> /start.sh && \
     echo '};' >> /start.sh && \
     echo 'EOF' >> /start.sh && \
     echo 'cat /usr/share/nginx/html/config.js' >> /start.sh && \

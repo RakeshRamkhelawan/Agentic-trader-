@@ -102,6 +102,10 @@ class PaperTrade(Base):
     pnl = Column(Float, nullable=True)
     pnl_pct = Column(Float, nullable=True)
 
+    # Slippage tracking
+    intended_price = Column(Float, nullable=True)
+    slippage_pct = Column(Float, nullable=True)
+
     # Agent info
     agent = Column(String(50), nullable=False, default="V18_Elemental")
     strategy = Column(String(100), nullable=True)
@@ -137,6 +141,9 @@ class PaperTrade(Base):
     # Raw analysis data (for debugging/research)
     analysis_data = Column(JSON, nullable=True)
 
+    # Cognitive Shadow Mode (Phase 9)
+    rag_context = Column(JSON, nullable=True)
+
     # Relationships
     session = relationship("PaperTradingSession", back_populates="trades")
 
@@ -171,6 +178,7 @@ class PaperTradingAnalytics(Base):
 
     # Price data
     current_price = Column(Float, nullable=False)
+    expected_slippage = Column(Float, nullable=True)
 
     # VedAstro analysis
     vedastro_signal = Column(String(20), nullable=True)

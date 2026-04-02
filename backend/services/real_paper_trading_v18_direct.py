@@ -26,6 +26,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from backend.core.telemetry.cognitive_logger import CognitiveLogger
 from backend.execution.execution_guard import ExecutionGuard
 
 # Direct imports van tools (sneller dan MCP)
@@ -65,6 +66,11 @@ class PaperTradingConfig:
     # VedAstro settings
     min_vedastro_confidence: float = 50.0
     min_vedastro_score: float = 45.0
+
+    # Live Mode (Phase 5)
+    live_mode: bool = True
+    max_slippage_allowed: float = 0.005  # 0.5% max slippage for live
+    min_profit_to_slippage_ratio: float = 2.0  # Profit must be 2x slippage
 
     # Trading cycle settings - OPTIMIZED
     # DataPreFetchAgent updates all 400+ symbols continuously
@@ -156,6 +162,10 @@ class RealPaperTradingV18:
         print("Execution Guard: READY (Daily Limit: 5%)")
         print()
 
+        # Initialize Cognitive Logger (Taak 9.1)
+        self.cognitive_logger = CognitiveLogger()
+        print("Cognitive Logger: READY")
+
     async def initialize(self):
         """Initialize Data Agent and Database."""
         logger.info("Initializing Paper Trading V18 Direct...")
@@ -232,11 +242,28 @@ class RealPaperTradingV18:
                 self.use_rag = False
 
         # Initialize Data Pre-fetch Agent
-        from backend.services.data_prefetch_agent import DataPreFetchAgent
+        from backend.services.data_prefetch_agent import DataPreFetchAgent, get_data_agent
 
         self.data_agent = await get_data_agent()
         await self.data_agent.start()
-        self.all_symbols = DataPreFetchAgent.PRIORITY_SYMBOLS
+
+        # DYNAMIC SYMBOL LOADING (Phase 5)
+        if self.config.live_mode:
+            try:
+                from backend.execution.bitvavo_adapter import BitvavoAdapter
+
+                bitvavo = BitvavoAdapter()
+                if await bitvavo.initialize():
+                    self.all_symbols = bitvavo.get_eur_pairs()
+                    logger.info(f"[LIVE] Loaded {len(self.all_symbols)} EUR pairs from Bitvavo API")
+                    await bitvavo.close()
+                else:
+                    self.all_symbols = DataPreFetchAgent.PRIORITY_SYMBOLS
+            except Exception as e:
+                logger.error(f"[LIVE] Failed to load Bitvavo symbols: {e}")
+                self.all_symbols = DataPreFetchAgent.PRIORITY_SYMBOLS
+        else:
+            self.all_symbols = DataPreFetchAgent.PRIORITY_SYMBOLS
 
         logger.info(f"Data agent initialized with {len(self.all_symbols)} symbols")
 
@@ -403,6 +430,26 @@ class RealPaperTradingV18:
         """Execute one trading cycle - OPTIMIZED for all 400+ symbols."""
         self._cycle_count += 1
 
+        # --- PERIODIC TUNING BROADCAST (Every 10 cycles / ~50s) ---
+        if self._cycle_count % 10 == 0:
+            try:
+                from backend.services.evolutionary_tuner import tuner
+                from backend.services.paper_trading_ws_broadcast import broadcast_tuning_update
+
+                tuning_stats = {
+                    "regimes": {
+                        r: {
+                            "weights": tuner.current_weights.get(r, {}),
+                            "bandit_stats": b.get_stats(),
+                        }
+                        for r, b in tuner.bandits.items()
+                    },
+                    "agents": tuner.agents,
+                }
+                await broadcast_tuning_update(tuning_stats)
+            except Exception as e:
+                logger.debug(f"[TUNER-WS] Broadcast failed: {e}")
+
         if not self.data_agent:
             return
 
@@ -544,25 +591,77 @@ class RealPaperTradingV18:
             )
 
             # ============================================================
-            # 1b. RAG ORIENT PHASE - Retrieve similar scenarios from ChromaDB
+            # 1b. ELEMENTAL WATER ANALYSIS (Jala - Regime/Momentum)
+            # ============================================================
+            # Must run BEFORE RAG so we know exactly what regime to search for
+            water_vote = 0.0
+            regime = "unknown"
+            risk_on_score = 0.5
+
+            if len(price_history) >= 20:
+                try:
+                    water_result = await elemental_water_regime_check(
+                        symbol=symbol, prices=price_history
+                    )
+                    regime = water_result.get("regime", "unknown")
+                    risk_on_score = water_result.get("risk_on_score", 0.5)
+
+                    # Water vote based on regime favorability
+                    if regime == "expansion":
+                        water_vote = 0.4
+                    elif regime == "contraction":
+                        water_vote = -0.2 if risk_on_score < 0.35 else 0.1
+                    else:  # neutral
+                        water_vote = 0.2
+
+                    logger.debug(
+                        f"[WATER] {symbol}: Regime={regime}, risk_on={risk_on_score:.2f}, vote={water_vote:.2f}"
+                    )
+                except Exception as e:
+                    logger.warning(f"[WATER] {symbol}: Regime check failed ({e})")
+                    water_vote = 0.0
+            else:
+                logger.debug(
+                    f"[WATER] {symbol}: Insufficient history ({len(price_history)} points)"
+                )
+                water_vote = 0.0
+
+            analysis["elemental"]["water"] = {
+                "vote": water_vote,
+                "regime": regime,
+                "risk_on_score": risk_on_score,
+            }
+
+            # ============================================================
+            # 1c. RAG ORIENT PHASE - Metadata-Driven Retrieval
             # ============================================================
             rag_insights = []
             rag_adjustment = 0.0
             if self.use_rag and self.chroma_collection:
                 try:
-                    # Build query context
-                    query_text = f"{symbol} {signal} {dominant_planet} market regime"
-
-                    # Query ChromaDB (synchronous)
-                    results = self.chroma_collection.query(
-                        query_texts=[query_text],
-                        n_results=3,
-                        where=(
-                            {"category": "scenario"} if False else None
-                        ),  # Filter by category if needed
+                    # Advanced Query: Focus on Symbol, exact Regime and VedAstro Lord matching
+                    mahadasha = (
+                        vedastro_result.get("dasha_context", "").split("-")[0].strip()
+                        if "-" in vedastro_result.get("dasha_context", "")
+                        else "Unknown"
+                    )
+                    antardasha = (
+                        vedastro_result.get("dasha_context", "").split("-")[1].strip()
+                        if "-" in vedastro_result.get("dasha_context", "")
+                        else "Unknown"
                     )
 
-                    if results and results["documents"] and results["documents"][0]:
+                    query_text = (
+                        f"{symbol} {regime.upper()} {mahadasha}-{antardasha} {dominant_planet}"
+                    )
+
+                    # Semantic Search on the 10,125 episodes
+                    results = self.chroma_collection.query(
+                        query_texts=[query_text],
+                        n_results=5,
+                    )
+
+                    if results and results.get("documents") and results["documents"][0]:
                         documents = results["documents"][0]
                         metadatas = results["metadatas"][0]
                         distances = results["distances"][0]
@@ -572,33 +671,51 @@ class RealPaperTradingV18:
                             for doc, meta, dist in zip(documents, metadatas, distances)
                         ]
 
-                        logger.info(f"[RAG] {symbol}: Found {len(rag_insights)} similar scenarios")
+                        logger.info(
+                            f"[RAG-COGNITIVE] {symbol}: Found {len(rag_insights)} strategic episodes"
+                        )
 
-                        # Calculate adjustment based on historical outcomes
+                        # Dynamic weighting based on historical returns
                         for insight in rag_insights:
-                            content = insight["content"]
                             meta = insight["metadata"]
+                            # Bonus multiplier if symbol matches identically
+                            symbol_match_multiplier = 1.5 if meta.get("symbol") == symbol else 1.0
+                            # Bonus multiplier if Dasha matches identically
+                            dasha_match_multiplier = (
+                                1.5 if meta.get("mahadasha") == mahadasha else 1.0
+                            )
 
-                            # Check metadata first
-                            outcome = meta.get("outcome", "").lower() if meta else ""
-                            if outcome == "success" or "success" in content.lower():
-                                rag_adjustment += 0.05
-                            elif outcome == "failure" or "failure" in content.lower():
-                                rag_adjustment -= 0.05
+                            historical_return = float(meta.get("return_pct", 0.0))
 
-                        # Limit adjustment
-                        rag_adjustment = max(-0.15, min(0.15, rag_adjustment))
+                            # Scaling the return into an adjustment bounded by (-0.10 to +0.10) per insight
+                            if historical_return > 0:
+                                weight = (
+                                    min(0.05, historical_return / 500)
+                                    * symbol_match_multiplier
+                                    * dasha_match_multiplier
+                                )
+                                rag_adjustment += weight
+                            else:
+                                weight = (
+                                    max(-0.05, historical_return / 500)
+                                    * symbol_match_multiplier
+                                    * dasha_match_multiplier
+                                )
+                                rag_adjustment += weight
+
+                        # Clamp final adjustment strictly
+                        rag_adjustment = max(-0.25, min(0.25, rag_adjustment))
 
                         analysis["rag"] = {
                             "insights_count": len(rag_insights),
-                            "adjustment": rag_adjustment,
+                            "adjustment": float(rag_adjustment),
                             "top_scenario": (
                                 rag_insights[0]["content"][:100] if rag_insights else None
                             ),
                         }
 
                 except Exception as e:
-                    logger.warning(f"[RAG] {symbol}: Failed to retrieve insights: {e}")
+                    logger.warning(f"[RAG-COGNITIVE] {symbol}: Failed to retrieve insights: {e}")
 
             # VedAstro vote berekening (EERST!)
             signal_upper = signal.upper() if signal else "HOLD"
@@ -697,47 +814,6 @@ class RealPaperTradingV18:
                 "position_size_raw": position_size,
                 "dominant_planet": current_dominant_planet,
                 "sizing_factors": fire_sizing_factors,
-            }
-
-            # ============================================================
-            # 4. ELEMENTAL WATER ANALYSIS (Jala - Regime/Momentum)
-            # ============================================================
-            water_vote = 0.0
-            regime = "unknown"
-            risk_on_score = 0.5
-
-            if len(price_history) >= 20:
-                try:
-                    water_result = await elemental_water_regime_check(
-                        symbol=symbol, prices=price_history
-                    )
-                    regime = water_result.get("regime", "unknown")
-                    risk_on_score = water_result.get("risk_on_score", 0.5)
-
-                    # Water vote based on regime favorability
-                    if regime == "expansion":
-                        water_vote = 0.4
-                    elif regime == "contraction":
-                        water_vote = -0.2 if risk_on_score < 0.35 else 0.1
-                    else:  # neutral
-                        water_vote = 0.2
-
-                    logger.debug(
-                        f"[WATER] {symbol}: Regime={regime}, risk_on={risk_on_score:.2f}, vote={water_vote:.2f}"
-                    )
-                except Exception as e:
-                    logger.warning(f"[WATER] {symbol}: Regime check failed ({e})")
-                    water_vote = 0.0
-            else:
-                logger.debug(
-                    f"[WATER] {symbol}: Insufficient history ({len(price_history)} points)"
-                )
-                water_vote = 0.0
-
-            analysis["elemental"]["water"] = {
-                "vote": water_vote,
-                "regime": regime,
-                "risk_on_score": risk_on_score,
             }
 
             # ============================================================
@@ -850,35 +926,38 @@ class RealPaperTradingV18:
 
             # GEWICHTEN (sum = 1.0, zonder guna als aparte stem)
             # VERHOGEN DREMPELS voor conservatievere trading (V18.1)
-            if regime == "expansion":
-                # Bull: VedAstro leidt (40%), Earth volgt (25%)
+            # --- ADAPTIVE WEIGHTS (Auto-Pilot / Evolutionary Tuner) ---
+            try:
+                from backend.services.evolutionary_tuner import tuner
+
+                adaptive_config = tuner.get_weights(regime)
                 weights = {
-                    "vedastro": 0.40,
-                    "earth": 0.25,
-                    "fire": 0.25,
-                    "water": 0.10,
+                    "vedastro": adaptive_config.get("vedastro", 0.30),
+                    "earth": adaptive_config.get("earth", 0.30),
+                    "fire": adaptive_config.get("fire", 0.25),
+                    "water": adaptive_config.get("water", 0.15),
                 }
-                base_threshold = 0.35  # VERHOOGD van 0.30
-                logger.debug(f"[JALA] {symbol}: EXPANSIE regime - VedAstro 40%, threshold 0.35")
-            elif regime == "contraction":
-                # Bear: Earth beschermt (45%), VedAstro adviseert (20%)
-                weights = {
-                    "vedastro": 0.20,
-                    "earth": 0.45,  # Earth beschermt kapitaal
-                    "fire": 0.15,  # Fire is voorzichtiger
-                    "water": 0.20,  # Water regime indicator
-                }
-                base_threshold = 0.40  # VERHOOGD van 0.35
-                logger.debug(f"[JALA] {symbol}: CONTRACTIE regime - Earth 45%, threshold 0.40")
-            else:
-                # Neutraal: balans
-                weights = {
-                    "vedastro": 0.30,
-                    "earth": 0.30,
-                    "fire": 0.25,
-                    "water": 0.15,
-                }
-                base_threshold = 0.35  # VERHOOGD van 0.30
+                base_threshold = adaptive_config.get("threshold", 0.35)
+
+                logger.debug(
+                    f"[TUNER] {symbol}: Using adaptive weights for {regime} | "
+                    f"V:{weights['vedastro']:.2f} E:{weights['earth']:.2f} F:{weights['fire']:.2f} W:{weights['water']:.2f} | "
+                    f"Threshold:{base_threshold:.2f}"
+                )
+            except Exception as tuner_err:
+                logger.warning(
+                    f"[TUNER] Failed to load adaptive weights, using fallback: {tuner_err}"
+                )
+                # Fallback to defaults if tuner fails
+                if regime == "expansion":
+                    weights = {"vedastro": 0.40, "earth": 0.25, "fire": 0.25, "water": 0.10}
+                    base_threshold = 0.35
+                elif regime == "contraction":
+                    weights = {"vedastro": 0.20, "earth": 0.45, "fire": 0.15, "water": 0.20}
+                    base_threshold = 0.40
+                else:
+                    weights = {"vedastro": 0.30, "earth": 0.30, "fire": 0.25, "water": 0.15}
+                    base_threshold = 0.35
 
             # Pas Vayu demping toe op drempel
             effective_threshold = base_threshold * vayu_dampener
@@ -1005,6 +1084,31 @@ class RealPaperTradingV18:
                 f"Dominant:{dominant_agent} | Vayu:{vayu_dampener:.1f}"
             )
 
+            # --- COGNITIVE AUDIT LOGGING ---
+            if hasattr(self, "cognitive_logger"):
+                cog_decision = "BUY" if total_vote >= effective_threshold else "SKIP"
+                await self.cognitive_logger.log_decision(
+                    symbol=symbol,
+                    regime=regime,
+                    engine_signal=signal,
+                    rag_insights=rag_insights,
+                    vedastro_vote=vedastro_vote,
+                    rag_adjustment=rag_adjustment,
+                    final_decision=cog_decision,
+                )
+
+                # Broadcast to frontend via WebSocket (non-blocking)
+                try:
+                    from backend.services.paper_trading_ws_broadcast import (
+                        broadcast_cognitive_insight,
+                    )
+
+                    recent = self.cognitive_logger.get_recent_decisions(limit=1)
+                    if recent:
+                        await broadcast_cognitive_insight(recent[0])
+                except Exception as ws_err:
+                    logger.debug(f"[WS] Cognitive broadcast skipped: {ws_err}")
+
             # Check of consensus sterk genoeg is (gebruik effective_threshold!)
             if total_vote < effective_threshold:
                 analysis["decision"] = {
@@ -1025,6 +1129,45 @@ class RealPaperTradingV18:
                     reason=f"Consensus {total_vote:.2f} < threshold {effective_threshold:.2f} | VedAstro:{vedastro_vote:.2f} | Earth:{earth_vote:.2f} | Fire:{fire_vote:.2f} | Regime:{regime}",
                     executed=False,
                 )
+                return False
+
+            # ============================================================
+            # 7. SLIPPAGE & EXECUTION CHECK (Phase 5)
+            # ============================================================
+            intended_price = current_price
+            expected_slippage_pct = 0.001  # Default 0.1% for liquid pairs
+
+            # If live, try to get real spread for better slippage estimation
+            if self.config.live_mode:
+                try:
+                    from backend.execution.bitvavo_adapter import BitvavoAdapter
+
+                    bitvavo = BitvavoAdapter()
+                    if await bitvavo.initialize():
+                        book = await bitvavo.fetch_order_book(symbol, limit=5)
+                        if book and book["bids"] and book["asks"]:
+                            spread = (book["asks"][0][0] - book["bids"][0][0]) / intended_price
+                            # We use a 1.5x multiplier for spread to estimate slippage
+                            expected_slippage_pct = max(0.001, (spread / 2) * 1.5)
+                        await bitvavo.close()
+                except Exception as e:
+                    logger.warning(f"[SLIPPAGE] Could not fetch real book for {symbol}: {e}")
+
+            # CALCULATE PROFIT TO SLIPPAGE RATIO
+            # We assume a base profit target of 1.5% for V18 elemental entries
+            expected_profit_pct = 0.015
+            if strength_score > 70:
+                expected_profit_pct = 0.025
+
+            if expected_profit_pct < (
+                expected_slippage_pct * self.config.min_profit_to_slippage_ratio
+            ):
+                logger.warning(
+                    f"[SKIP-SLIPPAGE] {symbol}: Profit ({expected_profit_pct:.2%}) "
+                    f"< Slippage ({expected_slippage_pct:.2%}) * {self.config.min_profit_to_slippage_ratio}"
+                )
+                analysis["decision"] = {"action": "SKIP", "reason": "high_slippage_risk"}
+                await self._log_analysis(analysis)
                 return False
 
             # ============================================================
@@ -1089,15 +1232,51 @@ class RealPaperTradingV18:
                 logger.warning(f"[GUARD] {symbol}: ORDER REJECTED - {reason}")
                 return False
 
-            quantity = position_size / current_price
+            # POSITION SIZING - Hardcoded to €5 for Live Mode per user instructions
+            if self.config.live_mode:
+                final_size_eur = 5.0
+            else:
+                final_size_eur = position_size
 
-            result = await execution_execute_paper_trade(
-                symbol=symbol,
-                action="BUY",
-                quantity=quantity,
-                current_price=current_price,
-                account_id=self.config.account_id,
-            )
+            quantity = final_size_eur / intended_price
+
+            if self.config.live_mode:
+                # REAL BITVAVO EXECUTION
+                try:
+                    from backend.execution.bitvavo_adapter import BitvavoAdapter
+
+                    bitvavo = BitvavoAdapter()
+                    if await bitvavo.initialize():
+                        # Market orders on Bitvavo
+                        res = await bitvavo.create_market_order(symbol, "buy", quantity)
+                        if res:
+                            actual_price = res.get("price") or intended_price
+                            quantity = res.get("amount") or quantity
+                            actual_slippage = (actual_price - intended_price) / intended_price
+                            result = {
+                                "status": "FILLED",
+                                "price": actual_price,
+                                "amount": quantity,
+                                "slippage": actual_slippage,
+                                "commission": res.get("fee", final_size_eur * 0.0025),
+                            }
+                        else:
+                            result = {"status": "FAILED"}
+                        await bitvavo.close()
+                    else:
+                        result = {"status": "FAILED"}
+                except Exception as e:
+                    logger.error(f"[LIVE-ERR] {e}")
+                    result = {"status": "ERROR", "message": str(e)}
+            else:
+                # SHADOW EXECUTION
+                result = await execution_execute_paper_trade(
+                    symbol=symbol,
+                    action="BUY",
+                    quantity=quantity,
+                    current_price=intended_price,
+                    account_id=self.config.account_id,
+                )
 
             if result.get("status") != "FILLED":
                 analysis["decision"] = {
@@ -1108,18 +1287,24 @@ class RealPaperTradingV18:
                 logger.warning(f"{symbol}: Trade not filled - {result.get('status')}")
                 return False
 
-            # ============================================================
             # 9. UPDATE STATE & LOG ANALYTICS
             # ============================================================
+            current_price = result.get("price", intended_price)
+            actual_slippage = result.get("slippage") or (
+                (current_price - intended_price) / intended_price if intended_price > 0 else 0
+            )
+
             cost = quantity * current_price
-            commission = result.get("commission", cost * 0.0005)
+            commission = result.get("commission", cost * 0.0025)
 
             self.state.cash -= cost + commission
             self.state.open_positions[symbol] = {
                 "entry_date": datetime.utcnow().isoformat(),
                 "entry_price": current_price,
+                "intended_price": intended_price,
+                "slippage_pct": actual_slippage,
                 "quantity": quantity,
-                "position_size": position_size,
+                "position_size": final_size_eur,
                 "commission": commission,
             }
             self.peak_prices[symbol] = current_price
@@ -1130,7 +1315,9 @@ class RealPaperTradingV18:
                 "side": "buy",
                 "qty": quantity,
                 "price": current_price,
-                "value": position_size,
+                "intended_price": intended_price,
+                "slippage_pct": actual_slippage,
+                "value": final_size_eur,
                 "agent": "V18_Elemental",
                 "exchange": "Bitvavo",
                 "commission": commission,
@@ -1153,6 +1340,8 @@ class RealPaperTradingV18:
                             "side": "buy",
                             "quantity": quantity,
                             "price": current_price,
+                            "intended_price": trade.get("intended_price"),
+                            "slippage_pct": trade.get("slippage_pct"),
                             "value": position_size,
                             "commission": commission,
                             "agent": "V18_Elemental",
@@ -1172,6 +1361,7 @@ class RealPaperTradingV18:
                             "regime": regime,
                             "trade_type": "entry",
                             "exchange": "Bitvavo",
+                            "rag_context": analysis.get("rag", {}),
                             "analysis_data": analysis,
                         }
                         await self.db.save_trade(db_trade)
@@ -1372,7 +1562,7 @@ class RealPaperTradingV18:
     async def _execute_exit(
         self,
         symbol: str,
-        current_price: float,
+        intended_price: float,
         quantity: float,
         position_size: float,
         reason: str,
@@ -1381,18 +1571,58 @@ class RealPaperTradingV18:
     ) -> bool:
         """Execute exit trade and update state."""
         try:
-            # Execute exit - DIRECT CALL
-            result = await execution_execute_paper_trade(
-                symbol=symbol,
-                action="SELL",
-                quantity=quantity,
-                current_price=current_price,
-                account_id=self.config.account_id,
-            )
+            if self.config.live_mode:
+                # REAL BITVAVO EXIT
+                try:
+                    from backend.execution.bitvavo_adapter import BitvavoAdapter
+
+                    bitvavo = BitvavoAdapter()
+                    if await bitvavo.initialize():
+                        # Close the entire position on Bitvavo
+                        res = await bitvavo.create_market_order(symbol, "sell", quantity)
+                        if res:
+                            executed_price = res.get("price") or intended_price
+                            quantity = res.get("amount") or quantity
+                            actual_slippage = (
+                                (intended_price - executed_price) / intended_price
+                                if intended_price > 0
+                                else 0
+                            )
+                            result = {
+                                "status": "FILLED",
+                                "price": executed_price,
+                                "amount": quantity,
+                                "slippage": actual_slippage,
+                                "commission": res.get("fee", (quantity * executed_price) * 0.0025),
+                            }
+                        else:
+                            result = {"status": "FAILED"}
+                        await bitvavo.close()
+                    else:
+                        result = {"status": "FAILED"}
+                except Exception as e:
+                    logger.error(f"[LIVE-EXIT-ERR] {e}")
+                    result = {"status": "ERROR"}
+            else:
+                # SHADOW EXIT
+                result = await execution_execute_paper_trade(
+                    symbol=symbol,
+                    action="SELL",
+                    quantity=quantity,
+                    current_price=intended_price,
+                    account_id=self.config.account_id,
+                )
 
             if result.get("status") != "FILLED":
-                logger.warning(f"[EXIT] {symbol}: Trade not filled - {result.get('status')}")
+                logger.warning(
+                    f"[EXIT] {symbol}: Trade not filled - {result.get('status', 'UNKNOWN')}"
+                )
                 return False
+
+            current_price = result.get("price", intended_price)
+            actual_slippage = result.get("slippage") or (
+                (intended_price - current_price) / intended_price if intended_price > 0 else 0
+            )
 
             # Calculate P&L
             proceeds = quantity * current_price

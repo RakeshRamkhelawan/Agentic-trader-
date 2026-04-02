@@ -8,10 +8,19 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    python3-dev \
+    gcc \
+    g++ \
+    libffi-dev \
+    libssl-dev \
+    pkg-config \
+    ninja-build \
+    meson \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements.txt .
+COPY requirements/base.txt ./requirements.txt
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Stage 2: Runtime
@@ -22,11 +31,12 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 WORKDIR /app
 
-# Set environment variables
+# Set environment variables for the non-root user
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
-ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONUSERBASE=/home/appuser/.local
+ENV PATH=/home/appuser/.local/bin:$PATH
 
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -34,8 +44,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python packages from builder
+# Copy Python packages from builder to the correct user location
 COPY --from=builder /root/.local /home/appuser/.local
+
+# Ensure the appuser owns their home directory and app files
+RUN chown -R appuser:appuser /home/appuser /app
 
 # Copy project files
 COPY --chown=appuser:appuser . .

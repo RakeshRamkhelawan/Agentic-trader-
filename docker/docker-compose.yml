@@ -2,27 +2,58 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    build:
+      context: ..
+      dockerfile: Dockerfile
     container_name: agentic_trader_api
     ports:
-      - "8000:8000"
+      - "${API_PORT}:8000"
     environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://trader:change_me_in_env@db:5432/trading_db}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-trader}:${POSTGRES_PASSWORD:-change_me_in_env}@db:5432/${POSTGRES_DB:-trading_db}
+      - REDIS_URL=redis://redis:6379/0
       - BITVAVO_API_KEY=${BITVAVO_API_KEY}
       - BITVAVO_API_SECRET=${BITVAVO_API_SECRET}
       - REVOLUT_API_KEY=${REVOLUT_API_KEY}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      # AUTH_DISABLED should NEVER be true in production
       - AUTH_DISABLED=${AUTH_DISABLED:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: always
+    networks:
+      - agentic_trader_network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
       timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: agentic_trader_frontend
+    ports:
+      - "${FRONTEND_DEV_PORT:-5180}:80"
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+      - VITE_WS_URL=${VITE_WS_URL}
+      - VITE_AUTH0_DOMAIN=${VITE_AUTH0_DOMAIN:-dev-agentic.auth0.com}
+      - VITE_AUTH0_CLIENT_ID=${VITE_AUTH0_CLIENT_ID:-placeholder_id}
+      - VITE_AUTH0_AUDIENCE=${VITE_AUTH0_AUDIENCE:-https://api.agentic-trader.com}
+      - VITE_DEMO_MODE=${VITE_DEMO_MODE:-true}
+    depends_on:
+      - api
+    restart: always
+    networks:
+      - agentic_trader_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
       retries: 3
 
   db:
@@ -33,9 +64,11 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change_me_in_env}
       - POSTGRES_DB=${POSTGRES_DB:-trading_db}
     ports:
-      - "127.0.0.1:5440:5432"
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - agentic_trader_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trader} -d ${POSTGRES_DB:-trading_db}"]
       interval: 10s
@@ -46,10 +79,12 @@ services:
     image: redis:7-alpine
     container_name: agentic_trader_redis
     ports:
-      - "127.0.0.1:6385:6379"
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-change_me_in_env}
+      - "127.0.0.1:${REDIS_PORT}:6379"
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    networks:
+      - agentic_trader_network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s

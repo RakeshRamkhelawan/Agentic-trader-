@@ -106,3 +106,25 @@ async def broadcast_stats(
         },
     }
     await broadcast_to_clients(message)
+
+
+async def broadcast_cognitive_insight(insight_data: dict[str, Any]):
+    """Broadcast a cognitive AI decision insight to all connected clients."""
+    message = {
+        "type": "cognitive_insight",
+        "data": {**insight_data, "broadcast_at": datetime.utcnow().isoformat()},
+    }
+    await broadcast_to_clients(message)
+    logger.debug(
+        f"Broadcasted cognitive insight: {insight_data.get('symbol')} -> {insight_data.get('final_decision')}"
+    )
+
+
+async def broadcast_tuning_update(tuning_data: dict[str, Any]):
+    """Broadcast current adaptive weights and tuning stats to all connected clients."""
+    message = {
+        "type": "tuning_update",
+        "data": {**tuning_data, "timestamp": datetime.utcnow().isoformat()},
+    }
+    await broadcast_to_clients(message)
+    logger.debug(f"Broadcasted tuning update: {list(tuning_data.keys())}")

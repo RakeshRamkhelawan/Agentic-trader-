@@ -13,6 +13,7 @@ import {
   type Trade,
   type Portfolio,
   type SessionStats,
+  type TuningStatsResponse,
 } from '@/lib/api/paper-trading';
 import usePaperTradingStore from '@/store/paper-trading';
 
@@ -21,6 +22,7 @@ interface UsePaperTradingWebSocketOptions {
   onTrade?: (trade: Trade) => void;
   onPortfolioUpdate?: (portfolio: Portfolio) => void;
   onStatsUpdate?: (stats: SessionStats) => void;
+  onTuningUpdate?: (tuning: TuningStatsResponse) => void;
   onError?: (error: string) => void;
 }
 
@@ -98,6 +100,10 @@ export function usePaperTradingWebSocket(
             
           case 'connected':
             console.log('[PaperTrading WS] Session confirmed:', message.session_id);
+            break;
+            
+          case 'tuning_update':
+            options.onTuningUpdate?.(message.data);
             break;
             
           case 'error':

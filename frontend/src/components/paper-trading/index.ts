@@ -11,6 +11,8 @@ export { PaperOrderPanel } from './PaperOrderPanel';
 export { PaperActiveOrders } from './PaperActiveOrders';
 export { PaperAIAdvisor } from './PaperAIAdvisor';
 export { PaperAgentStatus } from './PaperAgentStatus';
+export { CognitiveInsightsPanel } from './CognitiveInsightsPanel';
+export { EvolutionaryTuningPanel } from './EvolutionaryTuningPanel';
 
 // Future exports:
 // export { PaperTradingChart } from './PaperTradingChart';

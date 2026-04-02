@@ -24,6 +24,7 @@ interface PaperTradingState {
   // Session state
   sessionId: string | null;
   isRunning: boolean;
+  liveMode: boolean;
   startedAt: string | null;
   config: {
     duration: number;
@@ -62,6 +63,7 @@ interface PaperTradingState {
 const initialState = {
   sessionId: null,
   isRunning: false,
+  liveMode: false,
   startedAt: null,
   config: null,
   portfolio: null,
@@ -142,6 +144,7 @@ export const usePaperTradingStore = create<PaperTradingState>()(
           
           set({
             isRunning: status.is_running,
+            liveMode: !!status.live_mode,
             sessionId: status.session_id || null,
             portfolio: status.portfolio || null,
             stats: status.stats || null,

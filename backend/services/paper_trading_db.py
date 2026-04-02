@@ -140,43 +140,86 @@ class PaperTradingDB:
 
     async def save_trade(self, trade_data: Dict[str, Any]) -> PaperTrade:
         """Save a trade to database."""
-        trade = PaperTrade(
-            session_id=trade_data["session_id"],
-            symbol=trade_data["symbol"],
-            side=trade_data["side"],
-            order_type=trade_data.get("order_type", "market"),
-            quantity=trade_data["quantity"],
-            price=trade_data["price"],
-            value=trade_data.get("value", trade_data["quantity"] * trade_data["price"]),
-            commission=trade_data.get("commission", 0.0),
-            pnl=trade_data.get("pnl"),
-            pnl_pct=trade_data.get("pnl_pct"),
-            agent=trade_data.get("agent", "V18_Elemental"),
-            strategy=trade_data.get("strategy"),
-            consensus_score=trade_data.get("consensus_score"),
-            dominant_agent=trade_data.get("dominant_agent"),
-            entry_type=trade_data.get("entry_type"),
-            vedastro_signal=trade_data.get("vedastro_signal"),
-            vedastro_confidence=trade_data.get("vedastro_confidence"),
-            vedastro_score=trade_data.get("vedastro_score"),
-            dominant_planet=trade_data.get("dominant_planet"),
-            elemental_votes=trade_data.get("elemental_votes"),
-            regime=trade_data.get("regime"),
-            entry_time=trade_data.get("entry_time"),
-            exit_time=trade_data.get("exit_time"),
-            trade_type=trade_data.get("trade_type", "entry"),
-            exit_reason=trade_data.get("exit_reason"),
-            is_hard_exit=trade_data.get("is_hard_exit", False),
-            exchange=trade_data.get("exchange", "Bitvavo"),
-            analysis_data=trade_data.get("analysis_data"),
-            executed_at=trade_data.get("executed_at", datetime.utcnow()),
-        )
 
+        def _build_trade(include_rag: bool = True):
+            t = PaperTrade(
+                session_id=trade_data["session_id"],
+                symbol=trade_data["symbol"],
+                side=trade_data["side"],
+                order_type=trade_data.get("order_type", "market"),
+                quantity=trade_data["quantity"],
+                price=trade_data["price"],
+                value=trade_data.get("value", trade_data["quantity"] * trade_data["price"]),
+                commission=trade_data.get("commission", 0.0),
+                pnl=trade_data.get("pnl"),
+                pnl_pct=trade_data.get("pnl_pct"),
+                agent=trade_data.get("agent", "V18_Elemental"),
+                strategy=trade_data.get("strategy"),
+                consensus_score=trade_data.get("consensus_score"),
+                dominant_agent=trade_data.get("dominant_agent"),
+                entry_type=trade_data.get("entry_type"),
+                vedastro_signal=trade_data.get("vedastro_signal"),
+                vedastro_confidence=trade_data.get("vedastro_confidence"),
+                vedastro_score=trade_data.get("vedastro_score"),
+                dominant_planet=trade_data.get("dominant_planet"),
+                elemental_votes=trade_data.get("elemental_votes"),
+                regime=trade_data.get("regime"),
+                entry_time=trade_data.get("entry_time"),
+                exit_time=trade_data.get("exit_time"),
+                trade_type=trade_data.get("trade_type", "entry"),
+                exit_reason=trade_data.get("exit_reason"),
+                is_hard_exit=trade_data.get("is_hard_exit", False),
+                exchange=trade_data.get("exchange", "Bitvavo"),
+                analysis_data=trade_data.get("analysis_data"),
+                executed_at=trade_data.get("executed_at", datetime.utcnow()),
+                intended_price=trade_data.get("intended_price"),
+                slippage_pct=trade_data.get("slippage_pct"),
+            )
+            if include_rag and hasattr(PaperTrade, "rag_context") and "rag_context" in trade_data:
+                t.rag_context = trade_data.get("rag_context")
+            return t
+
+        trade = _build_trade(include_rag=True)
         self.session.add(trade)
-        await self.session.commit()
-        await self.session.refresh(trade)
+        try:
+            await self.session.commit()
+            await self.session.refresh(trade)
+        except Exception as e:
+            if "rag_context" in str(e).lower() and "column" in str(e).lower():
+                logger.warning("[DB] Schema mismatch: rag_context not found. Retrying without it.")
+                await self.session.rollback()
+                trade = _build_trade(include_rag=False)
+                self.session.add(trade)
+                await self.session.commit()
+                await self.session.refresh(trade)
+            else:
+                await self.session.rollback()
+                raise e
 
         logger.debug(f"[DB] Saved trade {trade.id}: {trade.side} {trade.symbol} @ €{trade.price}")
+
+        # --- EVOLUTIONARY TUNER HOOK ---
+        if trade.trade_type == "exit" and trade.pnl is not None and trade.regime:
+            try:
+                from backend.services.evolutionary_tuner import tuner
+
+                # Determine involved agents (default to the elemental triad + vedastro)
+                # In V18, these are typically vedastro, earth, fire, water
+                agents_involved = ["vedastro", "earth", "fire", "water"]
+
+                # Update tuner with outcome and slippage
+                tuner.update_performance(
+                    regime=trade.regime.lower(),
+                    outcome=trade.pnl,
+                    agents_involved=agents_involved,
+                    slippage=trade.slippage_pct or 0.0,
+                )
+                logger.debug(
+                    f"[TUNER-HOOK] Updated performance for {trade.symbol} | Slippage: {trade.slippage_pct}"
+                )
+            except Exception as tuner_err:
+                logger.error(f"[TUNER-HOOK] Error updating tuner: {tuner_err}")
+
         return trade
 
     async def get_trades(

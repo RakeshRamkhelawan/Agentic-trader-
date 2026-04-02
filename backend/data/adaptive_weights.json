@@ -1,0 +1,23 @@
+{
+    "expansion": {
+        "vedastro": 0.298,
+        "earth": 0.202,
+        "fire": 0.202,
+        "water": 0.298,
+        "threshold": 0.3
+    },
+    "contraction": {
+        "vedastro": 0.2,
+        "earth": 0.45,
+        "fire": 0.15,
+        "water": 0.2,
+        "threshold": 0.4
+    },
+    "neutral": {
+        "vedastro": 0.3,
+        "earth": 0.3,
+        "fire": 0.25,
+        "water": 0.15,
+        "threshold": 0.35
+    }
+}

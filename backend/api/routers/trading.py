@@ -527,6 +527,7 @@ async def get_paper_trading_status():
 
         return {
             "is_running": _paper_trading_engine.running,
+            "live_mode": _paper_trading_engine.config.live_mode,
             "start_time": (
                 _paper_trading_engine.start_time.isoformat()
                 if _paper_trading_engine.start_time
@@ -561,6 +562,64 @@ async def get_paper_trading_status():
     except Exception as e:
         logger.error(f"Error getting paper trading status: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}")
+
+
+@router.get("/paper-trading/cognitive-insights")
+async def get_cognitive_insights(limit: int = Query(default=20, le=50)):
+    """Get recent AI cognitive decision insights from the V18 engine.
+
+    Returns the most recent decisions from the in-memory ring buffer,
+    including RAG evidence, VedAstro votes, and regime context.
+    No file I/O - reads directly from memory for instant response.
+    """
+    global _paper_trading_engine
+
+    if _paper_trading_engine is None:
+        return {"insights": [], "message": "Paper trading not active."}
+
+    try:
+        cognitive_logger = getattr(_paper_trading_engine, "cognitive_logger", None)
+        if cognitive_logger is None:
+            return {"insights": [], "message": "Cognitive logger not initialized."}
+
+        decisions = cognitive_logger.get_recent_decisions(limit=limit)
+        return {
+            "insights": decisions,
+            "count": len(decisions),
+            "engine_running": _paper_trading_engine.running,
+        }
+    except Exception as e:
+        logger.error(f"Error fetching cognitive insights: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get insights: {str(e)}")
+
+
+@router.get("/paper-trading/tuning-stats")
+async def get_tuning_stats():
+    """Get current adaptive weights and Thompson Sampling stats from the Evolutionary Tuner.
+
+    Provides real-time insights into how the bot is optimizing its own
+    agent weights (VedAstro, Earth, Fire, Water) per regime.
+    """
+    try:
+        from backend.services.evolutionary_tuner import tuner
+
+        # Get all stats from the bandits
+        stats = {}
+        for regime, bandit in tuner.bandits.items():
+            stats[regime] = {
+                "weights": tuner.current_weights.get(regime, {}),
+                "bandit_stats": bandit.get_stats(),
+                "avg_slippage": tuner.avg_slippage.get(regime, 0.0),
+            }
+
+        return {
+            "regimes": stats,
+            "last_update": datetime.utcnow().isoformat() + "Z",
+            "agents": tuner.agents,
+        }
+    except Exception as e:
+        logger.error(f"Error fetching tuning stats: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get tuning stats: {str(e)}")
 
 
 @router.post("/paper-trading/inject-test-trades")

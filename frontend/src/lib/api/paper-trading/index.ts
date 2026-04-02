@@ -95,6 +95,7 @@ export interface SessionStatusResponse {
   stats?: SessionStats;
   trades?: Trade[];
   uptime_seconds?: number;
+  live_mode?: boolean;
 }
 
 export interface AgentDecision {
@@ -106,6 +107,54 @@ export interface AgentDecision {
   confidence: number;
   reason: string;
   executed: boolean;
+}
+
+export interface RagEvidence {
+  source: string;
+  symbol: string;
+  period: string;
+  regime: string;
+  outcome: string;
+  return_pct: number;
+  mahadasha: string;
+  antardasha: string;
+  distance: number;
+}
+
+export interface CognitiveInsight {
+  timestamp: string;
+  symbol: string;
+  regime: string;
+  engine_signal: string;
+  vedastro_vote: number;
+  rag_adjustment: number;
+  final_decision: 'BUY' | 'SKIP';
+  rag_evidence: RagEvidence[];
+}
+
+export interface CognitiveInsightsResponse {
+  insights: CognitiveInsight[];
+  count: number;
+  engine_running?: boolean;
+  message?: string;
+}
+
+export interface BanditStats {
+  alpha: number;
+  beta: number;
+  expected_winrate: number;
+}
+
+export interface RegimeTuning {
+  weights: Record<string, number>;
+  bandit_stats: Record<string, BanditStats>;
+  avg_slippage?: number;
+}
+
+export interface TuningStatsResponse {
+  regimes: Record<string, RegimeTuning>;
+  agents: string[];
+  last_update: string;
 }
 
 // ============================================================================
@@ -170,6 +219,24 @@ export async function getAgentDecisions(): Promise<AgentDecision[]> {
   return response.data;
 }
 
+/**
+ * Get cognitive AI decision insights (from in-memory ring buffer)
+ */
+export async function getCognitiveInsights(limit = 20): Promise<CognitiveInsightsResponse> {
+  const response = await api.get<CognitiveInsightsResponse>('/trading/paper-trading/cognitive-insights', {
+    params: { limit }
+  });
+  return response.data;
+}
+
+/**
+ * Get evolutionary tuning statistics (adaptive weights)
+ */
+export async function getTuningStats(): Promise<TuningStatsResponse> {
+  const response = await api.get<TuningStatsResponse>('/trading/paper-trading/tuning-stats');
+  return response.data;
+}
+
 // ============================================================================
 // WEBSOCKET
 // ============================================================================
@@ -181,6 +248,8 @@ export type WebSocketMessage =
   | { type: 'portfolio'; data: Portfolio }
   | { type: 'stats'; data: SessionStats }
   | { type: 'decision'; data: AgentDecision }
+  | { type: 'cognitive_insight'; data: CognitiveInsight }
+  | { type: 'tuning_update'; data: TuningStatsResponse }
   | { type: 'connected'; session_id: string }
   | { type: 'error'; message: string };
 
@@ -196,6 +265,8 @@ export const paperTradingApi = {
   getPortfolio,
   getTradeHistory,
   getAgentDecisions,
+  getCognitiveInsights,
+  getTuningStats,
 };
 
 export default paperTradingApi;
