@@ -24,7 +24,7 @@ interface PaperTradingState {
   // Session state
   sessionId: string | null;
   isRunning: boolean;
-  liveMode: boolean;
+  mode: 'paper' | 'live';
   startedAt: string | null;
   config: {
     duration: number;
@@ -63,7 +63,7 @@ interface PaperTradingState {
 const initialState = {
   sessionId: null,
   isRunning: false,
-  liveMode: false,
+  mode: 'paper' as const,
   startedAt: null,
   config: null,
   portfolio: null,
@@ -90,13 +90,14 @@ export const usePaperTradingStore = create<PaperTradingState>()(
        */
       startSession: async (config) => {
         set({ isStarting: true, error: null });
-        
+
         try {
           const response = await paperTradingApi.startSession(config);
-          
+
           set({
             sessionId: response.session_id,
             isRunning: true,
+            mode: response.mode || 'paper',
             startedAt: response.started_at,
             config,
             isStarting: false,
@@ -138,13 +139,13 @@ export const usePaperTradingStore = create<PaperTradingState>()(
       fetchStatus: async () => {
         const isFirstLoad = !get().sessionId;
         set({ isLoading: isFirstLoad, error: null });
-        
+
         try {
           const status = await paperTradingApi.getSessionStatus();
-          
+
           set({
             isRunning: status.is_running,
-            liveMode: !!status.live_mode,
+            mode: status.mode || 'paper',
             sessionId: status.session_id || null,
             portfolio: status.portfolio || null,
             stats: status.stats || null,

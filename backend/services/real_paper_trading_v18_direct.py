@@ -97,11 +97,15 @@ class RealPaperTradingV18:
     V18 Paper Trading Engine - Direct Tool Calls.
 
     Gebruikt directe Python imports i.p.v. MCP client voor snellere executie.
+    Supports both paper (simulation) and live (real Bitvavo orders) modes.
     """
 
-    def __init__(self, initial_capital: float = 10000.0, use_database: bool = True):
+    def __init__(
+        self, initial_capital: float = 10000.0, use_database: bool = True, mode: str = "paper"
+    ):
         self.initial_capital = initial_capital
-        self.config = PaperTradingConfig(initial_cash=initial_capital)
+        self.mode = mode  # "paper" or "live"
+        self.config = PaperTradingConfig(initial_cash=initial_capital, live_mode=(mode == "live"))
         self.state = PaperTradingState(cash=initial_capital, total_value=initial_capital)
 
         # Portfolio and Data
@@ -145,8 +149,11 @@ class RealPaperTradingV18:
         self.chroma_collection: Optional[Any] = None
         self.rag_embedding_model = None
 
+        mode_banner = (
+            "LIVE TRADING - REAL BITVAVO ORDERS" if mode == "live" else "PAPER TRADING - SIMULATION"
+        )
         print("=" * 80)
-        print("     REAL PAPER TRADING V18 - Direct Tool Edition")
+        print(f"     V18 {mode_banner}")
         print("=" * 80)
         print(f"\nInitial Capital: EUR {initial_capital:,.2f}")
         print(
@@ -156,6 +163,7 @@ class RealPaperTradingV18:
         print(f"VedAstro Min Score: {self.config.min_vedastro_score}")
         print(f"Cycle Interval: {self.config.cycle_interval_seconds}s")
         print(f"Database: {'ENABLED' if use_database else 'DISABLED'}")
+        print(f"Mode: {mode.upper()} {'(€5 REAL orders)' if mode == 'live' else '(simulated)'}")
 
         # Initialize Execution Guard (Taak 2.1)
         self.guard = ExecutionGuard(initial_capital=initial_capital)

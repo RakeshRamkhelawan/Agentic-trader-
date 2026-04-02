@@ -55,10 +55,17 @@ except:
 class StartSessionRequest(BaseModel):
     duration: int = 8
     capital: float = 10000.0
+    mode: str = "paper"  # "paper" or "live" - live uses REAL Bitvavo orders
 
 
-async def _run_trading_engine(duration_hours: int, capital: float):
-    """Run V18 trading engine as background task with WebSocket broadcasts."""
+async def _run_trading_engine(duration_hours: int, capital: float, mode: str = "paper"):
+    """Run V18 trading engine as background task with WebSocket broadcasts.
+
+    Args:
+        duration_hours: How long to run the trading session
+        capital: Initial capital amount
+        mode: "paper" for simulation, "live" for real Bitvavo orders
+    """
     global _trading_logs, _trading_trades, _session_start_time, _trading_engine
 
     # Import here to avoid circular imports
@@ -74,10 +81,13 @@ async def _run_trading_engine(duration_hours: int, capital: float):
     _trading_logs = []
     _trading_trades = []
 
-    logger.info(f"[TRADING TASK] Starting V18 engine for {duration_hours}h with €{capital:,.2f}")
+    mode_label = "LIVE" if mode == "live" else "PAPER"
+    logger.info(
+        f"[TRADING TASK] Starting V18 {mode_label} engine for {duration_hours}h with €{capital:,.2f}"
+    )
 
-    # Initialize engine
-    engine = RealPaperTradingV18(initial_capital=capital)
+    # Initialize engine with mode
+    engine = RealPaperTradingV18(initial_capital=capital, mode=mode)
     _trading_engine = engine  # Store globally for status endpoint
 
     try:
@@ -177,9 +187,15 @@ async def get_status():
         }
         stats = {"total_trades": state.total_trades, "uptime_seconds": uptime_seconds}
 
+    # Get mode from engine if available
+    engine_mode = None
+    if _trading_engine and hasattr(_trading_engine, "mode"):
+        engine_mode = _trading_engine.mode
+
     return {
         "is_running": is_running,
         "trading_mode": settings.TRADING_MODE,
+        "mode": engine_mode,  # "paper" or "live"
         "logs": logs if logs else _trading_logs[-30:] if _trading_logs else [],
         "trades": _trading_trades[-20:] if _trading_trades else [],
         "portfolio": portfolio,
@@ -191,13 +207,33 @@ async def get_status():
 
 @router.post("/start")
 async def start_paper_trading(request: StartSessionRequest):
-    """Start a new paper trading session with live WebSocket updates."""
+    """Start a new paper trading session with live WebSocket updates.
+
+    Args:
+        request: Session configuration including mode ("paper" or "live")
+            - paper: Simulated trading (no real orders)
+            - live: REAL Bitvavo orders with €5 position size
+
+    Note:
+        Live mode requires:
+        - TRADING_MODE environment variable set to "live"
+        - Valid Bitvavo API credentials configured
+    """
     global _trading_task, _trading_engine
 
-    if settings.TRADING_MODE != "paper":
+    # Validate mode
+    if request.mode not in ["paper", "live"]:
         raise HTTPException(
             status_code=400,
-            detail=f"TRADING_MODE is '{settings.TRADING_MODE}', must be 'paper'",
+            detail=f"Invalid mode '{request.mode}'. Must be 'paper' or 'live'",
+        )
+
+    # Extra safety check for live mode
+    if request.mode == "live" and settings.TRADING_MODE != "live":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot start live trading: TRADING_MODE is '{settings.TRADING_MODE}', must be 'live'. "
+            "Set TRADING_MODE=live in your .env file to enable live trading.",
         )
 
     # Check if already running
@@ -206,17 +242,24 @@ async def start_paper_trading(request: StartSessionRequest):
 
     try:
         # Start engine as background task (same process = WebSocket access!)
-        _trading_task = asyncio.create_task(_run_trading_engine(request.duration, request.capital))
+        _trading_task = asyncio.create_task(
+            _run_trading_engine(request.duration, request.capital, request.mode)
+        )
 
-        logger.info(f"[API] Paper trading task started for {request.duration}h")
+        mode_label = "LIVE" if request.mode == "live" else "PAPER"
+        logger.info(f"[API] {mode_label} trading task started for {request.duration}h")
 
         return {
             "status": "started",
+            "mode": request.mode,
             "duration": request.duration,
             "capital": request.capital,
-            "message": f"V18 Paper trading started with €{request.capital:,.2f} for {request.duration} hours",
+            "message": f"V18 {mode_label} trading started with €{request.capital:,.2f} for {request.duration} hours",
             "websocket": "/ws/paper-trading",
             "realtime": True,
+            "warning": (
+                "LIVE MODE: Real Bitvavo orders will be placed!" if request.mode == "live" else None
+            ),
         }
 
     except Exception as e:

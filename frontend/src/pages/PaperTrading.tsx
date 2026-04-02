@@ -255,6 +255,7 @@ function SessionControls() {
     sessionId,
     startedAt,
     config,
+    mode,
     startSession,
     stopSession,
     clearError,
@@ -262,11 +263,29 @@ function SessionControls() {
 
   const [duration, setDuration] = useState(8);
   const [capital, setCapital] = useState(10000);
+  const [selectedMode, setSelectedMode] = useState<'paper' | 'live'>('paper');
+  const [showLiveWarning, setShowLiveWarning] = useState(false);
 
   const handleStart = async () => {
     clearError();
+    
+    // Show warning for live mode
+    if (selectedMode === 'live') {
+      setShowLiveWarning(true);
+      return;
+    }
+    
     try {
-      await startSession({ duration, capital });
+      await startSession({ duration, capital, mode: selectedMode });
+    } catch (err) {
+      // Error handled in store
+    }
+  };
+
+  const confirmLiveStart = async () => {
+    setShowLiveWarning(false);
+    try {
+      await startSession({ duration, capital, mode: 'live' });
     } catch (err) {
       // Error handled in store
     }
@@ -282,15 +301,24 @@ function SessionControls() {
   };
 
   if (isRunning) {
+    const isLiveMode = mode === 'live';
+    
     return (
-      <Card className='border-green-500/30 bg-green-500/5'>
+      <Card className={isLiveMode ? 'border-red-500/30 bg-red-500/5' : 'border-green-500/30 bg-green-500/5'}>
         <CardHeader>
           <div className='flex items-center justify-between'>
             <div>
               <CardTitle className='flex items-center gap-2 text-white'>
-                <Activity className='h-5 w-5 text-green-500 animate-pulse' />
-                Paper Trading Actief
-                <Badge className='bg-green-500 text-black'>LIVE</Badge>
+                <Activity className={cn('h-5 w-5 animate-pulse', isLiveMode ? 'text-red-500' : 'text-green-500')} />
+                {isLiveMode ? 'LIVE Trading Actief' : 'Paper Trading Actief'}
+                {isLiveMode ? (
+                  <Badge className="bg-red-500 text-white gap-1 animate-pulse">
+                    <Zap className="h-3 w-3 fill-white" />
+                    LIVE BITVAVO
+                  </Badge>
+                ) : (
+                  <Badge className='bg-green-500 text-black'>SIMULATIE</Badge>
+                )}
               </CardTitle>
               <CardDescription className='text-[#888888]'>
                 {sessionId && `Sessie ID: ${sessionId.slice(0, 8)}...`}
@@ -333,8 +361,10 @@ function SessionControls() {
             <div className='flex items-center gap-2'>
               <Target className='h-4 w-4 text-[#666666]' />
               <div>
-                <p className='text-xs text-[#888888]'>Status</p>
-                <p className='font-semibold text-green-500'>Actief</p>
+                <p className='text-xs text-[#888888]'>Mode</p>
+                <p className={cn('font-semibold', isLiveMode ? 'text-red-500' : 'text-green-500')}>
+                  {isLiveMode ? 'LIVE (€5 orders)' : 'Paper (simulatie)'}
+                </p>
               </div>
             </div>
           </div>
@@ -360,6 +390,45 @@ function SessionControls() {
             <AlertDescription className='text-red-400'>{error}</AlertDescription>
           </Alert>
         )}
+
+        {/* Mode Selection */}
+        <div className='space-y-2'>
+          <Label className='text-[#888888]'>Trading Mode</Label>
+          <div className='grid grid-cols-2 gap-2'>
+            <Button
+              variant={selectedMode === 'paper' ? 'default' : 'outline'}
+              onClick={() => setSelectedMode('paper')}
+              disabled={isStarting}
+              className={cn(
+                'gap-2',
+                selectedMode === 'paper' ? 'bg-green-600 hover:bg-green-700' : 'border-[#333333]'
+              )}
+            >
+              <Bot className='w-4 h-4' />
+              Paper (Simulatie)
+            </Button>
+            <Button
+              variant={selectedMode === 'live' ? 'default' : 'outline'}
+              onClick={() => setSelectedMode('live')}
+              disabled={isStarting}
+              className={cn(
+                'gap-2',
+                selectedMode === 'live' ? 'bg-red-600 hover:bg-red-700' : 'border-[#333333]'
+              )}
+            >
+              <Zap className='w-4 h-4' />
+              Live (Echt geld)
+            </Button>
+          </div>
+          {selectedMode === 'live' && (
+            <Alert className='bg-red-500/10 border-red-500/30 mt-2'>
+              <AlertDescription className='text-red-400 text-xs'>
+                <strong>WAARSCHUWING:</strong> Live mode plaatst ECHTE Bitvavo orders met €5 per positie. 
+                Zorg dat je API keys correct zijn geconfigureerd en dat je een balans hebt op Bitvavo.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
 
         <div className='grid grid-cols-2 gap-4'>
           <div className='space-y-2'>
@@ -390,17 +459,59 @@ function SessionControls() {
           </div>
         </div>
 
+        {/* Live Mode Warning Dialog */}
+        {showLiveWarning && (
+          <Alert className='bg-red-500/20 border-red-500/50'>
+            <AlertDescription className='text-red-200 space-y-3'>
+              <p className='font-bold text-lg'>⚠️ LIVE TRADING BEVESTIGEN</p>
+              <p>Je staat op het punt om <strong>LIVE</strong> trading te starten met je Bitvavo account.</p>
+              <ul className='list-disc list-inside text-sm space-y-1'>
+                <li>Echte orders worden geplaatst op Bitvavo</li>
+                <li>Positie grootte is vast gezet op €5 per trade</li>
+                <li>Dit kan niet ongedaan worden gemaakt</li>
+              </ul>
+              <div className='flex gap-2 pt-2'>
+                <Button 
+                  variant='outline' 
+                  onClick={() => setShowLiveWarning(false)}
+                  className='flex-1 border-[#333333]'
+                >
+                  Annuleren
+                </Button>
+                <Button 
+                  onClick={confirmLiveStart}
+                  className='flex-1 bg-red-600 hover:bg-red-700'
+                >
+                  <Zap className='w-4 h-4 mr-2' />
+                  Bevestig LIVE Start
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Button
           onClick={handleStart}
-          disabled={isStarting}
-          className='w-full gap-2 bg-blue-600 hover:bg-blue-700'
+          disabled={isStarting || showLiveWarning}
+          className={cn(
+            'w-full gap-2',
+            selectedMode === 'live' 
+              ? 'bg-red-600 hover:bg-red-700' 
+              : 'bg-blue-600 hover:bg-blue-700'
+          )}
         >
           {isStarting ? (
             <RefreshCw className='h-4 w-4 animate-spin' />
+          ) : selectedMode === 'live' ? (
+            <Zap className='h-4 w-4' />
           ) : (
             <Play className='h-4 w-4' />
           )}
-          {isStarting ? 'Starten...' : 'Start Paper Trading'}
+          {isStarting 
+            ? 'Starten...' 
+            : selectedMode === 'live' 
+              ? 'Start LIVE Trading' 
+              : 'Start Paper Trading'}
         </Button>
       </CardContent>
     </Card>
@@ -664,10 +775,16 @@ export function PaperTrading() {
         <div className='flex items-center gap-3'>
           {isRunning && (
             <>
-              {usePaperTradingStore.getState().liveMode && (
-                <Badge className="bg-orange-500 text-black gap-1 animate-pulse border-none">
-                  <Zap className="h-3 w-3 fill-black" />
+              {usePaperTradingStore.getState().mode === 'live' && (
+                <Badge className="bg-red-500 text-white gap-1 animate-pulse border-none">
+                  <Zap className="h-3 w-3 fill-white" />
                   LIVE BITVAVO
+                </Badge>
+              )}
+              {usePaperTradingStore.getState().mode === 'paper' && (
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1">
+                  <Bot className="h-3 w-3" />
+                  SIMULATIE
                 </Badge>
               )}
               <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 gap-1">

@@ -71,12 +71,15 @@ export interface StartSessionRequest {
   capital: number;   // initial capital
   symbols?: string[]; // allowed symbols (optional)
   strategy?: string;  // strategy configuration (optional)
+  mode?: 'paper' | 'live';  // trading mode - live uses REAL Bitvavo orders
 }
 
 export interface StartSessionResponse {
   status: 'started';
   session_id: string;
   started_at: string;
+  mode?: 'paper' | 'live';
+  warning?: string | null;
 }
 
 export interface StopSessionResponse {
@@ -95,7 +98,8 @@ export interface SessionStatusResponse {
   stats?: SessionStats;
   trades?: Trade[];
   uptime_seconds?: number;
-  live_mode?: boolean;
+  mode?: 'paper' | 'live';
+  trading_mode?: string;
 }
 
 export interface AgentDecision {
