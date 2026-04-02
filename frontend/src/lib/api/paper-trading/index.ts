@@ -223,7 +223,7 @@ export async function getAgentDecisions(): Promise<AgentDecision[]> {
  * Get cognitive AI decision insights (from in-memory ring buffer)
  */
 export async function getCognitiveInsights(limit = 20): Promise<CognitiveInsightsResponse> {
-  const response = await api.get<CognitiveInsightsResponse>('/trading/paper-trading/cognitive-insights', {
+  const response = await api.get<CognitiveInsightsResponse>('/paper-trading/cognitive-insights', {
     params: { limit }
   });
   return response.data;
@@ -233,7 +233,7 @@ export async function getCognitiveInsights(limit = 20): Promise<CognitiveInsight
  * Get evolutionary tuning statistics (adaptive weights)
  */
 export async function getTuningStats(): Promise<TuningStatsResponse> {
-  const response = await api.get<TuningStatsResponse>('/trading/paper-trading/tuning-stats');
+  const response = await api.get<TuningStatsResponse>('/paper-trading/tuning-stats');
   return response.data;
 }
 

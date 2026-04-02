@@ -8,8 +8,9 @@ zodat het direct WebSocket berichten kan sturen voor real-time updates.
 import asyncio
 import logging
 from datetime import datetime
+from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from backend.core.config.settings import settings
@@ -254,6 +255,67 @@ async def get_websocket_url():
         "websocket_url": "/ws/paper-trading",
         "channels": ["paper_trading.live", "paper_trading.stats"],
     }
+
+
+@router.get("/cognitive-insights")
+async def get_cognitive_insights(limit: int = 20):
+    """Get recent AI cognitive decision insights from the V18 engine.
+
+    Returns the most recent decisions from the in-memory ring buffer,
+    including RAG evidence, VedAstro votes, and regime context.
+    """
+    global _trading_engine
+
+    if _trading_engine is None:
+        return {"insights": [], "message": "Paper trading not active.", "engine_running": False}
+
+    try:
+        cognitive_logger = getattr(_trading_engine, "cognitive_logger", None)
+        if cognitive_logger is None:
+            return {
+                "insights": [],
+                "message": "Cognitive logger not initialized.",
+                "engine_running": _trading_engine.running,
+            }
+
+        decisions = cognitive_logger.get_recent_decisions(limit=limit)
+        return {
+            "insights": decisions,
+            "count": len(decisions),
+            "engine_running": getattr(_trading_engine, "running", False),
+        }
+    except Exception as e:
+        logger.error(f"Error fetching cognitive insights: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get insights: {str(e)}")
+
+
+@router.get("/tuning-stats")
+async def get_tuning_stats():
+    """Get current adaptive weights and Thompson Sampling stats from the Evolutionary Tuner.
+
+    Provides real-time insights into how the bot is optimizing its own
+    agent weights (VedAstro, Earth, Fire, Water) per regime.
+    """
+    try:
+        from backend.services.evolutionary_tuner import tuner
+
+        # Get all stats from the bandits
+        stats = {}
+        for regime, bandit in tuner.bandits.items():
+            stats[regime] = {
+                "weights": tuner.current_weights.get(regime, {}),
+                "bandit_stats": bandit.get_stats(),
+                "avg_slippage": tuner.avg_slippage.get(regime, 0.0),
+            }
+
+        return {
+            "regimes": stats,
+            "last_update": datetime.utcnow().isoformat() + "Z",
+            "agents": tuner.agents,
+        }
+    except Exception as e:
+        logger.error(f"Error fetching tuning stats: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get tuning stats: {str(e)}")
 
 
 # Export broadcast functions for V18 engine to use
