@@ -1,219 +1,83 @@
-# Docker Compose - Production Configuration
-#
-# Usage:
-#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-#
-# This adds production-specific settings:
-# - SSL/TLS certificates via Nginx
-# - Nginx reverse proxy for API and frontend
-# - Resource limits for all services
-# - Production logging configuration
-# - Frontend production build
-
+# Production Docker Compose - Agentic Trader Platform
 version: '3.8'
 
 services:
-  # ============================================================================
-  # BACKEND API - Production Settings
-  # ============================================================================
-
-  api:
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 2G
-        reservations:
-          cpus: '1.0'
-          memory: 512M
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        labels: "service_name,environment"
-    environment:
-      - LOG_LEVEL=WARNING
-      - UVICORN_RELOAD=false
-      - UVICORN_WORKERS=4
-      - DEBUG=false
-
-  # ============================================================================
-  # DATABASE SERVICES - Production Settings
-  # ============================================================================
-
-  postgres:
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  clickhouse:
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  redis:
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  chromadb:
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  redpanda:
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # ============================================================================
-  # FRONTEND - Production Build
-  # ============================================================================
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: ../infrastructure/docker/Dockerfile.frontend.prod
-    container_name: trader-frontend
-    restart: always
-    environment:
-      - NODE_ENV=production
-      - VITE_API_URL=/api
-      - VITE_WS_URL=/ws
-    depends_on:
-      - api
-    networks:
-      - trader-network
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # ============================================================================
-  # NGINX - Reverse Proxy (SSL/Load Balancing)
-  # ============================================================================
-
-  nginx:
-    image: nginx:alpine
-    container_name: trader-nginx
-    restart: always
+  traefik:
+    image: traefik:v3.0
+    container_name: agentic_trader_traefik
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@example.com}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--ping=true"
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-      - ./nginx/logs:/var/log/nginx
-    depends_on:
-      api:
-        condition: service_healthy
-      frontend:
-        condition: service_healthy
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_certs:/letsencrypt
     networks:
-      - trader-network
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.25'
-          memory: 64M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - agentic_trader_network
 
-# ============================================================================
-# NETWORKS (must be defined here for production override)
-# ============================================================================
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: agentic_trader_api
+    environment:
+      - API_PORT=8000
+      - TRADING_MODE=${TRADING_MODE:-paper}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-trader}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-trading_db}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    networks:
+      - agentic_trader_network
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: agentic_trader_frontend
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+      - VITE_WS_URL=${VITE_WS_URL}
+    depends_on:
+      - api
+    networks:
+      - agentic_trader_network
+
+  db:
+    image: postgres:15-alpine
+    container_name: agentic_trader_db
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-trader}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change_me}
+      - POSTGRES_DB=${POSTGRES_DB:-trading_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - agentic_trader_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: agentic_trader_redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - agentic_trader_network
+
 networks:
-  trader-network:
+  agentic_trader_network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+  redis_data:
+  traefik_certs:

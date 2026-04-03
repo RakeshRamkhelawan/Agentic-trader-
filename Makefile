@@ -3,7 +3,7 @@
 # Convenient shortcuts for Docker operations
 # =============================================================================
 
-.PHONY: help start stop restart build logs clean reset test migrate dev prod format format-check lint security-check
+.PHONY: help setup start stop restart build logs clean reset test migrate dev prod format format-check lint security-check health monitor ci-build ci-push backup restore
 
 # Default target
 .DEFAULT_GOAL := help
@@ -88,18 +88,77 @@ reset: ## Reset all data (DESTRUCTIVE)
 status: ## Show service status
 	@./scripts/docker-dev.sh status
 
-# Production
-prod: ## Deploy to production
-	@./scripts/docker-prod.sh deploy
+# Production Deployment
+prod: ## Deploy to production (requires VERSION)
+	@./scripts/deploy.sh production deploy $(VERSION)
 
 prod-stop: ## Stop production
-	@./scripts/docker-prod.sh stop
+	@./scripts/deploy.sh production stop
 
-prod-update: ## Rolling update production
-	@./scripts/docker-prod.sh update
+prod-logs: ## View production logs
+	@./scripts/deploy.sh production logs
 
-backup: ## Backup databases
-	@./scripts/docker-prod.sh backup
+prod-status: ## Check production status
+	@./scripts/deploy.sh production status
+
+prod-rollback: ## Rollback production
+	@./scripts/deploy.sh production rollback
+
+# Staging Deployment
+staging: ## Deploy to staging (requires VERSION)
+	@./scripts/deploy.sh staging deploy $(VERSION)
+
+staging-stop: ## Stop staging
+	@./scripts/deploy.sh staging stop
+
+staging-logs: ## View staging logs
+	@./scripts/deploy.sh staging logs
+
+staging-status: ## Check staging status
+	@./scripts/deploy.sh staging status
+
+# CI/CD Helpers
+ci-build: ## Build images for CI
+	@docker build -t agentic-trader:ci .
+	@docker build -t agentic-trader-frontend:ci ./frontend
+
+ci-push: ## Push images to registry (requires REGISTRY)
+	@docker tag agentic-trader:ci $(REGISTRY)/agentic-trader/api:$(VERSION)
+	@docker tag agentic-trader-frontend:ci $(REGISTRY)/agentic-trader/frontend:$(VERSION)
+	@docker push $(REGISTRY)/agentic-trader/api:$(VERSION)
+	@docker push $(REGISTRY)/agentic-trader/frontend:$(VERSION)
+
+# Database Operations
+backup: ## Backup database
+	@docker-compose exec db pg_dump -U trader trading_db > backup_$(shell date +%Y%m%d_%H%M%S).sql
+	@echo "Backup created: backup_$(shell date +%Y%m%d_%H%M%S).sql"
+
+restore: ## Restore database from backup (requires FILE)
+	@docker-compose exec -T db psql -U trader trading_db < $(FILE)
+	@echo "Database restored from: $(FILE)"
+
+migrate-create: ## Create new migration (requires MESSAGE)
+	@cd backend && alembic revision --autogenerate -m "$(MESSAGE)"
+
+# Security & Quality
+ci-security: ## Run security scans
+	@bandit -r backend/ -f json -o bandit-report.json || true
+	@cd frontend && npm audit --audit-level=high
+
+ci-quality: ## Run quality checks
+	@black --check backend/ --line-length=100
+	@isort --check-only backend/ --profile=black --line-length=100
+	@ruff check backend/ --output-format=github
+
+# Health & Monitoring
+health: ## Run health checks
+	@./scripts/health-check.sh check
+
+monitor: ## Monitor resources (Ctrl+C to exit)
+	@./scripts/health-check.sh watch
+
+setup: ## First-time setup
+	@./scripts/setup.sh
 
 # Utility
 ps: ## Show running containers
