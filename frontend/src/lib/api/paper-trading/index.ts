@@ -161,6 +161,17 @@ export interface TuningStatsResponse {
   last_update: string;
 }
 
+export interface BitvavoStatus {
+  connected: boolean;
+  message: string;
+  has_api_key: boolean;
+  has_api_secret: boolean;
+  balance_eur: number;
+  available_eur: number;
+  can_trade_live?: boolean;
+  error?: string;
+}
+
 // ============================================================================
 // API FUNCTIONS
 // ============================================================================
@@ -241,6 +252,14 @@ export async function getTuningStats(): Promise<TuningStatsResponse> {
   return response.data;
 }
 
+/**
+ * Get Bitvavo connection status and account balance
+ */
+export async function getBitvavoStatus(): Promise<BitvavoStatus> {
+  const response = await api.get<BitvavoStatus>('/trading/paper-trading/bitvavo-status');
+  return response.data;
+}
+
 // ============================================================================
 // WEBSOCKET
 // ============================================================================
@@ -271,6 +290,7 @@ export const paperTradingApi = {
   getAgentDecisions,
   getCognitiveInsights,
   getTuningStats,
+  getBitvavoStatus,
 };
 
 export default paperTradingApi;

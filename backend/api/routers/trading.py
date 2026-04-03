@@ -622,6 +622,88 @@ async def get_tuning_stats():
         raise HTTPException(status_code=500, detail=f"Failed to get tuning stats: {str(e)}")
 
 
+@router.get("/paper-trading/bitvavo-status")
+async def get_bitvavo_status():
+    """Check Bitvavo API connection and account status.
+
+    Returns connection status, available balance, and API configuration.
+    This helps users verify their Bitvavo setup before starting live trading.
+    """
+    try:
+        from backend.execution.bitvavo_adapter import BitvavoAdapter
+
+        bitvavo = BitvavoAdapter()
+
+        # Check if API keys are configured
+        has_credentials = bool(
+            os.environ.get("BITVAVO_API_KEY") and os.environ.get("BITVAVO_API_SECRET")
+        )
+
+        if not has_credentials:
+            return {
+                "connected": False,
+                "message": "Bitvavo API credentials not configured",
+                "has_api_key": False,
+                "has_api_secret": False,
+                "balance_eur": 0.0,
+                "available_eur": 0.0,
+            }
+
+        # Try to connect and get balance
+        connected = await bitvavo.initialize()
+
+        if not connected:
+            return {
+                "connected": False,
+                "message": "Failed to connect to Bitvavo API. Check your API keys.",
+                "has_api_key": True,
+                "has_api_secret": True,
+                "balance_eur": 0.0,
+                "available_eur": 0.0,
+            }
+
+        # Get account balance
+        try:
+            balance = await bitvavo.fetch_balance()
+            eur_balance = balance.get("EUR", {}).get("total", 0.0)
+            eur_available = balance.get("EUR", {}).get("free", 0.0)
+
+            await bitvavo.close()
+
+            return {
+                "connected": True,
+                "message": "Successfully connected to Bitvavo",
+                "has_api_key": True,
+                "has_api_secret": True,
+                "balance_eur": eur_balance,
+                "available_eur": eur_available,
+                "can_trade_live": eur_available >= 5.0,  # Minimum €5 for live trading
+            }
+        except Exception as e:
+            await bitvavo.close()
+            logger.error(f"Error fetching Bitvavo balance: {e}")
+            return {
+                "connected": True,
+                "message": "Connected but failed to fetch balance",
+                "has_api_key": True,
+                "has_api_secret": True,
+                "balance_eur": 0.0,
+                "available_eur": 0.0,
+                "error": str(e),
+            }
+
+    except Exception as e:
+        logger.error(f"Error checking Bitvavo status: {e}")
+        return {
+            "connected": False,
+            "message": f"Error checking Bitvavo status: {str(e)}",
+            "has_api_key": bool(os.environ.get("BITVAVO_API_KEY")),
+            "has_api_secret": bool(os.environ.get("BITVAVO_API_SECRET")),
+            "balance_eur": 0.0,
+            "available_eur": 0.0,
+        }
+
+
 @router.post("/paper-trading/inject-test-trades")
 async def inject_test_trades(count: int = 5):
     """

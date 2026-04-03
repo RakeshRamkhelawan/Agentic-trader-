@@ -58,7 +58,8 @@ import { AIAdvisor } from '@/components/dashboard/AIAdvisor';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { 
   CognitiveInsightsPanel,
-  EvolutionaryTuningPanel
+  EvolutionaryTuningPanel,
+  BitvavoConnectionStatus
 } from '@/components/paper-trading';
 
 // Types
@@ -833,6 +834,9 @@ export function PaperTrading() {
         {/* Right Column - Trading & AI */}
         <div className='space-y-6'>
           <OrderPanel />
+          
+          {/* Bitvavo Account Status - always visible */}
+          <BitvavoConnectionStatus />
           
           <FederatedTriad />
           
