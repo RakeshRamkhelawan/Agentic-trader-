@@ -1,0 +1,49 @@
+- generic [ref=e4]:
+  - img [ref=e7]
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]: Welcome Back
+      - generic [ref=e12]: Sign in to access your trading dashboard
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]: Email
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - textbox "Email" [ref=e21]:
+              - /placeholder: you@example.com
+        - generic [ref=e22]:
+          - generic [ref=e23]: Password
+          - generic [ref=e24]:
+            - img [ref=e25]
+            - textbox "Password" [ref=e28]:
+              - /placeholder: ••••••••
+            - button [ref=e29] [cursor=pointer]:
+              - img [ref=e30]
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - checkbox "Remember me" [ref=e35] [cursor=pointer]
+            - checkbox
+            - generic [ref=e36] [cursor=pointer]: Remember me
+          - link "Forgot password?" [ref=e37] [cursor=pointer]:
+            - /url: /forgot-password
+        - button "Sign In" [ref=e38] [cursor=pointer]:
+          - text: Sign In
+          - img
+      - button "Try Demo Account" [ref=e39] [cursor=pointer]
+      - generic [ref=e40]:
+        - paragraph [ref=e41]: Or continue with
+        - button "Auth0 (SSO)" [ref=e42] [cursor=pointer]:
+          - img
+          - text: Auth0 (SSO)
+      - paragraph [ref=e43]:
+        - text: Don't have an account?
+        - link "Create one" [ref=e44] [cursor=pointer]:
+          - /url: /register
+  - paragraph [ref=e45]:
+    - text: By signing in, you agree to our
+    - link "Terms of Service" [ref=e46] [cursor=pointer]:
+      - /url: /terms
+    - text: and
+    - link "Privacy Policy" [ref=e47] [cursor=pointer]:
+      - /url: /privacy

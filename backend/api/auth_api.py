@@ -124,17 +124,6 @@ class AuthResponse(BaseModel):
     user: UserResponse
 
 
-# Legacy schemas
-class TokenRequest(BaseModel):
-    tenant_id: str
-    account_id: str
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str
-
-
 # ============================================================================
 # REGISTRATION ENDPOINT
 # ============================================================================
@@ -291,30 +280,3 @@ async def get_me(request: Request, db: AsyncSession = Depends(get_admin_db)):
         )
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
-
-
-# ============================================================================
-# LEGACY TOKEN ENDPOINT (for backward compatibility)
-# ============================================================================
-
-
-@router.post("/token", response_model=TokenResponse)
-async def get_token(request: TokenRequest):
-    """
-    Legacy token endpoint using tenant_id/account_id.
-    Kept for backward compatibility.
-    """
-    now = datetime.now(UTC)
-    payload = {
-        "sub": request.account_id,
-        "tenant_id": request.tenant_id,
-        "account_id": request.account_id,
-        "roles": ["trader"],
-        "exp": now + timedelta(hours=24),
-        "iat": now,
-        "iss": "agentic-trader",
-        "aud": "agentic-trader-api",
-    }
-
-    token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-    return {"access_token": token, "token_type": "bearer"}

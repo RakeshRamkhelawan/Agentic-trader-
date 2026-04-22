@@ -9,7 +9,7 @@ Provides monitoring endpoints for:
 
 import logging
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -133,7 +133,7 @@ async def health_check():
 
     return HealthResponse(
         status="healthy" if all_healthy else "degraded",
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         version="1.0.0",
         components=components,
     )
@@ -142,7 +142,7 @@ async def health_check():
 @router.get("/ping")
 async def ping():
     """Simple ping endpoint for load balancers."""
-    return {"status": "pong", "timestamp": datetime.utcnow().isoformat()}
+    return {"status": "pong", "timestamp": datetime.now(UTC).isoformat()}
 
 
 @router.get("/ready")
@@ -151,7 +151,7 @@ async def readiness_check():
     try:
         # Quick check that critical components are available
 
-        return {"ready": True, "timestamp": datetime.utcnow().isoformat()}
+        return {"ready": True, "timestamp": datetime.now(UTC).isoformat()}
     except Exception as e:
         logger.error(f"Readiness check failed: {e}")
         raise HTTPException(status_code=503, detail={"ready": False, "error": str(e)})
@@ -163,7 +163,7 @@ async def metrics():
 
     # This would collect actual metrics in production
     return {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "metrics": {
             "requests_total": 0,  # Would be tracked in middleware
             "request_duration_seconds": 0.0,

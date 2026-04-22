@@ -1,0 +1,18 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - img "agentictrader" [ref=e24]
+        - heading "App machtigen" [level=1] [ref=e8]
+        - generic [ref=e10]:
+          - img "Rakesh Ramkhelawan" [ref=e11]
+          - img "agentic trader frontend" [ref=e13]
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - paragraph [ref=e17]: Hallo Rakesh Ramkhelawan,
+          - paragraph [ref=e18]: agentic trader frontend vraagt om toegang tot uw agentictrader-account.
+        - generic [ref=e19]:
+          - button "Weigeren" [ref=e20] [cursor=pointer]
+          - button "Accepteren" [ref=e21] [cursor=pointer]
+    - link "Koppeling naar de Auth0-website" [ref=e22] [cursor=pointer]:
+      - /url: https://auth0.com/?utm_source=lock&utm_campaign=badge&utm_medium=widget

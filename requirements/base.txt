@@ -25,7 +25,7 @@ clickhouse-connect==0.10.0
 redis[hiredis]==5.0.1
 chromadb==0.5.0
 numpy==1.26.4
-pandas==2.2.0
+pandas==2.2.3
 
 # --- MACHINE LEARNING ---
 river==0.23.0

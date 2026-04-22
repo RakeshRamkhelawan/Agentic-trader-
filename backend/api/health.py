@@ -6,7 +6,7 @@ Provides comprehensive health status for all services
 import asyncio
 import logging
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/health", tags=["Health"])
 
 # Global service registry (populated during startup)
 _service_registry: dict[str, Any] = {}
-_startup_time = datetime.utcnow()
+_startup_time = datetime.now(UTC)
 
 
 class HealthStatus(BaseModel):
@@ -82,7 +82,7 @@ async def _check_redis_health() -> ServiceHealth:
             status="healthy",
             healthy=True,
             latency_ms=round(latency, 2),
-            last_check=datetime.utcnow().isoformat(),
+            last_check=datetime.now(UTC).isoformat(),
             details={"connected": True},
         )
     except Exception as e:
@@ -91,7 +91,7 @@ async def _check_redis_health() -> ServiceHealth:
             status="unhealthy",
             healthy=False,
             latency_ms=None,
-            last_check=datetime.utcnow().isoformat(),
+            last_check=datetime.now(UTC).isoformat(),
             details={"error": str(e)},
         )
 
@@ -113,7 +113,7 @@ async def _check_clickhouse_health() -> ServiceHealth:
             status="healthy",
             healthy=True,
             latency_ms=round(latency, 2),
-            last_check=datetime.utcnow().isoformat(),
+            last_check=datetime.now(UTC).isoformat(),
             details={"connected": True},
         )
     except Exception as e:
@@ -122,7 +122,7 @@ async def _check_clickhouse_health() -> ServiceHealth:
             status="unhealthy",
             healthy=False,
             latency_ms=None,
-            last_check=datetime.utcnow().isoformat(),
+            last_check=datetime.now(UTC).isoformat(),
             details={"error": str(e)},
         )
 
@@ -146,7 +146,7 @@ async def _check_chromadb_health() -> ServiceHealth:
             status="healthy",
             healthy=True,
             latency_ms=round(latency, 2),
-            last_check=datetime.utcnow().isoformat(),
+            last_check=datetime.now(UTC).isoformat(),
             details={"connected": True},
         )
     except Exception as e:
@@ -155,7 +155,7 @@ async def _check_chromadb_health() -> ServiceHealth:
             status="unhealthy",
             healthy=False,
             latency_ms=None,
-            last_check=datetime.utcnow().isoformat(),
+            last_check=datetime.now(UTC).isoformat(),
             details={"error": str(e)},
         )
 
@@ -171,7 +171,7 @@ async def _check_llm_providers_health() -> ServiceHealth:
             name="llm_providers",
             status="healthy",
             healthy=True,
-            last_check=datetime.utcnow().isoformat(),
+            last_check=datetime.now(UTC).isoformat(),
             details={"message": "No circuit breakers registered"},
         )
 
@@ -192,7 +192,7 @@ async def _check_llm_providers_health() -> ServiceHealth:
         name="llm_providers",
         status=status,
         healthy=healthy,
-        last_check=datetime.utcnow().isoformat(),
+        last_check=datetime.now(UTC).isoformat(),
         details={
             "providers": cb_health,
             "healthy_count": healthy_count,
@@ -211,7 +211,7 @@ async def basic_health_check():
     environment = os.getenv("ENVIRONMENT", "development")
     version = os.getenv("APP_VERSION", "1.0.0")
 
-    uptime = (datetime.utcnow() - _startup_time).total_seconds()
+    uptime = (datetime.now(UTC) - _startup_time).total_seconds()
 
     # Check critical services
     services_to_check = [
@@ -240,7 +240,7 @@ async def basic_health_check():
 
     response = HealthStatus(
         status=status,
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         version=version,
         uptime_seconds=uptime,
         environment=environment,
@@ -261,7 +261,7 @@ async def detailed_health_check():
     trading_mode = os.getenv("TRADING_MODE", "unknown")
     environment = os.getenv("ENVIRONMENT", "development")
     version = os.getenv("APP_VERSION", "1.0.0")
-    uptime = (datetime.utcnow() - _startup_time).total_seconds()
+    uptime = (datetime.now(UTC) - _startup_time).total_seconds()
 
     # Check all services
     services_to_check = [
@@ -284,7 +284,7 @@ async def detailed_health_check():
                 name=service_name,
                 status="unhealthy",
                 healthy=False,
-                last_check=datetime.utcnow().isoformat(),
+                last_check=datetime.now(UTC).isoformat(),
                 details={"error": str(result)},
             )
             unhealthy_count += 1
@@ -309,7 +309,7 @@ async def detailed_health_check():
 
     summary = HealthStatus(
         status=status,
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         version=version,
         uptime_seconds=uptime,
         environment=environment,
@@ -334,11 +334,11 @@ async def readiness_check():
             detail={
                 "ready": False,
                 "reason": "Redis unavailable",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             },
         )
 
-    return {"ready": True, "timestamp": datetime.utcnow().isoformat()}
+    return {"ready": True, "timestamp": datetime.now(UTC).isoformat()}
 
 
 @router.get("/live")
@@ -349,6 +349,6 @@ async def liveness_check():
     """
     return {
         "alive": True,
-        "timestamp": datetime.utcnow().isoformat(),
-        "uptime_seconds": (datetime.utcnow() - _startup_time).total_seconds(),
+        "timestamp": datetime.now(UTC).isoformat(),
+        "uptime_seconds": (datetime.now(UTC) - _startup_time).total_seconds(),
     }

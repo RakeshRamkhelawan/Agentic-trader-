@@ -34,6 +34,16 @@ export function getApiToken(): string | null {
   return accessToken;
 }
 
+/**
+ * Unauthorized callback - registered by the auth context.
+ * Called instead of hard-redirecting via window.location.href
+ */
+let _onUnauthorized: (() => void) | null = null;
+
+export function setOnUnauthorized(cb: () => void): void {
+  _onUnauthorized = cb;
+}
+
 // Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,
@@ -59,11 +69,13 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Clear token and redirect to login
+      // Clear token and trigger registered callback (no hard redirect)
       accessToken = null;
-      window.location.href = '/login';
+      if (_onUnauthorized) {
+        _onUnauthorized();
+      }
     }
-    
+
     // Extract meaningful error message from backend
     const errorData = error.response?.data as { detail?: string; message?: string };
     if (errorData?.detail) {
@@ -71,7 +83,7 @@ api.interceptors.response.use(
     } else if (errorData?.message) {
       error.message = errorData.message;
     }
-    
+
     return Promise.reject(error);
   }
 );

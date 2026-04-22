@@ -9,7 +9,7 @@ Provides endpoints for:
 
 import logging
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -97,7 +97,7 @@ async def run_backtest(request: BacktestRequest):
         Complete backtest results with performance metrics
     """
     start_time = time.time()
-    backtest_id = f"bt_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+    backtest_id = f"bt_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
 
     logger.info(f"Starting backtest {backtest_id}")
     logger.info(f"  Symbols: {request.symbols}")
@@ -179,7 +179,7 @@ async def run_batch_backtest(request: BatchBacktestRequest):
     successful = sum(1 for r in results if r["status"] == "success")
 
     return {
-        "batch_id": f"batch_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
+        "batch_id": f"batch_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}",
         "total": len(request.configs),
         "successful": successful,
         "failed": len(request.configs) - successful,

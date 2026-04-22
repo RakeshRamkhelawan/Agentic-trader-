@@ -15,12 +15,12 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',  // API backend poort
+        target: 'http://localhost:8099',  // API backend poort
         changeOrigin: true,
         secure: false,
       },
       '/ws': {
-        target: 'ws://localhost:8000',  // API WebSocket poort
+        target: 'ws://localhost:8099',  // API WebSocket poort
         changeOrigin: true,
         ws: true,
       },

@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  api:
+    image: agentic-trader-api:latest
+    container_name: agentic_trader_api
+    entrypoint: ["uvicorn"]
+    command: ["backend.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8003:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://trader:trader_local_password@db:5432/trading_db
+      - REDIS_URL=redis://redis:6379/0
+      - BITVAVO_API_KEY=${BITVAVO_API_KEY}
+      - BITVAVO_API_SECRET=${BITVAVO_API_SECRET}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - AUTH_DISABLED=${AUTH_DISABLED:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    networks:
+      - agentic_trader_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    image: agentic-trader-frontend-new:latest
+    container_name: agentic_trader_frontend
+    ports:
+      - "5180:80"
+    environment:
+      - VITE_API_URL=http://localhost:8003/api/v1
+      - VITE_WS_URL=ws://localhost:8003/ws
+      - VITE_AUTH0_DOMAIN=${VITE_AUTH0_DOMAIN:-}
+      - VITE_AUTH0_CLIENT_ID=${VITE_AUTH0_CLIENT_ID:-}
+      - VITE_AUTH0_AUDIENCE=${VITE_AUTH0_AUDIENCE:-}
+      - VITE_DEMO_MODE=${VITE_DEMO_MODE:-false}
+    depends_on:
+      - api
+    restart: always
+    networks:
+      - agentic_trader_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  db:
+    image: postgres:15-alpine
+    container_name: agentic_trader_db
+    environment:
+      - POSTGRES_USER=trader
+      - POSTGRES_PASSWORD=trader_local_password
+      - POSTGRES_DB=trading_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - agentic_trader_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trader -d trading_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: agentic_trader_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - agentic_trader_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+networks:
+  agentic_trader_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

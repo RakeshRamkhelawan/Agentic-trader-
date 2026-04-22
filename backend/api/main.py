@@ -35,21 +35,23 @@ from backend.api.kyc_api import router as kyc_router
 from backend.api.metrics_middleware import MetricsMiddleware
 from backend.api.paper_trading_api import router as paper_trading_router
 from backend.api.paper_trading_ws_simple import router as paper_trading_ws_router
-from backend.api.routers import (
-    agents,
-    backtest,
-    federated,
-    health,
-    navagraha,
-    ooda,
-    routing,
-    trading,
-)
+from backend.api.routers import agents, backtest, federated, health, navagraha, ooda, routing
 from backend.api.security_middleware import SecurityHeadersMiddleware
+from backend.api.trading_api import router as trading_api_router
 from backend.api.user_settings_api import router as user_settings_router
 from backend.api.websocket_endpoints import router as websocket_router
 from backend.core.config.settings import settings
 from backend.observability.metrics import metrics_endpoint
+
+# Auth0/JWT imports (optional, only when Auth0 is configured)
+try:
+    from backend.core.auth.jwt_validator import JWTValidator
+    from backend.core.auth.middleware import AuthMiddleware
+
+    AUTH_MIDDLEWARE_AVAILABLE = True
+except ImportError:
+    AUTH_MIDDLEWARE_AVAILABLE = False
+    logger.warning("Auth middleware not available, authentication disabled")
 
 
 @asynccontextmanager
@@ -83,6 +85,23 @@ app.add_middleware(SecurityHeadersMiddleware)
 # Prometheus Metrics & Middleware
 app.add_middleware(MetricsMiddleware)
 app.get("/metrics")(metrics_endpoint)
+
+# Auth0 Authentication Middleware (when configured)
+if AUTH_MIDDLEWARE_AVAILABLE and settings.AUTH0_DOMAIN and not settings.AUTH_DISABLED:
+    jwks_url = f"https://{settings.AUTH0_DOMAIN}/.well-known/jwks.json"
+    issuer = f"https://{settings.AUTH0_DOMAIN}/"
+    audience = settings.AUTH0_API_AUDIENCE or f"https://{settings.AUTH0_DOMAIN}/api/v2/"
+
+    token_validator = JWTValidator(
+        jwks_url=jwks_url,
+        issuer=issuer,
+        audience=audience,
+    )
+
+    app.add_middleware(AuthMiddleware, jwt_validator=token_validator)
+    logger.info(f"Auth0 authentication enabled: {settings.AUTH0_DOMAIN}")
+else:
+    logger.warning("Auth0 authentication disabled (no AUTH0_DOMAIN configured or AUTH_DISABLED)")
 
 # CORS middleware for React frontend
 # In production, use specific origins from settings
@@ -130,7 +149,7 @@ async def websocket_logging_middleware(request, call_next):
 # Include routers
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(backtest.router, prefix="/api/v1")
-app.include_router(trading.router, prefix="/api/v1")
+app.include_router(trading_api_router)
 app.include_router(routing.router, prefix="/api/v1")
 app.include_router(paper_trading_router)
 app.include_router(agents.router, prefix="/api/v1")

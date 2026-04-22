@@ -42,13 +42,14 @@ if (import.meta.env.PROD && !AUTH0_DOMAIN) {
   );
 }
 
-// Dev mode is ONLY active when running in Vite dev server AND Auth0 is not configured.
-// In production, this is unreachable due to the guard above.
-export const isDevMode = import.meta.env.DEV && !AUTH0_DOMAIN;
-export const isAuthDisabled = isDevMode;
-
 // Demo Mode - When true, shows demo/sample data instead of empty states
 export const isDemoMode = getConfig('VITE_DEMO_MODE', 'false') === 'true';
+
+// Dev mode is active when:
+// 1. Running in Vite dev server AND Auth0 is not configured, OR
+// 2. DEMO_MODE is explicitly enabled (for Docker deployments without Auth0)
+export const isDevMode = (import.meta.env.DEV && !AUTH0_DOMAIN) || isDemoMode;
+export const isAuthDisabled = isDevMode || isDemoMode || !AUTH0_DOMAIN;
 
 // Log configuration on load (only in dev, never leak config in prod)
 if (import.meta.env.DEV) {

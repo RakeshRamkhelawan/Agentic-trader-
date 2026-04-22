@@ -5,7 +5,7 @@ Simplified WebSocket for Live Paper Trading
 import asyncio
 import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
@@ -62,7 +62,7 @@ async def _handle_paper_trading_ws(websocket: WebSocket):
                     "paper_trading.agents",
                     "paper_trading.vedic",
                 ],
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         )
 
@@ -83,7 +83,7 @@ async def _handle_paper_trading_ws(websocket: WebSocket):
             except TimeoutError:
                 # Send keepalive
                 await websocket.send_json(
-                    {"type": "keepalive", "timestamp": datetime.utcnow().isoformat()}
+                    {"type": "keepalive", "timestamp": datetime.now(UTC).isoformat()}
                 )
 
     except WebSocketDisconnect:

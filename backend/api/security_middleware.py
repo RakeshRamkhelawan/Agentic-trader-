@@ -1,3 +1,5 @@
+import os
+
 """
 Security Headers Middleware for FastAPI.
 
@@ -35,16 +37,20 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # XSS Protection (legacy, but still useful)
         response.headers["X-XSS-Protection"] = "1; mode=block"
 
-        # HSTS (only in production)
-        response.headers["Strict-Transport-Security"] = (
-            "max-age=31536000; includeSubDomains; preload"
-        )
+        # HSTS - only when SSL is explicitly enabled or ENVIRONMENT=production
+        if (
+            os.getenv("SSL_ENABLED", "false").lower() == "true"
+            or os.getenv("ENVIRONMENT", "development") == "production"
+        ):
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains; preload"
+            )
 
         # Content Security Policy
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self'; "
+            "style-src 'self'; "
             "img-src 'self' data: https:; "
             "font-src 'self'; "
             "connect-src 'self' https: wss:;"

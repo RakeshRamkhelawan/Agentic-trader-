@@ -11,7 +11,7 @@ Features:
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import WebSocket
@@ -70,7 +70,7 @@ class WebSocketManager:
             {
                 "type": "connected",
                 "connection_id": connection_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             },
         )
 
@@ -160,7 +160,7 @@ class WebSocketManager:
             "channel": channel,
             "type": message_type,
             "data": message,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         subscribers = list(self.channel_subscribers.get(channel, []))
@@ -209,7 +209,7 @@ class WebSocketManager:
                 "change_percent_24h": change_percent_24h,
                 "high_24h": high_24h,
                 "low_24h": low_24h,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             },
             message_type="update",
         )
@@ -238,7 +238,7 @@ class WebSocketManager:
                             "channel": channel,
                             "type": "snapshot",
                             "data": {"bids": [], "asks": []},
-                            "timestamp": datetime.utcnow().isoformat(),
+                            "timestamp": datetime.now(UTC).isoformat(),
                         },
                     )
 
@@ -250,7 +250,7 @@ class WebSocketManager:
         elif msg_type == "ping":
             # Update last ping time
             if connection_id in self.connections:
-                self.connections[connection_id].last_ping = datetime.utcnow()
+                self.connections[connection_id].last_ping = datetime.now(UTC)
             await self.send_message(connection_id, {"type": "pong"})
 
     async def start_heartbeat(self, interval_seconds: int = 30) -> None:
@@ -265,7 +265,7 @@ class WebSocketManager:
 
     async def _check_stale_connections(self, timeout_seconds: int = 90) -> None:
         """Disconnect stale connections that haven't sent a ping."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         stale_connections = []
 
         for conn_id, conn in list(self.connections.items()):

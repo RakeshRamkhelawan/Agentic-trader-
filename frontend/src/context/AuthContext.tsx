@@ -16,7 +16,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { setApiToken } from '@/lib/api';
+import { setApiToken, setOnUnauthorized } from '@/lib/api';
 import { AUTH0_DOMAIN, AUTH0_AUDIENCE } from '@/lib/config';
 
 interface User {
@@ -125,6 +125,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
   }, [auth0Logout]);
 
+  // Register unauthorized callback so API can trigger logout instead of hard-redirect
+  useEffect(() => {
+    setOnUnauthorized(() => {
+      auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+    });
+  }, [auth0Logout]);
+
   const getAccessToken = useCallback(async () => {
     if (!auth0IsAuthenticated) return null;
     try {
@@ -167,7 +174,7 @@ const devAuthValue: AuthContextType = {
     id: 'dev-user-001',
     email: 'dev@localhost',
     name: 'Developer',
-    roles: ['admin'],
+    roles: ['viewer'],
   },
   accessToken: 'dev-token',
   login: () => {},

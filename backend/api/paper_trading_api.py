@@ -7,7 +7,7 @@ zodat het direct WebSocket berichten kan sturen voor real-time updates.
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
@@ -77,7 +77,7 @@ async def _run_trading_engine(duration_hours: int, capital: float, mode: str = "
 
     from backend.services.real_paper_trading_v18_direct import RealPaperTradingV18
 
-    _session_start_time = datetime.utcnow()
+    _session_start_time = datetime.now(UTC)
     _trading_logs = []
     _trading_trades = []
 
@@ -156,7 +156,7 @@ async def get_status():
     # Calculate session duration
     uptime_seconds = 0
     if _session_start_time and is_running:
-        uptime_seconds = (datetime.utcnow() - _session_start_time).total_seconds()
+        uptime_seconds = (datetime.now(UTC) - _session_start_time).total_seconds()
 
     # Get latest data from engine if running
     portfolio = None
@@ -353,7 +353,7 @@ async def get_tuning_stats():
 
         return {
             "regimes": stats,
-            "last_update": datetime.utcnow().isoformat() + "Z",
+            "last_update": datetime.now(UTC).isoformat() + "Z",
             "agents": tuner.agents,
         }
     except Exception as e:

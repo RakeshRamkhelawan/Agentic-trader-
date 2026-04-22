@@ -53,10 +53,10 @@ npm-debug.log*
 .coverage
 htmlcov/
 .tox/
+.benchmarks/
 
-# Node modules (frontend)
-frontend/node_modules/
-frontend/dist/
+# Frontend - exclude all, not needed for backend
+frontend/
 
 # Docker
 Dockerfile*
@@ -73,7 +73,17 @@ data/
 cache/
 backtest_results/
 backtest_logs/
+paper_trading_analytics/
+prediction-market-analysis/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Other large directories
+scripts/
+tests/
+models/
+reports/
+*.pem
+*.key

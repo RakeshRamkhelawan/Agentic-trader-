@@ -1,0 +1,293 @@
+- generic [ref=e5]:
+  - complementary [ref=e6]:
+    - generic [ref=e8]:
+      - img [ref=e10]
+      - generic [ref=e12]: Agentic
+    - navigation [ref=e13]:
+      - button "Dashboard" [ref=e14] [cursor=pointer]:
+        - img [ref=e15]
+        - generic [ref=e20]: Dashboard
+        - img [ref=e21]
+      - button "Markets" [ref=e23] [cursor=pointer]:
+        - img [ref=e24]
+        - generic [ref=e27]: Markets
+      - button "Portfolio" [ref=e28] [cursor=pointer]:
+        - img [ref=e29]
+        - generic [ref=e32]: Portfolio
+      - button "Terminal" [ref=e33] [cursor=pointer]:
+        - img [ref=e34]
+        - generic [ref=e36]: Terminal
+      - button "History" [ref=e37] [cursor=pointer]:
+        - img [ref=e38]
+        - generic [ref=e42]: History
+      - button "Live Paper Trading" [ref=e43] [cursor=pointer]:
+        - img [ref=e44]
+        - generic [ref=e47]: Live Paper Trading
+      - button "Competitions" [ref=e48] [cursor=pointer]:
+        - img [ref=e49]
+        - generic [ref=e55]: Competitions
+      - button "Settings" [ref=e56] [cursor=pointer]:
+        - img [ref=e57]
+        - generic [ref=e60]: Settings
+    - button [ref=e62] [cursor=pointer]:
+      - img
+    - generic [ref=e64] [cursor=pointer]:
+      - generic [ref=e66]: R
+      - generic [ref=e67]:
+        - paragraph [ref=e68]: Rakesh Ramkhelawan
+        - paragraph [ref=e69]: rakeshs.ramkhelawan@gmail.com
+      - button [ref=e70]:
+        - img
+  - generic [ref=e71]:
+    - banner [ref=e72]:
+      - generic [ref=e73]:
+        - heading "Dashboard" [level=1] [ref=e74]
+        - generic [ref=e75]: Live
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - img [ref=e78]
+          - textbox "Search assets, markets..." [ref=e81]
+        - button [ref=e82] [cursor=pointer]:
+          - img
+        - button [ref=e83] [cursor=pointer]:
+          - img
+        - button "R Rakesh Ramkhelawan" [ref=e85] [cursor=pointer]:
+          - generic [ref=e87]: R
+          - generic [ref=e88]: Rakesh Ramkhelawan
+    - main [ref=e89]:
+      - generic [ref=e90]:
+        - generic [ref=e91]:
+          - generic [ref=e92]:
+            - heading "Welcome back, Trader" [level=2] [ref=e93]
+            - paragraph [ref=e94]: Here's what's happening with your portfolio today
+          - generic [ref=e95]:
+            - button "Analytics" [ref=e96] [cursor=pointer]:
+              - img
+              - text: Analytics
+            - button "Quick Trade" [ref=e97] [cursor=pointer]:
+              - img
+              - text: Quick Trade
+        - generic [ref=e98]:
+          - generic [ref=e99]:
+            - generic [ref=e100]:
+              - generic [ref=e101]: Portfolio Value
+              - img [ref=e103]
+            - generic [ref=e105]:
+              - generic [ref=e106]: $10,000.00
+              - generic [ref=e107]:
+                - img [ref=e108]
+                - generic [ref=e111]: No trades yet
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - generic [ref=e114]: 24h Profit / Loss
+              - img [ref=e116]
+            - generic [ref=e119]:
+              - generic [ref=e120]: $0.00
+              - generic [ref=e122]: No trades today
+              - paragraph [ref=e123]: Place your first trade to see P&L
+          - generic [ref=e124]:
+            - generic [ref=e125]:
+              - generic [ref=e126]: Active Orders
+              - img [ref=e128]
+            - generic [ref=e130]:
+              - generic [ref=e131]: "0"
+              - generic [ref=e133]: No open orders
+              - paragraph [ref=e134]: Use the order panel to place trades
+          - generic [ref=e135]:
+            - generic [ref=e136]:
+              - generic [ref=e137]: AI Agent Status
+              - img [ref=e139]
+            - generic [ref=e142]:
+              - generic [ref=e143]: Active
+              - generic [ref=e144]:
+                - img [ref=e145]
+                - generic [ref=e148]: 6 agents running
+        - generic [ref=e149]:
+          - generic [ref=e150]:
+            - generic [ref=e151]:
+              - generic [ref=e153]:
+                - generic [ref=e155]:
+                  - generic [ref=e156]:
+                    - combobox [ref=e157] [cursor=pointer]:
+                      - img
+                    - generic [ref=e158]: +0.00%
+                  - generic [ref=e160]: —
+                - generic [ref=e161]:
+                  - generic [ref=e162]:
+                    - button "1m" [ref=e163] [cursor=pointer]
+                    - button "5m" [ref=e164] [cursor=pointer]
+                    - button "15m" [ref=e165] [cursor=pointer]
+                    - button "1h" [ref=e166] [cursor=pointer]
+                    - button "4h" [ref=e167] [cursor=pointer]
+                    - button "1d" [ref=e168] [cursor=pointer]
+                    - button "1w" [ref=e169] [cursor=pointer]
+                  - button [ref=e170] [cursor=pointer]:
+                    - img
+                  - button [ref=e171] [cursor=pointer]:
+                    - img
+                  - button [ref=e172] [cursor=pointer]:
+                    - img
+              - img [ref=e176]
+            - generic [ref=e178]:
+              - generic [ref=e180]:
+                - generic [ref=e181]: Active Orders
+                - generic [ref=e182]: "0"
+              - generic [ref=e184]:
+                - img [ref=e185]
+                - paragraph [ref=e188]: No active orders
+                - paragraph [ref=e189]: Your open orders will appear here
+            - generic [ref=e191]:
+              - generic [ref=e192]: Market Overview
+              - button "View All" [ref=e193] [cursor=pointer]:
+                - text: View All
+                - img
+          - generic [ref=e194]:
+            - generic [ref=e196]:
+              - generic [ref=e198]: Place Order
+              - generic [ref=e199]:
+                - generic [ref=e200]:
+                  - button "Buy" [ref=e201] [cursor=pointer]:
+                    - img [ref=e202]
+                    - text: Buy
+                  - button "Sell" [ref=e205] [cursor=pointer]:
+                    - img [ref=e206]
+                    - text: Sell
+                - generic [ref=e209]:
+                  - button "Market" [ref=e210] [cursor=pointer]
+                  - button "Limit" [ref=e211] [cursor=pointer]
+                  - button "Stop" [ref=e212] [cursor=pointer]
+                - generic [ref=e213]:
+                  - generic [ref=e214]: Amount
+                  - generic [ref=e215]:
+                    - spinbutton [ref=e216]
+                    - generic [ref=e217]: BTC
+                - generic [ref=e218]:
+                  - button "25%" [ref=e219] [cursor=pointer]
+                  - button "50%" [ref=e220] [cursor=pointer]
+                  - button "75%" [ref=e221] [cursor=pointer]
+                  - button "100%" [ref=e222] [cursor=pointer]
+                - generic [ref=e224]:
+                  - generic [ref=e225]: Total
+                  - generic [ref=e226]: $0.00
+                - button "Buy BTC" [disabled]
+                - generic [ref=e227]:
+                  - img [ref=e228]
+                  - generic [ref=e231]: "Available: $0.00"
+            - generic [ref=e232]:
+              - generic [ref=e234]:
+                - img [ref=e236]
+                - generic [ref=e239]:
+                  - generic [ref=e240]: AI Advisor
+                  - paragraph [ref=e241]: Ask for trading insights & advice
+              - generic [ref=e242]:
+                - generic [ref=e243]:
+                  - button "Top Picks" [ref=e244] [cursor=pointer]:
+                    - img [ref=e245]
+                    - generic [ref=e248]: Top Picks
+                  - button "Risk Alert" [ref=e249] [cursor=pointer]:
+                    - img [ref=e250]
+                    - generic [ref=e253]: Risk Alert
+                  - button "Market Outlook" [ref=e254] [cursor=pointer]:
+                    - img [ref=e255]
+                    - generic [ref=e258]: Market Outlook
+                - generic [ref=e259]:
+                  - textbox "Ask about markets, assets, or strategy..." [ref=e260]
+                  - button [disabled]:
+                    - img
+            - generic [ref=e261]:
+              - generic [ref=e263]:
+                - generic [ref=e264]:
+                  - img [ref=e267]
+                  - generic [ref=e276]:
+                    - generic [ref=e277]: Federated Triad
+                    - generic [ref=e278]:
+                      - generic [ref=e279]: Coherent
+                      - generic [ref=e280]: 5 Councils Active
+                - button [ref=e281] [cursor=pointer]:
+                  - img [ref=e282]
+              - generic [ref=e284]:
+                - generic [ref=e285]:
+                  - tablist [ref=e286]:
+                    - tab "Overview" [selected] [ref=e287] [cursor=pointer]:
+                      - img
+                      - generic [ref=e288]: Overview
+                    - tab "Councils" [ref=e289] [cursor=pointer]:
+                      - img
+                      - generic [ref=e290]: Councils
+                    - tab "Chitta" [ref=e291] [cursor=pointer]:
+                      - img
+                      - generic [ref=e292]: Chitta
+                    - tab "Buddhi" [ref=e293] [cursor=pointer]:
+                      - img
+                      - generic [ref=e294]: Buddhi
+                  - tabpanel "Overview" [ref=e295]:
+                    - generic [ref=e296]:
+                      - generic [ref=e298]:
+                        - generic [ref=e299]:
+                          - img [ref=e301]
+                          - generic [ref=e305]: System Coherence
+                        - generic [ref=e306]: Medium
+                      - generic [ref=e308]: 75%
+                      - generic [ref=e309]:
+                        - generic [ref=e311]:
+                          - generic [ref=e312]:
+                            - img [ref=e313]
+                            - generic [ref=e318]: Harmony
+                          - generic [ref=e319]: 80%
+                        - generic [ref=e323]:
+                          - generic [ref=e324]:
+                            - img [ref=e325]
+                            - generic [ref=e328]: Performance
+                          - generic [ref=e329]: +0%
+                        - generic [ref=e333]:
+                          - generic [ref=e334]:
+                            - img [ref=e335]
+                            - generic [ref=e339]: Chitta Health
+                          - generic [ref=e340]: 70%
+                        - generic [ref=e344]:
+                          - generic [ref=e345]:
+                            - img [ref=e346]
+                            - generic [ref=e354]: Buddhi Clarity
+                          - generic [ref=e355]: 75%
+                    - generic [ref=e358]:
+                      - generic [ref=e359]:
+                        - img [ref=e361]
+                        - generic [ref=e365]: 3 Guna Balance
+                      - generic [ref=e366]:
+                        - 'generic "Sattva (Harmony): 50%" [ref=e367]'
+                        - 'generic "Rajas (Activity): 30%" [ref=e368]'
+                        - 'generic "Tamas (Inertia): 20%" [ref=e369]'
+                      - generic [ref=e370]:
+                        - generic [ref=e373]: Sattva 50%
+                        - generic [ref=e376]: Rajas 30%
+                        - generic [ref=e379]: Tamas 20%
+                    - generic [ref=e380]:
+                      - generic [ref=e382]:
+                        - generic [ref=e383]:
+                          - img [ref=e384]
+                          - text: Buddhi Decision
+                        - generic [ref=e386]:
+                          - img
+                          - text: hold
+                      - paragraph [ref=e387]: "Consensus from 6 agents. 0 BUY, 0 SELL, 6 HOLD. Total P&L: €0.00"
+                      - generic [ref=e388]:
+                        - generic [ref=e389]:
+                          - img [ref=e390]
+                          - generic [ref=e393]: 0% conf
+                        - generic [ref=e394]:
+                          - img [ref=e395]
+                          - generic [ref=e398]: 0 supporting
+                        - generic [ref=e399]:
+                          - img [ref=e400]
+                          - generic [ref=e402]: 5 resolved
+                - button "Run Triad Analysis" [ref=e403] [cursor=pointer]:
+                  - img
+                  - generic [ref=e404]: Run Triad Analysis
+            - generic [ref=e405]:
+              - generic [ref=e407]:
+                - generic [ref=e408]: Recent Activity
+                - img [ref=e410]
+              - generic [ref=e415]:
+                - img [ref=e416]
+                - paragraph [ref=e419]: No recent activity
+  - region "Notifications alt+T"

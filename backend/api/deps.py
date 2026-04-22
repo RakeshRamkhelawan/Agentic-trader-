@@ -85,7 +85,13 @@ async def get_current_tenant_id(request: Request) -> str:
         )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"], options={"verify_aud": False})
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=["HS256"],
+            audience="agentic-trader-api",
+            options={"verify_aud": True},
+        )
         tenant_id = payload.get("tenant_id")
         if not tenant_id:
             raise HTTPException(

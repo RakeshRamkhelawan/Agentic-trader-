@@ -158,6 +158,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
         return TokenPayload(
             sub="dev-user-001",
             tenant_id="dev-tenant-001",
-            roles=["admin"],
+            roles=["viewer"],
             exp=9999999999,
         )

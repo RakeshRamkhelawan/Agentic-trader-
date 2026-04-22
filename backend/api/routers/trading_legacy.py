@@ -10,7 +10,7 @@ Uses REAL data from:
 
 import logging
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
@@ -614,7 +614,7 @@ async def get_tuning_stats():
 
         return {
             "regimes": stats,
-            "last_update": datetime.utcnow().isoformat() + "Z",
+            "last_update": datetime.now(UTC).isoformat() + "Z",
             "agents": tuner.agents,
         }
     except Exception as e:
@@ -784,7 +784,7 @@ async def inject_test_trades(count: int = 5):
 
             if result.status.value == "FILLED":
                 trade = {
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "symbol": symbol,
                     "agent": "TEST_AGENT",
                     "strategy": "test_injection",

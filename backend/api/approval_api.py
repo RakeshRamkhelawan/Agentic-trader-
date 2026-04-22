@@ -59,7 +59,7 @@ async def approve_order(
     # 2. Update Status
     order.status = OrderStatus.APPROVED.value
     order.approved_by = user.get("sub") or user.get("id")
-    order.approved_at = datetime.utcnow()
+    order.approved_at = datetime.now(UTC)
     # Commit status update first? Or after execution?
     # Better to commit first to lock it?
     # For now, let's keep it in session.

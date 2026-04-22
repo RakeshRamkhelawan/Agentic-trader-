@@ -32,7 +32,6 @@ import csv
 import io
 import logging
 import statistics
-import threading
 from abc import ABC, abstractmethod
 from collections import deque
 from collections.abc import AsyncGenerator
@@ -82,13 +81,13 @@ class RealMetricsProvider(MetricsProvider):
         """
         self.metrics_integration = metrics_integration
         self.history = deque(maxlen=10000)  # 10k samples max
-        self._lock = threading.RLock()
+        self._lock = asyncio.Lock()
         self._subscribers = []
         self._last_sample_time = None
 
     async def get_current_metrics(self) -> dict[str, Any]:
         """Get latest metrics from Phase 15 MetricsIntegration."""
-        with self._lock:
+        async with self._lock:
             now = datetime.now(UTC)
             metrics = {
                 "timestamp": now.isoformat(),
@@ -214,7 +213,7 @@ class RealMetricsProvider(MetricsProvider):
 
     async def get_metrics_history(self, minutes: int) -> list[dict[str, Any]]:
         """Get historical metrics from memory buffer."""
-        with self._lock:
+        async with self._lock:
             cutoff = datetime.now(UTC) - timedelta(minutes=minutes)
             return [m for m in self.history if datetime.fromisoformat(m["timestamp"]) > cutoff]
 
@@ -502,7 +501,7 @@ class AlertService:
         self.retention_hours = retention_hours
         self.alerts = deque(maxlen=1000)
         self.alert_counts = {}
-        self._lock = threading.RLock()
+        self._lock = asyncio.Lock()
 
     def check_coherence_thresholds(self, coherence: dict[str, float]) -> list[str]:
         """Check coherence values and generate alerts."""
@@ -553,9 +552,9 @@ class AlertService:
 
         return alerts
 
-    def add_alert(self, message: str, severity: str = "warning") -> None:
+    async def add_alert(self, message: str, severity: str = "warning") -> None:
         """Add alert with deduplication."""
-        with self._lock:
+        async with self._lock:
             # Deduplication: same message only once per minute
             key = (message, severity)
             last_time = self.alert_counts.get(key)
@@ -575,11 +574,11 @@ class AlertService:
             self.alert_counts[key] = datetime.now(UTC)
             logger.info(f"Alert [{severity}]: {message}")
 
-    def get_recent_alerts(
+    async def get_recent_alerts(
         self, limit: int = 50, severity: str | None = None
     ) -> list[dict[str, Any]]:
         """Get recent alerts with optional severity filter."""
-        with self._lock:
+        async with self._lock:
             alerts = list(self.alerts)
 
         # Filter by severity
@@ -590,9 +589,9 @@ class AlertService:
         alerts.sort(key=lambda a: a["timestamp"], reverse=True)
         return alerts[:limit]
 
-    def clear_alerts(self, older_than_hours: int | None = None) -> int:
+    async def clear_alerts(self, older_than_hours: int | None = None) -> int:
         """Clear old alerts."""
-        with self._lock:
+        async with self._lock:
             if older_than_hours is None:
                 older_than_hours = self.retention_hours
 
@@ -630,16 +629,16 @@ class HistoricalAnalyticsService:
         self.history_size = history_size
         self.metric_history = deque(maxlen=history_size)
         self.baseline = {}
-        self._lock = threading.RLock()
+        self._lock = asyncio.Lock()
 
-    def add_metrics_sample(self, metrics: dict[str, Any]) -> None:
+    async def add_metrics_sample(self, metrics: dict[str, Any]) -> None:
         """Add metrics sample to history."""
-        with self._lock:
+        async with self._lock:
             self.metric_history.append(metrics)
 
-    def get_history(self, hours: int | None = None) -> list[dict[str, Any]]:
+    async def get_history(self, hours: int | None = None) -> list[dict[str, Any]]:
         """Get metric history over time range."""
-        with self._lock:
+        async with self._lock:
             history = list(self.metric_history)
 
         if hours is None:
@@ -648,9 +647,9 @@ class HistoricalAnalyticsService:
         cutoff = datetime.now(UTC) - timedelta(hours=hours)
         return [m for m in history if datetime.fromisoformat(m["timestamp"]) > cutoff]
 
-    def analyze_trend(self, metric_name: str, samples: int = 100) -> str:
+    async def analyze_trend(self, metric_name: str, samples: int = 100) -> str:
         """Analyze trend in metric."""
-        with self._lock:
+        async with self._lock:
             history = list(self.metric_history)
 
         if len(history) < samples:
@@ -688,9 +687,9 @@ class HistoricalAnalyticsService:
         else:
             return "stable"
 
-    def calculate_percentiles(self, metric_name: str) -> dict[str, float]:
+    async def calculate_percentiles(self, metric_name: str) -> dict[str, float]:
         """Calculate percentiles for metric."""
-        with self._lock:
+        async with self._lock:
             history = list(self.metric_history)
 
         values = []
@@ -726,9 +725,9 @@ class HistoricalAnalyticsService:
             "max": max(values),
         }
 
-    def detect_anomalies(self, current_value: float, metric_name: str) -> float:
+    async def detect_anomalies(self, current_value: float, metric_name: str) -> float:
         """Detect anomalies using baseline."""
-        with self._lock:
+        async with self._lock:
             history = list(self.metric_history)
 
         if len(history) < 30:
@@ -761,9 +760,9 @@ class HistoricalAnalyticsService:
         z_score = abs((current_value - mean) / stdev)
         return min(1.0, z_score / 3.0)  # Normalize
 
-    def forecast_metric(self, metric_name: str, minutes_ahead: int = 5) -> dict[str, Any]:
+    async def forecast_metric(self, metric_name: str, minutes_ahead: int = 5) -> dict[str, Any]:
         """Simple trend-based forecast."""
-        with self._lock:
+        async with self._lock:
             history = list(self.metric_history)
 
         if len(history) < 10:

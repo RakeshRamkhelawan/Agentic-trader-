@@ -12,7 +12,7 @@ Endpoints:
 """
 
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
@@ -168,7 +168,7 @@ async def submit_kyc(
     _kyc_store[user_id] = {
         "data": data.dict(),
         "status": KYCStatus.PENDING_REVIEW,
-        "submitted_at": datetime.utcnow(),
+        "submitted_at": datetime.now(UTC),
         "reviewed_at": None,
         "rejection_reason": None,
     }
@@ -290,7 +290,7 @@ if ENABLE_KYC:
             )
 
         _kyc_store[user_id]["status"] = status
-        _kyc_store[user_id]["reviewed_at"] = datetime.utcnow()
+        _kyc_store[user_id]["reviewed_at"] = datetime.now(UTC)
 
         if status == KYCStatus.REJECTED and rejection_reason:
             _kyc_store[user_id]["rejection_reason"] = rejection_reason
